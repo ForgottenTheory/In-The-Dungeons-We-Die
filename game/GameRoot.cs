@@ -53,6 +53,7 @@ public partial class GameRoot : Node
     private DataStore<AbilityDefinition> _abilities = new();
     private DataStore<ActorDefinition> _actors = new();
     private DataStore<RealmDefinition> _realms = new();
+    private DataStore<ConsumableDefinition> _consumables = new();
 
     private CharacterComposer _composer = null!;
     private ProfessionSystem _professions = null!;
@@ -101,6 +102,7 @@ public partial class GameRoot : Node
         _abilities = ContentLoader.LoadDefinitions<AbilityDefinition>("res://data/abilities");
         _actors = ContentLoader.LoadDefinitions<ActorDefinition>("res://data/actors");
         _realms = ContentLoader.LoadDefinitions<RealmDefinition>("res://data/realms");
+        _consumables = ContentLoader.LoadDefinitions<ConsumableDefinition>("res://data/consumables");
 
         var rules = new RuleRegistry(new ICharacterRule[]
         {
@@ -280,6 +282,9 @@ public partial class GameRoot : Node
     /// <summary>Attempts the flagship cross-profession experiment: Iron Ingot + Oak Bark.</summary>
     public void ExperimentBarkbound() => Experiment("material.iron_ingot", "material.oak_bark");
 
+    /// <summary>Brews a Healing Salve from gathered herbs — the crafted Realm supply.</summary>
+    public void BrewHealingSalve() => Experiment("material.sageleaf");
+
     public void Experiment(params string[] itemIds)
     {
         var outcome = _crafting.Experiment(itemIds);
@@ -370,6 +375,27 @@ public partial class GameRoot : Node
     public void CombatBlock() => _encounter.Block();
     public void CombatDodge() => _encounter.Dodge();
     public void CombatWait() => _encounter.Wait();
+
+    /// <summary>Consumables the player currently carries in the active bag.</summary>
+    public IReadOnlyList<ConsumableDefinition> UsableConsumables =>
+        _consumables.GetAll().Where(c => CurrentBag.Contains(c.Id)).OrderBy(c => c.Name).ToList();
+
+    public void CombatUseConsumable(string itemId)
+    {
+        if (!_encounter.IsActive)
+            return;
+        if (!_consumables.TryGetById(itemId, out var consumable))
+            return;
+        if (!CurrentBag.Contains(itemId))
+        {
+            Emit($"[Combat] No {consumable.Name} to use.");
+            return;
+        }
+
+        CurrentBag.TryRemove(itemId, 1);
+        _encounter.UseHealingItem(consumable.Name, consumable.HealAmount);
+        InventoryChanged?.Invoke();
+    }
 
     public string CombatReport()
     {
@@ -632,13 +658,40 @@ public partial class GameRoot : Node
 
     // --- Save ---------------------------------------------------------------
 
-    public void SaveAndReload()
+    public void SaveGame()
     {
-        _saveStore.Save(new SaveData { SavedAtTick = _tick.CurrentTick });
-        var loaded = _saveStore.Load();
-        Emit(loaded is null
-            ? "[Save] Failed to reload save."
-            : $"[Save] Round-tripped save (schema v{loaded.SchemaVersion}, savedAtTick {loaded.SavedAtTick}).");
+        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick);
+        _saveStore.Save(data);
+        Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
+             $"{data.Discoveries.Count} discovery(ies).");
+    }
+
+    public void LoadGame()
+    {
+        if (InRealm)
+        {
+            Emit("[Load] Extract or finish the run before loading.");
+            return;
+        }
+
+        var save = _saveStore.Load();
+        if (save is null)
+        {
+            Emit("[Load] No save file found.");
+            return;
+        }
+
+        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge);
+        if (save.Build is not null)
+        {
+            _build = save.Build;
+            RebuildCharacter(); // raises CharacterChanged
+        }
+
+        Emit($"[Load] Loaded save (schema v{save.SchemaVersion}, saved at tick {save.SavedAtTick}).");
+        InventoryChanged?.Invoke();
+        DiscoveryChanged?.Invoke();
+        RealmChanged?.Invoke();
     }
 
     public void ReportStatus()
@@ -720,8 +773,14 @@ public partial class GameRoot : Node
     private string ActionName(string actionId) =>
         _actionDefs.TryGetById(actionId, out var a) ? a.Name : actionId;
 
-    private string ItemName(string itemId) =>
-        _materials.TryGetById(itemId, out var m) ? m.Name : itemId;
+    private string ItemName(string itemId)
+    {
+        if (_materials.TryGetById(itemId, out var m))
+            return m.Name;
+        if (_consumables.TryGetById(itemId, out var c))
+            return c.Name;
+        return itemId;
+    }
 
     private void Emit(string message)
     {

@@ -26,6 +26,7 @@ public class CraftingContentValidationTests
     {
         var interactions = Load<CraftingInteractionDefinition>("crafting_interactions");
         var materials = Load<MaterialDefinition>("materials");
+        var consumables = Load<Dungeons.Combat.ConsumableDefinition>("consumables");
         var professions = Load<Dungeons.Professions.ProfessionDefinition>("professions");
 
         Assert.True(interactions.Count >= 1);
@@ -34,7 +35,9 @@ public class CraftingContentValidationTests
         {
             foreach (var input in interaction.Inputs)
                 Assert.True(materials.Contains(input.ItemId), $"{interaction.Id} input {input.ItemId} missing");
-            Assert.True(materials.Contains(interaction.ResultItemId), $"{interaction.Id} result {interaction.ResultItemId} missing");
+            // A result may be a material or a consumable item.
+            Assert.True(materials.Contains(interaction.ResultItemId) || consumables.Contains(interaction.ResultItemId),
+                $"{interaction.Id} result {interaction.ResultItemId} missing");
             foreach (var req in interaction.ProfessionRequirements)
                 Assert.True(professions.Contains(req.ProfessionId), $"{interaction.Id} requires unknown profession {req.ProfessionId}");
         }

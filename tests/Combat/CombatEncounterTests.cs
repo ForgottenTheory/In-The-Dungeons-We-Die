@@ -126,6 +126,27 @@ public class CombatEncounterTests
     }
 
     [Fact]
+    public void UseHealingItem_RestoresHealth_AndCostsAttackTempo()
+    {
+        var (enc, tick) = Build();
+        var player = Player(hp: 100, attrs: Attrs());
+        enc.Start(player, new[] { Enemy("Brute", 500, Attrs(str: 1), "ability.goblin_smash") }); // slow, won't interfere
+
+        player.Health.Reduce(60); // 40/100
+        Assert.True(enc.PlayerReady);
+
+        var healed = enc.UseHealingItem("Healing Salve", 25);
+        Assert.Equal(25, healed);
+        Assert.Equal(65, player.Health.Current);
+        Assert.False(enc.PlayerReady); // spent tempo — can't immediately strike
+
+        tick.Advance(9);
+        Assert.False(enc.PlayerReady);
+        tick.Advance(1); // ItemUseRecoveryTicks = 10
+        Assert.True(enc.PlayerReady);
+    }
+
+    [Fact]
     public void EnemyAi_LoopsAcrossRecovery()
     {
         var (enc, tick) = Build();

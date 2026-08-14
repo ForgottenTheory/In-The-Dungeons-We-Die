@@ -138,6 +138,23 @@ public sealed class CombatEncounter
         Log("You wait, watching for an opening.");
     }
 
+    /// <summary>
+    /// Uses a healing item: restores Health now, at the cost of attack tempo (you can
+    /// still block/dodge). Consuming the item from inventory is the caller's job.
+    /// Returns the amount actually healed, or 0 if it could not be used.
+    /// </summary>
+    public int UseHealingItem(string label, int healAmount)
+    {
+        if (!IsActive)
+            return 0;
+
+        var healed = _player.Health.Restore(healAmount);
+        _player.ReadyTick = Math.Max(_player.ReadyTick, _tick.CurrentTick + CombatTuning.ItemUseRecoveryTicks);
+        Log($"You use {label} and recover {healed} Health. [{_player.Name} {_player.Health.Current}/{_player.Health.Max}]");
+        StateChanged?.Invoke();
+        return healed;
+    }
+
     // --- Enemy AI -----------------------------------------------------------
 
     private void BeginEnemyDecision(Combatant enemy)

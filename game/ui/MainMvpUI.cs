@@ -113,7 +113,8 @@ public partial class MainMvpUI : Control
         _runButton = MakeButton("Play", ToggleRun);
         simButtons.AddChild(_runButton);
         simButtons.AddChild(MakeButton("Advance 50 Ticks", () => _game.AdvanceTick(50)));
-        simButtons.AddChild(MakeButton("Save + Reload", () => _game.SaveAndReload()));
+        simButtons.AddChild(MakeButton("Save", () => _game.SaveGame()));
+        simButtons.AddChild(MakeButton("Load", () => _game.LoadGame()));
 
         BuildCharacterSection(root);
         BuildProfessionSection(root);
@@ -201,6 +202,7 @@ public partial class MainMvpUI : Control
         buttons.AddThemeConstantOverride("separation", 8);
         root.AddChild(buttons);
         buttons.AddChild(MakeButton("Experiment: Iron Ingot + Oak Bark", () => _game.ExperimentBarkbound()));
+        buttons.AddChild(MakeButton("Brew Healing Salve (2 Sageleaf)", () => _game.BrewHealingSalve()));
         buttons.AddChild(MakeButton("Grant Craft Test Mats", () => _game.GrantCraftTestMaterials()));
     }
 
@@ -245,6 +247,7 @@ public partial class MainMvpUI : Control
             fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
             fightRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
             fightRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
+            fightRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve")));
             return;
         }
 
@@ -289,6 +292,7 @@ public partial class MainMvpUI : Control
         actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
         actionRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
         actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
+        actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve")));
         actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
     }
 

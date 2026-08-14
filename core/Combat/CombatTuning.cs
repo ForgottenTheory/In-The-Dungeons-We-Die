@@ -26,4 +26,7 @@ public static class CombatTuning
     // Passive stamina recovery during combat.
     public const int StaminaRegenIntervalTicks = 15;
     public const int StaminaRegenAmount = 2;
+
+    /// <summary>Attack tempo lost after using an item — you can still block/dodge, but not immediately strike.</summary>
+    public const int ItemUseRecoveryTicks = 10;
 }
