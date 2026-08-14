@@ -1,0 +1,9 @@
+{
+  "id": "species.undead",
+  "name": "Undead",
+  "tags": ["undead", "immune:poison"],
+  "modifiers": [
+    { "stat": "Constitution", "op": "Add", "value": 2 },
+    { "stat": "Wisdom", "op": "Add", "value": -1 }
+  ]
+}

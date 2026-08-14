@@ -1,0 +1,6 @@
+{
+  "id": "suffix.inappropriate_optimism",
+  "name": "Of Inappropriate Optimism",
+  "tags": ["reckless", "conditional"],
+  "ruleIds": ["rule.inappropriate_optimism"]
+}

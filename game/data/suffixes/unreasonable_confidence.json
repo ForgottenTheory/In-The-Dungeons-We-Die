@@ -1,0 +1,6 @@
+{
+  "id": "suffix.unreasonable_confidence",
+  "name": "Of Unreasonable Confidence",
+  "tags": ["confident", "conditional"],
+  "ruleIds": ["rule.unreasonable_confidence"]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "prefix.pyromaniac",
+  "name": "Pyromaniac",
+  "tags": ["fire", "conversion"],
+  "modifiers": [
+    { "stat": "Intelligence", "op": "Add", "value": 1 }
+  ]
+}

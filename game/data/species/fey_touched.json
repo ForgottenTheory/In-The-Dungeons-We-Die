@@ -1,0 +1,10 @@
+{
+  "id": "species.fey_touched",
+  "name": "Fey-Touched",
+  "tags": ["fey", "magical"],
+  "modifiers": [
+    { "stat": "Intelligence", "op": "Add", "value": 2 },
+    { "stat": "Constitution", "op": "Add", "value": -1 },
+    { "stat": "MaxMana", "op": "Multiply", "value": 1.15 }
+  ]
+}

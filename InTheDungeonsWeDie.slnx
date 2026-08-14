@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/core/">
+    <Project Path="core/InTheDungeonsWeDie.Core.csproj" />
+  </Folder>
+  <Folder Name="/game/">
+    <Project Path="game/InTheDungeonsWeDie.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InTheDungeonsWeDie.Core.Tests.csproj" />
+  </Folder>
+</Solution>

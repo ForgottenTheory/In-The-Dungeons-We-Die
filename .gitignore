@@ -1,6 +1,6 @@
 # Godot 4 core ignores
-.godot/
-!.godot/extension_list.cfg
+game/.godot/
+!game/.godot/extension_list.cfg
 *.translation
 export_presets.cfg
 

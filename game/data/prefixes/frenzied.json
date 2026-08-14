@@ -1,0 +1,9 @@
+{
+  "id": "prefix.frenzied",
+  "name": "Frenzied",
+  "tags": ["aggressive", "momentum"],
+  "modifiers": [
+    { "stat": "Strength", "op": "Add", "value": 2 },
+    { "stat": "Dexterity", "op": "Add", "value": 1 }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "species.human",
+  "name": "Human",
+  "tags": ["human", "adaptable"],
+  "modifiers": [
+    { "stat": "Wisdom", "op": "Add", "value": 1 },
+    { "stat": "Luck", "op": "Add", "value": 1 }
+  ]
+}
