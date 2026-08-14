@@ -71,6 +71,18 @@ public sealed class ProfessionSystem
         return progress;
     }
 
+    /// <summary>All tracked profession progress, for persistence.</summary>
+    public IReadOnlyCollection<ProfessionProgress> AllProgress => _progress.Values;
+
+    /// <summary>Replaces all progression state (used when loading a save).</summary>
+    public void RestoreProgress(IEnumerable<ProfessionProgress> progress)
+    {
+        ArgumentNullException.ThrowIfNull(progress);
+        _progress.Clear();
+        foreach (var p in progress)
+            _progress[p.ProfessionId] = p;
+    }
+
     public ProfessionActionDefinition GetAction(string actionId) => _actions.GetById(actionId);
 
     public int EffectiveIntervalTicks(string actionId)

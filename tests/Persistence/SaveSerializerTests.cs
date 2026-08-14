@@ -1,4 +1,5 @@
-using System.Text;
+using Dungeons.Characters.Composition;
+using Dungeons.Items;
 using Dungeons.Persistence;
 using Xunit;
 
@@ -6,18 +7,34 @@ namespace Dungeons.Tests.Persistence;
 
 public class SaveSerializerTests
 {
+    private static SaveData Sample() => new()
+    {
+        SavedAtTick = 4242,
+        Build = new CharacterBuild("species.undead", "class.bastion", "prefix.frenzied", "suffix.the_last_laugh"),
+        Stash = new List<ItemStack> { new("material.oak_log", 7), new("material.iron_ingot", 2) },
+        Professions = new List<ProfessionSave>
+        {
+            new() { ProfessionId = "profession.forestry", Xp = 350, Mastery = new() { ["action.chop_oak"] = 12 } },
+        },
+        RealmKnowledge = new() { ["realm.dark_forest"] = 9 },
+        Discoveries = new List<string> { "discovery.barkbound_iron" },
+    };
+
     [Fact]
-    public void RoundTrip_PreservesVersionAndValues()
+    public void RoundTrip_PreservesEverything()
     {
         var serializer = new SaveSerializer();
-        var original = new SaveData { SchemaVersion = 1, SavedAtTick = 4242, Coins = 137 };
+        var restored = serializer.Deserialize(serializer.Serialize(Sample()));
 
-        var json = serializer.Serialize(original);
-        var restored = serializer.Deserialize(json);
-
-        Assert.Equal(original.SchemaVersion, restored.SchemaVersion);
-        Assert.Equal(original.SavedAtTick, restored.SavedAtTick);
-        Assert.Equal(original.Coins, restored.Coins);
+        Assert.Equal(SaveData.CurrentSchemaVersion, restored.SchemaVersion);
+        Assert.Equal(4242, restored.SavedAtTick);
+        Assert.Equal("species.undead", restored.Build!.SpeciesId);
+        Assert.Equal("suffix.the_last_laugh", restored.Build.SuffixId);
+        Assert.Equal(7, restored.Stash.First(s => s.ItemId == "material.oak_log").Quantity);
+        Assert.Equal(350, restored.Professions.Single().Xp);
+        Assert.Equal(12, restored.Professions.Single().Mastery["action.chop_oak"]);
+        Assert.Equal(9, restored.RealmKnowledge["realm.dark_forest"]);
+        Assert.Contains("discovery.barkbound_iron", restored.Discoveries);
     }
 
     [Fact]
@@ -31,29 +48,16 @@ public class SaveSerializerTests
     public void StreamRoundTrip_Works()
     {
         var serializer = new SaveSerializer();
-        var original = new SaveData { SavedAtTick = 9, Coins = 5 };
-
         using var stream = new MemoryStream();
-        serializer.Serialize(original, stream);
+        serializer.Serialize(Sample(), stream);
         stream.Position = 0;
         var restored = serializer.Deserialize(stream);
-
-        Assert.Equal(9, restored.SavedAtTick);
-        Assert.Equal(5, restored.Coins);
+        Assert.Equal(4242, restored.SavedAtTick);
     }
 
     [Fact]
     public void Deserialize_RejectsEmptyJson()
     {
-        var serializer = new SaveSerializer();
-        Assert.Throws<ArgumentException>(() => serializer.Deserialize(""));
-    }
-
-    [Fact]
-    public void SerializedPayload_IsPlainJson()
-    {
-        var json = new SaveSerializer().Serialize(new SaveData { Coins = 1 });
-        Assert.Contains("schemaVersion", json, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("coins", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Throws<ArgumentException>(() => new SaveSerializer().Deserialize(""));
     }
 }

@@ -31,6 +31,9 @@ public sealed class ProfessionProgress
 
     public int GetMastery(string actionId) => _masteryByActionId.TryGetValue(actionId, out var m) ? m : 0;
 
+    /// <summary>Read-only view of all activity mastery, for persistence.</summary>
+    public IReadOnlyDictionary<string, int> Masteries => _masteryByActionId;
+
     public void AddMastery(string actionId, int amount)
     {
         if (amount <= 0)

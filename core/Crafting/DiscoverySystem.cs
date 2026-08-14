@@ -25,6 +25,14 @@ public sealed class DiscoverySystem
 
     public int Count => _discovered.Count;
 
+    /// <summary>Adds discoveries without raising events (used when loading a save).</summary>
+    public void Restore(IEnumerable<string> ids)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        foreach (var id in ids)
+            _discovered.Add(id);
+    }
+
     /// <summary>Records a discovery. Returns true only if it was not already known.</summary>
     public bool Record(string id)
     {
