@@ -1,0 +1,14 @@
+{
+  "id": "action.gather_sageleaf",
+  "professionId": "profession.herblore",
+  "name": "Gather Sageleaf",
+  "requiredLevel": 1,
+  "baseIntervalTicks": 120,
+  "experience": 12,
+  "outputs": [
+    { "itemId": "material.sageleaf", "quantity": 1 }
+  ],
+  "bonusOutputs": [
+    { "itemId": "material.marsh_root", "chance": 0.2, "quantity": 1 }
+  ]
+}

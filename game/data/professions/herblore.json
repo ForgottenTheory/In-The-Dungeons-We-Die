@@ -1,0 +1,6 @@
+{
+  "id": "profession.herblore",
+  "name": "Herblore",
+  "category": "Gathering",
+  "primaryAttributes": ["Intelligence", "Wisdom"]
+}

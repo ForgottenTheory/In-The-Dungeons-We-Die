@@ -1,0 +1,6 @@
+{
+  "id": "profession.forestry",
+  "name": "Forestry",
+  "category": "Gathering",
+  "primaryAttributes": ["Strength", "Dexterity"]
+}

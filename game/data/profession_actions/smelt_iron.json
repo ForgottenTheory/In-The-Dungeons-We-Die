@@ -1,0 +1,14 @@
+{
+  "id": "action.smelt_iron",
+  "professionId": "profession.smithing",
+  "name": "Smelt Iron Ingot",
+  "requiredLevel": 1,
+  "baseIntervalTicks": 150,
+  "experience": 20,
+  "inputs": [
+    { "itemId": "material.iron_ore", "quantity": 2 }
+  ],
+  "outputs": [
+    { "itemId": "material.iron_ingot", "quantity": 1 }
+  ]
+}

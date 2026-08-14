@@ -1,0 +1,6 @@
+{
+  "id": "profession.smithing",
+  "name": "Smithing",
+  "category": "Crafting",
+  "primaryAttributes": ["Strength", "Endurance"]
+}

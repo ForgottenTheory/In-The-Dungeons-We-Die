@@ -1,0 +1,14 @@
+{
+  "id": "action.chop_oak",
+  "professionId": "profession.forestry",
+  "name": "Chop Oak",
+  "requiredLevel": 1,
+  "baseIntervalTicks": 100,
+  "experience": 10,
+  "outputs": [
+    { "itemId": "material.oak_log", "quantity": 1 }
+  ],
+  "bonusOutputs": [
+    { "itemId": "material.oak_bark", "chance": 0.25, "quantity": 1 }
+  ]
+}
