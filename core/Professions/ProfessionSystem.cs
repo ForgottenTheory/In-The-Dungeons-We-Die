@@ -19,7 +19,7 @@ public readonly record struct ProfessionLevelUp(string ProfessionId, int OldLeve
 public sealed class ProfessionSystem
 {
     private readonly DataStore<ProfessionActionDefinition> _actions;
-    private readonly Inventory _inventory;
+    private readonly Func<Inventory> _inventoryProvider;
     private readonly IRandomSource _rng;
     private readonly Dictionary<string, ProfessionProgress> _progress = new(StringComparer.Ordinal);
 
@@ -28,9 +28,23 @@ public sealed class ProfessionSystem
         Inventory inventory,
         IRandomSource rng,
         IEnumerable<ProfessionProgress>? initialProgress = null)
+        : this(actions, () => inventory, rng, initialProgress)
+    {
+        ArgumentNullException.ThrowIfNull(inventory);
+    }
+
+    /// <summary>
+    /// Provider overload: the target inventory is resolved per action, so gathering
+    /// can deposit into the Hideout Stash or the current Realm run inventory.
+    /// </summary>
+    public ProfessionSystem(
+        DataStore<ProfessionActionDefinition> actions,
+        Func<Inventory> inventoryProvider,
+        IRandomSource rng,
+        IEnumerable<ProfessionProgress>? initialProgress = null)
     {
         _actions = actions ?? throw new ArgumentNullException(nameof(actions));
-        _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
+        _inventoryProvider = inventoryProvider ?? throw new ArgumentNullException(nameof(inventoryProvider));
         _rng = rng ?? throw new ArgumentNullException(nameof(rng));
 
         if (initialProgress is not null)
@@ -72,7 +86,7 @@ public sealed class ProfessionSystem
             return ActionFailure.UnknownAction;
         if (GetProgress(action.ProfessionId).Level < action.RequiredLevel)
             return ActionFailure.LevelTooLow;
-        if (action.Inputs.Count > 0 && !_inventory.CanRemoveAll(action.Inputs.Select(i => i.ToStack()).ToList()))
+        if (action.Inputs.Count > 0 && !_inventoryProvider().CanRemoveAll(action.Inputs.Select(i => i.ToStack()).ToList()))
             return ActionFailure.MissingInputs;
         return ActionFailure.None;
     }
@@ -92,14 +106,15 @@ public sealed class ProfessionSystem
         var action = _actions.GetById(actionId);
         var progress = GetProgress(action.ProfessionId);
 
+        var bag = _inventoryProvider();
         var inputs = action.Inputs.Select(i => i.ToStack()).ToList();
         if (inputs.Count > 0)
-            _inventory.TryRemoveAll(inputs); // guaranteed by CheckExecutable above
+            bag.TryRemoveAll(inputs); // guaranteed by CheckExecutable above
 
         var mastery = progress.GetMastery(actionId);
         var yield = ActionResolver.Resolve(action, mastery, performance, _rng);
         foreach (var stack in yield.Produced)
-            _inventory.Add(stack);
+            bag.Add(stack);
 
         var oldLevel = progress.Level;
         progress.AddXp(yield.Xp);

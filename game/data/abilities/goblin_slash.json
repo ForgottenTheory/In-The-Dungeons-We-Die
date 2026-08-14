@@ -1,0 +1,8 @@
+{
+  "id": "ability.goblin_slash",
+  "name": "Rusty Slash",
+  "damageType": "Slashing",
+  "baseValue": 6,
+  "staminaCost": 0,
+  "timing": { "telegraphTicks": 8, "windupTicks": 8, "recoveryTicks": 20 }
+}

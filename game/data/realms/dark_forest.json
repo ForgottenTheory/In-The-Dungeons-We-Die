@@ -1,0 +1,54 @@
+{
+  "id": "realm.dark_forest",
+  "name": "The Dark Forest",
+  "supportedTiers": [1],
+  "tags": ["forest", "fey", "toxin"],
+  "locations": [
+    {
+      "id": "loc.entrance", "name": "Camp Entrance", "type": "Entrance", "depth": 1,
+      "connections": ["loc.forest_path"]
+    },
+    {
+      "id": "loc.forest_path", "name": "Forest Path", "type": "Travel", "depth": 1,
+      "connections": ["loc.entrance", "loc.old_grove", "loc.goblin_camp"]
+    },
+    {
+      "id": "loc.old_grove", "name": "Old Grove", "type": "Gather", "depth": 1,
+      "connections": ["loc.forest_path", "loc.ruins"],
+      "professionActionId": "action.chop_oak"
+    },
+    {
+      "id": "loc.goblin_camp", "name": "Goblin Camp", "type": "Combat", "depth": 1,
+      "connections": ["loc.forest_path", "loc.ruins"],
+      "actorId": "actor.goblin_raider"
+    },
+    {
+      "id": "loc.ruins", "name": "Crumbling Ruins", "type": "Event", "depth": 1,
+      "connections": ["loc.old_grove", "loc.goblin_camp", "loc.descent"],
+      "eventText": "You pry open a moss-covered chest hidden in the ruins.",
+      "rewardItemId": "material.iron_ore", "rewardQuantity": 2
+    },
+    {
+      "id": "loc.descent", "name": "The Descent", "type": "Descent", "depth": 1,
+      "connections": ["loc.ruins"]
+    },
+    {
+      "id": "loc.deep_path", "name": "Deep Path", "type": "Entrance", "depth": 2,
+      "connections": ["loc.dark_grove", "loc.brute_warren"]
+    },
+    {
+      "id": "loc.dark_grove", "name": "Dark Grove", "type": "Gather", "depth": 2,
+      "connections": ["loc.deep_path", "loc.deep_extraction"],
+      "professionActionId": "action.gather_sageleaf"
+    },
+    {
+      "id": "loc.brute_warren", "name": "Brute Warren", "type": "Combat", "depth": 2,
+      "connections": ["loc.deep_path", "loc.deep_extraction"],
+      "actorId": "actor.goblin_brute"
+    },
+    {
+      "id": "loc.deep_extraction", "name": "Extraction Portal", "type": "Extraction", "depth": 2,
+      "connections": ["loc.dark_grove", "loc.brute_warren"]
+    }
+  ]
+}

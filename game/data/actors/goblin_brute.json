@@ -1,0 +1,8 @@
+{
+  "id": "actor.goblin_brute",
+  "name": "Goblin Brute",
+  "attributes": { "strength": 12, "dexterity": 5, "intelligence": 3, "constitution": 10, "wisdom": 3, "endurance": 10, "luck": 3 },
+  "resources": { "health": 60, "mana": 0, "stamina": 40 },
+  "abilityIds": ["ability.goblin_smash"],
+  "lootItemId": "material.goblin_scrap"
+}

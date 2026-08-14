@@ -1,4 +1,5 @@
 using System;
+using Dungeons.Realms;
 using Godot;
 
 namespace Dungeons.Game.Ui;
@@ -19,6 +20,10 @@ public partial class MainMvpUI : Control
     private Label _professionSummaryLabel = null!;
     private Label _passiveStatusLabel = null!;
     private Label _inventoryLabel = null!;
+    private Label _craftingLabel = null!;
+    private Label _combatLabel = null!;
+    private Label _realmLabel = null!;
+    private VBoxContainer _realmControls = null!;
     private Button _runButton = null!;
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
@@ -35,11 +40,16 @@ public partial class MainMvpUI : Control
         _game.CharacterChanged += RefreshCharacter;
         _game.InventoryChanged += RefreshProfessionsAndInventory;
         _game.RunningChanged += RefreshRunButton;
+        _game.DiscoveryChanged += RefreshCrafting;
+        _game.CombatChanged += RefreshCombat;
+        _game.RealmChanged += RefreshRealm;
 
         _game.ReportStatus();
         RefreshCharacter();
         RefreshProfessionsAndInventory();
         RefreshRunButton();
+        RefreshCombat();
+        RefreshRealm();
     }
 
     public override void _ExitTree()
@@ -50,6 +60,9 @@ public partial class MainMvpUI : Control
         _game.CharacterChanged -= RefreshCharacter;
         _game.InventoryChanged -= RefreshProfessionsAndInventory;
         _game.RunningChanged -= RefreshRunButton;
+        _game.DiscoveryChanged -= RefreshCrafting;
+        _game.CombatChanged -= RefreshCombat;
+        _game.RealmChanged -= RefreshRealm;
     }
 
     public override void _Process(double delta)
@@ -65,6 +78,9 @@ public partial class MainMvpUI : Control
         _passiveStatusLabel.Text = _game.IsPassiveRunning
             ? $"Passive: {_game.CurrentPassiveActionId}"
             : "Passive: (idle)";
+
+        if (_game.IsCombatActive)
+            RefreshCombat(); // telegraph countdowns tick down each frame
     }
 
     private void BuildLayout()
@@ -101,6 +117,9 @@ public partial class MainMvpUI : Control
 
         BuildCharacterSection(root);
         BuildProfessionSection(root);
+        BuildCraftingSection(root);
+        BuildRealmSection(root);
+        BuildCombatSection(root);
         BuildInventorySection(root);
 
         root.AddChild(new HSeparator());
@@ -170,6 +189,109 @@ public partial class MainMvpUI : Control
         passiveRow.AddChild(MakeButton("Stop Passive", () => _game.StopPassive()));
     }
 
+    private void BuildCraftingSection(VBoxContainer root)
+    {
+        root.AddChild(new HSeparator());
+        root.AddChild(Header("CRAFTING"));
+
+        _craftingLabel = new Label();
+        root.AddChild(_craftingLabel);
+
+        var buttons = new HBoxContainer();
+        buttons.AddThemeConstantOverride("separation", 8);
+        root.AddChild(buttons);
+        buttons.AddChild(MakeButton("Experiment: Iron Ingot + Oak Bark", () => _game.ExperimentBarkbound()));
+        buttons.AddChild(MakeButton("Grant Craft Test Mats", () => _game.GrantCraftTestMaterials()));
+    }
+
+    private void BuildRealmSection(VBoxContainer root)
+    {
+        root.AddChild(new HSeparator());
+        root.AddChild(Header("REALM"));
+
+        _realmLabel = new Label();
+        root.AddChild(_realmLabel);
+
+        _realmControls = new VBoxContainer();
+        _realmControls.AddThemeConstantOverride("separation", 4);
+        root.AddChild(_realmControls);
+    }
+
+    private void RebuildRealmControls()
+    {
+        foreach (var child in _realmControls.GetChildren())
+        {
+            _realmControls.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        if (!_game.InRealm)
+        {
+            foreach (var realm in _game.Realms)
+            {
+                var id = realm.Id;
+                _realmControls.AddChild(MakeButton($"Enter {realm.Name}", () => _game.EnterRealm(id)));
+            }
+
+            return;
+        }
+
+        if (_game.RealmBusy)
+        {
+            _realmControls.AddChild(new Label { Text = "In combat — act here (telegraphs show in the Combat panel):" });
+            var fightRow = new HBoxContainer();
+            fightRow.AddThemeConstantOverride("separation", 8);
+            _realmControls.AddChild(fightRow);
+            fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
+            fightRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
+            fightRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
+            return;
+        }
+
+        var actionLabel = _game.RealmActionLabel();
+        if (actionLabel is not null)
+            _realmControls.AddChild(MakeButton(actionLabel, () => _game.RealmAction()));
+        if (_game.RealmCanDescend)
+            _realmControls.AddChild(MakeButton("▼ Go Deeper", () => _game.RealmGoDeeper()));
+        if (_game.RealmCanExtract)
+            _realmControls.AddChild(MakeButton("Extract", () => _game.RealmExtract()));
+
+        var run = _game.Run;
+        if (run is null)
+            return;
+        foreach (var destination in run.Destinations())
+        {
+            var id = destination.Id;
+            _realmControls.AddChild(MakeButton($"→ Go to {destination.Name}", () => _game.RealmTravel(id)));
+        }
+    }
+
+    private void BuildCombatSection(VBoxContainer root)
+    {
+        root.AddChild(new HSeparator());
+        root.AddChild(Header("COMBAT"));
+
+        _combatLabel = new Label();
+        root.AddChild(_combatLabel);
+
+        var startRow = new HBoxContainer();
+        startRow.AddThemeConstantOverride("separation", 8);
+        root.AddChild(startRow);
+        foreach (var actor in _game.EnemyActors)
+        {
+            var actorId = actor.Id;
+            startRow.AddChild(MakeButton($"Fight {actor.Name}", () => _game.StartCombat(actorId)));
+        }
+
+        var actionRow = new HBoxContainer();
+        actionRow.AddThemeConstantOverride("separation", 8);
+        root.AddChild(actionRow);
+        actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
+        actionRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
+        actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
+        actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
+    }
+
     private void BuildInventorySection(VBoxContainer root)
     {
         root.AddChild(new HSeparator());
@@ -195,6 +317,26 @@ public partial class MainMvpUI : Control
     {
         _professionSummaryLabel.Text = _game.ProfessionSummary();
         _inventoryLabel.Text = _game.InventoryReport();
+        RefreshCrafting(); // herblore level shown in the crafting requirement can change
+    }
+
+    private void RefreshCrafting() => _craftingLabel.Text = _game.CraftingReport();
+
+    private void RefreshCombat()
+    {
+        _combatLabel.Text = _game.CombatReport();
+        if (!_game.InRealm)
+            return;
+
+        _realmLabel.Text = _game.RealmReport(); // keep party HP live during a realm fight
+        if (!_game.RealmBusy)
+            RebuildRealmControls(); // combat just ended → surface travel/extract options again
+    }
+
+    private void RefreshRealm()
+    {
+        _realmLabel.Text = _game.RealmReport();
+        RebuildRealmControls();
     }
 
     private void AppendLog(string message) => _log.AppendText(message + "\n");
