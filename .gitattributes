@@ -1,0 +1,8 @@
+# Enforce LF for Godot files
+*.gd text eol=lf
+*.godot text eol=lf
+*.tres text eol=lf
+*.tscn text eol=lf
+
+# Let C# files use standard text handling
+*.cs text

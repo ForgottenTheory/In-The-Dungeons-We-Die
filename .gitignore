@@ -1,0 +1,17 @@
+# Godot 4 core ignores
+.godot/
+!.godot/extension_list.cfg
+*.translation
+export_presets.cfg
+
+# .NET / C# Build Artifacts
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# OS specific
+.DS_Store
+Thumbs.db
