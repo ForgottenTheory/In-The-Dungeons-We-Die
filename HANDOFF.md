@@ -11,13 +11,17 @@ Finish **Phase 4** of the equipment/crafting work, then make crafting real. Rema
 2. ✅ **Unify item+quantity shapes** — done. `ItemStack(ItemId, Quantity=1)` is the single item+quantity shape; new `ItemChance(ItemId, Chance, Quantity=1)` (in `core/Items/`, exposes `.Stack`) replaces the old `ItemChanceData`; `ItemAmountData` removed. Profession action JSON unchanged.
 3. ✅ **Equipment/inventory UI** — done. `MainMvpUI` EQUIPMENT section (per-slot rows + Unequip, Stash list + Equip, debug Grant-to-stash), backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + queries. Godot-side — user verifies visually.
 
-**Phase 4 is complete.** The **static material library is now authored** (~470 defs, 0–100 flat properties, category array files, biome-diverse, rarity-tagged; `docs/itemization.md §2`). Biome/rarity are tags only — no biome type/field (user's explicit call). Next: "make crafting real" (the emergent reaction simulation) — do this together with the user; do NOT hardcode crafting combinations or build reaction rules yet without them. Likely prerequisites: crafting with `ItemInstance` inputs (recursion input half), then the universal interaction pipeline behind `CraftingDerivation` (`docs/crafting.md §17.3`). More equipment authoring is also outstanding.
+**Phase 4 complete; material library authored (~470 defs); emergent-item-system P0 done.**
+
+The crafting system is now driven by **`docs/emergent-item-system.md`** (ACCEPTED, supersedes `docs/crafting.md §17`). **P0 shipped** (see ROADMAP): `family:value` tag namespace across all materials, `PropertyDefinition` registry + roles (`game/data/properties/`), `resonance` property, `ResistanceCalculator` (derived resistances), and tag-family/property validation. New Core: `PropertyDefinition`, `ResistanceCalculator`, `TagFamilies`. The tag-migration script is in the scratchpad (`migrate_tags.ps1`) if you need the exact mapping.
+
+**Next is P1** (§20): `ProcessDefinition` + the universal reaction algebra (convergence/off-channel/opposition) + potency + integrity (destruction/byproducts/pre-commit UI) + archetype registry + naming + Reaction Log, with **zero authored signatures/traits** — prove the emergent core first. Do NOT hardcode crafting combinations. The old `CraftingExperimentSystem` stays until P1 replaces it. Confirm scope with the user before building P1 (it's large).
 
 The user stated: after Phase 4 we **populate items** and then build the **crafting reaction simulation**. So do 1 & 2 before big item authoring.
 
 ## Repo/git state
-- Branch `main`, latest commit `afa2d05` (save persistence). Uncommitted (this session, not yet committed — commit on request): content-validator, item-shape unification, equipment UI, material-property schema change, **~470-material biome-diverse library (rarity via tags, no biome schema)**.
-- `dotnet build InTheDungeonsWeDie.slnx` clean; `dotnet test` → **160 passing** (0 failing; was 137 at session start). Godot is not on PATH — verify via dotnet only; the user runs the game from their Godot 4.7.1 editor.
+- Branch `main`, latest commit `05a9f29` (equipment P4 + base-resource ecosystem). Uncommitted (not yet committed — commit on request): the tabbed/themed `MainMvpUI` refresh, and **emergent-item-system P0** (tag namespacing migration of all 7 material files, `PropertyDefinition` registry + `game/data/properties/`, `ResistanceCalculator`, `TagFamilies`, validator rules).
+- `dotnet build InTheDungeonsWeDie.slnx` clean; `dotnet test` → **182 passing** (0 failing). Godot is not on PATH — verify via dotnet only; the user runs the game from their Godot 4.7.1 editor.
 - Recent commits: `afa2d05` P4a save · `0377872` P3 crafting instances · `4d1ccc8` P1–2 equipment · `988357f` M9 · … (see `git log`).
 
 ## Files changed most recently (this session)

@@ -16,7 +16,15 @@ All three remainder items done (content validation, unified item shapes, equipme
 2. ✅ **Unify item+quantity shapes** — `ItemStack(ItemId, Quantity=1)` is now the single item+quantity shape everywhere; the old `ItemAmountData`/`ItemChanceData` classes are gone. Profession action Inputs/Outputs are `ItemStack`; BonusOutputs are the new `ItemChance(ItemId, Chance, Quantity=1)` value type (built on `ItemStack`, exposes `.Stack`). Flat content JSON is unchanged. Regression test: `ProfessionContentValidationTests.FlatJson_BindsToUnifiedItemStackAndItemChance`.
 3. ✅ **Equipment/inventory UI** — `MainMvpUI` now has a real EQUIPMENT section: per-slot rows (weapon/armor) with resolved stat summaries + Unequip, a Stash list of unequipped instances each with Equip, and a debug "Grant to stash" row. Backed by `GameRoot` commands `EquipFromStash`/`UnequipToStash`/`GrantToStash` and queries `EquippedWeapon`/`EquippedArmor`/`StashEquipment`/`InstanceLabel`. (Godot-side; verify visually in the editor.)
 
-## Next — make crafting real (the emergent simulation)
+## Emergent item system (the crafting simulation) — `docs/emergent-item-system.md`
+The accepted design. Phased build (§20):
+- ✅ **P0** — tag namespacing (`family:value`), `PropertyDefinition` registry + roles, `resonance`, derived resistances, validator rules. Plumbing only; no gameplay change.
+- ⬜ **P1** — `ProcessDefinition` + universal reaction algebra (convergence/off-channel/opposition) + potency + integrity (incl. destruction + byproducts + pre-commit projection UI) + signature/quantization + archetype registry + naming v1 + Reaction Log. **Zero signatures/traits** — this alone is the playable emergent core; prove it first.
+- ⬜ **P2** state traits + cap/displacement/supersession · **P3** essence + resonance strain + `Attune` · **P4** signature/chain reactions · **P5a/b/c** fabrication (single-slot → multi-component → consumables) · **P6** codex/journal/assay/rename.
+
+Do NOT hardcode crafting combinations. The old fixed-interaction `CraftingExperimentSystem` is superseded by this; keep it until P1 replaces it.
+
+## (Superseded) Next — make crafting real (the emergent simulation)
 Ordered so each step is testable before the next:
 1. ⬜ **Crafting with instance inputs** — let `CraftingExperimentSystem` accept `ItemInstance`s as inputs (recursion "input half"; generation half already works). Match/consume instances, derive from their properties.
 2. 🔄 **Populate items** — ✅ **raw/processed material library done** (~470 defs on a 0–100 flat-property scale across `game/data/materials/` category array files; biome-diverse, multi-part creatures, rarity-tagged, load-validated; `docs/itemization.md §2`). ⬜ Still to author: more **equipment** (weapons/armor beyond the 4 starters); generated instances come from crafting. No reaction rules / derived combinations authored (by design).
@@ -34,4 +42,4 @@ Ordered so each step is testable before the next:
 - ⬜ **Production**: art, audio, animation, telegraph visuals; eventual multiplayer (host-authoritative — Domain already supports it).
 
 ## Guardrails
-Keep `dotnet test` green (160 cases now). Add Core tests for new deterministic behavior. Don't hardcode crafting combinations. Don't put gameplay rules in `GameRoot`/UI. Commit only when asked; on `main`.
+Keep `dotnet test` green (182 cases now). Add Core tests for new deterministic behavior. Don't hardcode crafting combinations. Don't put gameplay rules in `GameRoot`/UI. Commit only when asked; on `main`.

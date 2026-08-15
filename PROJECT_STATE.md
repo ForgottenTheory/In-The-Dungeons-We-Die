@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo; `docs/current-state.md` is a deeper audit (written before the equipment system, so trust this file + code where they differ).
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 160 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 182 passing cases. Core-only; no Godot/UI tests.
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
 - Build/verify: `dotnet build InTheDungeonsWeDie.slnx` && `dotnet test`.
 
@@ -12,7 +12,8 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 ## Simulation & content plumbing
 - ✅ `TickEngine` (deterministic schedule/advance/cancel + events); one shared instance drives combat + passive gathering at 20 ticks/s.
 - ✅ `DataStore<T>` (JSON→definitions, duplicate-id fails loudly, path-agnostic). `ContentLoader` (Godot) reads `res://data`.
-- ✅ `ContentValidator` (Core): load-time cross-reference validation of the loaded stores (actors→abilities/loot, actions→profession/materials, crafting→materials/consumables/professions, realm nodes→actors/actions/rewards + symmetric edges, equipment slot↔stat block). `GameRoot._Ready` runs it and fails loudly (logs + throws `ContentValidationException`). Character-component refs stay validated by `CharacterComposer`.
+- ✅ `ContentValidator` (Core): load-time cross-reference validation of the loaded stores (actors→abilities/loot, actions→profession/materials, crafting→materials/consumables/professions, realm nodes→actors/actions/rewards + symmetric edges, equipment slot↔stat block, **material property ranges + tag-family cardinality**). `GameRoot._Ready` runs it and fails loudly (logs + throws `ContentValidationException`). Character-component refs stay validated by `CharacterComposer`.
+- ✅ **Emergent item system — P0 done** (`docs/emergent-item-system.md §20`): material tags migrated to `family:value` namespace (origin/comp/form/state/rarity/class/part); `PropertyDefinition` registry with roles (structural/reactive/response/sourcing) as data in `game/data/properties/`; `resonance` property added (no values yet); `ResistanceCalculator` derives resistances from `resisted_by` (authored `*_resistance` values are overrides). **No reaction engine / traits / essence / potency / integrity / fabrication yet** — those are P1–P5.
 - ✅ Seeded `IRandomSource`/`SeededRandom`.
 
 ## Character & professions
@@ -53,4 +54,4 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 
 ## Persistence & UI
 - ✅ Save/load: single slot `user://save.json`, schema v3. Persists build, stash (stacks+instances), equipment, instance-id counter, professions, realm knowledge, discoveries. ⬜ No migration, no multi-slot, no mid-run save (blocked during a run). RNG/tick not persisted.
-- 🟡 One code-built debug UI page (`MainMvpUI`) — no production screens, art, audio, or navigation. `GameRoot` is ~850 lines (composition root + app glue + report formatting), flagged for an Application-layer extraction.
+- 🟡 One code-built debug/test console (`MainMvpUI`) — dark code-only theme, tabbed navigation (Character/Equipment/Professions/Crafting/Realm/Combat/Inventory), persistent header + always-visible event log. Still no art/audio or production screens. `GameRoot` is ~880 lines (composition root + app glue + report formatting), flagged for an Application-layer extraction.

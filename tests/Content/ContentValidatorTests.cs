@@ -38,8 +38,7 @@ public class ContentValidatorTests
             string.Join(Environment.NewLine, problems));
     }
 
-    private static readonly IReadOnlySet<string> RarityTags =
-        new HashSet<string> { "common", "uncommon", "rare", "very_rare", "exceptional" };
+    private static readonly string[] ValidTags = { "origin:flora", "comp:organic", "form:wood", "state:raw", "rarity:common" };
 
     [Fact]
     public void ShippedMaterialLibrary_IsSubstantial_LegacyIdsSurvive_AndProfilesAreCoherent()
@@ -56,10 +55,10 @@ public class ContentValidatorTests
         })
             Assert.True(materials.Contains(id), $"legacy material {id} went missing.");
 
-        // Every material carries exactly one rarity tag (availability, not power).
+        // Every material carries exactly one rarity: tag (availability, not power).
         foreach (var material in materials.GetAll())
-            Assert.True(material.Tags.Count(RarityTags.Contains) == 1,
-                $"{material.Id} must have exactly one rarity tag, has [{string.Join(", ", material.Tags.Where(RarityTags.Contains))}].");
+            Assert.True(material.Tags.Count(t => t.StartsWith("rarity:", StringComparison.Ordinal)) == 1,
+                $"{material.Id} must have exactly one rarity: tag.");
 
         // Spot-check that profiles express their intended identity.
         var copper = materials.GetById("material.copper_ore");
@@ -95,6 +94,7 @@ public class ContentValidatorTests
         {
             Id = "material.copper_ore",
             Name = "Copper Ore",
+            Tags = new[] { "origin:mineral", "comp:inorganic", "form:ore", "state:raw", "rarity:common" },
             Properties = new Dictionary<string, double>
             {
                 ["hardness"] = 40, ["mass"] = 50, ["conductivity"] = 85, ["heat_resistance"] = 55,
@@ -140,6 +140,67 @@ public class ContentValidatorTests
             Properties = new Dictionary<string, double> { ["mass"] = -5 },
         });
         AssertHasProblem(content, "materials", "range");
+    }
+
+    // --- Tag family namespacing + cardinality --------------------------------
+
+    private static MaterialDefinition Tagged(params string[] tags) =>
+        new() { Id = "material.bad", Name = "Bad", Tags = tags };
+
+    [Fact]
+    public void Tags_MustBeNamespaced()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "comp:organic", "form:wood", "rarity:common", "legacy"));
+        AssertHasProblem(content, "tags", "un-namespaced");
+    }
+
+    [Fact]
+    public void Tags_UnknownFamily_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "comp:organic", "form:wood", "rarity:common", "badfam:x"));
+        AssertHasProblem(content, "tags", "unknown family");
+    }
+
+    [Fact]
+    public void Tags_InvalidClosedValue_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "comp:organic", "form:wood", "rarity:legendary"));
+        AssertHasProblem(content, "tags", "not a valid");
+    }
+
+    [Fact]
+    public void Tags_MissingForm_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "comp:organic", "rarity:common")); // no form:
+        AssertHasProblem(content, "tags", "'form:' tag");
+    }
+
+    [Fact]
+    public void Tags_TwoRarity_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "comp:organic", "form:wood", "rarity:common", "rarity:rare"));
+        AssertHasProblem(content, "tags", "'rarity:' tags");
+    }
+
+    [Fact]
+    public void Tags_ThreeOrigins_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:flora", "origin:fauna", "origin:fungal", "comp:organic", "form:wood", "rarity:common"));
+        AssertHasProblem(content, "tags", "'origin:' tags");
+    }
+
+    [Fact]
+    public void Tags_TwoOriginsAndTwoForms_AreAllowed()
+    {
+        var content = ValidBaseline();
+        content.Materials.Add(Tagged("origin:mineral", "origin:arcane", "comp:inorganic", "form:metal", "form:ore", "state:raw", "rarity:rare"));
+        Assert.Empty(content.Validate());
     }
 
     [Fact]
@@ -349,7 +410,7 @@ public class ContentValidatorTests
     private static TestContent ValidBaseline()
     {
         var content = new TestContent();
-        content.Materials.Add(new MaterialDefinition { Id = "material.oak" });
+        content.Materials.Add(new MaterialDefinition { Id = "material.oak", Tags = ValidTags });
         content.Professions.Add(new ProfessionDefinition { Id = "prof.forestry" });
         content.Abilities.Add(new AbilityDefinition { Id = "ability.strike" });
         return content;

@@ -46,6 +46,7 @@ public partial class GameRoot : Node
     private readonly Inventory _stash = new();
 
     private DataStore<MaterialDefinition> _materials = new();
+    private DataStore<PropertyDefinition> _propertyDefs = new();
     private DataStore<ProfessionDefinition> _professionDefs = new();
     private DataStore<ProfessionActionDefinition> _actionDefs = new();
 
@@ -107,6 +108,7 @@ public partial class GameRoot : Node
     public override void _Ready()
     {
         _materials = ContentLoader.LoadMaterials("res://data/materials");
+        _propertyDefs = ContentLoader.LoadDefinitions<PropertyDefinition>("res://data/properties");
 
         var species = ContentLoader.LoadDefinitions<SpeciesDefinition>("res://data/species");
         var classes = ContentLoader.LoadDefinitions<BaseClassDefinition>("res://data/classes");

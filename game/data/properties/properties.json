@@ -1,0 +1,32 @@
+[
+  { "id": "hardness",     "name": "Hardness",     "role": "structural", "family": "physical",   "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "mass",         "name": "Mass",         "role": "structural", "family": "physical",   "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "flexibility",  "name": "Flexibility",  "role": "structural", "family": "physical",   "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "affinity",     "name": "Affinity",     "role": "structural", "family": "bonding",    "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "conductivity", "name": "Conductivity", "role": "structural", "family": "electrical", "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "insulation",   "name": "Insulation",   "role": "structural", "family": "electrical", "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "solubility",   "name": "Solubility",   "role": "structural", "family": "processing", "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "resonance",    "name": "Resonance",    "role": "structural", "family": "arcane",     "dilutes": false, "transferable": false, "floor": 5 },
+  { "id": "instability",  "name": "Instability",  "role": "structural", "family": "processing", "dilutes": false, "transferable": false, "floor": 5 },
+
+  { "id": "heat",      "name": "Heat",      "role": "reactive", "family": "thermal",    "opposes": "cold",  "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "heat_resistance", "weight": 1.0 }, { "property": "insulation", "weight": 0.5 }, { "property": "mass", "weight": 0.15 } ] },
+  { "id": "cold",      "name": "Cold",      "role": "reactive", "family": "thermal",    "opposes": "heat",  "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "cold_resistance", "weight": 1.0 }, { "property": "insulation", "weight": 0.4 }, { "property": "mass", "weight": 0.1 } ] },
+  { "id": "charge",    "name": "Charge",    "role": "reactive", "family": "electrical", "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "insulation", "weight": 1.0 }, { "property": "mass", "weight": 0.1 } ] },
+  { "id": "toxicity",  "name": "Toxicity",  "role": "reactive", "family": "biological", "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "toxin_resistance", "weight": 1.0 } ] },
+  { "id": "growth",    "name": "Growth",    "role": "reactive", "family": "biological", "opposes": "decay", "dilutes": true, "transferable": true, "floor": 5 },
+  { "id": "decay",     "name": "Decay",     "role": "reactive", "family": "biological", "opposes": "growth", "dilutes": true, "transferable": true, "floor": 5 },
+  { "id": "corrosion", "name": "Corrosion", "role": "reactive", "family": "chemical",   "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "hardness", "weight": 0.5 }, { "property": "insulation", "weight": 0.2 } ] },
+  { "id": "arcane",    "name": "Arcane",    "role": "reactive", "family": "arcane",     "dilutes": true, "transferable": true, "floor": 5,
+    "resisted_by": [ { "property": "resonance", "weight": 0.5 } ] },
+
+  { "id": "heat_resistance",  "name": "Heat Resistance",  "role": "response", "family": "thermal",    "dilutes": false, "transferable": false, "floor": 0 },
+  { "id": "cold_resistance",  "name": "Cold Resistance",  "role": "response", "family": "thermal",    "dilutes": false, "transferable": false, "floor": 0 },
+  { "id": "toxin_resistance", "name": "Toxin Resistance", "role": "response", "family": "biological", "dilutes": false, "transferable": false, "floor": 0 },
+
+  { "id": "harvest_resistance", "name": "Harvest Resistance", "role": "sourcing", "family": "sourcing", "dilutes": false, "transferable": false, "floor": 0 }
+]

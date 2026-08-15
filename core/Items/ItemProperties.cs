@@ -3,7 +3,10 @@ namespace Dungeons.Items;
 /// <summary>
 /// Well-known material/item property names (docs/itemization.md §2). These are
 /// convenience constants only — a <see cref="PropertySet"/> is string-keyed, so new
-/// properties can be introduced in data/rules without touching this file.
+/// properties can be introduced in data/rules without touching this file. The
+/// authoritative role/family classification for each property lives in
+/// <c>game/data/properties/</c> as <see cref="Dungeons.Content.PropertyDefinition"/>s;
+/// the groupings below are legacy convenience lists used for name validation.
 /// </summary>
 public static class ItemProperties
 {
@@ -14,6 +17,11 @@ public static class ItemProperties
     public const string Affinity = "affinity";
     public const string Conductivity = "conductivity";
     public const string Insulation = "insulation";
+
+    /// <summary>Capacity to hold and channel supernatural energy (stands to <c>arcane</c> as
+    /// <c>conductivity</c> stands to <c>charge</c>). Added for the emergent item system; not
+    /// yet authored onto any material (docs/emergent-item-system.md §2.2).</summary>
+    public const string Resonance = "resonance";
 
     // Processing
     public const string HarvestResistance = "harvest_resistance";
@@ -41,7 +49,7 @@ public static class ItemProperties
 
     public static readonly IReadOnlyList<string> Physical = new[]
     {
-        Hardness, Mass, Flexibility, Affinity, Conductivity, Insulation,
+        Hardness, Mass, Flexibility, Affinity, Conductivity, Insulation, Resonance,
     };
 
     public static readonly IReadOnlyList<string> Processing = new[]

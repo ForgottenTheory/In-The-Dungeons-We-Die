@@ -49,6 +49,7 @@ public static class ContentValidator
         var problems = new List<ContentProblem>();
 
         ValidateMaterials(materials, problems);
+        ValidateMaterialTags(materials, problems);
         ValidateActors(actors, abilities, materials, problems);
         ValidateProfessionActions(actions, professions, materials, problems);
         ValidateInteractions(interactions, materials, consumables, professions, problems);
@@ -78,6 +79,50 @@ public static class ContentValidator
 
                 if (value < MinPropertyValue || value > MaxPropertyValue)
                     problems.Add(new("materials", $"{material.Id} property '{property}' = {value:0.##} is outside the {MinPropertyValue:0}–{MaxPropertyValue:0} range."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Validates the <c>family:value</c> tag namespace on materials (docs/emergent-item-system §4.1):
+    /// every tag is namespaced under a known family, closed families use allowed values, and
+    /// per-family cardinality holds (comp/state/rarity exactly one, origin one-or-two, form ≥1).
+    /// </summary>
+    private static void ValidateMaterialTags(
+        DataStore<MaterialDefinition> materials,
+        List<ContentProblem> problems)
+    {
+        foreach (var material in materials.GetAll())
+        {
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+
+            foreach (var tag in material.Tags)
+            {
+                if (!TagFamilies.TryParse(tag, out var family, out var value))
+                {
+                    problems.Add(new("tags", $"{material.Id} has un-namespaced tag '{tag}' (expected family:value)."));
+                    continue;
+                }
+
+                if (!TagFamilies.TryGet(family, out var def))
+                {
+                    problems.Add(new("tags", $"{material.Id} tag '{tag}' uses unknown family '{family}'."));
+                    continue;
+                }
+
+                if (def.ClosedValues is not null && !def.ClosedValues.Contains(value))
+                    problems.Add(new("tags", $"{material.Id} tag '{tag}' is not a valid '{family}' value."));
+
+                counts[family] = counts.GetValueOrDefault(family) + 1;
+            }
+
+            foreach (var family in TagFamilies.All)
+            {
+                var count = counts.GetValueOrDefault(family.Name);
+                if (count < family.Min)
+                    problems.Add(new("tags", $"{material.Id} needs at least {family.Min} '{family.Name}:' tag (has {count})."));
+                else if (count > family.Max)
+                    problems.Add(new("tags", $"{material.Id} has {count} '{family.Name}:' tags (max {family.Max})."));
             }
         }
     }

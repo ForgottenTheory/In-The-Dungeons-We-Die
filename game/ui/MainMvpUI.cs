@@ -6,15 +6,27 @@ using Godot;
 namespace Dungeons.Game.Ui;
 
 /// <summary>
-/// Milestone 1–3 "wiring-proof" developer shell. Intentionally ugly: its job is to
-/// prove the Godot → GameRoot → Core path and make the simulation observable — the
-/// tick clock, character composition, and profession passive/active gathering. Real
-/// screens arrive in later milestones. Controls are built in code to keep the .tscn
-/// trivial. Only animating values are polled in _Process; the rest is event-driven.
+/// Developer test console. Its job is to make every system observable and drivable
+/// while there is no art — a themed, tabbed shell over <see cref="GameRoot"/> with a
+/// persistent header (tick/sim + save) and an always-visible event log. Purely
+/// presentation: it only calls <see cref="GameRoot"/> commands and reads its queries.
+/// All controls are built in code so the .tscn stays trivial.
 /// </summary>
 public partial class MainMvpUI : Control
 {
+    // --- Palette (code-only theming, no assets) -----------------------------
+    private static readonly Color Bg = new(0.11f, 0.12f, 0.15f);
+    private static readonly Color PanelCol = new(0.16f, 0.18f, 0.22f);
+    private static readonly Color CardCol = new(0.20f, 0.23f, 0.28f);
+    private static readonly Color Accent = new(0.29f, 0.62f, 1.0f);
+    private static readonly Color Positive = new(0.30f, 0.72f, 0.36f);
+    private static readonly Color Danger = new(0.90f, 0.36f, 0.32f);
+    private static readonly Color TextCol = new(0.84f, 0.86f, 0.90f);
+    private static readonly Color Muted = new(0.55f, 0.58f, 0.64f);
+    private static readonly Color Border = new(0.28f, 0.32f, 0.38f);
+
     private GameRoot _game = null!;
+    private TabContainer _tabs = null!;
     private RichTextLabel _log = null!;
     private Label _statusLabel = null!;
     private Label _characterLabel = null!;
@@ -22,6 +34,7 @@ public partial class MainMvpUI : Control
     private Label _passiveStatusLabel = null!;
     private Label _inventoryLabel = null!;
     private Label _craftingLabel = null!;
+    private Label _craftingStashLabel = null!;
     private Label _combatLabel = null!;
     private Label _realmLabel = null!;
     private VBoxContainer _realmControls = null!;
@@ -74,7 +87,7 @@ public partial class MainMvpUI : Control
         var t = _timingPhase < 0.5 ? _timingPhase * 2.0 : 2.0 - (_timingPhase * 2.0);
         _timingBar.Value = t * 100.0;
 
-        _statusLabel.Text = $"Tick {_game.CurrentTick}   |   Sim {(_game.IsRunning ? "RUNNING" : "paused")} @ {GameRoot.TicksPerSecond}/s";
+        _statusLabel.Text = $"Tick {_game.CurrentTick}    Sim {(_game.IsRunning ? "▶ RUNNING" : "❚❚ paused")} @ {GameRoot.TicksPerSecond}/s";
 
         _passiveBar.Value = _game.PassiveProgress * 100.0;
         _passiveStatusLabel.Text = _game.IsPassiveRunning
@@ -85,93 +98,255 @@ public partial class MainMvpUI : Control
             RefreshCombat(); // telegraph countdowns tick down each frame
     }
 
+    // --- Layout -------------------------------------------------------------
+
     private void BuildLayout()
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Theme = BuildTheme();
 
-        var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        scroll.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        AddChild(scroll);
+        var bg = new ColorRect { Color = Bg, MouseFilter = MouseFilterEnum.Ignore };
+        bg.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(bg);
 
-        var margin = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var margin = new MarginContainer();
+        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         foreach (var side in new[] { "margin_left", "margin_top", "margin_right", "margin_bottom" })
-            margin.AddThemeConstantOverride(side, 12);
-        scroll.AddChild(margin);
+            margin.AddThemeConstantOverride(side, 10);
+        AddChild(margin);
 
-        var root = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        root.AddThemeConstantOverride("separation", 8);
+        var root = new VBoxContainer();
+        root.AddThemeConstantOverride("separation", 10);
         margin.AddChild(root);
 
-        var title = new Label { Text = "In The Dungeons We Die — Debug Shell (M1–M3)" };
-        title.AddThemeFontSizeOverride("font_size", 20);
-        root.AddChild(title);
+        root.AddChild(BuildHeader());
 
-        _statusLabel = new Label();
-        root.AddChild(_statusLabel);
+        var body = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", 10);
+        root.AddChild(body);
 
-        var simButtons = new HBoxContainer();
-        simButtons.AddThemeConstantOverride("separation", 8);
-        root.AddChild(simButtons);
-        _runButton = MakeButton("Play", ToggleRun);
-        simButtons.AddChild(_runButton);
-        simButtons.AddChild(MakeButton("Advance 50 Ticks", () => _game.AdvanceTick(50)));
-        simButtons.AddChild(MakeButton("Save", () => _game.SaveGame()));
-        simButtons.AddChild(MakeButton("Load", () => _game.LoadGame()));
+        _tabs = new TabContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        body.AddChild(_tabs);
+        body.AddChild(BuildLogPanel());
 
-        BuildCharacterSection(root);
-        BuildEquipmentSection(root);
-        BuildProfessionSection(root);
-        BuildCraftingSection(root);
-        BuildRealmSection(root);
-        BuildCombatSection(root);
-        BuildInventorySection(root);
+        BuildCharacterSection(MakeTab("Character"));
+        BuildEquipmentSection(MakeTab("Equipment"));
+        BuildProfessionSection(MakeTab("Professions"));
+        BuildCraftingSection(MakeTab("Crafting"));
+        BuildRealmSection(MakeTab("Realm"));
+        BuildCombatSection(MakeTab("Combat"));
+        BuildInventorySection(MakeTab("Inventory"));
+    }
 
-        root.AddChild(new HSeparator());
+    private Control BuildHeader()
+    {
+        var panel = new PanelContainer();
+        var row = Row(8);
+        panel.AddChild(row);
+
+        var title = new Label { Text = "IN THE DUNGEONS WE DIE" };
+        title.AddThemeFontSizeOverride("font_size", 18);
+        title.AddThemeColorOverride("font_color", Accent);
+        row.AddChild(title);
+
+        _statusLabel = new Label
+        {
+            Text = "…",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        _statusLabel.AddThemeColorOverride("font_color", Muted);
+        row.AddChild(_statusLabel);
+
+        _runButton = MakeButton("Play", ToggleRun, Accent);
+        row.AddChild(_runButton);
+        row.AddChild(MakeButton("Advance 50", () => _game.AdvanceTick(50)));
+        row.AddChild(MakeButton("Save", () => _game.SaveGame(), Positive));
+        row.AddChild(MakeButton("Load", () => _game.LoadGame()));
+        return panel;
+    }
+
+    private Control BuildLogPanel()
+    {
+        var panel = new PanelContainer { CustomMinimumSize = new Vector2(340, 0) };
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 6);
+        panel.AddChild(col);
+
+        var head = Row(8);
+        col.AddChild(head);
+        var logTitle = SectionTitle("Event Log");
+        logTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        head.AddChild(logTitle);
+        head.AddChild(MakeButton("Clear", () => _log.Clear()));
+
         _log = new RichTextLabel
         {
             ScrollFollowing = true,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 200),
+            SizeFlagsVertical = SizeFlags.ExpandFill,
         };
-        root.AddChild(_log);
+        col.AddChild(_log);
+        return panel;
     }
+
+    /// <summary>Adds a scrollable tab page and returns the VBox its content goes into.</summary>
+    private VBoxContainer MakeTab(string name)
+    {
+        var page = new MarginContainer { Name = name };
+        foreach (var side in new[] { "margin_left", "margin_top", "margin_right", "margin_bottom" })
+            page.AddThemeConstantOverride(side, 10);
+
+        var scroll = new ScrollContainer
+        {
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        var col = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        col.AddThemeConstantOverride("separation", 8);
+        scroll.AddChild(col);
+        page.AddChild(scroll);
+        _tabs.AddChild(page);
+        return col;
+    }
+
+    // --- Sections -----------------------------------------------------------
 
     private void BuildCharacterSection(VBoxContainer root)
     {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("CHARACTER"));
-
-        var buttons = new HBoxContainer();
-        buttons.AddThemeConstantOverride("separation", 8);
-        root.AddChild(buttons);
-        buttons.AddChild(MakeButton("Damage 40%", () => _game.DamageCharacterPercent(0.4)));
-        buttons.AddChild(MakeButton("Heal Full", () => _game.HealCharacterFull()));
-        buttons.AddChild(MakeButton("Cycle Suffix", () => _game.CycleSuffix()));
-
+        root.AddChild(SectionTitle("Character"));
         _characterLabel = new Label { Text = "…" };
-        root.AddChild(_characterLabel);
+        root.AddChild(Card(_characterLabel));
+
+        var buttons = Row();
+        root.AddChild(buttons);
+        buttons.AddChild(MakeButton("Damage 40%", () => _game.DamageCharacterPercent(0.4), Danger));
+        buttons.AddChild(MakeButton("Heal Full", () => _game.HealCharacterFull(), Positive));
+        buttons.AddChild(MakeButton("Cycle Suffix", () => _game.CycleSuffix()));
     }
 
     private void BuildEquipmentSection(VBoxContainer root)
     {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("EQUIPMENT"));
+        root.AddChild(SectionTitle("Equipment"));
 
         _equipmentControls = new VBoxContainer();
         _equipmentControls.AddThemeConstantOverride("separation", 4);
-        root.AddChild(_equipmentControls);
+        root.AddChild(Card(_equipmentControls));
 
-        // Debug: conjure gear into the stash so the equip-from-stash flow has something to act on.
-        var grantRow = new HBoxContainer();
-        grantRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(grantRow);
-        grantRow.AddChild(new Label { Text = "Grant to stash:" });
+        var grant = Row();
+        root.AddChild(grant);
+        grant.AddChild(new Label { Text = "Grant to stash:" });
         foreach (var gear in _game.EquipmentCatalog)
         {
             var id = gear.Id;
-            grantRow.AddChild(MakeButton(gear.Name, () => _game.GrantToStash(id)));
+            grant.AddChild(MakeButton(gear.Name, () => _game.GrantToStash(id)));
         }
     }
+
+    private void BuildProfessionSection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Professions"));
+        _professionSummaryLabel = new Label();
+        root.AddChild(Card(_professionSummaryLabel));
+
+        var timingRow = Row();
+        root.AddChild(timingRow);
+        timingRow.AddChild(new Label { Text = "Active timing (aim for the middle):" });
+        _timingBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
+        timingRow.AddChild(_timingBar);
+
+        foreach (var action in _game.Actions)
+        {
+            var row = Row();
+            root.AddChild(row);
+            var actionId = action.Id;
+            row.AddChild(new Label
+            {
+                Text = $"{action.Name} ({_game.ProfessionName(action.ProfessionId)})",
+                CustomMinimumSize = new Vector2(240, 0),
+            });
+            row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
+            row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, CurrentTimingPerformance()), Accent));
+        }
+
+        var passiveRow = Row();
+        root.AddChild(passiveRow);
+        _passiveStatusLabel = new Label { Text = "Passive: (idle)", CustomMinimumSize = new Vector2(240, 0) };
+        passiveRow.AddChild(_passiveStatusLabel);
+        _passiveBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
+        passiveRow.AddChild(_passiveBar);
+        passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
+    }
+
+    private void BuildCraftingSection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Crafting"));
+        _craftingLabel = new Label();
+        root.AddChild(Card(_craftingLabel));
+
+        var buttons = new VBoxContainer();
+        buttons.AddThemeConstantOverride("separation", 4);
+        root.AddChild(buttons);
+        buttons.AddChild(MakeButton("Experiment: Iron Ingot + Oak Bark", () => _game.ExperimentBarkbound(), Accent));
+        buttons.AddChild(MakeButton("Brew Healing Salve (2 Sageleaf)", () => _game.BrewHealingSalve()));
+        buttons.AddChild(MakeButton("Grant Craft Test Mats", () => _game.GrantCraftTestMaterials(), Positive));
+
+        root.AddChild(new HSeparator());
+        var stashHead = new Label { Text = "Materials on hand (experiment inputs):" };
+        stashHead.AddThemeColorOverride("font_color", Muted);
+        root.AddChild(stashHead);
+        _craftingStashLabel = new Label();
+        root.AddChild(Card(_craftingStashLabel));
+    }
+
+    private void BuildRealmSection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Realm"));
+        _realmLabel = new Label();
+        root.AddChild(Card(_realmLabel));
+
+        _realmControls = new VBoxContainer();
+        _realmControls.AddThemeConstantOverride("separation", 4);
+        root.AddChild(_realmControls);
+    }
+
+    private void BuildCombatSection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Combat"));
+        _combatLabel = new Label();
+        root.AddChild(Card(_combatLabel));
+
+        var startRow = Row();
+        root.AddChild(startRow);
+        startRow.AddChild(new Label { Text = "Start fight:" });
+        foreach (var actor in _game.EnemyActors)
+        {
+            var actorId = actor.Id;
+            startRow.AddChild(MakeButton(actor.Name, () => _game.StartCombat(actorId), Danger));
+        }
+
+        var actionRow = Row();
+        root.AddChild(actionRow);
+        actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
+        actionRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
+        actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
+        actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve"), Positive));
+        actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
+    }
+
+    private void BuildInventorySection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Inventory"));
+        _inventoryLabel = new Label { Text = "…" };
+        root.AddChild(Card(_inventoryLabel));
+    }
+
+    // --- Dynamic control groups --------------------------------------------
 
     private void RebuildEquipmentControls()
     {
@@ -184,7 +359,10 @@ public partial class MainMvpUI : Control
         AddSlotRow(EquipmentSlot.Weapon, _game.EquippedWeapon, _game.EquippedWeaponSummary());
         AddSlotRow(EquipmentSlot.Armor, _game.EquippedArmor, _game.EquippedArmorSummary());
 
-        _equipmentControls.AddChild(new Label { Text = "In stash:" });
+        var stashHead = new Label { Text = "In stash:" };
+        stashHead.AddThemeColorOverride("font_color", Muted);
+        _equipmentControls.AddChild(stashHead);
+
         var stash = _game.StashEquipment;
         if (stash.Count == 0)
         {
@@ -194,94 +372,22 @@ public partial class MainMvpUI : Control
 
         foreach (var instance in stash)
         {
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 8);
+            var row = Row();
             _equipmentControls.AddChild(row);
             row.AddChild(new Label { Text = _game.InstanceLabel(instance), CustomMinimumSize = new Vector2(340, 0) });
             var id = instance.InstanceId;
-            row.AddChild(MakeButton("Equip", () => _game.EquipFromStash(id)));
+            row.AddChild(MakeButton("Equip", () => _game.EquipFromStash(id), Accent));
         }
     }
 
     private void AddSlotRow(EquipmentSlot slot, ItemInstance? equipped, string summary)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
+        var row = Row();
         _equipmentControls.AddChild(row);
         var name = equipped?.DisplayName ?? "— (empty)";
         row.AddChild(new Label { Text = $"{slot}: {name}  →  {summary}", CustomMinimumSize = new Vector2(420, 0) });
         if (equipped is not null)
-            row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot)));
-    }
-
-    private void BuildProfessionSection(VBoxContainer root)
-    {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("PROFESSIONS"));
-
-        _professionSummaryLabel = new Label();
-        root.AddChild(_professionSummaryLabel);
-
-        var timingRow = new HBoxContainer();
-        timingRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(timingRow);
-        timingRow.AddChild(new Label { Text = "Active timing (aim for the middle):" });
-        _timingBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
-        timingRow.AddChild(_timingBar);
-
-        foreach (var action in _game.Actions)
-        {
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 8);
-            root.AddChild(row);
-
-            var actionId = action.Id;
-            row.AddChild(new Label
-            {
-                Text = $"{action.Name} ({_game.ProfessionName(action.ProfessionId)})",
-                CustomMinimumSize = new Vector2(240, 0),
-            });
-            row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
-            row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, CurrentTimingPerformance())));
-        }
-
-        var passiveRow = new HBoxContainer();
-        passiveRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(passiveRow);
-        _passiveStatusLabel = new Label { Text = "Passive: (idle)", CustomMinimumSize = new Vector2(240, 0) };
-        passiveRow.AddChild(_passiveStatusLabel);
-        _passiveBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
-        passiveRow.AddChild(_passiveBar);
-        passiveRow.AddChild(MakeButton("Stop Passive", () => _game.StopPassive()));
-    }
-
-    private void BuildCraftingSection(VBoxContainer root)
-    {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("CRAFTING"));
-
-        _craftingLabel = new Label();
-        root.AddChild(_craftingLabel);
-
-        var buttons = new HBoxContainer();
-        buttons.AddThemeConstantOverride("separation", 8);
-        root.AddChild(buttons);
-        buttons.AddChild(MakeButton("Experiment: Iron Ingot + Oak Bark", () => _game.ExperimentBarkbound()));
-        buttons.AddChild(MakeButton("Brew Healing Salve (2 Sageleaf)", () => _game.BrewHealingSalve()));
-        buttons.AddChild(MakeButton("Grant Craft Test Mats", () => _game.GrantCraftTestMaterials()));
-    }
-
-    private void BuildRealmSection(VBoxContainer root)
-    {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("REALM"));
-
-        _realmLabel = new Label();
-        root.AddChild(_realmLabel);
-
-        _realmControls = new VBoxContainer();
-        _realmControls.AddThemeConstantOverride("separation", 4);
-        root.AddChild(_realmControls);
+            row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot), Danger));
     }
 
     private void RebuildRealmControls()
@@ -297,7 +403,7 @@ public partial class MainMvpUI : Control
             foreach (var realm in _game.Realms)
             {
                 var id = realm.Id;
-                _realmControls.AddChild(MakeButton($"Enter {realm.Name}", () => _game.EnterRealm(id)));
+                _realmControls.AddChild(MakeButton($"Enter {realm.Name}", () => _game.EnterRealm(id), Accent));
             }
 
             return;
@@ -305,24 +411,23 @@ public partial class MainMvpUI : Control
 
         if (_game.RealmBusy)
         {
-            _realmControls.AddChild(new Label { Text = "In combat — act here (telegraphs show in the Combat panel):" });
-            var fightRow = new HBoxContainer();
-            fightRow.AddThemeConstantOverride("separation", 8);
+            _realmControls.AddChild(new Label { Text = "In combat — act here (telegraphs show in the Combat tab):" });
+            var fightRow = Row();
             _realmControls.AddChild(fightRow);
-            fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
+            fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
             fightRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
             fightRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
-            fightRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve")));
+            fightRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve"), Positive));
             return;
         }
 
         var actionLabel = _game.RealmActionLabel();
         if (actionLabel is not null)
-            _realmControls.AddChild(MakeButton(actionLabel, () => _game.RealmAction()));
+            _realmControls.AddChild(MakeButton(actionLabel, () => _game.RealmAction(), Accent));
         if (_game.RealmCanDescend)
             _realmControls.AddChild(MakeButton("▼ Go Deeper", () => _game.RealmGoDeeper()));
         if (_game.RealmCanExtract)
-            _realmControls.AddChild(MakeButton("Extract", () => _game.RealmExtract()));
+            _realmControls.AddChild(MakeButton("Extract", () => _game.RealmExtract(), Positive));
 
         var run = _game.Run;
         if (run is null)
@@ -330,51 +435,11 @@ public partial class MainMvpUI : Control
         foreach (var destination in run.Destinations())
         {
             var id = destination.Id;
-            _realmControls.AddChild(MakeButton($"→ Go to {destination.Name}", () => _game.RealmTravel(id)));
+            _realmControls.AddChild(MakeButton($"→ {destination.Name}", () => _game.RealmTravel(id)));
         }
     }
 
-    private void BuildCombatSection(VBoxContainer root)
-    {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("COMBAT"));
-
-        _combatLabel = new Label();
-        root.AddChild(_combatLabel);
-
-        var startRow = new HBoxContainer();
-        startRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(startRow);
-        foreach (var actor in _game.EnemyActors)
-        {
-            var actorId = actor.Id;
-            startRow.AddChild(MakeButton($"Fight {actor.Name}", () => _game.StartCombat(actorId)));
-        }
-
-        var actionRow = new HBoxContainer();
-        actionRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(actionRow);
-        actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack()));
-        actionRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
-        actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
-        actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve")));
-        actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
-    }
-
-    private void BuildInventorySection(VBoxContainer root)
-    {
-        root.AddChild(new HSeparator());
-        root.AddChild(Header("INVENTORY"));
-        _inventoryLabel = new Label { Text = "…" };
-        root.AddChild(_inventoryLabel);
-    }
-
-    private double CurrentTimingPerformance()
-    {
-        // 1.0 when the sweep is dead-centre, falling to 0 at the edges.
-        var position = _timingBar.Value / 100.0;
-        return Math.Clamp(1.0 - (Math.Abs(position - 0.5) * 2.0), 0.0, 1.0);
-    }
+    // --- Refresh ------------------------------------------------------------
 
     private void ToggleRun() => _game.SetRunning(!_game.IsRunning);
 
@@ -390,6 +455,7 @@ public partial class MainMvpUI : Control
     {
         _professionSummaryLabel.Text = _game.ProfessionSummary();
         _inventoryLabel.Text = _game.InventoryReport();
+        _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed
         RefreshCrafting(); // herblore level shown in the crafting requirement can change
     }
@@ -413,19 +479,96 @@ public partial class MainMvpUI : Control
         RebuildRealmControls();
     }
 
-    private void AppendLog(string message) => _log.AppendText(message + "\n");
+    private void AppendLog(string message) => _log.AddText(message + "\n");
 
-    private static Label Header(string text)
+    // --- Theming helpers ----------------------------------------------------
+
+    /// <summary>1.0 when the active-timing sweep is dead-centre, falling to 0 at the edges.</summary>
+    private double CurrentTimingPerformance()
     {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 16);
+        var position = _timingBar.Value / 100.0;
+        return Math.Clamp(1.0 - (Math.Abs(position - 0.5) * 2.0), 0.0, 1.0);
+    }
+
+    private static Label SectionTitle(string text)
+    {
+        var label = new Label { Text = text.ToUpperInvariant() };
+        label.AddThemeFontSizeOverride("font_size", 15);
+        label.AddThemeColorOverride("font_color", Accent);
         return label;
     }
 
-    private static Button MakeButton(string text, Action onPressed)
+    private static HBoxContainer Row(int separation = 8)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", separation);
+        return row;
+    }
+
+    private static PanelContainer Card(Control inner)
+    {
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", Flat(CardCol, 6, 10, Border, 1));
+        panel.AddChild(inner);
+        return panel;
+    }
+
+    private static Button MakeButton(string text, Action onPressed, Color? accentText = null)
     {
         var button = new Button { Text = text };
         button.Pressed += onPressed;
+        if (accentText.HasValue)
+            button.AddThemeColorOverride("font_color", accentText.Value);
         return button;
+    }
+
+    private static StyleBoxFlat Flat(Color bg, int radius, int pad, Color? border = null, int borderWidth = 0)
+    {
+        var box = new StyleBoxFlat { BgColor = bg };
+        box.SetCornerRadiusAll(radius);
+        box.SetContentMarginAll(pad);
+        if (border.HasValue && borderWidth > 0)
+        {
+            box.BorderColor = border.Value;
+            box.SetBorderWidthAll(borderWidth);
+        }
+
+        return box;
+    }
+
+    private static Theme BuildTheme()
+    {
+        var theme = new Theme();
+
+        theme.SetColor("font_color", "Label", TextCol);
+        theme.SetFontSize("font_size", "Label", 13);
+
+        theme.SetStylebox("normal", "Button", Flat(PanelCol, 5, 8, Border, 1));
+        theme.SetStylebox("hover", "Button", Flat(CardCol, 5, 8, Accent, 1));
+        theme.SetStylebox("pressed", "Button", Flat(Accent, 5, 8));
+        theme.SetStylebox("focus", "Button", new StyleBoxEmpty());
+        theme.SetColor("font_color", "Button", TextCol);
+        theme.SetColor("font_hover_color", "Button", new Color(1, 1, 1));
+        theme.SetColor("font_pressed_color", "Button", new Color(1, 1, 1));
+        theme.SetFontSize("font_size", "Button", 13);
+
+        theme.SetStylebox("panel", "PanelContainer", Flat(PanelCol, 8, 10, Border, 1));
+
+        theme.SetStylebox("panel", "TabContainer", Flat(PanelCol, 8, 10, Border, 1));
+        theme.SetStylebox("tab_selected", "TabContainer", Flat(Accent, 5, 8));
+        theme.SetStylebox("tab_unselected", "TabContainer", Flat(CardCol, 5, 8));
+        theme.SetStylebox("tab_hovered", "TabContainer", Flat(CardCol, 5, 8, Accent, 1));
+        theme.SetStylebox("tabbar_background", "TabContainer", new StyleBoxEmpty());
+        theme.SetColor("font_selected_color", "TabContainer", new Color(1, 1, 1));
+        theme.SetColor("font_unselected_color", "TabContainer", Muted);
+        theme.SetColor("font_hovered_color", "TabContainer", TextCol);
+
+        theme.SetStylebox("background", "ProgressBar", Flat(Bg, 4, 0));
+        theme.SetStylebox("fill", "ProgressBar", Flat(Accent, 4, 0));
+        theme.SetColor("font_color", "ProgressBar", TextCol);
+
+        theme.SetColor("default_color", "RichTextLabel", TextCol);
+        theme.SetFontSize("normal_font_size", "RichTextLabel", 12);
+        return theme;
     }
 }
