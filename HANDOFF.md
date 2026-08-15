@@ -1,47 +1,52 @@
 # HANDOFF.md
 
-For the next Claude session. Read `CLAUDE.md`, then this, then `PROJECT_STATE.md` / `SYSTEM_INDEX.md` / `DECISIONS.md` / `ROADMAP.md`. Then inspect the repo.
+For the next Claude session. Read `CLAUDE.md`, then this, then `PROJECT_STATE.md` / `SYSTEM_INDEX.md` / `DECISIONS.md` / `ROADMAP.md`. Then read **`docs/emergent-item-system.md`** in full — it is the accepted spec for the task below and supersedes `docs/crafting.md §17`.
 
-## Where we just were
-Building the **equipment + item-instance system** in phases on top of the completed MVP vertical slice. This session did: design docs → Phase 1 (item/property/instance + equipment model) → Phase 2 (weapon-driven combat, armor, starter loadout, gear safe on death) → Phase 3 (crafting produces derived instances) → **Phase 4a (save persistence of instances + equipment)** — the last thing committed.
+## Repo / build state
+- Branch `main`, latest commit **`c84cf83`** (pre-expansion cleanup pass). Working tree clean.
+- `dotnet build InTheDungeonsWeDie.slnx` clean (0 warnings); `dotnet test` → **193 passing**. Godot is **not** on PATH — verify via `dotnet build`/`dotnet test` only; the user runs the game from their Godot 4.7.1 editor and verifies UI visually.
+- Recent commits: `c84cf83` cleanup · `a15df87` emergent P0 + tabbed UI · `05a9f29` base-resource ecosystem (~470 materials) · `77ae8df` handoff docs.
 
-## Current objective
-Finish **Phase 4** of the equipment/crafting work, then make crafting real. Remaining Phase 4 items, in recommended order:
-1. ✅ **Content validation at load** — done. `core/Content/ContentValidator` (+ `ContentProblem`, `ContentValidationException`) validates content cross-references; wired into `GameRoot._Ready` via `ValidateContentOrThrow`. Covered by `tests/Content/ContentValidatorTests.cs`.
-2. ✅ **Unify item+quantity shapes** — done. `ItemStack(ItemId, Quantity=1)` is the single item+quantity shape; new `ItemChance(ItemId, Chance, Quantity=1)` (in `core/Items/`, exposes `.Stack`) replaces the old `ItemChanceData`; `ItemAmountData` removed. Profession action JSON unchanged.
-3. ✅ **Equipment/inventory UI** — done. `MainMvpUI` EQUIPMENT section (per-slot rows + Unequip, Stash list + Equip, debug Grant-to-stash), backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + queries. Godot-side — user verifies visually.
+## Where we are
+MVP vertical slice complete; equipment/item-instance system done; **~470-material library** authored; **emergent-item-system P0 done** (tag `family:value` namespace, `PropertyDefinition` registry as the single source of truth for property names, `ResistanceCalculator`, tag/property validation); and a **cleanup/audit pass** just landed (`ContentBundle` + `ContentLoader.LoadAll`, bundle-based `ContentValidator`, id conventions, typed `CharacterBuild` ids, gameplay pulled out of `GameRoot`/UI into Core). See `DECISIONS.md` D16–D19.
 
-**Phase 4 complete; material library authored (~470 defs); emergent-item-system P0 done.**
+---
 
-The crafting system is now driven by **`docs/emergent-item-system.md`** (ACCEPTED, supersedes `docs/crafting.md §17`). **P0 shipped** (see ROADMAP): `family:value` tag namespace across all materials, `PropertyDefinition` registry + roles (`game/data/properties/`), `resonance` property, `ResistanceCalculator` (derived resistances), and tag-family/property validation. New Core: `PropertyDefinition`, `ResistanceCalculator`, `TagFamilies`. The tag-migration script is in the scratchpad (`migrate_tags.ps1`) if you need the exact mapping.
+## THE TASK: Emergent crafting — **P1** (the universal reaction engine)
 
-**Next is P1** (§20): `ProcessDefinition` + the universal reaction algebra (convergence/off-channel/opposition) + potency + integrity (destruction/byproducts/pre-commit UI) + archetype registry + naming + Reaction Log, with **zero authored signatures/traits** — prove the emergent core first. Do NOT hardcode crafting combinations. The old `CraftingExperimentSystem` stays until P1 replaces it. Confirm scope with the user before building P1 (it's large).
+Build P1 from `docs/emergent-item-system.md §20`. **This is large — plan-first with the user and build in tested increments.** Read these spec sections closely: **§6** (potency/integrity/generation), **§7** (processes/channels/medium), **§8** (the algebra — the core), **§12** (identity/quantization/registry/variance), **§13** (naming v1), **§15.3** (Reaction Log), **§18** (data model), **§20/§21** (phasing + open decisions).
 
-The user stated: after Phase 4 we **populate items** and then build the **crafting reaction simulation**. So do 1 & 2 before big item authoring.
+### In scope (P1)
+`ProcessDefinition` (data) + the universal reaction algebra (acceptance/release → convergence → off-channel drift+prune → opposition/annihilation) + **potency** (weighted mean) + **integrity** (transformation budget, incl. **destruction at 0 + byproducts + the pre-commit integrity-projection UI**, §6.2c — this UI is P1 scope, not later) + **quantization→signature→archetype registry** + **naming v1** + **Reaction Log** + a minimal first-discovery flag. **A playable emergent material system with zero authored content beyond processes.**
 
-## Repo/git state
-- Branch `main`, latest commit `05a9f29` (equipment P4 + base-resource ecosystem). Uncommitted (not yet committed — commit on request): the tabbed/themed `MainMvpUI` refresh, and **emergent-item-system P0** (tag namespacing migration of all 7 material files, `PropertyDefinition` registry + `game/data/properties/`, `ResistanceCalculator`, `TagFamilies`, validator rules).
-- `dotnet build InTheDungeonsWeDie.slnx` clean; `dotnet test` → **182 passing** (0 failing). Godot is not on PATH — verify via dotnet only; the user runs the game from their Godot 4.7.1 editor.
-- Recent commits: `afa2d05` P4a save · `0377872` P3 crafting instances · `4d1ccc8` P1–2 equipment · `988357f` M9 · … (see `git log`).
+### Explicitly OUT of P1 (do NOT build)
+- **Traits** (P2), **Essence + resonance/strain + `arcane` amplification + `Attune` process** (P3), **Signature/Chain reactions** (P4), **Fabrication → equipment/consumables** (P5), **Codex/known-rules journal/Assay/renaming** (P6). §8.4 essence transfer is P3 — the P1 algebra runs channel convergence, off-channel, opposition, potency, integrity **only**. Ship the 7 mundane starter processes; **`Attune` is P3** (it raises `resonance` for essence).
 
-## Files changed most recently (this session)
-- New Core: `core/Items/*` (PropertySet, ItemProperties, ItemType, IItemDefinition, ItemInstance, InstanceIdSource), `core/Equipment/*` (EquipmentDefinition, Equipment, EquipmentResolver), `core/Combat/AttackProfile.cs`, `core/Crafting/CraftingDerivation.cs`.
-- Modified Core: `core/Combat/{Combatant,CombatCalculator,CombatEncounter,CombatTuning}.cs`, `core/Content/MaterialDefinition.cs`, `core/Inventory/Inventory.cs`, `core/Realms/RealmExtraction.cs`, `core/Crafting/{CraftingInteractionDefinition,CraftingExperimentSystem,ExperimentOutcome}.cs`, `core/Persistence/{SaveData,SaveMapper}.cs`.
-- Godot: `game/GameRoot.cs` (equipment load/starter/resolve/save wiring, instance inventory display), `game/ui/MainMvpUI.cs` (equip buttons), `game/data/equipment/*.json` (4), `game/data/crafting_interactions/barkbound_iron.json` (resultIsInstance).
-- Docs: `docs/itemization.md` (rewritten), `docs/crafting.md §17`, `docs/current-state.md` (audit). Handoff docs (this set).
-- Tests: `tests/Items/*`, plus updates to Combat/Crafting/Persistence/Realms tests.
+### ⚠️ Critical architectural reconciliation to settle FIRST
+The spec's **§0 Decision 3** says emergent materials are **stackable runtime `ItemDefinition`s registered by signature**, NOT per-unit `ItemInstance`s. This **contradicts** `docs/itemization.md` D6 ("any generated material becomes a unique `ItemInstance`") and the current `CraftingExperimentSystem` (which mints Barkbound Iron as an `ItemInstance` via `resultIsInstance`). **The emergent doc wins** (per its status line). So P1 introduces an **emergent archetype registry**: a craft result is quantized → hashed → looked up/registered as a stackable `MaterialDefinition`, and identical results **stack**. `ItemInstance` stays for **equipment only** (P5). Update `itemization.md` D6 and `DECISIONS.md` when you do this. This is the single most important shift in P1 — get it right before writing the algebra.
 
-## Outstanding problems / questions
-- ~~Content validation is tests-only~~ — **fixed**; validated at load by `ContentValidator`. (Note: character-component refs — rule ids, class ability ids incl. the known-dead `ability.guard`/`hex_bolt` — are intentionally NOT in the validator; they're resolved/validated by the `CharacterComposer` path instead.)
-- ~~Two item+quantity shapes~~ — **fixed**; unified on `ItemStack` + `ItemChance`.
-- **Crafting recursion input half not wired** — `CraftingExperimentSystem.Experiment` matches submitted *stackable* ids; it can't yet consume an `ItemInstance` as an input. Needed for true recursive crafting.
-- **`GameRoot` ~850 lines** — composition root + app glue + report formatting; extract an Application layer before piling on more systems.
-- **Reaction simulation is architecture-only** — `CraftingDerivation` is a trivial additive merge; the real rules are deferred by user instruction. Don't hardcode per-combination recipes.
-- **Dead content**: `ability.guard`/`ability.hex_bolt` referenced by classes but unimplemented; Mana unused; material properties on non-instance materials are mostly inert except via derivation.
-- The old verbose `CLAUDE.md` (full design bible) was replaced with a concise rules file this session; the detailed design lives in `/docs` and these handoff files. If you need the old vision text, see `docs/*` and git history.
+### Open decisions to settle with the user before/while building
+1. **Base-material potency/integrity source.** The ~470 authored materials have no `potency`/`integrity`/`generation`. P1's potency math (§6.1) needs a base potency per material. Options: flat default (e.g. 50), **derive from the `rarity:` tag** (common→low … exceptional→high) [recommended cheap start], or author per-material. Integrity defaults to 100, generation to 1. Decide with the user.
+2. **Quantization granularity (§12.2).** Start at 5-point buckets; **highest-risk tuning number** — too coarse collapses the space, too fine floods the registry. Must be tuned empirically once it runs.
+3. **`MaterialProfile` placement (§18).** Recommend extending `MaterialDefinition` with potency/integrity/generation/lineage/signature (authored bases get the defaults from #1; emergent archetypes get computed values). Keep authored material JSON unchanged (defaults fill in).
+4. **Fate of the 2 existing interactions.** `interaction.barkbound_iron` (becomes an emergent result — likely retire the fixed recipe) and `interaction.healing_salve` (a consumable recipe — fabrication is P5, so keep a minimal consumable path until then, or shim it). Decide what the old `CraftingExperimentSystem`/`CraftingDerivation`/`CraftingInteractionDefinition` become — they are the prototype P1 replaces; don't 10x them.
+5. **Registry persistence.** The archetype registry lives in the save (§12.4) behind `IEmergentRegistry`; bump `SaveData` schema (currently v3 → v4). Codex stays separate/per-save (P6).
 
-## Exact recommended next steps
-1. `dotnet test InTheDungeonsWeDie.slnx` — confirm 155 green.
-2. Skim `docs/itemization.md` + `docs/crafting.md §17` (the item/crafting model) and `SYSTEM_INDEX.md`.
-3. **Phase 4 is complete.** Next is "make crafting real" — the emergent **reaction simulation** (`docs/crafting.md §17.3`), which the user described as "basically Conway's Game of Life" for crafting. The user wants to design/build this **together** with item population. Read `docs/crafting.md §17` thoroughly and discuss the model before writing rules. Do NOT hardcode per-combination recipes; the sim slots in behind `CraftingDerivation` + the crafting matcher. Also note the "input half" gap: `CraftingExperimentSystem` can't yet consume an `ItemInstance` as an input (recursion) — likely a prerequisite.
-4. Keep tests green; commit only when the user asks.
+### Suggested build order (each slice: `dotnet build` + `dotnet test` green)
+1. **`MaterialProfile` + base defaults** (decision #1/#3) + tests. No behaviour change to existing content.
+2. **`ProcessDefinition`** (data type + `game/data/processes/*.json`, 7 processes) + load via `ContentBundle`/`ContentLoader.LoadAll` + validate (channel props known, medium valid, tags resolve). This is why the cleanup added the content registry — adding this type is one store + one load line.
+3. **The algebra** as pure Core functions (`ReactionEngine` / `IReactionEngine.Resolve`): acceptance/release (8.1) → convergence (8.2) → off-channel drift+prune (8.3) → opposition/annihilation (8.5). Heavily unit-tested with the §19 worked examples (Warmed Iron, Emberveined-minus-traits) as fixtures — but note traits are P2, so the §19 examples' trait/signature/essence steps are stubbed.
+4. **Potency + integrity + effective-instability + generation** (§6) + tests (weighted-mean can't inflate; integrity cost ∝ Δstate; destruction at 0 yields byproducts).
+5. **Quantization → signature → `IEmergentRegistry`** (§12) + save-backed store + **seeded variance perturbation** (§12.3). Determinism tests: same inputs+process+seed → same archetype id.
+6. **Naming v1** (§13) — state-based; without traits it's `[intensity] [root noun] [form noun]` from lineage+form; keep it ≤3 words, no numbers.
+7. **Reaction Log** (§15.3) — structured, human-readable step trace (required scope; it's the tutorial + debugger + future codex content).
+8. **`CraftRequest → CraftOutcome` orchestration** replacing the fixed matcher; wire into `GameRoot` + a **Crafting tab UI** to pick substrate/reagents/process and show the **pre-commit integrity projection + destruction warning** (§6.2c). Godot-side; user verifies visually.
+
+Determinism invariant (§12.5): everything pure **except** the execution-quality roll and the variance perturbation, both through the seeded `IRandomSource`. This keeps it unit-testable.
+
+## Guardrails
+- Keep `dotnet test` green (193 now) in tested increments. Add Core tests for the algebra/registry/naming (pure → easy).
+- Core stays Godot-free; nothing authoritative in `GameRoot`/UI (see the cleanup — leaked gameplay was just pulled out; don't re-introduce it).
+- Do **not** hardcode per-combination recipes or reaction rules; the algebra is the source of truth. No traits/essence/signatures yet.
+- Commit only when the user asks; on `main`, end messages with the Co-Authored-By trailer.
+- `GameRoot` is ~960 lines; the **application-layer extraction** is the other deferred cleanup (separate from P1) — don't let P1 command handlers pile into `GameRoot` without a plan.
