@@ -17,13 +17,16 @@ internal static class CombatTestData
         Luck = luck,
     };
 
-    public static Combatant Player(int hp = 100, AttributeSet? attrs = null, int stamina = 100) => new(
+    public static Combatant Player(int hp = 100, AttributeSet? attrs = null, int stamina = 100, AttackProfile? attack = null, ArmorProfile? armor = null) => new(
         "Hero", CombatTeam.Player,
         new ResourcePool(ResourceType.Health, hp),
         new ResourcePool(ResourceType.Stamina, stamina),
         new ResourcePool(ResourceType.Mana, 0),
         new[] { "ability.strike" },
-        () => attrs ?? Attrs());
+        () => attrs ?? Attrs(),
+        lootItemId: null,
+        attack: attack,
+        armorProfile: armor);
 
     public static Combatant Enemy(string name, int hp, AttributeSet attrs, string abilityId, string? loot = "material.goblin_scrap") => new(
         name, CombatTeam.Enemy,

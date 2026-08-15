@@ -38,6 +38,33 @@ public class RealmExtractionTests
     }
 
     [Fact]
+    public void Secure_MovesInstances_ToStash()
+    {
+        var run = new RealmRun(Forest(), 1);
+        run.RunInventory.AddInstance(new ItemInstance { InstanceId = 7, BaseDefinitionId = "equip.iron_sword", ItemType = ItemType.Weapon, DisplayName = "Looted Sword" });
+
+        var stash = new Inventory();
+        var summary = RealmExtraction.Secure(run, stash);
+
+        Assert.Single(summary.Instances);
+        Assert.Equal(1, summary.TotalQuantity);
+        Assert.Equal("Looted Sword", stash.GetInstance(7)!.DisplayName);
+        Assert.Equal(0, run.RunInventory.InstanceCount);
+    }
+
+    [Fact]
+    public void Forfeit_LosesInstances_Too()
+    {
+        var run = new RealmRun(Forest(), 1);
+        run.RunInventory.AddInstance(new ItemInstance { InstanceId = 7, BaseDefinitionId = "x", ItemType = ItemType.Armor });
+
+        var summary = RealmExtraction.Forfeit(run);
+
+        Assert.Single(summary.Instances);
+        Assert.Equal(0, run.RunInventory.InstanceCount);
+    }
+
+    [Fact]
     public void Forfeit_LosesRunLoot_StashUntouched_EndsRun()
     {
         var run = new RealmRun(Forest(), 1);

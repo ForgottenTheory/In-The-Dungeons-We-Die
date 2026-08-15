@@ -17,7 +17,7 @@ public class CombatCalculatorTests
         var attacker = Enemy("A", 50, Attrs(str: 10), "ability.strike");
         var target = Player(attrs: Attrs(con: 10));
 
-        var result = calc.Resolve(attacker, target, Strike, currentTick: 0);
+        var result = calc.Resolve(attacker, target, Strike.DamageType, Strike.BaseValue, currentTick: 0);
 
         // 10 + STR10*0.5 = 15; armor CON10*0.3 = 3; → 12
         Assert.Equal(12, result.Amount);
@@ -34,7 +34,7 @@ public class CombatCalculatorTests
         var target = Player(attrs: Attrs(con: 10));
         target.DodgeUntilTick = 10;
 
-        var result = calc.Resolve(attacker, target, Strike, currentTick: 5);
+        var result = calc.Resolve(attacker, target, Strike.DamageType, Strike.BaseValue, currentTick: 5);
 
         Assert.True(result.Dodged);
         Assert.Equal(0, result.Amount);
@@ -48,7 +48,7 @@ public class CombatCalculatorTests
         var target = Player(attrs: Attrs(con: 10));
         target.BlockUntilTick = 10;
 
-        var result = calc.Resolve(attacker, target, Strike, currentTick: 5);
+        var result = calc.Resolve(attacker, target, Strike.DamageType, Strike.BaseValue, currentTick: 5);
 
         // (15 - 3) * 0.4 = 4.8 → 5
         Assert.True(result.Blocked);
@@ -62,7 +62,7 @@ public class CombatCalculatorTests
         var attacker = Enemy("A", 50, Attrs(str: 10, luck: 100), "ability.strike");
         var target = Player(attrs: Attrs(con: 10));
 
-        var result = calc.Resolve(attacker, target, Strike, currentTick: 0);
+        var result = calc.Resolve(attacker, target, Strike.DamageType, Strike.BaseValue, currentTick: 0);
 
         // (15 * 1.5) - 3 = 19.5 → 20
         Assert.True(result.Crit);
@@ -76,9 +76,26 @@ public class CombatCalculatorTests
         var attacker = Enemy("A", 50, Attrs(intel: 10), "ability.bolt");
         var target = Player(attrs: Attrs(con: 10));
 
-        var result = calc.Resolve(attacker, target, Bolt, currentTick: 0);
+        var result = calc.Resolve(attacker, target, Bolt.DamageType, Bolt.BaseValue, currentTick: 0);
 
         // 10 + INT10*0.5 = 15; no armor → 15
         Assert.Equal(15, result.Amount);
+    }
+
+    [Fact]
+    public void EquippedArmor_AddsFlatMitigation_AndTypedResistance()
+    {
+        var calc = new CombatCalculator(new FakeRandom(0.99));
+        var attacker = Enemy("A", 50, Attrs(str: 10), "ability.strike");
+        var target = Player(attrs: Attrs(con: 10), armor: new ArmorProfile
+        {
+            Armor = 5,
+            Resistances = new Dictionary<string, double> { ["Slashing"] = 0.5 },
+        });
+
+        var result = calc.Resolve(attacker, target, Strike.DamageType, Strike.BaseValue, currentTick: 0);
+
+        // 15 raw; armor CON3 + gear5 = 8 → 7; then 50% Slashing resist → 3.5 → 4
+        Assert.Equal(4, result.Amount);
     }
 }

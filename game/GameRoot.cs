@@ -54,6 +54,22 @@ public partial class GameRoot : Node
     private DataStore<ActorDefinition> _actors = new();
     private DataStore<RealmDefinition> _realms = new();
     private DataStore<ConsumableDefinition> _consumables = new();
+    private DataStore<EquipmentDefinition> _equipment = new();
+
+    private readonly Equipment _playerEquipment = new();
+    private readonly InstanceIdSource _instanceIds = new();
+
+    private const string StarterWeaponId = "equip.rusty_sword";
+    private const string StarterArmorId = "equip.tattered_armor";
+
+    private static readonly AttackProfile Unarmed = new()
+    {
+        Name = "Bare Fists",
+        DamageType = DamageType.Crushing,
+        BaseDamage = 3,
+        StaminaCost = 3,
+        Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 6, RecoveryTicks = 12 },
+    };
 
     private CharacterComposer _composer = null!;
     private ProfessionSystem _professions = null!;
@@ -103,6 +119,7 @@ public partial class GameRoot : Node
         _actors = ContentLoader.LoadDefinitions<ActorDefinition>("res://data/actors");
         _realms = ContentLoader.LoadDefinitions<RealmDefinition>("res://data/realms");
         _consumables = ContentLoader.LoadDefinitions<ConsumableDefinition>("res://data/consumables");
+        _equipment = ContentLoader.LoadDefinitions<EquipmentDefinition>("res://data/equipment");
 
         var rules = new RuleRegistry(new ICharacterRule[]
         {
@@ -111,6 +128,7 @@ public partial class GameRoot : Node
         });
         _composer = new CharacterComposer(species, classes, prefixes, suffixes, rules);
         RebuildCharacter();
+        EquipStarterLoadout();
 
         // Gathering deposits into the current bag: the Stash in the Hideout, the run
         // inventory while in a Realm (unsecured until extraction).
@@ -366,7 +384,8 @@ public partial class GameRoot : Node
         _passiveRunner.Stop(); // one activity at a time
         _everFought = true;
         var actor = _actors.GetById(actorId);
-        _encounter.Start(Combatant.FromCharacter(Character), new[] { Combatant.FromActor(actor) });
+        var player = Combatant.FromCharacter(Character, ResolvePlayerWeapon(), ResolvePlayerArmor());
+        _encounter.Start(player, new[] { Combatant.FromActor(actor) });
         SetRunning(true); // telegraphs advance in real time
         CombatChanged?.Invoke();
     }
@@ -460,6 +479,75 @@ public partial class GameRoot : Node
         {
             EndRealmRun(died: true);
         }
+    }
+
+    // --- Equipment ----------------------------------------------------------
+
+    /// <summary>Equipment blueprints that can be granted/equipped (excludes the starter kit).</summary>
+    public IReadOnlyList<EquipmentDefinition> EquipmentCatalog =>
+        _equipment.GetAll().Where(e => e.Id != StarterWeaponId && e.Id != StarterArmorId).OrderBy(e => e.Name).ToList();
+
+    /// <summary>Debug: instantiates a piece of equipment, equips it, and banks whatever it displaced.</summary>
+    public void GrantAndEquip(string equipmentDefId)
+    {
+        if (!_equipment.TryGetById(equipmentDefId, out var def))
+            return;
+        var instance = InstantiateEquipment(def);
+        var displaced = _playerEquipment.Equip(def.Slot, instance);
+        if (displaced is not null)
+            _stash.AddInstance(displaced);
+        Emit($"[Equipment] Equipped {instance.DisplayName}.");
+        CharacterChanged?.Invoke();
+    }
+
+    public string EquipmentReport()
+    {
+        var weapon = _playerEquipment.InSlot(EquipmentSlot.Weapon);
+        var armor = _playerEquipment.InSlot(EquipmentSlot.Armor);
+        var attack = ResolvePlayerWeapon();
+        var armorProfile = ResolvePlayerArmor();
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"Weapon: {(weapon?.DisplayName ?? "— (unarmed)")}  →  {attack.BaseDamage:0.#} {attack.DamageType}, impact {attack.Timing.TimeToImpactTicks}t");
+        var resist = armorProfile.Resistances.Count == 0
+            ? string.Empty
+            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r => $"{r.Key} {r.Value:P0}"));
+        sb.Append($"Armor:  {(armor?.DisplayName ?? "— (none)")}  →  {armorProfile.Armor:0.#} armor{resist}");
+        return sb.ToString();
+    }
+
+    private void EquipStarterLoadout()
+    {
+        if (_playerEquipment.InSlot(EquipmentSlot.Weapon) is null && _equipment.Contains(StarterWeaponId))
+            _playerEquipment.Equip(EquipmentSlot.Weapon, InstantiateEquipment(_equipment.GetById(StarterWeaponId)));
+        if (_playerEquipment.InSlot(EquipmentSlot.Armor) is null && _equipment.Contains(StarterArmorId))
+            _playerEquipment.Equip(EquipmentSlot.Armor, InstantiateEquipment(_equipment.GetById(StarterArmorId)));
+    }
+
+    private ItemInstance InstantiateEquipment(EquipmentDefinition def) => new()
+    {
+        InstanceId = _instanceIds.Next(),
+        BaseDefinitionId = def.Id,
+        ItemType = def.ItemType,
+        DisplayName = def.Name,
+        Properties = def.BaseProperties,
+        Provenance = new[] { def.Id },
+    };
+
+    private AttackProfile ResolvePlayerWeapon()
+    {
+        var instance = _playerEquipment.InSlot(EquipmentSlot.Weapon);
+        if (instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var def))
+            return EquipmentResolver.ResolveWeapon(def, instance, Unarmed);
+        return Unarmed;
+    }
+
+    private ArmorProfile ResolvePlayerArmor()
+    {
+        var instance = _playerEquipment.InSlot(EquipmentSlot.Armor);
+        if (instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var def))
+            return EquipmentResolver.ResolveArmor(def, instance);
+        return ArmorProfile.None;
     }
 
     // --- Realm --------------------------------------------------------------
@@ -637,8 +725,7 @@ public partial class GameRoot : Node
         if (died)
         {
             var lost = RealmExtraction.Forfeit(_run);
-            Emit($"[Realm] You have died. {lost.TotalQuantity} unsecured item(s) lost. Your Stash is safe. " +
-                 "(Equipped-gear loss and a starter loadout arrive with the equipment system.)");
+            Emit($"[Realm] You have died. {lost.TotalQuantity} unsecured item(s) lost. Your Stash and equipped gear are safe.");
         }
         else
         {
@@ -714,6 +801,7 @@ public partial class GameRoot : Node
         sb.AppendLine(c.DisplayName);
         sb.AppendLine($"Primary resource: {c.Blueprint.PrimaryResource}");
         sb.AppendLine($"HP {c.Health.Current}/{c.Health.Max}    Mana {c.Mana.Current}/{c.Mana.Max}    Stamina {c.Stamina.Current}/{c.Stamina.Max}");
+        sb.AppendLine(EquipmentReport());
         sb.AppendLine("Attributes  (effective / base):");
         foreach (var attribute in AttributeTypes.All)
             sb.AppendLine($"  {attribute,-13} {effective[attribute],3} / {baseAttributes[attribute]}");

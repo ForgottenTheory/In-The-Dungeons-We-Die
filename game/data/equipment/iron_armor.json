@@ -1,0 +1,8 @@
+{
+  "id": "equip.iron_armor",
+  "name": "Iron Armor",
+  "slot": "Armor",
+  "tags": ["armor", "metal"],
+  "armor": { "armor": 5, "resistances": { "Slashing": 0.15 } },
+  "properties": { "hardness": 4 }
+}

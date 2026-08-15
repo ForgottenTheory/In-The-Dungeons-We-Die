@@ -147,6 +147,16 @@ public partial class MainMvpUI : Control
 
         _characterLabel = new Label { Text = "…" };
         root.AddChild(_characterLabel);
+
+        var equipRow = new HBoxContainer();
+        equipRow.AddThemeConstantOverride("separation", 8);
+        root.AddChild(equipRow);
+        equipRow.AddChild(new Label { Text = "Equip:" });
+        foreach (var gear in _game.EquipmentCatalog)
+        {
+            var id = gear.Id;
+            equipRow.AddChild(MakeButton(gear.Name, () => _game.GrantAndEquip(id)));
+        }
     }
 
     private void BuildProfessionSection(VBoxContainer root)

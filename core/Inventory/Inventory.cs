@@ -1,16 +1,17 @@
 namespace Dungeons.Items;
 
 /// <summary>
-/// A simple quantity-keyed bag of stackable items. Milestone 3 uses it as the home
-/// for profession outputs and inputs; capacity limits, item instances and the
-/// stash/loadout/realm split arrive with later milestones (docs/architecture.md §23).
-/// Transactions are all-or-nothing: a removal that cannot be satisfied changes nothing.
+/// A bag holding both <b>stacks</b> (quantity-keyed stackable items — raw materials,
+/// consumables) and <b>instances</b> (unique <see cref="ItemInstance"/>s — equipment
+/// and generated materials). Stack transactions are all-or-nothing. Used for both the
+/// Stash and a run's unsecured inventory (docs/architecture.md §23, docs/itemization.md §4).
 /// </summary>
 public sealed class Inventory
 {
     private readonly Dictionary<string, int> _quantities = new(StringComparer.Ordinal);
+    private readonly List<ItemInstance> _instances = new();
 
-    /// <summary>Raised after any change to contents.</summary>
+    /// <summary>Raised after any change to contents (stacks or instances).</summary>
     public event Action? Changed;
 
     public int GetQuantity(string itemId) => _quantities.TryGetValue(itemId, out var qty) ? qty : 0;
@@ -71,15 +72,45 @@ public sealed class Inventory
         return true;
     }
 
-    /// <summary>Snapshot of current contents.</summary>
+    /// <summary>Snapshot of stackable contents.</summary>
     public IReadOnlyList<ItemStack> Snapshot() =>
         _quantities.Select(pair => new ItemStack(pair.Key, pair.Value)).ToList();
 
+    // --- Unique instances ---------------------------------------------------
+
+    /// <summary>Snapshot of unique item instances.</summary>
+    public IReadOnlyList<ItemInstance> Instances => _instances.ToList();
+
+    public int InstanceCount => _instances.Count;
+
+    public void AddInstance(ItemInstance instance)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        _instances.Add(instance);
+        Changed?.Invoke();
+    }
+
+    public ItemInstance? GetInstance(long instanceId) =>
+        _instances.FirstOrDefault(i => i.InstanceId == instanceId);
+
+    /// <summary>Removes an instance by id. Returns the removed instance, or null if absent.</summary>
+    public ItemInstance? RemoveInstance(long instanceId)
+    {
+        var index = _instances.FindIndex(i => i.InstanceId == instanceId);
+        if (index < 0)
+            return null;
+        var removed = _instances[index];
+        _instances.RemoveAt(index);
+        Changed?.Invoke();
+        return removed;
+    }
+
     public void Clear()
     {
-        if (_quantities.Count == 0)
+        if (_quantities.Count == 0 && _instances.Count == 0)
             return;
         _quantities.Clear();
+        _instances.Clear();
         Changed?.Invoke();
     }
 }

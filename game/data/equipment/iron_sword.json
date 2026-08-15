@@ -1,0 +1,8 @@
+{
+  "id": "equip.iron_sword",
+  "name": "Iron Sword",
+  "slot": "Weapon",
+  "tags": ["weapon", "sword", "metal"],
+  "weapon": { "baseDamage": 10, "damageType": "Slashing", "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15, "staminaCost": 6 },
+  "properties": { "mass": 3, "hardness": 4 }
+}

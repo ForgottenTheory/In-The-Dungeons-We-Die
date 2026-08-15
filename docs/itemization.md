@@ -1,231 +1,107 @@
-# CLAUDE.md
+# Itemization — Items, Properties, Instances, Equipment
 
-# In The Dungeons We Die
+> Status legend: **[impl]** implemented in code · **[arch]** architecture/seam exists, behavior deferred · **[planned]** design only.
+>
+> This document supersedes the earlier stray content in this file. It defines the item data model that supports emergent, recursive, property-based crafting (see `docs/crafting.md`).
 
-## Purpose
+---
 
-This is the primary project instruction file for Claude Code. It defines the project vision, architecture rules, MVP priorities, and implementation behavior. Detailed mechanics live in `/docs` and should be read only when relevant to the task.
+## 1. Two-tier item model
 
-## 1. Project Vision
+There are two kinds of "item" in the game, and the distinction is mandatory (see `docs/architecture.md §8`).
 
-**In The Dungeons We Die** is a progression-heavy extraction RPG combining:
+### Item Definitions — static, shared, canonical **[impl]**
 
-* Melvor Idle-style interconnected profession progression.
-* For The King 2-style spatial Realm exploration.
-* Extraction-game preparation, risk, loss, and recovery.
-* Real-time tick-based tactical combat.
-* Dungeon Crawler Carl-inspired character identity through Species, Prefix, Base Class, and Suffix.
-* Deep crafting, experimentation, and material interactions.
+A *definition* describes what a kind of item **is**. It is loaded from JSON, shared by every copy, and never mutated at runtime.
 
-The central loop is:
-**Prepare → Enter Realm → Explore → Fight / Gather / Discover → Extract or Go Deeper → Improve → Repeat**
+- Raw materials (Iron Ore, Bloodmoss, Emberleaf, …) — `MaterialDefinition`.
+- Equipment blueprints (Iron Sword, Leather Armor, …) — `EquipmentDefinition`.
+- Consumables (Healing Salve, …) — `ConsumableDefinition`.
 
-**The Realm Run is the center of the game.** Major systems should meaningfully support Realm preparation, survival, exploration, extraction, or mastery.
+All item definitions expose the `IItemDefinition` contract: `Id`, `Name`, `ItemType`, `Stackable`, and `BaseProperties` (a `PropertySet`).
 
-## 2. Current Goal
+### Item Instances — unique, generated, per-item **[impl]**
 
-Build a **playable MVP vertical slice** before expanding the full game.
-The MVP must prove:
-**Gather → Craft → Prepare → Enter Realm → Explore → Fight → Loot → Extract or Go Deeper → Improve → Repeat**
+An *instance* is a specific owned item whose properties may differ from its definition. Instances are used for:
 
-Use functional Godot 4 Control-based 2D UI. Do not wait for production art, final 3D presentation, shaders, multiplayer, or large content libraries.
-The temporary UI is a real client for real game systems. Do not put throwaway gameplay rules inside UI code.
+- **All equipment** (every crafted/looted weapon or armor is an instance).
+- **Any generated/processed material** whose properties differ from its raw definition (e.g. *Bloodmoss Iron Ingot* produced by crafting).
 
-## 3. Core Design Pillars
+`ItemInstance` carries:
 
-### Realm-Centered Design
+| Field | Meaning |
+|---|---|
+| `InstanceId` | unique id (deterministic counter, `InstanceIdSource`) |
+| `BaseDefinitionId` | the definition it derives from (identity/render fallback) |
+| `ItemType` | Material / Weapon / Armor / Consumable |
+| `DisplayName` | generated name, e.g. "Bloodmoss Iron Ingot" |
+| `Quality` | Poor / Normal / Fine / Exceptional / Masterwork |
+| `Properties` | the **derived** `PropertySet` (this is what makes it different) |
+| `Provenance` | definition ids of the materials it was made from |
+| `Traits` | generated named effects/traits (e.g. "blight", reserved for the reaction sim) |
 
-Every major system should connect back to Realm Runs. Avoid disconnected progression systems that exist only because other RPGs have them.
+**Rule of thumb:** identical raw materials stay lightweight quantity-based stacks; the moment an item's properties diverge from its definition, it becomes an instance. Iron Ore never becomes a unique object; *Charred Bloodmoss Iron* always does.
 
-### Active vs Passive
+---
 
-Most progression systems should eventually support both.
+## 2. Property model — data-driven **[impl]**
 
-* Passive: convenient, consistent, offline-friendly, lower optimization ceiling.
-* Active: requires decisions or execution, better efficiency or quality, more discovery opportunities, better survival potential.
+Properties are stored in a `PropertySet`: a **string-keyed, case-insensitive map of `name → value`**. Storage is string-keyed on purpose — adding a new property never requires touching code, only data/rules. Known property names are provided as constants in `ItemProperties` for convenience and consistency, grouped:
 
-Active play should reward actual performance, not a hidden flat bonus. Passive play must remain worthwhile.
+**Physical** — `hardness` (resist physical deformation/damage), `mass` (weight/density), `flexibility` (deform without breaking), `affinity` (willingness to bond), `conductivity` (transmit electricity), `insulation` (resist/contain electricity).
 
-### Preparation Matters
+**Processing** — `harvest_resistance` (difficulty to extract), `solubility` (ease properties transfer into solution), `instability` (likelihood of craft failure/mutation).
 
-Realm success should be influenced by equipment, consumables, food, profession products, build choices, Realm Knowledge, resistances, and supplies.
+**Reactive** — `heat`, `cold`, `charge`, `toxicity`, `growth`, `decay`, `corrosion`, `arcane`.
 
-### Risk vs Reward
+**Response/resistance** properties (e.g. `heat_resistance`, `cold_resistance`) will be added as the model is finalized. **[planned]**
 
-Realm Runs should repeatedly create meaningful decisions about continuing, extracting, spending resources, avoiding danger, and risking unsecured loot.
+A definition's `BaseProperties` are its intrinsic values; an instance's `Properties` are the derived result of crafting. `PropertySet` supports `Get`, `Has`, `With`, and `Combine(other, fn)` for derivation.
 
-### Discovery Matters
+---
 
-Players should gradually discover recipes, material interactions, enemy weaknesses, Realm secrets, hidden routes, class interactions, and rare events.
+## 3. Equipment **[impl (data) / arch (combat)]**
 
-### Depth Before Breadth
+`EquipmentDefinition` (`IItemDefinition`) adds:
 
-Prefer a few deeply interconnected systems over many shallow ones.
+- `Slot` — `Weapon` or `Armor` (more slots later).
+- optional `Weapon` block — `BaseDamage`, `DamageType`, `BaseIntervalTicks`, `StaminaCost` (attribute scaling later).
+- optional `Armor` block — `Armor` value + typed `Resistances` map.
+- `BaseProperties` — intrinsic material-style properties.
 
-## 4. Character Identity
+At runtime a character holds an `Equipment` container (slot → equipped `ItemInstance`).
 
-Character combat identity is:
-**Species + Prefix + Base Class + Suffix**
+**Definition + instance → combat values** is resolved by `EquipmentResolver`:
+- `ResolveWeapon(def, instance, unarmedFallback)` → `AttackProfile` (base damage/type/interval/stamina, adjusted by instance properties).
+- `ResolveArmor(def, instance)` → `ArmorProfile` (flat armor + resistances, adjusted by instance properties).
 
-* Species defines fundamental biological or metaphysical rules.
-* Base Class defines the combat chassis.
-* Prefix changes how the chassis operates.
-* Suffix acts as a rule breaker.
+The **property → stat effects** (e.g. high `mass` raises damage but slows the swing; `hardness` improves armor; `toxicity`/`charge`/`heat` eventually add on-hit effects and resistances) are intentionally a **small, extensible seam** right now — a couple of illustrative effects are implemented and clearly marked as the expansion point. Combat reads only the neutral `AttackProfile`/`ArmorProfile`, never equipment types directly, so the material→combat rules can grow without touching the encounter. **[arch]**
 
-Use established custom class names when available. Do not replace them with generic RPG names without explicit direction.
-See `docs/classes.md`.
+Two Iron Swords share the base weapon definition, but a *Bloodmoss Iron Sword* instance and a *Storm-Infused Iron Sword* instance resolve to different `AttackProfile`s because their derived properties differ.
 
-## 5. Architecture Invariant
+---
 
-Authoritative gameplay rules belong primarily in engine-independent C#.
-The Domain layer must not depend on Godot scene-tree types or inherit from `Node`, `Node2D`, `Node3D`, `Control`, or `Resource`.
+## 4. Inventory **[impl]**
 
-Examples of Domain systems:
-`TickEngine`, `CombatSystem`, `CharacterSystem`, `ProfessionSystem`, `InventorySystem`, `CraftingSystem`, `RealmSystem`, `RealmKnowledgeSystem`, `ExtractionSystem`, `ClassCompositionSystem`.
+One `Inventory` (used for both the Stash and a run's unsecured bag) holds **both**:
+- **Stacks** — `definitionId → quantity` for stackable raw materials/consumables (unchanged from before).
+- **Instances** — a list of `ItemInstance` for equipment and generated materials.
 
-Godot is **not forbidden**. Use Godot for UI, input, rendering, scenes, animation, audio, camera, visual effects, and engine integration.
-The rule is: **Gameplay rules should not become coupled to the Godot scene tree.**
+Extraction (`RealmExtraction`) and, later, save both move stacks **and** instances.
 
-## 6. Layering
+---
 
-Preferred flow:
-**Godot Presentation → Application → Domain**
+## 5. Gear loss & recovery **[impl (rule) / arch (toggle)]**
 
-Infrastructure handles JSON, saves, logging, and other external concerns.
-Godot should communicate with gameplay through application services, commands, queries, DTOs, events, and read-only state snapshots.
-The UI must not calculate authoritative combat or progression results.
-See `docs/architecture.md`.
+- Death forfeits the **unsecured run inventory** (stacks + instances); equipped gear and the Stash are safe.
+- A **starter loadout** (weak weapon + armor) is always available so a fresh or broke character can never be bricked. **[planned]**
+- "Gear at risk on death" is designed as a switchable option but defaults **off**. **[arch]**
 
-## 7. Data-Driven Content
+---
 
-Use external JSON for game definitions where practical and `System.Text.Json` for serialization.
-Prefer reusable loading through `DataStore<T>`.
-Keep definitions separate from runtime state. Example: `WeaponData` defines a weapon type; `ItemInstance` represents a specific owned weapon.
+## 6. What is deferred
 
-Use stable namespaced IDs such as:
-
-* `weapon.rusty_sword`
-* `enemy.goblin_raider`
-* `realm.dark_forest`
-* `profession.forestry`
-* `species.undead`
-
-See `docs/json-schema.md`.
-
-## 8. Simulation And Combat
-
-Gameplay timing should use the shared tick simulation where timing matters.
-Combat is continuous and real-time, but readable rather than twitch-heavy.
-
-Core combat timing:
-**Telegraph → Windup → Execution → Recovery**
-
-Players should have time to make meaningful decisions such as attacking, blocking, dodging, moving, interrupting, using abilities, or consuming items.
-Health does **not naturally regenerate during normal Realm combat**. Healing requires intentional resources or mechanics.
-See `docs/combat-spec.md`.
-
-## 9. Realm And Extraction Rules
-
-Production Realm exploration should resemble For The King 2-style spatial exploration rather than a simple card/node progression screen.
-Realm loot is generally unsecured until successful extraction.
-Death should create meaningful loss without erasing long-term progression such as profession levels, Realm Knowledge, discoveries, or safe Stash contents.
-The player must always retain a recovery path through weak starter equipment.
-See `docs/realms.md`.
-
-## 10. Crafting And Professions
-
-Professions are persistent progression systems and should interact with one another and with Realm preparation.
-Crafting should eventually support passive crafting, active crafting, experimentation, material infusion, quality, discovery, and cross-profession interactions.
-Avoid isolated skill bars and recipe systems with no meaningful connection to the Realm loop.
-
-See:
-
-* `docs/professions.md`
-* `docs/crafting.md`
-* `docs/itemization.md`
-* `docs/progression.md`
-
-## 11. Testing And Coding Rules
-
-Domain systems should be testable without launching Godot whenever practical.
-Prioritize tests for tick scheduling, combat calculations/timing, inventory transactions, crafting, loot, extraction, profession progression, offline calculations, Realm progression, and class modifiers.
-
-Coding rules:
-
-* Use the C# version supported by the current Godot .NET project.
-* Enable nullable reference types.
-* Prefer composition over deep inheritance.
-* Keep classes focused and avoid global mutable state.
-* Avoid unnecessary static systems.
-* Prefer constructor dependency injection in Domain code.
-* Keep authoritative calculations deterministic where practical.
-* Prefer readability over cleverness.
-* Use interfaces where they represent real boundaries, not ceremony.
-* Do not create giant manager classes or giant switches based on content IDs.
-* Do not generalize systems before real use cases require it.
-
-## 12. MVP Scope Control
-
-Prefer a working vertical-slice feature over a sophisticated framework for a future feature.
-
-Unless explicitly requested, do not prioritize:
-
-* Multiplayer or PvP.
-* Production 3D graphics or final shaders.
-* Huge procedural generation systems.
-* Hundreds of items.
-* Full profession content or full class roster.
-* Trading or live-service infrastructure.
-
-Design reasonable extension points without building speculative systems.
-See `docs/vertical-slice.md` and `docs/godot-ui-mvp.md`.
-
-## 13. Documentation Map
-
-Always read before major implementation:
-
-* `docs/architecture.md`
-* `docs/vertical-slice.md`
-
-Read when relevant:
-
-* Combat: `docs/combat-spec.md`
-* Godot MVP UI: `docs/godot-ui-mvp.md`
-* Data: `docs/json-schema.md`
-* Classes: `docs/classes.md`
-* Professions: `docs/professions.md`
-* Realms: `docs/realms.md`
-* Progression: `docs/progression.md`
-* Crafting: `docs/crafting.md`
-* Items: `docs/itemization.md`
-
-Do not load every document unnecessarily.
-
-If documentation conflicts:
-
-1. `CLAUDE.md` wins for architecture and development rules.
-2. The most feature-specific document wins for mechanics.
-3. `vertical-slice.md` wins for current MVP scope.
-4. Do not silently redesign major systems to resolve contradictions.
-
-## 14. Implementation Workflow
-
-Before implementing a significant feature:
-
-1. Read the relevant design document.
-2. Determine which architecture layer owns the behavior.
-3. Check whether the feature belongs in the current vertical slice.
-4. Inspect existing code before creating new abstractions.
-5. Implement the smallest coherent version that advances the playable loop.
-6. Add tests for deterministic Domain behavior.
-7. Keep gameplay rules outside Godot presentation code.
-8. Keep the project runnable after meaningful increments.
-9. Update documentation when an established design decision changes.
-
-Do not silently redesign major game systems during implementation.
-
-## 15. Guiding Question
-
-When evaluating a gameplay feature, ask:
-**How does this make preparing for, entering, exploring, surviving, mastering, or extracting from a Realm more interesting?**
-If there is no convincing answer, reconsider whether the feature belongs in the game.
+- The crafting **reaction simulation** that generates instance properties (see `docs/crafting.md`) — architecture only for now.
+- Full material→combat formulas, on-hit status effects, resistances-in-combat.
+- Additional equipment slots, durability, sockets, affix rolls, rarity-from-loot.
+- Save persistence of instances/equipment (next phase).

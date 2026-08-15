@@ -7,8 +7,10 @@ public sealed class ExtractionSummary
 {
     public required bool Secured { get; init; }
     public required IReadOnlyList<ItemStack> Items { get; init; }
+    public IReadOnlyList<ItemInstance> Instances { get; init; } = Array.Empty<ItemInstance>();
 
-    public int TotalQuantity => Items.Sum(i => i.Quantity);
+    /// <summary>Total item count moved/lost: stacked quantities plus unique instances.</summary>
+    public int TotalQuantity => Items.Sum(i => i.Quantity) + Instances.Count;
 }
 
 /// <summary>
@@ -26,12 +28,15 @@ public static class RealmExtraction
         ArgumentNullException.ThrowIfNull(stash);
 
         var items = run.RunInventory.Snapshot();
+        var instances = run.RunInventory.Instances;
         foreach (var stack in items)
             stash.Add(stack);
+        foreach (var instance in instances)
+            stash.AddInstance(instance);
         run.RunInventory.Clear();
         run.End();
 
-        return new ExtractionSummary { Secured = true, Items = items };
+        return new ExtractionSummary { Secured = true, Items = items, Instances = instances };
     }
 
     /// <summary>Forfeits all unsecured run loot (death) and ends the run. The Stash is untouched.</summary>
@@ -40,9 +45,10 @@ public static class RealmExtraction
         ArgumentNullException.ThrowIfNull(run);
 
         var items = run.RunInventory.Snapshot();
+        var instances = run.RunInventory.Instances;
         run.RunInventory.Clear();
         run.End();
 
-        return new ExtractionSummary { Secured = false, Items = items };
+        return new ExtractionSummary { Secured = false, Items = items, Instances = instances };
     }
 }

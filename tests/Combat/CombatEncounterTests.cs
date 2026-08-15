@@ -126,6 +126,29 @@ public class CombatEncounterTests
     }
 
     [Fact]
+    public void PlayerAttack_UsesEquippedWeaponProfile_NotFallbackAbility()
+    {
+        var (enc, tick) = Build();
+        var ironSword = new AttackProfile
+        {
+            Name = "Iron Sword",
+            DamageType = DamageType.Slashing,
+            BaseDamage = 20, // far above the fallback strike's 8
+            StaminaCost = 5,
+            Timing = new AbilityTiming { TelegraphTicks = 1, WindupTicks = 4, RecoveryTicks = 10 },
+        };
+        var player = Player(hp: 100, attrs: Attrs(str: 5), attack: ironSword);
+        var enemy = Enemy("Dummy", 100, Attrs(con: 2), "ability.goblin_slash");
+        enc.Start(player, new[] { enemy });
+
+        Assert.True(enc.Attack());
+        tick.Advance(5); // weapon impact = telegraph 1 + windup 4
+
+        // 20 + STR5*0.5 = 22.5; armor CON2*0.3 = 0.6 → 21.9 → 22
+        Assert.Equal(78, enemy.Health.Current);
+    }
+
+    [Fact]
     public void UseHealingItem_RestoresHealth_AndCostsAttackTempo()
     {
         var (enc, tick) = Build();

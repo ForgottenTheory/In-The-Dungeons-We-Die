@@ -23,6 +23,9 @@ public static class CombatTuning
     public const double ArmorPerConstitution = 0.3;
     public const int MinimumDamage = 1;
 
+    /// <summary>Cap on typed resistance from equipped armor (fraction).</summary>
+    public const double MaxResistance = 0.75;
+
     // Passive stamina recovery during combat.
     public const int StaminaRegenIntervalTicks = 15;
     public const int StaminaRegenAmount = 2;

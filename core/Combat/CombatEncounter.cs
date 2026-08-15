@@ -40,7 +40,7 @@ public sealed class CombatEncounter
     private readonly CombatCalculator _calculator;
     private readonly DataStore<AbilityDefinition> _abilities;
     private readonly IRandomSource _rng;
-    private readonly string _playerAttackAbilityId;
+    private readonly string _playerFallbackAbilityId;
 
     private readonly Dictionary<Combatant, EnemyIntent> _intents = new();
     private readonly Dictionary<Combatant, ScheduledAction> _enemyPending = new();
@@ -56,14 +56,27 @@ public sealed class CombatEncounter
         CombatCalculator calculator,
         DataStore<AbilityDefinition> abilities,
         IRandomSource rng,
-        string playerAttackAbilityId)
+        string playerFallbackAbilityId)
     {
         _tick = tick ?? throw new ArgumentNullException(nameof(tick));
         _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
         _abilities = abilities ?? throw new ArgumentNullException(nameof(abilities));
         _rng = rng ?? throw new ArgumentNullException(nameof(rng));
-        _playerAttackAbilityId = playerAttackAbilityId;
+        _playerFallbackAbilityId = playerFallbackAbilityId;
     }
+
+    /// <summary>The player's basic attack: the equipped-weapon profile, or the fallback ability if unarmed.</summary>
+    private AttackProfile PlayerAttackProfile =>
+        _player.Attack ?? ToProfile(_abilities.GetById(_playerFallbackAbilityId));
+
+    private static AttackProfile ToProfile(AbilityDefinition ability) => new()
+    {
+        Name = ability.Name,
+        DamageType = ability.DamageType,
+        BaseDamage = ability.BaseValue,
+        StaminaCost = ability.StaminaCost,
+        Timing = ability.Timing,
+    };
 
     public event Action<string>? Logged;
     public event Action? StateChanged;
@@ -107,8 +120,8 @@ public sealed class CombatEncounter
             return false;
         }
 
-        var ability = _abilities.GetById(_playerAttackAbilityId);
-        if (_player.Stamina.Current < ability.StaminaCost)
+        var attack = PlayerAttackProfile;
+        if (_player.Stamina.Current < attack.StaminaCost)
         {
             Log("Not enough stamina to attack.");
             return false;
@@ -118,11 +131,11 @@ public sealed class CombatEncounter
         if (target is null)
             return false;
 
-        _player.Stamina.Reduce(ability.StaminaCost);
-        var executeIn = Math.Max(1, ability.Timing.TimeToImpactTicks);
-        _player.ReadyTick = _tick.CurrentTick + executeIn + ability.Timing.RecoveryTicks;
-        _playerPending = _tick.Schedule(executeIn, () => ResolvePlayerAttack(ability));
-        Log($"You ready {ability.Name}.");
+        _player.Stamina.Reduce(attack.StaminaCost);
+        var executeIn = Math.Max(1, attack.Timing.TimeToImpactTicks);
+        _player.ReadyTick = _tick.CurrentTick + executeIn + attack.Timing.RecoveryTicks;
+        _playerPending = _tick.Schedule(executeIn, () => ResolvePlayerAttack(attack));
+        Log($"You ready {attack.Name}.");
         StateChanged?.Invoke();
         return true;
     }
@@ -183,8 +196,8 @@ public sealed class CombatEncounter
 
         if (_player.IsAlive)
         {
-            var result = _calculator.Resolve(enemy, _player, ability, _tick.CurrentTick);
-            ApplyResult(enemy, _player, ability, result);
+            var result = _calculator.Resolve(enemy, _player, ability.DamageType, ability.BaseValue, _tick.CurrentTick);
+            ApplyResult(enemy, _player, ability.Name, result);
             if (!_player.IsAlive)
             {
                 EndCombat(CombatResult.Defeat);
@@ -196,7 +209,7 @@ public sealed class CombatEncounter
         _enemyPending[enemy] = _tick.Schedule(recovery, () => BeginEnemyDecision(enemy));
     }
 
-    private void ResolvePlayerAttack(AbilityDefinition ability)
+    private void ResolvePlayerAttack(AttackProfile attack)
     {
         _playerPending = null;
         if (!IsActive)
@@ -206,8 +219,8 @@ public sealed class CombatEncounter
         if (target is null)
             return;
 
-        var result = _calculator.Resolve(_player, target, ability, _tick.CurrentTick);
-        ApplyResult(_player, target, ability, result);
+        var result = _calculator.Resolve(_player, target, attack.DamageType, attack.BaseDamage, _tick.CurrentTick);
+        ApplyResult(_player, target, attack.Name, result);
 
         if (!target.IsAlive)
         {
@@ -242,17 +255,17 @@ public sealed class CombatEncounter
         StateChanged?.Invoke();
     }
 
-    private void ApplyResult(Combatant attacker, Combatant target, AbilityDefinition ability, DamageResult result)
+    private void ApplyResult(Combatant attacker, Combatant target, string attackName, DamageResult result)
     {
         if (result.Dodged)
         {
-            Log($"{target.Name} dodges {attacker.Name}'s {ability.Name}!");
+            Log($"{target.Name} dodges {attacker.Name}'s {attackName}!");
         }
         else
         {
             target.Health.Reduce(result.Amount);
             var tags = (result.Crit ? " (crit!)" : string.Empty) + (result.Blocked ? " (blocked)" : string.Empty);
-            Log($"{attacker.Name}'s {ability.Name} hits {target.Name} for {result.Amount} {result.Type}{tags}. " +
+            Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{tags}. " +
                 $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
         }
 
