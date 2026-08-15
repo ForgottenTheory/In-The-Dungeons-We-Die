@@ -45,6 +45,7 @@ public partial class GameRoot : Node
     private readonly SaveStore _saveStore = new();
     private readonly Inventory _stash = new();
 
+    private ContentBundle _content = new();
     private DataStore<MaterialDefinition> _materials = new();
     private DataStore<ProfessionDefinition> _professionDefs = new();
     private DataStore<ProfessionActionDefinition> _actionDefs = new();
@@ -67,6 +68,9 @@ public partial class GameRoot : Node
     private PassiveProfessionRunner _passiveRunner = null!;
     private DiscoverySystem _discoveries = null!;
     private CraftingExperimentSystem _crafting = null!;
+    private IEmergentRegistry _emergentRegistry = null!;
+    private IReactionEngine _reactions = null!;
+    private MaterialProfileResolver _profiles = null!;
     private CombatEncounter _encounter = null!;
     private bool _everFought;
 
@@ -102,6 +106,7 @@ public partial class GameRoot : Node
         var content = ContentLoader.LoadAll("res://data");
         ValidateContentOrThrow(content);
 
+        _content = content;
         _materials = content.Materials;
         _professionDefs = content.Professions;
         _actionDefs = content.Actions;
@@ -138,6 +143,22 @@ public partial class GameRoot : Node
             professionLevel: id => _professions.GetProgress(id).Level,
             instanceIds: _instanceIds);
         _discoveries.Discovered += OnDiscovered;
+
+        // The emergent crafting engine (docs/emergent-item-system.md P1). It replaces recipe
+        // matching entirely; the interaction system above survives only to keep the Healing
+        // Salve brewable until fabrication lands in P5c.
+        _profiles = new MaterialProfileResolver(content.Properties);
+        _emergentRegistry = new EmergentRegistry(_materials);
+        _reactions = new ReactionEngine(
+            content,
+            () => CurrentBag,
+            _profiles,
+            _emergentRegistry,
+            new NameGenerator(_materials, content.Properties, content.NameGrammar),
+            new TagDeriver(content.Properties),
+            new ByproductResolver(content.Byproducts),
+            professionLevel: id => _professions.GetProgress(id).Level,
+            new SeededRandom(0xC12AF7));
 
         var combatRng = new SeededRandom(0x0C0FFEE);
         _encounter = new CombatEncounter(_tick, new CombatCalculator(combatRng), _abilities, combatRng, "ability.strike");
@@ -310,10 +331,91 @@ public partial class GameRoot : Node
         return lines.Count == 0 ? "  (empty)" : string.Join("\n", lines);
     }
 
-    // --- Crafting -----------------------------------------------------------
+    // --- Emergent crafting ---------------------------------------------------
+    //
+    // These are thin forwards. Every rule lives in Core's ReactionEngine; GameRoot only turns
+    // an outcome into log lines and change events, so the flagged Application-layer extraction
+    // does not get any harder than it already is.
 
-    /// <summary>Attempts the flagship cross-profession experiment: Iron Ingot + Oak Bark.</summary>
-    public void ExperimentBarkbound() => Experiment("material.iron_ingot", "material.oak_bark");
+    /// <summary>Every process the player can choose between, gentlest first.</summary>
+    public IReadOnlyList<ProcessDefinition> Processes =>
+        _content.Processes.GetAll().OrderBy(p => p.Severity).ToList();
+
+    /// <summary>
+    /// Materials currently on hand, for the crafting pickers. Emergent archetypes appear here
+    /// alongside authored ones with no special-casing — that is the whole point of registering
+    /// them into the same store (DECISIONS D20).
+    /// </summary>
+    public IReadOnlyList<(string Id, string Name, int Quantity)> MaterialsOnHand =>
+        CurrentBag.Snapshot()
+            .Where(s => _materials.Contains(s.ItemId))
+            .Select(s => (s.ItemId, _materials.GetById(s.ItemId).Name, s.Quantity))
+            .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    /// <summary>A material's emergent profile, for the crafting inspector. Null if unknown.</summary>
+    public string MaterialSummary(string materialId)
+    {
+        if (!_materials.TryGetById(materialId, out var material))
+            return string.Empty;
+
+        var profile = _profiles.Resolve(material);
+        var properties = profile.Properties.AsDictionary()
+            .OrderByDescending(p => p.Value)
+            .Take(5)
+            .Select(p => $"{p.Key} {p.Value:0}");
+
+        return $"{material.Name} — potency {profile.Potency}, integrity {profile.Integrity}, "
+            + $"gen {profile.Generation}\n  {string.Join(", ", properties)}\n  {string.Join(" ", material.Tags)}";
+    }
+
+    /// <summary>
+    /// What a craft would cost and risk, <b>before</b> committing to it
+    /// (docs/emergent-item-system.md §6.2c). Integrity 0 destroys the material, so the UI must
+    /// always show this first.
+    /// </summary>
+    public CraftProjection ProjectCraft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null) =>
+        _reactions.Project(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+
+    /// <summary>Runs a craft and reports it. Order of reagents is the mechanic (§0 Decision 2).</summary>
+    public CraftOutcome Craft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null)
+    {
+        var outcome = _reactions.Resolve(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+
+        if (!outcome.Success)
+        {
+            Emit("[Craft] " + CraftFormat.Failure(outcome.Failure));
+            return outcome;
+        }
+
+        foreach (var entry in outcome.Log.Entries)
+            Emit("  " + new string(' ', entry.Indent * 2) + entry.Text);
+
+        if (outcome.WasDestroyed)
+            Emit($"[Craft] {outcome.ResultName} was destroyed. Recovered: {DescribeStacks(outcome.Byproducts)}.");
+        else if (outcome.IsFirstDiscovery)
+            Emit($"[Craft] First discovery — {outcome.ResultName} ×{outcome.Quantity}!");
+        else
+            Emit($"[Craft] Made {outcome.ResultName} ×{outcome.Quantity}.");
+
+        InventoryChanged?.Invoke();
+        DiscoveryChanged?.Invoke();
+        return outcome;
+    }
+
+    private string DescribeStacks(IReadOnlyList<ItemStack> stacks) =>
+        stacks.Count == 0
+            ? "nothing"
+            : string.Join(", ", stacks.Select(s => $"{ItemName(s.ItemId)} ×{s.Quantity}"));
+
+    /// <summary>The emergent materials this save has produced (§12.4).</summary>
+    public IReadOnlyCollection<MaterialDefinition> DiscoveredArchetypes => _emergentRegistry.All;
+
+    // --- Legacy fixed-interaction crafting -----------------------------------
+    //
+    // Superseded by the reaction engine. Only the Healing Salve recipe remains, because
+    // consumables are produced by fabrication (P5c) and there is no emergent path to one yet.
+    // Delete this whole section when P5c lands.
 
     /// <summary>Brews a Healing Salve from gathered herbs — the crafted Realm supply.</summary>
     public void BrewHealingSalve() => Experiment("material.sageleaf");
@@ -341,13 +443,30 @@ public partial class GameRoot : Node
         });
     }
 
-    /// <summary>Debug helper: grants the materials and Herblore knowledge needed to try Barkbound Iron.</summary>
+    /// <summary>
+    /// Debug helper: a spread of materials chosen to make the crafting bench worth playing
+    /// with immediately — substrates of different forms, reagents spanning the media (soluble,
+    /// volatile, hard), and enough skill to reach every process.
+    /// </summary>
     public void GrantCraftTestMaterials()
     {
-        _stash.Add("material.iron_ingot", 1);
-        _stash.Add("material.oak_bark", 1);
-        _professions.GetProgress("profession.herblore").AddXp(ProfessionLeveling.XpForLevel(2));
-        Emit("[Debug] Granted 1 Iron Ingot, 1 Oak Bark, and Herblore knowledge.");
+        foreach (var id in new[]
+        {
+            // Substrates: metal, stone, wood, herb — different forms take different processes.
+            "material.iron_ingot", "material.iron_ore", "material.granite", "material.oak_log", "material.sageleaf",
+            // Reagents: soluble (sap, springwater), volatile (cores), hard (stormglass, granite).
+            "material.ember_sap", "material.springwater", "material.oak_bark",
+            "material.ember_core", "material.frost_core", "material.storm_core", "material.stormglass",
+        })
+        {
+            if (_materials.Contains(id))
+                _stash.Add(id, 20);
+        }
+
+        _professions.GetProgress("profession.herblore").AddXp(ProfessionLeveling.XpForLevel(15));
+        _professions.GetProgress("profession.smithing").AddXp(ProfessionLeveling.XpForLevel(15));
+
+        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every process unlocked).");
         InventoryChanged?.Invoke();
     }
 

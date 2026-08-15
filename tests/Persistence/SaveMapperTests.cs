@@ -94,6 +94,86 @@ public class SaveMapperTests
         Assert.True(newInstanceIds.Next() >= instanceIds.Peek());
     }
 
+    /// <summary>
+    /// An emergent archetype is the one definition-shaped thing a save holds, because there is
+    /// no authored definition to point back at (docs/emergent-item-system.md §12.4). Round-trip
+    /// it, then check the thing that actually matters: a stash stack referring to it resolves
+    /// again in a fresh session.
+    /// </summary>
+    [Fact]
+    public void CaptureThenApply_RestoresEmergentArchetypesAndTheStacksThatUseThem()
+    {
+        const string signature = "emergent.7f3a91c4";
+
+        var materials = new DataStore<MaterialDefinition>();
+        var registry = new EmergentRegistry(materials);
+        registry.GetOrRegister(signature, () => new MaterialDefinition
+        {
+            Id = signature,
+            Name = "Emberveined Iron",
+            Tags = new[] { "form:metal", "state:alloy" },
+            Properties = new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 },
+            Profile = new MaterialProfile(
+                new PropertySet(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 }),
+                Potency: 49,
+                Integrity: 72,
+                Lineage: new Lineage(
+                    new[] { new RootShare("material.iron_ingot", 1.0) },
+                    Generation: 2,
+                    ProcessId: "process.forge_infusion",
+                    ParentSignatures: new[] { "material.iron_ingot" }),
+                Signature: signature),
+        });
+
+        var stash = new Inventory();
+        stash.Add(signature, 40); // emergent materials stack like any other (§0 Decision 3)
+        var professions = MakeProfessions(stash);
+
+        var save = SaveMapper.Capture(
+            null, stash, professions, new DiscoverySystem(), new Dictionary<string, int>(),
+            savedAtTick: 1, equipment: null, instanceIds: null, emergentRegistry: registry);
+
+        var loaded = new SaveSerializer().Deserialize(new SaveSerializer().Serialize(save));
+
+        // --- A fresh session that has never seen this material ---
+        var freshMaterials = new DataStore<MaterialDefinition>();
+        var freshRegistry = new EmergentRegistry(freshMaterials);
+        var freshStash = new Inventory();
+
+        SaveMapper.Apply(
+            loaded, freshStash, MakeProfessions(freshStash), new DiscoverySystem(),
+            new Dictionary<string, int>(), equipment: null, instanceIds: null,
+            emergentRegistry: freshRegistry);
+
+        Assert.Equal(40, freshStash.GetQuantity(signature));
+        Assert.True(freshMaterials.Contains(signature), "the stack must resolve to a material again.");
+
+        var restored = freshMaterials.GetById(signature);
+        Assert.Equal("Emberveined Iron", restored.Name);
+        Assert.Equal(49, restored.Profile!.Potency);
+        Assert.Equal(72, restored.Profile.Integrity);
+        Assert.Equal(2, restored.Profile.Generation);
+        Assert.Equal(35, restored.Profile.Properties.Get("heat"));
+        Assert.Equal("process.forge_infusion", restored.Profile.Lineage.ProcessId);
+        Assert.Equal("material.iron_ingot", restored.Profile.Lineage.DominantRoot?.RootId);
+        Assert.Contains("material.iron_ingot", restored.Profile.Lineage.ParentSignatures);
+    }
+
+    /// <summary>v3 saves predate emergent archetypes and must still load — the new field simply
+    /// arrives empty, so no migration step is needed (SaveData v4).</summary>
+    [Fact]
+    public void ASaveWithoutEmergentArchetypes_StillLoads()
+    {
+        var stash = new Inventory();
+        var registry = new EmergentRegistry(new DataStore<MaterialDefinition>());
+
+        SaveMapper.Apply(
+            new SaveData(), stash, MakeProfessions(stash), new DiscoverySystem(),
+            new Dictionary<string, int>(), equipment: null, instanceIds: null, emergentRegistry: registry);
+
+        Assert.Equal(0, registry.Count);
+    }
+
     [Fact]
     public void Apply_ReplacesExistingState()
     {

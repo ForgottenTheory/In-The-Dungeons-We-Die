@@ -34,6 +34,9 @@ public class ContentValidatorTests
     {
         Materials = Load<MaterialDefinition>("materials"),
         Properties = Load<PropertyDefinition>("properties"),
+        Processes = Load<ProcessDefinition>("processes"),
+        Byproducts = Load<ByproductDefinition>("byproducts"),
+        NameGrammar = Load<NameWordDefinition>("name_grammar"),
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),
         Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),
@@ -431,6 +434,215 @@ public class ContentValidatorTests
         AssertHasProblem(content, "equipment", "equip.bad");
     }
 
+    // --- Processes (docs/emergent-item-system.md §7) --------------------------
+
+    [Fact]
+    public void Process_WithUnknownProfession_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(profession: "profession.nope"));
+        AssertHasProblem(content, "processes", "unknown profession");
+    }
+
+    [Fact]
+    public void Process_WithUnknownChannelProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: Channel("sparkliness", 0.5)));
+        AssertHasProblem(content, "processes", "unknown property 'sparkliness'");
+    }
+
+    /// <summary>§2.3: a derived resistance can never be a reaction input.</summary>
+    [Fact]
+    public void Process_OpeningAResponseProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: Channel("heat_resistance", 0.5)));
+        AssertHasProblem(content, "processes", "Response property");
+    }
+
+    /// <summary>§2.2: otherwise every craft would "alloy the difficulty of mining."</summary>
+    [Fact]
+    public void Process_OpeningASourcingProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: Channel("harvest_resistance", 0.5)));
+        AssertHasProblem(content, "processes", "Sourcing property");
+    }
+
+    [Fact]
+    public void Process_WithNoChannel_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: Array.Empty<ChannelEntry>()));
+        AssertHasProblem(content, "processes", "opens no channel");
+    }
+
+    [Fact]
+    public void Process_WithDuplicateChannelProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: new[]
+        {
+            new ChannelEntry { Property = "heat", Rate = 0.5 },
+            new ChannelEntry { Property = "heat", Rate = 0.3 },
+        }));
+        AssertHasProblem(content, "processes", "twice");
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(1.5)]
+    public void Process_WithChannelRateOutOfRange_IsReported(double rate)
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(channel: Channel("heat", rate)));
+        AssertHasProblem(content, "processes", "rate");
+    }
+
+    /// <summary>§6.1: potency is a weighted mean, so weights that don't sum to 1 would let a
+    /// process inflate potency for free — the exact exploit the mean exists to close.</summary>
+    [Fact]
+    public void Process_WithRoleWeightsThatDoNotSumToOne_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            roleWeights: new RoleWeights { Substrate = 0.9, Reagent = 0.9, Catalyst = 0.0 }));
+        AssertHasProblem(content, "processes", "role_weights sum to");
+    }
+
+    [Fact]
+    public void Process_WithSeverityOutOfRange_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(severity: 1.4));
+        AssertHasProblem(content, "processes", "severity");
+    }
+
+    [Fact]
+    public void Process_WithUnknownTagFamilyInEffects_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            tagEffects: new ProcessTagEffects { Set = new[] { "flavour:zesty" } }));
+        AssertHasProblem(content, "processes", "unknown family");
+    }
+
+    [Fact]
+    public void Process_WithInvalidClosedTagValue_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            tagEffects: new ProcessTagEffects { Set = new[] { "state:molten" } }));
+        AssertHasProblem(content, "processes", "not a valid 'state' value");
+    }
+
+    /// <summary>The wildcard means "clear this whole family" — setting it would be meaningless.</summary>
+    [Fact]
+    public void Process_UsingTheFamilyWildcardInSet_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            tagEffects: new ProcessTagEffects { Set = new[] { "form:*" } }));
+        AssertHasProblem(content, "processes", "wildcard");
+    }
+
+    [Fact]
+    public void Process_ClearingAWholeFamily_IsAccepted()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            tagEffects: new ProcessTagEffects { Set = new[] { "form:powder" }, Clear = new[] { "form:*" } }));
+        Assert.DoesNotContain(content.Validate(), p => p.Category == "processes");
+    }
+
+    [Fact]
+    public void Process_ThatIsUngatedButRequiresALevel_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Processes.Add(Process(
+            profession: string.Empty,
+            requires: new ProcessRequirements { ProfessionLevel = 5 }));
+        AssertHasProblem(content, "processes", "ungated");
+    }
+
+    // --- Byproducts (docs/emergent-item-system.md §6.2c) ----------------------
+
+    [Fact]
+    public void Byproduct_ProducingAnUnknownMaterial_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Byproducts.Add(new ByproductDefinition
+        {
+            Id = "byproduct.bad", Material = "material.nope", Forms = new[] { "wood" }, Fallback = true,
+        });
+        AssertHasProblem(content, "byproducts", "unknown material");
+    }
+
+    /// <summary>A form covered twice would make the outcome depend on load order.</summary>
+    [Fact]
+    public void Byproduct_CoveringAFormTwice_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Byproducts.Add(new ByproductDefinition
+        {
+            Id = "byproduct.a", Material = "material.oak", Forms = new[] { "wood" }, Fallback = true,
+        });
+        content.Byproducts.Add(new ByproductDefinition
+        {
+            Id = "byproduct.b", Material = "material.oak", Forms = new[] { "wood" },
+        });
+        AssertHasProblem(content, "byproducts", "both cover form 'wood'");
+    }
+
+    /// <summary>Without a fallback, destroying an emergent form would return nothing at all.</summary>
+    [Fact]
+    public void ByproductTable_WithNoFallback_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Byproducts.Add(new ByproductDefinition
+        {
+            Id = "byproduct.only", Material = "material.oak", Forms = new[] { "wood" },
+        });
+        AssertHasProblem(content, "byproducts", "exactly one fallback");
+    }
+
+    /// <summary>The fallback covers emergent forms, not gaps in an unfinished table.</summary>
+    [Fact]
+    public void ByproductTable_MissingAnAuthoredForm_IsReported()
+    {
+        var content = ValidBaseline(); // the baseline material carries form:wood
+        content.Byproducts.Add(new ByproductDefinition
+        {
+            Id = "byproduct.fallback", Material = "material.oak", Forms = new[] { "liquid" }, Fallback = true,
+        });
+        AssertHasProblem(content, "byproducts", "form 'wood' is used by the material library");
+    }
+
+    private static ChannelEntry[] Channel(string property, double rate) =>
+        new[] { new ChannelEntry { Property = property, Rate = rate } };
+
+    /// <summary>A well-formed process; each argument left unset keeps its valid default, so a
+    /// test breaks exactly one rule.</summary>
+    private static ProcessDefinition Process(
+        string profession = "prof.forestry",
+        double severity = 0.4,
+        RoleWeights? roleWeights = null,
+        IReadOnlyList<ChannelEntry>? channel = null,
+        ProcessRequirements? requires = null,
+        ProcessTagEffects? tagEffects = null) => new()
+        {
+            Id = "process.test",
+            Name = "Test",
+            Profession = profession,
+            Severity = severity,
+            Medium = TransferMedium.Thermal,
+            RoleWeights = roleWeights ?? new RoleWeights { Substrate = 0.65, Reagent = 0.30, Catalyst = 0.05 },
+            Channel = channel ?? Channel("heat", 0.5),
+            Requires = requires ?? new ProcessRequirements { ProfessionLevel = 1 },
+            TagEffects = tagEffects ?? new ProcessTagEffects(),
+        };
+
     // --- Helpers -------------------------------------------------------------
 
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
@@ -461,6 +673,9 @@ public class ContentValidatorTests
         private readonly ContentBundle _bundle = new() { Properties = LoadProperties() };
 
         public DataStore<MaterialDefinition> Materials => _bundle.Materials;
+        public DataStore<ProcessDefinition> Processes => _bundle.Processes;
+        public DataStore<ByproductDefinition> Byproducts => _bundle.Byproducts;
+        public DataStore<NameWordDefinition> NameGrammar => _bundle.NameGrammar;
         public DataStore<ProfessionDefinition> Professions => _bundle.Professions;
         public DataStore<ProfessionActionDefinition> Actions => _bundle.Actions;
         public DataStore<CraftingInteractionDefinition> Interactions => _bundle.Interactions;

@@ -24,6 +24,43 @@ public sealed class ItemInstanceSave
     public List<string> Traits { get; init; } = new();
 }
 
+/// <summary>One ancestral root and its share, flattened for the save.</summary>
+public sealed class LineageRootSave
+{
+    public string RootId { get; init; } = string.Empty;
+    public double Weight { get; init; }
+}
+
+/// <summary>
+/// Serializable form of an emergent material archetype (docs/emergent-item-system.md §12.4).
+///
+/// <para>This is the one place the save stores something definition-shaped, and it is not an
+/// exception to the "ids, never definitions" rule so much as a consequence of it: an emergent
+/// archetype <i>has</i> no authored definition to refer back to. It is a deterministic cache
+/// — the same signature always regenerates the same content — so losing it would cost nothing
+/// but the names, and the codex that records what the player discovered stays separate (P6).</para>
+/// </summary>
+public sealed class EmergentArchetypeSave
+{
+    /// <summary>The canonical signature, which is also the material's id.</summary>
+    public string Signature { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
+    public List<string> Tags { get; init; } = new();
+    public Dictionary<string, double> Properties { get; init; } = new();
+    public int Potency { get; init; }
+    public int Integrity { get; init; }
+    public int Generation { get; init; } = 1;
+
+    /// <summary>The process that produced it.</summary>
+    public string ProcessId { get; init; } = string.Empty;
+
+    public List<LineageRootSave> Roots { get; init; } = new();
+
+    /// <summary>One level of parent links only — the full tree is walked through the registry.</summary>
+    public List<string> ParentSignatures { get; init; } = new();
+}
+
 /// <summary>
 /// Versioned root of a save file. Stores ids and runtime values only — never
 /// definitions (docs/architecture.md §27–28, docs/json-schema.md §22). Persistent
@@ -32,8 +69,14 @@ public sealed class ItemInstanceSave
 /// </summary>
 public sealed class SaveData
 {
-    /// <summary>The schema version a brand-new save is written with.</summary>
-    public const int CurrentSchemaVersion = 3;
+    /// <summary>
+    /// The schema version a brand-new save is written with.
+    ///
+    /// <para>v4 added <see cref="EmergentArchetypes"/>. A v3 save still loads: the new field
+    /// simply arrives empty, and any archetype a stack refers to is regenerated the next time
+    /// that state is reached. No migration step is needed.</para>
+    /// </summary>
+    public const int CurrentSchemaVersion = 4;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
@@ -60,4 +103,7 @@ public sealed class SaveData
 
     /// <summary>Discovered crafting-interaction ids.</summary>
     public List<string> Discoveries { get; init; } = new();
+
+    /// <summary>Emergent material archetypes this save has produced (§12.4).</summary>
+    public List<EmergentArchetypeSave> EmergentArchetypes { get; init; } = new();
 }

@@ -25,7 +25,31 @@ All item definitions expose the `IItemDefinition` contract: `Id`, `Name`, `ItemT
 An *instance* is a specific owned item whose properties may differ from its definition. Instances are used for:
 
 - **All equipment** (every crafted/looted weapon or armor is an instance).
-- **Any generated/processed material** whose properties differ from its raw definition (e.g. *Bloodmoss Iron Ingot* produced by crafting).
+- ~~Any generated/processed material whose properties differ from its raw definition.~~ **Superseded — see the box below.**
+
+> ### ⚠️ Emergent materials are stackable definitions, not instances
+>
+> **This reverses the original rule of this section.** `docs/emergent-item-system.md` §0
+> Decision 3 supersedes it, and the emergent P1 implementation follows the new rule.
+>
+> A crafted material's state is quantized and hashed into a canonical **signature**, and a
+> runtime `MaterialDefinition` is registered under it (`emergent.7f3a91c4`). Identical results
+> therefore **stack**, like any other material.
+>
+> **Why the reversal.** Under the old rule, 40 units of the same emergent alloy were 40 unique
+> objects — inventory, save file, UI and the future codex all break at that scale. Worse,
+> variance would have produced *random stats on the same material* rather than a genuinely
+> different one, which is a much poorer fit for a discovery game. Under the new rule two
+> players (or the same player twice) who reach the same state get the same material with the
+> same name, so discovery is shareable and worth talking about.
+>
+> **Consequence for code.** Emergent archetypes are registered into the *same*
+> `DataStore<MaterialDefinition>` the authored library lives in, so they flow through every
+> existing path — `Inventory` stacks, lookups, crafting inputs, loot — with no special-casing.
+> Nothing needs to know whether an input was authored or generated.
+>
+> **`ItemInstance` remains, and remains correct, for equipment**, which is genuinely unique per
+> copy. It is no longer used for materials.
 
 `ItemInstance` carries:
 
@@ -40,7 +64,7 @@ An *instance* is a specific owned item whose properties may differ from its defi
 | `Provenance` | definition ids of the materials it was made from |
 | `Traits` | generated named effects/traits (e.g. "blight", reserved for the reaction sim) |
 
-**Rule of thumb:** identical raw materials stay lightweight quantity-based stacks; the moment an item's properties diverge from its definition, it becomes an instance. Iron Ore never becomes a unique object; *Charred Bloodmoss Iron* always does.
+**Rule of thumb (revised):** *materials* are always quantity-based stacks — authored ones under their authored id, emergent ones under their signature. *Equipment* is always an instance. The dividing line is no longer "do the properties differ from the definition" but "is this kind of thing unique per copy".
 
 ---
 

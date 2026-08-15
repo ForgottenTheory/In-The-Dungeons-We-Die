@@ -18,6 +18,9 @@ public sealed class ContentBundle
 {
     public DataStore<MaterialDefinition> Materials { get; init; } = new();
     public DataStore<PropertyDefinition> Properties { get; init; } = new();
+    public DataStore<ProcessDefinition> Processes { get; init; } = new();
+    public DataStore<ByproductDefinition> Byproducts { get; init; } = new();
+    public DataStore<NameWordDefinition> NameGrammar { get; init; } = new();
     public DataStore<ProfessionDefinition> Professions { get; init; } = new();
     public DataStore<ProfessionActionDefinition> Actions { get; init; } = new();
     public DataStore<CraftingInteractionDefinition> Interactions { get; init; } = new();

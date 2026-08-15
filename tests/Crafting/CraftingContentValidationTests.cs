@@ -40,26 +40,40 @@ public class CraftingContentValidationTests
         }
     }
 
+    /// <summary>
+    /// The Healing Salve is the last fixed interaction standing. It survives only because
+    /// consumables are produced by fabrication (P5c) and there is no emergent path to one yet
+    /// — everything else was retired when the reaction engine replaced recipe matching.
+    /// </summary>
     [Fact]
-    public void BarkboundIron_CraftsAndCarriesDerivedProperty()
+    public void HealingSalve_IsStillBrewable_UntilFabricationLands()
     {
         var interactions = Load<CraftingInteractionDefinition>("crafting_interactions");
-        var materials = Load<MaterialDefinition>("materials");
         var inventory = new Inventory();
-        var discoveries = new DiscoverySystem();
+        var system = new CraftingExperimentSystem(
+            interactions, Load<MaterialDefinition>("materials"), inventory, new DiscoverySystem(), _ => 99);
 
-        // Provide enough knowledge to satisfy any requirement.
-        var system = new CraftingExperimentSystem(interactions, materials, inventory, discoveries, _ => 99);
-
-        var interaction = interactions.GetById("interaction.barkbound_iron");
+        var interaction = interactions.GetById("interaction.healing_salve");
         foreach (var input in interaction.Inputs)
             inventory.Add(input.ItemId, input.Quantity);
 
         var outcome = system.Experiment(interaction.Inputs.Select(i => i.ItemId).ToArray());
 
         Assert.True(outcome.Success);
-        Assert.True(outcome.WasNewDiscovery);
-        Assert.Equal("material.barkbound_iron", outcome.ResultItemId);
-        Assert.Contains(outcome.ResultProperties, p => p.Property == "toxin_resistance" && p.Value > 0);
+        Assert.Equal("consumable.healing_salve", outcome.ResultItemId);
+    }
+
+    /// <summary>
+    /// Barkbound Iron was the prototype the emergent system replaces. Its fixed recipe is gone
+    /// — that combination now goes through the reaction algebra like any other, and hardcoding
+    /// it would be exactly the recipe table the design rejects (§0 Decision 1).
+    /// </summary>
+    [Fact]
+    public void OnlyTheConsumableShimRemains()
+    {
+        var interactions = Load<CraftingInteractionDefinition>("crafting_interactions");
+
+        Assert.False(interactions.Contains("interaction.barkbound_iron"));
+        Assert.Equal(1, interactions.Count);
     }
 }

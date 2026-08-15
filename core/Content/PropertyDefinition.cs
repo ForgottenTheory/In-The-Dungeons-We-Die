@@ -24,6 +24,18 @@ public sealed class ResistContributor
 }
 
 /// <summary>
+/// A tag this property confers once it passes <see cref="Min"/> — the "state threshold" source
+/// of tag derivation (docs/emergent-item-system.md §4.2), e.g. <c>toxicity ≥ 55 →
+/// class:venomous</c>. Declared on the property rather than in a separate rules file so a new
+/// property brings its own classification with it, and tags stay data.
+/// </summary>
+public sealed class TagGrant
+{
+    public string Tag { get; init; } = string.Empty;
+    public double Min { get; init; }
+}
+
+/// <summary>
 /// First-class, data-driven definition of a material property (game/data/properties/).
 /// Promotes the string-keyed properties in <see cref="Dungeons.Items.ItemProperties"/> to
 /// loaded data so the reaction engine can reason about roles/opposition/resistance without
@@ -58,4 +70,8 @@ public sealed class PropertyDefinition : IDefinition
 
     /// <summary>Below this value the property is pruned to 0 after a transformation.</summary>
     public int Floor { get; init; } = 5;
+
+    /// <summary>Tags this property confers on a result once it passes a threshold (§4.2).</summary>
+    [JsonPropertyName("grants_tags")]
+    public IReadOnlyList<TagGrant> GrantsTags { get; init; } = Array.Empty<TagGrant>();
 }

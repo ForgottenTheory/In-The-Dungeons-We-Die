@@ -38,8 +38,17 @@ InTheDungeonsWeDie.slnx   root solution
 ## Professions — `core/Professions/`
 `ProfessionDefinition`, `ProfessionActionDefinition` (Inputs/Outputs are `ItemStack`, BonusOutputs are `ItemChance`), `ProfessionProgress` (xp/level/mastery), `ProfessionLeveling`, `ProfessionTuning`, `ActionResolver`, `ActionOutcome`, `ProfessionSystem` (single `Execute` path for passive+active; provider-supplied `Inventory`), `PassiveProfessionRunner` (on TickEngine). **Connects:** `GameRoot` gives it `() => CurrentBag` so gathering lands in the Stash or the run inventory.
 
-## Crafting — `core/Crafting/`
-`CraftingInteractionDefinition` (inputs + profession reqs + result + `ResultIsInstance`), `DiscoverySystem`, `CraftingExperimentSystem`, `ExperimentOutcome`, `CraftingDerivation` (property-merge seam → future reaction sim). **Connects:** uses the Stash + `_materials` + `InstanceIdSource`; produces stacks or derived `ItemInstance`s.
+## Crafting — `core/Crafting/`  (the emergent reaction engine, P1)
+The one entry point is **`ReactionEngine : IReactionEngine`** — `Project(CraftRequest) → CraftProjection` (pre-commit, consumes nothing) and `Resolve(CraftRequest) → CraftOutcome`. It runs the whole `docs/emergent-item-system.md` §8.7 pipeline. **There are no recipes.**
+
+- **Algebra (§8):** `ReactionAlgebra.ApplyReagent` (converge → off-channel drift → oppose → prune), `ReactionCoefficients` (§8.1 + the §7.3 medium→property map), `ReactionStepResult`/`PropertyChange` (what moved and *why*), `ReactionTuning`.
+- **Meta (§6):** `PotencyCalculator` (weighted mean + `max(input)+8` ceiling), `IntegrityCalculator` (cost, effective instability, variance magnitude, `IntegrityProjection`), `RefinementTuning`, `CraftQuality` (§7.4).
+- **Identity (§12):** `MaterialSignature` (quantize → SHA-256 → `emergent.7f3a91c4`; `Canonical()` exposed for debugging), `VariancePerturbation` (seeded), `QuantizationTuning` (**the highest-risk tuning number**), `IEmergentRegistry`/`EmergentRegistry`.
+- **Presentation:** `NameGenerator` (§13), `ReactionLog`/`ReactionLogBuilder` (§15.3), `CraftFormat` (pre-commit text; pure, tested — §6.2c makes this wording a rule).
+- **Support:** `TagDeriver` (§4.2), `ByproductResolver` (§6.2c).
+- **Legacy shim:** `CraftingInteractionDefinition`, `CraftingExperimentSystem`, `ExperimentOutcome`, `CraftingDerivation`, `DiscoverySystem` — superseded; only `interaction.healing_salve` remains, until fabrication (P5c). See DECISIONS D21.
+
+**Connects:** `GameRoot` constructs the engine over the `ContentBundle` + `() => CurrentBag` and exposes `Craft`/`ProjectCraft`/`Processes`/`MaterialsOnHand`/`MaterialSummary` as **thin forwards**; `MainMvpUI`'s Crafting tab drives them. Emergent archetypes register into the *same* `DataStore<MaterialDefinition>` as authored ones (D20), so inventory/lookup/loot need no special-casing. Persisted via `SaveData` v4.
 
 ## Combat — `core/Combat/`
 `DamageType`, `AbilityDefinition`, `ActorDefinition`, `ConsumableDefinition`, `Combatant` (player shares `Character` pools + effective attrs + weapon `AttackProfile` + `ArmorProfile`; enemy from actor), `CombatCalculator`, `CombatTuning`, `AttackProfile`/`ArmorProfile`, `CombatEncounter` (tick-driven lifecycle, AI loop, player commands, events `Logged`/`StateChanged`/`Ended`). **Connects:** runs on the shared TickEngine; `GameRoot` bridges realm combat nodes ↔ encounter, routes loot + clears/ends the run on `Ended`.
@@ -51,7 +60,7 @@ InTheDungeonsWeDie.slnx   root solution
 `SaveData` (v3: build, stash stacks+instances, equipment, next-instance-id, professions, knowledge, discoveries) + `ItemInstanceSave`/`ProfessionSave` DTOs, `SaveSerializer` (System.Text.Json), `SaveMapper` (Capture/Apply between live systems ↔ SaveData). **Connects:** `GameRoot.SaveGame/LoadGame` via `SaveStore` (Godot `user://`).
 
 ## Data content — `game/data/`
-`species/`(3) `classes/`(2) `prefixes/`(3) `suffixes/`(5) `professions/`(3) `profession_actions/`(3) `materials/`(~470 defs across 7 category array files; `family:value` tags) `properties/`(21 `PropertyDefinition`s) `crafting_interactions/`(2) `abilities/`(3) `actors/`(2) `consumables/`(1) `equipment/`(4) `realms/`(1). Each folder auto-loads into a `DataStore<T>` in `GameRoot._Ready` (materials via array files, everything else one-object-per-file).
+`species/`(3) `classes/`(2) `prefixes/`(3) `suffixes/`(5) `professions/`(3) `profession_actions/`(3) `materials/`(~474 defs across 8 category array files incl. byproducts; `family:value` tags) `properties/`(21 `PropertyDefinition`s) `processes/`(7) `byproducts/`(4) `name_grammar/`(44 words) `crafting_interactions/`(1, legacy shim) `abilities/`(3) `actors/`(2) `consumables/`(1) `equipment/`(4) `realms/`(1). Each folder auto-loads into a `DataStore<T>` in `GameRoot._Ready` (materials via array files, everything else one-object-per-file).
 
 ## Tests — `tests/`
 Mirror the Core namespaces: `Simulation/`, `Content/` (incl. `ContentValidatorTests` — shipped content passes + a broken-store test per rule), `Characters/`, `Items/` (item model, equipment, equipment content validation), `Professions/`, `Crafting/`, `Combat/`, `Realms/`, `Persistence/`, `Integration/` (`FullLoopTests` — the whole loop headless). Content-validation tests (Content/Characters/Professions/Combat/Realms/Items) load real `game/data` JSON via `TestPaths.DataDir`.

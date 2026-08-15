@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo; `docs/current-state.md` is a deeper audit (written before the equipment system, so trust this file + code where they differ).
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 193 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 364 passing cases. Core-only; no Godot/UI tests.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
 - Build/verify: `dotnet build InTheDungeonsWeDie.slnx` && `dotnet test`.
@@ -34,12 +34,18 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ✅ Save persists stash stacks + instances + equipment + the instance-id counter (SaveData v3).
 - ✅ Equipment UI: `MainMvpUI` EQUIPMENT section — per-slot rows (weapon/armor) with resolved stat summaries + Unequip, a Stash list of unequipped instances each with Equip, and a debug "Grant to stash" row. Backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + `EquippedWeapon`/`EquippedArmor`/`StashEquipment`/`InstanceLabel`. (Still code-built debug shell, no art.)
 
-## Crafting
-- ✅ `CraftingExperimentSystem`: submit materials → match interaction → gate on profession level → consume inputs → produce result → record discovery.
-- ✅ Produces a **derived `ItemInstance`** when `ResultIsInstance` (Barkbound Iron: toxin_resistance derived from Oak Bark, provenance recorded); else a stack. `CraftingDerivation` = additive-merge seam.
-- 🧱 Crafting is still fixed-interaction matching, NOT the emergent property **reaction simulation** (the real vision — `docs/crafting.md §17`). Reaction rules, thresholds, instability/mutation, catalysts, opposing-property resolution: NOT built.
-- ⬜ Crafting **with an instance input** (recursion input half) not wired — matching is by submitted stackable ids only.
-- ⬜ No quality tiers in play, infusion, active crafting, experiment-failure byproducts.
+## Crafting — emergent reaction engine (P1 complete, Core-side)
+- ✅ **`ReactionEngine`** (`core/Crafting/`) resolves every craft through the one universal pipeline (`docs/emergent-item-system.md` §8.7). **No recipes, no per-combination rules.** `CraftRequest → CraftOutcome`; `Project()` returns the pre-commit `CraftProjection`.
+- ✅ **`ProcessDefinition`** + 7 mundane starter processes (`game/data/processes/`): Grind · Steep · Distill · Smelt · Quench · Alloy · Forge Infusion. (`Attune` is P3.) Channels/severity/medium/role-weights/gates/tag-effects, heavily validated.
+- ✅ **The algebra** (`ReactionAlgebra`): acceptance/release → channel convergence → off-channel drift → opposition/annihilation → floor pruning. Reproduces §19's worked example exactly (heat 7 steeped, heat 35 / hardness 62 forged).
+- ✅ **Meta fields**: `PotencyCalculator` (weighted mean + `max(input)+8` ceiling), `IntegrityCalculator` (cost, effective instability, variance magnitude, **`IntegrityProjection` with destruction chance**), generation, destruction-at-0 with **byproducts** (`ByproductDefinition`, `game/data/byproducts/` → Slag/Cinders/Dross/Residue by form tag).
+- ✅ **Identity**: `MaterialSignature` (quantize to 5-point buckets → SHA-256 → `emergent.7f3a91c4`), `VariancePerturbation` (seeded), **`IEmergentRegistry`** registering archetypes into the shared material store so they flow through every existing path. **`SaveData` v4** persists them (v3 loads forward-compatibly).
+- ✅ **Naming v1** (`NameGenerator` + `game/data/name_grammar/`): `[intensity] [root] [form noun]`, ≤3 words, ladders not tier words, deterministic syllable coinage on collision.
+- ✅ **Reaction Log** (`ReactionLog`/`ReactionLogBuilder`): structured + human-readable §15.3 trace; every line states *why*.
+- ✅ **`TagDeriver`** (§4.2): process assertion → state thresholds (declared on properties as `grants_tags`) → lineage carry; `part:` never carries. Tag count stays ≈6–9.
+- 🟡 **Legacy shim**: `CraftingExperimentSystem` + `interaction.healing_salve` survive only until fabrication (P5c) — `interaction.barkbound_iron` is deleted. See DECISIONS D21.
+- ✅ **Crafting tab UI**: process picker (medium/severity/gate + the channel it opens), base picker, **ordered reagent chain with ↑/↓/✕ reordering** (§7.1 — order is legible, not abstract), optional catalyst, a live **pre-commit projection** (expected result, potency, integrity→, cost ± spread, destruction warning or %) and a Craft button that recolours and relabels to "Craft (risky)"/"Craft (destroys!)". After a successful craft the base re-points at the result, so recursion is one click. `CraftFormat` (Core, tested) owns the wording; the client only does colour and layout. **Needs visual verification in the Godot editor.**
+- ⬜ Traits (P2), essence/resonance/`Attune` (P3), signature reactions (P4), fabrication → equipment/consumables (P5), codex/assay/rename (P6).
 
 ## Combat
 - ✅ Tick-driven `CombatEncounter`: enemy self-scheduling telegraph→execute→recovery; player Attack/Block/Dodge/Wait/UseItem. Block/dodge are timed stances (skill test).

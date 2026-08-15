@@ -1,4 +1,5 @@
 using Dungeons.Characters.Composition;
+using Dungeons.Content;
 using Dungeons.Crafting;
 using Dungeons.Items;
 using Dungeons.Professions;
@@ -20,7 +21,8 @@ public static class SaveMapper
         IReadOnlyDictionary<string, int> realmKnowledge,
         long savedAtTick,
         Equipment? equipment = null,
-        InstanceIdSource? instanceIds = null)
+        InstanceIdSource? instanceIds = null,
+        IEmergentRegistry? emergentRegistry = null)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -47,6 +49,9 @@ public static class SaveMapper
                 .ToList(),
             RealmKnowledge = new Dictionary<string, int>(realmKnowledge),
             Discoveries = discoveries.All.ToList(),
+            EmergentArchetypes = emergentRegistry is null
+                ? new List<EmergentArchetypeSave>()
+                : emergentRegistry.All.Select(ToSave).ToList(),
         };
     }
 
@@ -57,9 +62,14 @@ public static class SaveMapper
         DiscoverySystem discoveries,
         IDictionary<string, int> realmKnowledge,
         Equipment? equipment = null,
-        InstanceIdSource? instanceIds = null)
+        InstanceIdSource? instanceIds = null,
+        IEmergentRegistry? emergentRegistry = null)
     {
         ArgumentNullException.ThrowIfNull(save);
+
+        // Restored first: stash stacks may refer to emergent archetype ids, which nothing else
+        // in the game can resolve until they are back in the material store.
+        emergentRegistry?.Restore(save.EmergentArchetypes.Select(FromSave));
 
         stash.Clear();
         foreach (var stack in save.Stash)
@@ -95,6 +105,46 @@ public static class SaveMapper
             progress.AddMastery(pair.Key, pair.Value);
         return progress;
     }
+
+    private static EmergentArchetypeSave ToSave(MaterialDefinition archetype)
+    {
+        var profile = archetype.Profile
+            ?? throw new InvalidOperationException($"Emergent archetype '{archetype.Id}' has no profile to save.");
+
+        return new EmergentArchetypeSave
+        {
+            Signature = archetype.Id,
+            Name = archetype.Name,
+            Tags = archetype.Tags.ToList(),
+            Properties = new Dictionary<string, double>(profile.Properties.AsDictionary()),
+            Potency = profile.Potency,
+            Integrity = profile.Integrity,
+            Generation = profile.Generation,
+            ProcessId = profile.Lineage.ProcessId,
+            Roots = profile.Lineage.Roots
+                .Select(r => new LineageRootSave { RootId = r.RootId, Weight = r.Weight })
+                .ToList(),
+            ParentSignatures = profile.Lineage.ParentSignatures.ToList(),
+        };
+    }
+
+    private static MaterialDefinition FromSave(EmergentArchetypeSave save) => new()
+    {
+        Id = save.Signature,
+        Name = save.Name,
+        Tags = save.Tags,
+        Properties = new Dictionary<string, double>(save.Properties),
+        Profile = new MaterialProfile(
+            Properties: new PropertySet(save.Properties),
+            Potency: save.Potency,
+            Integrity: save.Integrity,
+            Lineage: new Lineage(
+                save.Roots.Select(r => new RootShare(r.RootId, r.Weight)).ToList(),
+                save.Generation,
+                save.ProcessId,
+                save.ParentSignatures),
+            Signature: save.Signature),
+    };
 
     private static ItemInstanceSave ToSave(ItemInstance instance) => new()
     {

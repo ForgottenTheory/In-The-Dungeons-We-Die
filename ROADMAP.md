@@ -19,7 +19,8 @@ All three remainder items done (content validation, unified item shapes, equipme
 ## Emergent item system (the crafting simulation) — `docs/emergent-item-system.md`
 The accepted design. Phased build (§20):
 - ✅ **P0** — tag namespacing (`family:value`), `PropertyDefinition` registry + roles, `resonance`, derived resistances, validator rules. Plumbing only; no gameplay change.
-- ⬜ **P1** — `ProcessDefinition` + universal reaction algebra (convergence/off-channel/opposition) + potency + integrity (incl. destruction + byproducts + pre-commit projection UI) + signature/quantization + archetype registry + naming v1 + Reaction Log. **Zero signatures/traits** — this alone is the playable emergent core; prove it first.
+- ✅ **P1** — `ProcessDefinition` + universal reaction algebra + potency + integrity (incl. destruction + byproducts + pre-commit projection) + signature/quantization + archetype registry + naming v1 + Reaction Log + Crafting tab. `ReactionEngine`, 364 tests. The Crafting tab still needs **visual verification in the Godot editor**.
+  - **Tune from play before starting P2.** Two numbers are provisional and can only be judged by playing: **quantization bucket size** (§21 calls it the highest-risk number in the design; measured at 67% collapse over 2,800 crafts) and **how weak the integrity budget feels** — the expensive cost terms are traits (P2) and signatures (P4), so P1 alone allows roughly 20–40 meaningful refinements before destruction. Both are single constants (`QuantizationTuning.PropertyBucket`, `RefinementTuning.StateDeltaCost`).
 - ⬜ **P2** state traits + cap/displacement/supersession · **P3** essence + resonance strain + `Attune` · **P4** signature/chain reactions · **P5a/b/c** fabrication (single-slot → multi-component → consumables) · **P6** codex/journal/assay/rename.
 
 Do NOT hardcode crafting combinations. The old fixed-interaction `CraftingExperimentSystem` is superseded by this; keep it until P1 replaces it.

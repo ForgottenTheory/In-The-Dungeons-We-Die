@@ -1,0 +1,39 @@
+[
+  {
+    "id": "byproduct.slag",
+    "name": "Slag",
+    "material": "material.slag",
+    "forms": [
+      "metal", "ore", "ingot", "stone", "crystal", "gem", "glass",
+      "earth", "sand", "coal", "salt", "core"
+    ]
+  },
+
+  {
+    "id": "byproduct.cinders",
+    "name": "Cinders",
+    "material": "material.cinders",
+    "forms": [
+      "wood", "bark", "fiber", "herb", "root", "flower", "seed", "fruit",
+      "vine", "moss", "fungus", "mold", "resin", "powder", "ash"
+    ]
+  },
+
+  {
+    "id": "byproduct.dross",
+    "name": "Dross",
+    "material": "material.dross",
+    "forms": [
+      "hide", "fur", "bone", "chitin", "horn", "tooth", "claw",
+      "meat", "organ", "gland", "egg", "blood", "slime"
+    ]
+  },
+
+  {
+    "id": "byproduct.residue",
+    "name": "Residue",
+    "material": "material.residue",
+    "forms": ["liquid", "oil", "tar", "sludge", "gas", "mote", "soil"],
+    "fallback": true
+  }
+]

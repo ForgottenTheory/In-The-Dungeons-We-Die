@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Dungeons.Items;
 
 namespace Dungeons.Content;
@@ -24,6 +25,26 @@ public sealed class MaterialDefinition : IItemDefinition
     public string Name { get; init; } = string.Empty;
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public Dictionary<string, double> Properties { get; init; } = new();
+
+    /// <summary>
+    /// Optional authored override for derived potency (§6.1). Left unset by the whole
+    /// authored library — <see cref="MaterialProfileResolver"/> derives it — and exists so a
+    /// single material whose derived value reads wrong can be hand-tuned without special
+    /// cases in code.
+    /// </summary>
+    public int? Potency { get; init; }
+
+    /// <summary>Optional authored override for derived integrity (§6.2). See <see cref="Potency"/>.</summary>
+    public int? Integrity { get; init; }
+
+    /// <summary>
+    /// The explicit profile of an <b>emergent</b> archetype, computed by the reaction engine
+    /// and registered under its signature (§12). Null for authored materials, whose profile
+    /// is derived by <see cref="MaterialProfileResolver"/>. Never authored in JSON — always
+    /// resolve through the resolver rather than reading this directly.
+    /// </summary>
+    [JsonIgnore]
+    public MaterialProfile? Profile { get; init; }
 
     public ItemType ItemType => ItemType.Material;
     public bool Stackable => true;

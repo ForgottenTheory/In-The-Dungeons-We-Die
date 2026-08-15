@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Dungeons.Crafting;
 using Dungeons.Items;
 using Dungeons.Realms;
 using Godot;
@@ -42,6 +45,23 @@ public partial class MainMvpUI : Control
     private Button _runButton = null!;
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
+
+    // --- Crafting bench -----------------------------------------------------
+    private OptionButton _processPicker = null!;
+    private OptionButton _substratePicker = null!;
+    private OptionButton _reagentPicker = null!;
+    private OptionButton _catalystPicker = null!;
+    private VBoxContainer _reagentChain = null!;
+    private Label _channelLabel = null!;
+    private Label _projectionLabel = null!;
+    private Label _substrateInspector = null!;
+    private Button _craftButton = null!;
+
+    /// <summary>The ordered reagent chain being assembled. Order is the mechanic (§0 D2).</summary>
+    private readonly List<string> _reagents = new();
+
+    /// <summary>Snapshot backing the material pickers, so a picker index maps to an id.</summary>
+    private IReadOnlyList<(string Id, string Name, int Quantity)> _onHand = Array.Empty<(string, string, int)>();
 
     private double _timingPhase;
 
@@ -283,26 +303,298 @@ public partial class MainMvpUI : Control
         passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
     }
 
+    /// <summary>
+    /// The emergent crafting bench (docs/emergent-item-system.md §7.1, §6.2c).
+    ///
+    /// <para>The layout follows the spec's insistence that order be <b>legible</b>: the player
+    /// literally sees "Base: Iron Ingot → Step 1: Ember Sap → Step 2: Stormglass" and can
+    /// reorder the steps, rather than dragging abstract properties around. Permuting the
+    /// reagents permutes the outcome, and the UI makes that visible.</para>
+    ///
+    /// <para>The projection panel is <b>required scope</b>, not polish: integrity 0 destroys
+    /// the material, and that rule is only fair if destruction is never a surprise.</para>
+    /// </summary>
     private void BuildCraftingSection(VBoxContainer root)
     {
         root.AddChild(SectionTitle("Crafting"));
-        _craftingLabel = new Label();
-        root.AddChild(Card(_craftingLabel));
 
-        var buttons = new VBoxContainer();
-        buttons.AddThemeConstantOverride("separation", 4);
-        root.AddChild(buttons);
-        buttons.AddChild(MakeButton("Experiment: Iron Ingot + Oak Bark", () => _game.ExperimentBarkbound(), Accent));
-        buttons.AddChild(MakeButton("Brew Healing Salve (2 Sageleaf)", () => _game.BrewHealingSalve()));
-        buttons.AddChild(MakeButton("Grant Craft Test Mats", () => _game.GrantCraftTestMaterials(), Positive));
+        // --- Process ---------------------------------------------------------
+        var processRow = Row();
+        root.AddChild(processRow);
+        processRow.AddChild(new Label { Text = "Process:", CustomMinimumSize = new Vector2(70, 0) });
+        _processPicker = new OptionButton { CustomMinimumSize = new Vector2(420, 0) };
+        foreach (var process in _game.Processes)
+            _processPicker.AddItem(CraftFormat.Process(process, _game.ProfessionName(process.Profession)));
+        _processPicker.ItemSelected += _ => RefreshProjection();
+        processRow.AddChild(_processPicker);
 
+        _channelLabel = new Label();
+        _channelLabel.AddThemeColorOverride("font_color", Muted);
+        root.AddChild(_channelLabel);
+
+        // --- Substrate -------------------------------------------------------
+        var substrateRow = Row();
+        root.AddChild(substrateRow);
+        substrateRow.AddChild(new Label { Text = "Base:", CustomMinimumSize = new Vector2(70, 0) });
+        _substratePicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
+        _substratePicker.ItemSelected += _ => RefreshProjection();
+        substrateRow.AddChild(_substratePicker);
+
+        // --- Reagent chain ---------------------------------------------------
+        var reagentRow = Row();
+        root.AddChild(reagentRow);
+        reagentRow.AddChild(new Label { Text = "Add step:", CustomMinimumSize = new Vector2(70, 0) });
+        _reagentPicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
+        reagentRow.AddChild(_reagentPicker);
+        reagentRow.AddChild(MakeButton("Add →", AddReagent, Accent));
+        reagentRow.AddChild(MakeButton("Clear", () => { _reagents.Clear(); RebuildReagentChain(); }, Danger));
+
+        _reagentChain = new VBoxContainer();
+        _reagentChain.AddThemeConstantOverride("separation", 2);
+        root.AddChild(Card(_reagentChain));
+
+        // --- Catalyst --------------------------------------------------------
+        var catalystRow = Row();
+        root.AddChild(catalystRow);
+        catalystRow.AddChild(new Label { Text = "Catalyst:", CustomMinimumSize = new Vector2(70, 0) });
+        _catalystPicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
+        _catalystPicker.ItemSelected += _ => RefreshProjection();
+        catalystRow.AddChild(_catalystPicker);
+        var catalystHint = new Label { Text = "not consumed; lends its affinity" };
+        catalystHint.AddThemeColorOverride("font_color", Muted);
+        catalystRow.AddChild(catalystHint);
+
+        // --- Projection + commit ---------------------------------------------
         root.AddChild(new HSeparator());
-        var stashHead = new Label { Text = "Materials on hand (experiment inputs):" };
+        var projectionHead = new Label { Text = "Before you commit:" };
+        projectionHead.AddThemeColorOverride("font_color", Muted);
+        root.AddChild(projectionHead);
+
+        _projectionLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        root.AddChild(Card(_projectionLabel));
+
+        var commitRow = Row();
+        root.AddChild(commitRow);
+        _craftButton = MakeButton("Craft", CommitCraft, Positive);
+        _craftButton.CustomMinimumSize = new Vector2(160, 0);
+        commitRow.AddChild(_craftButton);
+        commitRow.AddChild(MakeButton("Refresh", RefreshCraftingPickers));
+        commitRow.AddChild(MakeButton("Grant Test Mats", () => _game.GrantCraftTestMaterials(), Accent));
+        commitRow.AddChild(MakeButton("Brew Healing Salve", () => _game.BrewHealingSalve()));
+
+        // --- Inspector + legacy report ---------------------------------------
+        root.AddChild(new HSeparator());
+        var inspectorHead = new Label { Text = "Base material:" };
+        inspectorHead.AddThemeColorOverride("font_color", Muted);
+        root.AddChild(inspectorHead);
+        _substrateInspector = new Label();
+        root.AddChild(Card(_substrateInspector));
+
+        var stashHead = new Label { Text = "Materials on hand:" };
         stashHead.AddThemeColorOverride("font_color", Muted);
         root.AddChild(stashHead);
         _craftingStashLabel = new Label();
         root.AddChild(Card(_craftingStashLabel));
+
+        _craftingLabel = new Label();
+        root.AddChild(Card(_craftingLabel));
+
+        RefreshCraftingPickers();
     }
+
+    // --- Crafting bench behaviour -------------------------------------------
+
+    /// <summary>Repopulates the material pickers from what is actually on hand, preserving the
+    /// current selection where it still exists.</summary>
+    private void RefreshCraftingPickers()
+    {
+        // Read the selections against the *old* list before replacing it — a picker index only
+        // means anything relative to the snapshot it was populated from.
+        var previousSubstrate = SelectedMaterialId(_substratePicker);
+        var previousReagent = SelectedMaterialId(_reagentPicker);
+        var previousCatalyst = SelectedMaterialId(_catalystPicker);
+
+        _onHand = _game.MaterialsOnHand;
+
+        Repopulate(_substratePicker, previousSubstrate, includeNone: false);
+        Repopulate(_reagentPicker, previousReagent, includeNone: false);
+        Repopulate(_catalystPicker, previousCatalyst, includeNone: true);
+
+        // Steps referring to materials no longer on hand would fail the gate confusingly.
+        _reagents.RemoveAll(id => _onHand.All(m => m.Id != id));
+        RebuildReagentChain();
+    }
+
+    private void Repopulate(OptionButton picker, string? previous, bool includeNone)
+    {
+        picker.Clear();
+
+        if (includeNone)
+            picker.AddItem("(none)");
+
+        foreach (var material in _onHand)
+            picker.AddItem($"{material.Name}  ×{material.Quantity}");
+
+        var restored = _onHand.ToList().FindIndex(m => m.Id == previous);
+        if (restored >= 0)
+            picker.Selected = restored + (includeNone ? 1 : 0);
+        else if (picker.ItemCount > 0)
+            picker.Selected = 0;
+    }
+
+    /// <summary>The material id a picker is on, or null for "(none)" / an empty picker.</summary>
+    private string? SelectedMaterialId(OptionButton picker)
+    {
+        var offset = picker == _catalystPicker ? 1 : 0;
+        var index = picker.Selected - offset;
+        return index >= 0 && index < _onHand.Count ? _onHand[index].Id : null;
+    }
+
+    private void AddReagent()
+    {
+        if (SelectedMaterialId(_reagentPicker) is not { } id)
+            return;
+
+        // 1–3 ordered reagents (§7.1). Beyond three the chain stops being legible, which is
+        // the whole reason order lives in slots rather than in an abstract permutation.
+        if (_reagents.Count >= 3)
+        {
+            AppendLog("[Craft] A process takes at most three steps.");
+            return;
+        }
+
+        _reagents.Add(id);
+        RebuildReagentChain();
+    }
+
+    /// <summary>Renders the ordered chain, with the reordering controls that make §0 Decision 2
+    /// something the player can actually play with.</summary>
+    private void RebuildReagentChain()
+    {
+        // RemoveChild first: QueueFree is deferred, so freeing alone would leave the old rows
+        // on screen for a frame and the chain would appear duplicated.
+        foreach (var child in _reagentChain.GetChildren())
+        {
+            _reagentChain.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        if (_reagents.Count == 0)
+        {
+            var empty = new Label { Text = "(no steps — add a reagent above)" };
+            empty.AddThemeColorOverride("font_color", Muted);
+            _reagentChain.AddChild(empty);
+            RefreshProjection();
+            return;
+        }
+
+        for (var i = 0; i < _reagents.Count; i++)
+        {
+            var index = i;
+            var row = Row(4);
+            _reagentChain.AddChild(row);
+
+            row.AddChild(new Label
+            {
+                Text = $"Step {i + 1}:  {NameOf(_reagents[i])}",
+                CustomMinimumSize = new Vector2(260, 0),
+            });
+
+            if (index > 0)
+                row.AddChild(MakeButton("↑", () => SwapReagents(index, index - 1)));
+            if (index < _reagents.Count - 1)
+                row.AddChild(MakeButton("↓", () => SwapReagents(index, index + 1)));
+
+            row.AddChild(MakeButton("✕", () => { _reagents.RemoveAt(index); RebuildReagentChain(); }, Danger));
+        }
+
+        RefreshProjection();
+    }
+
+    private void SwapReagents(int a, int b)
+    {
+        (_reagents[a], _reagents[b]) = (_reagents[b], _reagents[a]);
+        RebuildReagentChain();
+    }
+
+    /// <summary>
+    /// Recomputes the pre-commit projection (§6.2c). Runs on every selection change, because a
+    /// destruction warning the player has to ask for is not a warning.
+    /// </summary>
+    private void RefreshProjection()
+    {
+        if (_processPicker is null || _projectionLabel is null)
+            return; // still building the tab
+
+        var processes = _game.Processes;
+        var process = _processPicker.Selected >= 0 && _processPicker.Selected < processes.Count
+            ? processes[_processPicker.Selected]
+            : null;
+
+        _channelLabel.Text = process is null ? string.Empty : CraftFormat.Channel(process);
+
+        var substrate = SelectedMaterialId(_substratePicker);
+        _substrateInspector.Text = substrate is null ? "(nothing selected)" : _game.MaterialSummary(substrate);
+
+        if (process is null || substrate is null || _reagents.Count == 0)
+        {
+            _projectionLabel.Text = "Choose a process, a base material, and at least one step.";
+            _projectionLabel.AddThemeColorOverride("font_color", Muted);
+            _craftButton.Disabled = true;
+            _craftButton.Text = "Craft";
+            return;
+        }
+
+        var projection = _game.ProjectCraft(process.Id, substrate, _reagents, SelectedMaterialId(_catalystPicker));
+
+        _projectionLabel.Text = CraftFormat.Projection(projection, NameOf(substrate));
+        _projectionLabel.AddThemeColorOverride(
+            "font_color",
+            !projection.CanCraft ? Muted
+            : projection.WarnsOfDestruction || projection.WarnsOfRisk ? Danger
+            : TextCol);
+
+        // Destruction stays available — pushing a deep material is a legible gamble the player
+        // is allowed to take (§6.2c) — but the button says plainly what it will do.
+        _craftButton.Disabled = !projection.CanCraft;
+        _craftButton.Text = projection.WarnsOfDestruction ? "Craft (destroys!)"
+            : projection.WarnsOfRisk ? "Craft (risky)"
+            : "Craft";
+        _craftButton.AddThemeColorOverride(
+            "font_color", projection.WarnsOfDestruction || projection.WarnsOfRisk ? Danger : Positive);
+    }
+
+    private void CommitCraft()
+    {
+        var processes = _game.Processes;
+        if (_processPicker.Selected < 0 || _processPicker.Selected >= processes.Count)
+            return;
+        if (SelectedMaterialId(_substratePicker) is not { } substrate)
+            return;
+
+        var outcome = _game.Craft(
+            processes[_processPicker.Selected].Id, substrate, _reagents.ToList(), SelectedMaterialId(_catalystPicker));
+
+        // A successful craft consumed its steps; keep the base pointed at the result so the
+        // recursion the system exists for is one click away.
+        if (outcome.Success)
+        {
+            _reagents.Clear();
+            RefreshCraftingPickers();
+
+            if (outcome.ResultItemId is { } produced)
+            {
+                var index = _onHand.ToList().FindIndex(m => m.Id == produced);
+                if (index >= 0)
+                    _substratePicker.Selected = index;
+            }
+        }
+
+        RefreshProjection();
+    }
+
+    private string NameOf(string materialId) =>
+        _onHand.FirstOrDefault(m => m.Id == materialId).Name ?? materialId;
 
     private void BuildRealmSection(VBoxContainer root)
     {
@@ -458,6 +750,9 @@ public partial class MainMvpUI : Control
         _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed
         RefreshCrafting(); // herblore level shown in the crafting requirement can change
+
+        // What is craftable changed, and so did every projection that depends on it.
+        RefreshCraftingPickers();
     }
 
     private void RefreshCrafting() => _craftingLabel.Text = _game.CraftingReport();
