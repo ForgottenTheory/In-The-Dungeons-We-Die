@@ -127,6 +127,44 @@ public class CraftingTests
     }
 
     [Fact]
+    public void Experiment_GeneratesInstance_WithPropertiesDerivedFromInputs()
+    {
+        var interactions = Interactions(new CraftingInteractionDefinition
+        {
+            Id = "interaction.bloodmoss_iron",
+            Name = "Bloodmoss Iron",
+            Inputs = new[] { new ItemStack("material.iron_ingot", 1), new ItemStack("material.bloodmoss", 1) },
+            ResultItemId = "material.bloodmoss_iron",
+            ResultQuantity = 1,
+            ResultIsInstance = true,
+            DiscoveryId = "discovery.bloodmoss_iron",
+        });
+        var materials = Materials(
+            new MaterialDefinition { Id = "material.iron_ingot", Name = "Iron Ingot", Properties = new[] { new MaterialProperty { Property = "mass", Value = 3 } } },
+            new MaterialDefinition { Id = "material.bloodmoss", Name = "Bloodmoss", Properties = new[] { new MaterialProperty { Property = "growth", Value = 2 } } },
+            new MaterialDefinition { Id = "material.bloodmoss_iron", Name = "Bloodmoss Iron" });
+
+        var inv = new Inventory();
+        inv.Add("material.iron_ingot", 1);
+        inv.Add("material.bloodmoss", 1);
+        var sys = new CraftingExperimentSystem(interactions, materials, inv, new DiscoverySystem(), _ => 99, new InstanceIdSource());
+
+        var outcome = sys.Experiment(new[] { "material.iron_ingot", "material.bloodmoss" });
+
+        Assert.True(outcome.Success);
+        Assert.NotNull(outcome.ProducedInstance);
+        var made = outcome.ProducedInstance!;
+        Assert.Equal("Bloodmoss Iron", made.DisplayName);
+        Assert.Equal(3, made.Properties.Get("mass"));    // derived from iron ingot
+        Assert.Equal(2, made.Properties.Get("growth"));  // derived from bloodmoss
+        Assert.Contains("material.iron_ingot", made.Provenance);
+
+        // It's a unique instance, not a stack.
+        Assert.Equal(1, inv.InstanceCount);
+        Assert.Equal(0, inv.GetQuantity("material.bloodmoss_iron"));
+    }
+
+    [Fact]
     public void DiscoverySystem_RecordsOnce_AndRaisesEvent()
     {
         var disc = new DiscoverySystem();

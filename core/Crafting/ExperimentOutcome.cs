@@ -1,4 +1,5 @@
 using Dungeons.Content;
+using Dungeons.Items;
 
 namespace Dungeons.Crafting;
 
@@ -23,6 +24,9 @@ public sealed class ExperimentOutcome
 
     /// <summary>Properties carried by the produced material, for feedback.</summary>
     public IReadOnlyList<MaterialProperty> ResultProperties { get; init; } = Array.Empty<MaterialProperty>();
+
+    /// <summary>The generated instance, when the interaction produces one (else null → a plain stack).</summary>
+    public ItemInstance? ProducedInstance { get; init; }
 
     /// <summary>The profession that fell short, when <see cref="Failure"/> is ProfessionTooLow.</summary>
     public string? UnmetProfessionId { get; init; }

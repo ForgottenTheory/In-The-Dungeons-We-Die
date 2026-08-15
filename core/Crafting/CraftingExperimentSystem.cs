@@ -19,19 +19,22 @@ public sealed class CraftingExperimentSystem
     private readonly Inventory _inventory;
     private readonly DiscoverySystem _discoveries;
     private readonly Func<string, int> _professionLevel;
+    private readonly InstanceIdSource _instanceIds;
 
     public CraftingExperimentSystem(
         DataStore<CraftingInteractionDefinition> interactions,
         DataStore<MaterialDefinition> materials,
         Inventory inventory,
         DiscoverySystem discoveries,
-        Func<string, int> professionLevel)
+        Func<string, int> professionLevel,
+        InstanceIdSource? instanceIds = null)
     {
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
         _materials = materials ?? throw new ArgumentNullException(nameof(materials));
         _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
         _discoveries = discoveries ?? throw new ArgumentNullException(nameof(discoveries));
         _professionLevel = professionLevel ?? throw new ArgumentNullException(nameof(professionLevel));
+        _instanceIds = instanceIds ?? new InstanceIdSource();
     }
 
     /// <summary>
@@ -74,12 +77,47 @@ public sealed class CraftingExperimentSystem
             return ExperimentOutcome.Failed(ExperimentFailure.MissingInputs, interaction.Id);
 
         _inventory.TryRemoveAll(interaction.Inputs);
-        _inventory.Add(interaction.ResultItemId, interaction.ResultQuantity);
+
+        ItemInstance? produced = null;
+        IReadOnlyList<MaterialProperty> resultProperties;
+
+        if (interaction.ResultIsInstance)
+        {
+            // Generated material: derive its properties from the inputs and mint unique instances.
+            var inputProperties = interaction.Inputs
+                .Select(i => _materials.TryGetById(i.ItemId, out var m) ? m.BaseProperties : PropertySet.Empty)
+                .ToList();
+            var derived = CraftingDerivation.Derive(inputProperties);
+            var name = _materials.TryGetById(interaction.ResultItemId, out var resultDef) ? resultDef.Name : interaction.ResultItemId;
+            var provenance = interaction.Inputs.Select(i => i.ItemId).ToList();
+
+            for (var q = 0; q < interaction.ResultQuantity; q++)
+            {
+                produced = new ItemInstance
+                {
+                    InstanceId = _instanceIds.Next(),
+                    BaseDefinitionId = interaction.ResultItemId,
+                    ItemType = ItemType.Material,
+                    DisplayName = name,
+                    Properties = derived,
+                    Provenance = provenance,
+                };
+                _inventory.AddInstance(produced);
+            }
+
+            resultProperties = derived.AsDictionary()
+                .Select(kv => new MaterialProperty { Property = kv.Key, Value = kv.Value })
+                .ToList();
+        }
+        else
+        {
+            _inventory.Add(interaction.ResultItemId, interaction.ResultQuantity);
+            resultProperties = _materials.TryGetById(interaction.ResultItemId, out var material)
+                ? material.Properties
+                : Array.Empty<MaterialProperty>();
+        }
 
         var wasNew = !string.IsNullOrEmpty(interaction.DiscoveryId) && _discoveries.Record(interaction.DiscoveryId);
-        var properties = _materials.TryGetById(interaction.ResultItemId, out var material)
-            ? material.Properties
-            : Array.Empty<MaterialProperty>();
 
         return new ExperimentOutcome
         {
@@ -88,7 +126,8 @@ public sealed class CraftingExperimentSystem
             ResultItemId = interaction.ResultItemId,
             ResultQuantity = interaction.ResultQuantity,
             WasNewDiscovery = wasNew,
-            ResultProperties = properties,
+            ResultProperties = resultProperties,
+            ProducedInstance = produced,
         };
     }
 }

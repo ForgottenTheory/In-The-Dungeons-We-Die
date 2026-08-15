@@ -10,5 +10,6 @@
   ],
   "resultItemId": "material.barkbound_iron",
   "resultQuantity": 1,
+  "resultIsInstance": true,
   "discoveryId": "discovery.barkbound_iron"
 }

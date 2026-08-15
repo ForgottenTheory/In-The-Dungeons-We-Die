@@ -143,7 +143,8 @@ public partial class GameRoot : Node
         _discoveries = new DiscoverySystem();
         _crafting = new CraftingExperimentSystem(
             _interactions, _materials, _stash, _discoveries,
-            professionLevel: id => _professions.GetProgress(id).Level);
+            professionLevel: id => _professions.GetProgress(id).Level,
+            instanceIds: _instanceIds);
         _discoveries.Discovered += OnDiscovered;
 
         var combatRng = new SeededRandom(0x0C0FFEE);
@@ -289,10 +290,19 @@ public partial class GameRoot : Node
 
     private string FormatBag(Inventory bag)
     {
-        var stacks = bag.Snapshot().OrderBy(s => s.ItemId).ToList();
-        if (stacks.Count == 0)
-            return "  (empty)";
-        return string.Join("\n", stacks.Select(s => $"  {ItemName(s.ItemId),-14} x{s.Quantity}"));
+        var lines = bag.Snapshot().OrderBy(s => s.ItemId)
+            .Select(s => $"  {ItemName(s.ItemId),-16} x{s.Quantity}")
+            .ToList();
+
+        foreach (var instance in bag.Instances.OrderBy(i => i.DisplayName))
+        {
+            var props = instance.Properties.Count > 0
+                ? " (" + string.Join(", ", instance.Properties.AsDictionary().Select(p => $"{p.Key} {p.Value:0.##}")) + ")"
+                : string.Empty;
+            lines.Add($"  {instance.DisplayName,-16} #{instance.InstanceId}{props}");
+        }
+
+        return lines.Count == 0 ? "  (empty)" : string.Join("\n", lines);
     }
 
     // --- Crafting -----------------------------------------------------------
@@ -309,9 +319,10 @@ public partial class GameRoot : Node
         if (outcome.Success)
         {
             var props = outcome.ResultProperties.Count > 0
-                ? " (" + string.Join(", ", outcome.ResultProperties.Select(p => $"{p.Property} {p.Value}")) + ")"
+                ? " (" + string.Join(", ", outcome.ResultProperties.Select(p => $"{p.Property} {p.Value:0.##}")) + ")"
                 : string.Empty;
-            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}{props}.");
+            var kind = outcome.ProducedInstance is not null ? " [instance]" : string.Empty;
+            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}{kind}{props}.");
             return;
         }
 
