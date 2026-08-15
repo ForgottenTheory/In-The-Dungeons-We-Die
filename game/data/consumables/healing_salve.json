@@ -1,5 +1,5 @@
 {
-  "id": "item.healing_salve",
+  "id": "consumable.healing_salve",
   "name": "Healing Salve",
   "healAmount": 25
 }

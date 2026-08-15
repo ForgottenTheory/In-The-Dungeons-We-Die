@@ -3,6 +3,6 @@
   "name": "Rusty Sword",
   "slot": "Weapon",
   "tags": ["weapon", "sword", "starter"],
-  "weapon": { "baseDamage": 5, "damageType": "Slashing", "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15, "staminaCost": 5 },
+  "weapon": { "baseDamage": 5, "damageType": "Slashing", "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15 }, "staminaCost": 5 },
   "properties": { "mass": 2, "hardness": 1 }
 }

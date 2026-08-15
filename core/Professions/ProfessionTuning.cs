@@ -40,4 +40,12 @@ public static class ProfessionTuning
 
     public static double MasteryBonusChance(int mastery) =>
         Math.Min(MaxMasteryBonusChance, mastery * BonusChancePerMastery);
+
+    /// <summary>
+    /// Active-play performance [0,1] from a timing-bar position [0,1]: 1.0 dead-centre,
+    /// falling linearly to 0 at the edges. The scoring rule lives in Core so every UI
+    /// (and tests) share it rather than reimplementing the curve in the client.
+    /// </summary>
+    public static double TimingPerformance(double position) =>
+        Math.Clamp(1.0 - Math.Abs(position - 0.5) * 2.0, 0.0, 1.0);
 }

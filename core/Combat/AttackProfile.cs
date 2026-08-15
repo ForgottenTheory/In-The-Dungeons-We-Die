@@ -12,6 +12,17 @@ public sealed class AttackProfile
     public required double BaseDamage { get; init; }
     public required int StaminaCost { get; init; }
     public required AbilityTiming Timing { get; init; }
+
+    /// <summary>The fallback attack for an unarmed character — the canonical default used as the
+    /// weapon-resolution fallback, kept in Core so combat rules aren't authored in the client.</summary>
+    public static readonly AttackProfile Unarmed = new()
+    {
+        Name = "Bare Fists",
+        DamageType = DamageType.Crushing,
+        BaseDamage = 3,
+        StaminaCost = 3,
+        Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 6, RecoveryTicks = 12 },
+    };
 }
 
 /// <summary>

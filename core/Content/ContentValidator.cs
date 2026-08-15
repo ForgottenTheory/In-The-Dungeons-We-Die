@@ -1,3 +1,4 @@
+using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Crafting;
 using Dungeons.Items;
@@ -7,75 +8,67 @@ using Dungeons.Realms;
 namespace Dungeons.Content;
 
 /// <summary>
-/// Validates cross-references and well-formedness across the loaded content stores,
+/// Validates cross-references and well-formedness across the loaded <see cref="ContentBundle"/>,
 /// at load time rather than only in tests. Every "this id points at that store"
 /// relationship in the shipped JSON is checked once, up front, so a mistyped or
 /// missing reference fails loudly at startup instead of throwing a
 /// <see cref="KeyNotFoundException"/> mid-play (see DECISIONS.md D5, ROADMAP Phase 4).
 ///
-/// This covers pure content→content references. Character-component references
-/// (rule ids, class ability ids) are resolved and validated by the
-/// <see cref="Characters.Composition.CharacterComposer"/> path instead, because they
-/// depend on code-supplied handlers and include intentionally-unimplemented ids.
+/// Character-component <c>abilityIds</c> are validated against a known-unimplemented
+/// allowlist (<see cref="KnownUnimplementedAbilities"/>) so real typos fail while designed
+/// placeholders pass; component <c>ruleIds</c> are validated by the
+/// <see cref="CharacterComposer"/> path (they resolve against code-supplied handlers).
 /// </summary>
 public static class ContentValidator
 {
+    /// <summary>Valid property range for material/equipment profiles (docs/itemization.md §2).</summary>
+    public const double MinPropertyValue = 0.0;
+    public const double MaxPropertyValue = 100.0;
+
+    /// <summary>Ability ids referenced by classes/species but intentionally not yet implemented
+    /// (docs/emergent-item-system.md / DECISIONS.md D12). Validation tolerates these; anything
+    /// else missing from the ability store is a real typo and fails.</summary>
+    public static readonly IReadOnlySet<string> KnownUnimplementedAbilities =
+        new HashSet<string>(StringComparer.Ordinal) { "ability.guard", "ability.hex_bolt" };
+
     /// <summary>
-    /// Returns every problem found in the given stores (empty when the content is
-    /// well-formed). Never throws for content problems — the caller decides whether to
-    /// log, warn, or throw <see cref="ContentValidationException"/>.
+    /// Returns every problem found in the bundle (empty when the content is well-formed).
+    /// Never throws for content problems — the caller decides whether to log, warn, or throw
+    /// <see cref="ContentValidationException"/>.
     /// </summary>
-    public static IReadOnlyList<ContentProblem> Validate(
-        DataStore<MaterialDefinition> materials,
-        DataStore<ProfessionDefinition> professions,
-        DataStore<ProfessionActionDefinition> actions,
-        DataStore<CraftingInteractionDefinition> interactions,
-        DataStore<AbilityDefinition> abilities,
-        DataStore<ActorDefinition> actors,
-        DataStore<RealmDefinition> realms,
-        DataStore<ConsumableDefinition> consumables,
-        DataStore<EquipmentDefinition> equipment)
+    public static IReadOnlyList<ContentProblem> Validate(ContentBundle content)
     {
-        ArgumentNullException.ThrowIfNull(materials);
-        ArgumentNullException.ThrowIfNull(professions);
-        ArgumentNullException.ThrowIfNull(actions);
-        ArgumentNullException.ThrowIfNull(interactions);
-        ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(actors);
-        ArgumentNullException.ThrowIfNull(realms);
-        ArgumentNullException.ThrowIfNull(consumables);
-        ArgumentNullException.ThrowIfNull(equipment);
+        ArgumentNullException.ThrowIfNull(content);
+
+        // The property registry is the single source of truth for valid property names.
+        var knownProperties = new HashSet<string>(
+            content.Properties.GetAll().Select(p => p.Id), StringComparer.OrdinalIgnoreCase);
 
         var problems = new List<ContentProblem>();
 
-        ValidateMaterials(materials, problems);
-        ValidateMaterialTags(materials, problems);
-        ValidateActors(actors, abilities, materials, problems);
-        ValidateProfessionActions(actions, professions, materials, problems);
-        ValidateInteractions(interactions, materials, consumables, professions, problems);
-        ValidateRealms(realms, actors, actions, materials, problems);
-        ValidateEquipment(equipment, problems);
+        ValidateMaterials(content.Materials, knownProperties, problems);
+        ValidateMaterialTags(content.Materials, problems);
+        ValidateActors(content.Actors, content.Abilities, content.Materials, problems);
+        ValidateProfessionActions(content.Actions, content.Professions, content.Materials, problems);
+        ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
+        ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
+        ValidateEquipment(content.Equipment, knownProperties, problems);
+        ValidateCharacterAbilities(content, problems);
 
         return problems;
     }
 
-    /// <summary>Valid property range for material profiles (docs/itemization.md §2).</summary>
-    public const double MinPropertyValue = 0.0;
-    public const double MaxPropertyValue = 100.0;
-
-    private static readonly IReadOnlySet<string> KnownProperties =
-        new HashSet<string>(ItemProperties.All, StringComparer.OrdinalIgnoreCase);
-
     private static void ValidateMaterials(
         DataStore<MaterialDefinition> materials,
+        IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
         foreach (var material in materials.GetAll())
         {
             foreach (var (property, value) in material.Properties)
             {
-                if (!KnownProperties.Contains(property))
-                    problems.Add(new("materials", $"{material.Id} has unknown property '{property}' (typo, or add it to ItemProperties)."));
+                if (!knownProperties.Contains(property))
+                    problems.Add(new("materials", $"{material.Id} has unknown property '{property}' (typo, or add it to game/data/properties/)."));
 
                 if (value < MinPropertyValue || value > MaxPropertyValue)
                     problems.Add(new("materials", $"{material.Id} property '{property}' = {value:0.##} is outside the {MinPropertyValue:0}–{MaxPropertyValue:0} range."));
@@ -193,6 +186,7 @@ public static class ContentValidator
         DataStore<ActorDefinition> actors,
         DataStore<ProfessionActionDefinition> actions,
         DataStore<MaterialDefinition> materials,
+        DataStore<ConsumableDefinition> consumables,
         List<ContentProblem> problems)
     {
         foreach (var realm in realms.GetAll())
@@ -229,8 +223,10 @@ public static class ContentValidator
                         break;
 
                     case RealmLocationType.Event:
-                        if (!string.IsNullOrEmpty(loc.RewardItemId) && !materials.Contains(loc.RewardItemId))
-                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} rewards unknown material '{loc.RewardItemId}'."));
+                        // A reward may be a stackable material or a consumable item.
+                        if (!string.IsNullOrEmpty(loc.RewardItemId)
+                            && !materials.Contains(loc.RewardItemId) && !consumables.Contains(loc.RewardItemId))
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} rewards unknown item '{loc.RewardItemId}'."));
                         break;
                 }
             }
@@ -239,6 +235,7 @@ public static class ContentValidator
 
     private static void ValidateEquipment(
         DataStore<EquipmentDefinition> equipment,
+        IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
         foreach (var def in equipment.GetAll())
@@ -252,6 +249,30 @@ public static class ContentValidator
                     problems.Add(new("equipment", $"{def.Id} is Armor but has no armor stats block."));
                     break;
             }
+
+            foreach (var property in def.Properties.Keys)
+                if (!knownProperties.Contains(property))
+                    problems.Add(new("equipment", $"{def.Id} has unknown property '{property}' (typo, or add it to game/data/properties/)."));
         }
+    }
+
+    /// <summary>
+    /// Validates that ability ids referenced by character components (species/class/prefix/suffix)
+    /// exist, tolerating the <see cref="KnownUnimplementedAbilities"/> placeholders.
+    /// </summary>
+    private static void ValidateCharacterAbilities(ContentBundle content, List<ContentProblem> problems)
+    {
+        void Check(IEnumerable<CharacterComponentDefinition> components, string kind)
+        {
+            foreach (var component in components)
+                foreach (var abilityId in component.AbilityIds)
+                    if (!content.Abilities.Contains(abilityId) && !KnownUnimplementedAbilities.Contains(abilityId))
+                        problems.Add(new(kind, $"{component.Id} references unknown ability '{abilityId}'."));
+        }
+
+        Check(content.Species.GetAll(), "species");
+        Check(content.Classes.GetAll(), "classes");
+        Check(content.Prefixes.GetAll(), "prefixes");
+        Check(content.Suffixes.GetAll(), "suffixes");
     }
 }

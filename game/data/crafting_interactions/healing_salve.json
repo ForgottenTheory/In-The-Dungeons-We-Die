@@ -7,7 +7,7 @@
   "professionRequirements": [
     { "professionId": "profession.herblore", "level": 1 }
   ],
-  "resultItemId": "item.healing_salve",
+  "resultItemId": "consumable.healing_salve",
   "resultQuantity": 1,
   "discoveryId": "discovery.healing_salve"
 }

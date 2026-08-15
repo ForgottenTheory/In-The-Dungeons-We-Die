@@ -346,14 +346,16 @@ The cleanest seams for the next phase: `IDefinition`/`DataStore<T>` (content), `
 
 ---
 
+> **Note (audit is partly stale):** this file predates the P0 emergent-item work and the cleanup pass. Several debts below are resolved — kept struck-through for history. Authoritative current state: `PROJECT_STATE.md`, `SYSTEM_INDEX.md`, `DECISIONS.md`.
+
 ## 19. Known limitations and technical debt
 
-- **`GameRoot` is a ~790-line composition-root + application layer + presenter.** It currently orchestrates every system, formats every report string, and owns run/combat state — it is trending toward the "GameGodObject" the docs warn against. Before adding systems, an **Application layer** (use-case services) should be extracted, or `GameRoot` will become a bottleneck.
-- **Runtime content validation is missing.** Cross-reference checks (an actor pointing at a real ability, a recipe at a real material) live **only in tests**, not at load time. A bad JSON ships and only throws later via `GetById`. `DataStore.LoadOne` catches duplicate ids but not dangling references.
-- **Two item+quantity shapes** (`ItemStack` vs `ItemAmountData`/`ItemChanceData`) — duplication to unify.
-- **Dead ability ids** on classes (`ability.guard`, `ability.hex_bolt`).
-- **Inert material properties** — the property system exists with no consumer.
-- **No character creation** — single hardcoded build.
+- **`GameRoot` is a ~960-line composition-root + application layer + presenter.** Still the clearest debt: the command/use-case handlers and narrative report formatting want an **Application layer** extracted (deferred as a focused next step; item-display formatting already lifted to `ItemFormat`).
+- ~~Runtime content validation is missing~~ — **fixed**: `ContentValidator.Validate(ContentBundle)` runs at load and fails loudly (cross-refs, property ranges/names from the JSON registry, tag families, character-component abilities).
+- ~~Two item+quantity shapes~~ — **fixed**: unified on `ItemStack` + `ItemChance`.
+- **Dead ability ids** on classes (`ability.guard`, `ability.hex_bolt`) — kept as designed placeholders; now tolerated by a validator allowlist so real typos still fail.
+- ~~Inert material properties~~ — the property system is now first-class data (`PropertyDefinition` registry) though the reaction *engine* that consumes it is P1.
+- **No character creation** — single hardcoded build (now typed-id `CharacterBuild`).
 - **UI is one code-built debug page** with `QueueFree`/re-add churn for realm controls; not a foundation for production screens.
 - **RNG/tick not persisted**; save/load resets the clock and RNG position.
 - **Mana is defined but never used**; primary-resource-by-class has no gameplay effect yet.
@@ -365,7 +367,7 @@ The cleanest seams for the next phase: `IDefinition`/`DataStore<T>` (content), `
 
 ## 20. Test coverage — what is currently verified
 
-**120 passing test cases across 24 test classes** (Core only — no Godot/UI tests). Highlights:
+**193 passing test cases** (Core only — no Godot/UI tests; count grew with content-validation, property-system, and cleanup tests). Highlights:
 
 | Area | Cases | What's verified |
 |---|---|---|
@@ -402,7 +404,7 @@ The docs describe a fuller game; the code is a deliberately minimal slice. Key d
 9. **Extraction/death.** Docs include equipped-gear loss and a starter loadout. Actual: only **unsecured run loot** is lost (no equipment exists).
 10. **Persistence.** Docs list characters, equipment, active realm run, settings. Actual: **build + stash + professions + knowledge + discoveries**, single slot, no mid-run save, no migration.
 
-`itemization.md` is a stray file (it currently contains a copy of `CLAUDE.md`, not itemization content).
+(Historical note now resolved: `itemization.md` was rewritten as the real item-model doc; `docs/emergent-item-system.md` is the accepted crafting design superseding `crafting.md §17`.)
 
 ---
 

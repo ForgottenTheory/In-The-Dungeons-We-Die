@@ -1,5 +1,11 @@
 using System.Collections.Generic;
+using Dungeons.Characters.Composition;
+using Dungeons.Combat;
 using Dungeons.Content;
+using Dungeons.Crafting;
+using Dungeons.Items;
+using Dungeons.Professions;
+using Dungeons.Realms;
 using Godot;
 
 namespace Dungeons.Game.Infrastructure;
@@ -11,8 +17,28 @@ namespace Dungeons.Game.Infrastructure;
 /// </summary>
 public static class ContentLoader
 {
-    public static DataStore<MaterialDefinition> LoadMaterials(string directory) =>
-        LoadDefinitions<MaterialDefinition>(directory);
+    /// <summary>
+    /// Loads every content type from <paramref name="dataRoot"/> into one <see cref="ContentBundle"/>.
+    /// This is the single registration point: a new content type is one line here plus a store on
+    /// the bundle (convention: folder name == the content type). Content is parsed once, here.
+    /// </summary>
+    public static ContentBundle LoadAll(string dataRoot) => new()
+    {
+        Materials = LoadDefinitions<MaterialDefinition>($"{dataRoot}/materials"),
+        Properties = LoadDefinitions<PropertyDefinition>($"{dataRoot}/properties"),
+        Professions = LoadDefinitions<ProfessionDefinition>($"{dataRoot}/professions"),
+        Actions = LoadDefinitions<ProfessionActionDefinition>($"{dataRoot}/profession_actions"),
+        Interactions = LoadDefinitions<CraftingInteractionDefinition>($"{dataRoot}/crafting_interactions"),
+        Abilities = LoadDefinitions<AbilityDefinition>($"{dataRoot}/abilities"),
+        Actors = LoadDefinitions<ActorDefinition>($"{dataRoot}/actors"),
+        Realms = LoadDefinitions<RealmDefinition>($"{dataRoot}/realms"),
+        Consumables = LoadDefinitions<ConsumableDefinition>($"{dataRoot}/consumables"),
+        Equipment = LoadDefinitions<EquipmentDefinition>($"{dataRoot}/equipment"),
+        Species = LoadDefinitions<SpeciesDefinition>($"{dataRoot}/species"),
+        Classes = LoadDefinitions<BaseClassDefinition>($"{dataRoot}/classes"),
+        Prefixes = LoadDefinitions<PrefixDefinition>($"{dataRoot}/prefixes"),
+        Suffixes = LoadDefinitions<SuffixDefinition>($"{dataRoot}/suffixes"),
+    };
 
     /// <summary>
     /// Loads every <c>.json</c> definition of type <typeparamref name="T"/> from a directory.
@@ -26,7 +52,8 @@ public static class ContentLoader
         return store;
     }
 
-    /// <summary>Returns the text of every <c>.json</c> file directly under <paramref name="directory"/>.</summary>
+    /// <summary>Returns the text of every <c>.json</c> file under <paramref name="directory"/>,
+    /// recursing into subfolders so a content type can be sharded (e.g. materials/ores.json).</summary>
     public static IReadOnlyList<string> ReadJsonFiles(string directory)
     {
         var results = new List<string>();
@@ -41,10 +68,17 @@ public static class ContentLoader
         dir.ListDirBegin();
         for (var name = dir.GetNext(); name != string.Empty; name = dir.GetNext())
         {
-            if (dir.CurrentIsDir() || !name.EndsWith(".json"))
+            var fullPath = $"{directory.TrimEnd('/')}/{name}";
+
+            if (dir.CurrentIsDir())
+            {
+                results.AddRange(ReadJsonFiles(fullPath)); // recurse into subfolders
+                continue;
+            }
+
+            if (!name.EndsWith(".json"))
                 continue;
 
-            var fullPath = $"{directory.TrimEnd('/')}/{name}";
             using var file = FileAccess.Open(fullPath, FileAccess.ModeFlags.Read);
             if (file is null)
             {

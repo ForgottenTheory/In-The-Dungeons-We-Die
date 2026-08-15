@@ -5,4 +5,4 @@ namespace Dungeons.Characters.Composition;
 /// definitions (plus a baseline) produces a <see cref="CharacterBlueprint"/>.
 /// This is the persisted description of "who" a character is (docs/architecture.md §17).
 /// </summary>
-public sealed record CharacterBuild(string SpeciesId, string BaseClassId, string PrefixId, string SuffixId);
+public sealed record CharacterBuild(SpeciesId SpeciesId, BaseClassId BaseClassId, PrefixId PrefixId, SuffixId SuffixId);

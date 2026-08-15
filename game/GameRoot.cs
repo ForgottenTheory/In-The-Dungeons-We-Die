@@ -46,7 +46,6 @@ public partial class GameRoot : Node
     private readonly Inventory _stash = new();
 
     private DataStore<MaterialDefinition> _materials = new();
-    private DataStore<PropertyDefinition> _propertyDefs = new();
     private DataStore<ProfessionDefinition> _professionDefs = new();
     private DataStore<ProfessionActionDefinition> _actionDefs = new();
 
@@ -63,15 +62,6 @@ public partial class GameRoot : Node
     private const string StarterWeaponId = "equip.rusty_sword";
     private const string StarterArmorId = "equip.tattered_armor";
 
-    private static readonly AttackProfile Unarmed = new()
-    {
-        Name = "Bare Fists",
-        DamageType = DamageType.Crushing,
-        BaseDamage = 3,
-        StaminaCost = 3,
-        Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 6, RecoveryTicks = 12 },
-    };
-
     private CharacterComposer _composer = null!;
     private ProfessionSystem _professions = null!;
     private PassiveProfessionRunner _passiveRunner = null!;
@@ -87,7 +77,9 @@ public partial class GameRoot : Node
     /// <summary>Where loot currently flows: the run inventory in a Realm, else the Stash.</summary>
     private Inventory CurrentBag => _run is { Active: true } ? _run.RunInventory : _stash;
 
-    private CharacterBuild _build = new("species.fey_touched", "class.hexslinger", "prefix.frenzied", SuffixCycle[0]);
+    private CharacterBuild _build = new(
+        new SpeciesId("species.fey_touched"), new BaseClassId("class.hexslinger"),
+        new PrefixId("prefix.frenzied"), new SuffixId(SuffixCycle[0]));
     private int _suffixIndex;
 
     private bool _running;
@@ -107,30 +99,25 @@ public partial class GameRoot : Node
 
     public override void _Ready()
     {
-        _materials = ContentLoader.LoadMaterials("res://data/materials");
-        _propertyDefs = ContentLoader.LoadDefinitions<PropertyDefinition>("res://data/properties");
+        var content = ContentLoader.LoadAll("res://data");
+        ValidateContentOrThrow(content);
 
-        var species = ContentLoader.LoadDefinitions<SpeciesDefinition>("res://data/species");
-        var classes = ContentLoader.LoadDefinitions<BaseClassDefinition>("res://data/classes");
-        var prefixes = ContentLoader.LoadDefinitions<PrefixDefinition>("res://data/prefixes");
-        var suffixes = ContentLoader.LoadDefinitions<SuffixDefinition>("res://data/suffixes");
-        _professionDefs = ContentLoader.LoadDefinitions<ProfessionDefinition>("res://data/professions");
-        _actionDefs = ContentLoader.LoadDefinitions<ProfessionActionDefinition>("res://data/profession_actions");
-        _interactions = ContentLoader.LoadDefinitions<CraftingInteractionDefinition>("res://data/crafting_interactions");
-        _abilities = ContentLoader.LoadDefinitions<AbilityDefinition>("res://data/abilities");
-        _actors = ContentLoader.LoadDefinitions<ActorDefinition>("res://data/actors");
-        _realms = ContentLoader.LoadDefinitions<RealmDefinition>("res://data/realms");
-        _consumables = ContentLoader.LoadDefinitions<ConsumableDefinition>("res://data/consumables");
-        _equipment = ContentLoader.LoadDefinitions<EquipmentDefinition>("res://data/equipment");
-
-        ValidateContentOrThrow();
+        _materials = content.Materials;
+        _professionDefs = content.Professions;
+        _actionDefs = content.Actions;
+        _interactions = content.Interactions;
+        _abilities = content.Abilities;
+        _actors = content.Actors;
+        _realms = content.Realms;
+        _consumables = content.Consumables;
+        _equipment = content.Equipment;
 
         var rules = new RuleRegistry(new ICharacterRule[]
         {
             new UnreasonableConfidenceRule(),
             new InappropriateOptimismRule(),
         });
-        _composer = new CharacterComposer(species, classes, prefixes, suffixes, rules);
+        _composer = new CharacterComposer(content.Species, content.Classes, content.Prefixes, content.Suffixes, rules);
         RebuildCharacter();
         EquipStarterLoadout();
 
@@ -169,11 +156,9 @@ public partial class GameRoot : Node
     /// and fails loudly if anything is broken, so a bad reference is caught at startup
     /// rather than as a mid-play <see cref="KeyNotFoundException"/> (ROADMAP Phase 4).
     /// </summary>
-    private void ValidateContentOrThrow()
+    private void ValidateContentOrThrow(ContentBundle content)
     {
-        var problems = ContentValidator.Validate(
-            _materials, _professionDefs, _actionDefs, _interactions,
-            _abilities, _actors, _realms, _consumables, _equipment);
+        var problems = ContentValidator.Validate(content);
 
         if (problems.Count == 0)
             return;
@@ -217,7 +202,7 @@ public partial class GameRoot : Node
     public void CycleSuffix()
     {
         _suffixIndex = (_suffixIndex + 1) % SuffixCycle.Length;
-        _build = _build with { SuffixId = SuffixCycle[_suffixIndex] };
+        _build = _build with { SuffixId = new SuffixId(SuffixCycle[_suffixIndex]) };
         RebuildCharacter();
     }
 
@@ -502,7 +487,7 @@ public partial class GameRoot : Node
         if (outcome.Result == CombatResult.Victory)
         {
             _run.MarkCleared(locationId);
-            AddKnowledge(_run.Realm.Id, 2);
+            AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerCombatCleared);
             Emit($"[Realm] Cleared {_run.Realm.GetLocation(locationId).Name}.");
             RealmChanged?.Invoke();
         }
@@ -581,13 +566,7 @@ public partial class GameRoot : Node
     }
 
     /// <summary>One-line description of an instance: name, id, and any derived properties.</summary>
-    public string InstanceLabel(ItemInstance instance)
-    {
-        var props = instance.Properties.Count > 0
-            ? " (" + string.Join(", ", instance.Properties.AsDictionary().Select(p => $"{p.Key} {p.Value:0.##}")) + ")"
-            : string.Empty;
-        return $"{instance.DisplayName} #{instance.InstanceId}{props}";
-    }
+    public string InstanceLabel(ItemInstance instance) => ItemFormat.InstanceLabel(instance);
 
     public string EquipmentReport()
     {
@@ -619,8 +598,8 @@ public partial class GameRoot : Node
     {
         var instance = _playerEquipment.InSlot(EquipmentSlot.Weapon);
         if (instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var def))
-            return EquipmentResolver.ResolveWeapon(def, instance, Unarmed);
-        return Unarmed;
+            return EquipmentResolver.ResolveWeapon(def, instance, AttackProfile.Unarmed);
+        return AttackProfile.Unarmed;
     }
 
     private ArmorProfile ResolvePlayerArmor()
@@ -668,7 +647,7 @@ public partial class GameRoot : Node
         Character.RestoreAll(); // rested and prepared before the expedition
         _run = new RealmRun(realm, tier: 1);
         _run.RunInventory.Changed += () => InventoryChanged?.Invoke();
-        AddKnowledge(realmId, 1);
+        AddKnowledge(realmId, RealmTuning.KnowledgePerEnter);
         Emit($"[Realm] Entered {realm.Name} (Tier {_run.Tier}, Depth {_run.CurrentDepth}).");
         RealmChanged?.Invoke();
     }
@@ -688,7 +667,7 @@ public partial class GameRoot : Node
             return;
 
         if (isNew)
-            AddKnowledge(_run.Realm.Id, 1);
+            AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerTravel);
         Emit($"[Realm] Travelled to {_run.CurrentLocation.Name}.");
         RealmChanged?.Invoke();
     }
@@ -735,7 +714,7 @@ public partial class GameRoot : Node
                     Emit($"[Loot] {ItemName(loc.RewardItemId)} x{loc.RewardQuantity}.");
                 }
                 _run.MarkCleared(loc.Id);
-                AddKnowledge(_run.Realm.Id, 1);
+                AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerEvent);
                 RealmChanged?.Invoke();
                 break;
 
@@ -755,7 +734,7 @@ public partial class GameRoot : Node
             return;
         }
 
-        AddKnowledge(_run.Realm.Id, 2);
+        AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerDescend);
         Emit($"[Realm] You press deeper. Depth {_run.CurrentDepth}. The danger rises.");
         RealmChanged?.Invoke();
     }
@@ -811,7 +790,7 @@ public partial class GameRoot : Node
         else
         {
             var secured = RealmExtraction.Secure(_run, _stash);
-            AddKnowledge(realmId, 3);
+            AddKnowledge(realmId, RealmTuning.KnowledgePerExtract);
             Emit($"[Extraction] Secured {secured.TotalQuantity} item(s) to your Stash. Returned to the Hideout.");
         }
 

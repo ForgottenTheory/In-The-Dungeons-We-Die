@@ -335,7 +335,7 @@ public partial class MainMvpUI : Control
         actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
         actionRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
         actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
-        actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve"), Positive));
+        actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("consumable.healing_salve"), Positive));
         actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
     }
 
@@ -417,7 +417,7 @@ public partial class MainMvpUI : Control
             fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
             fightRow.AddChild(MakeButton("Block", () => _game.CombatBlock()));
             fightRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
-            fightRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("item.healing_salve"), Positive));
+            fightRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("consumable.healing_salve"), Positive));
             return;
         }
 
@@ -484,11 +484,8 @@ public partial class MainMvpUI : Control
     // --- Theming helpers ----------------------------------------------------
 
     /// <summary>1.0 when the active-timing sweep is dead-centre, falling to 0 at the edges.</summary>
-    private double CurrentTimingPerformance()
-    {
-        var position = _timingBar.Value / 100.0;
-        return Math.Clamp(1.0 - (Math.Abs(position - 0.5) * 2.0), 0.0, 1.0);
-    }
+    private double CurrentTimingPerformance() =>
+        Dungeons.Professions.ProfessionTuning.TimingPerformance(_timingBar.Value / 100.0);
 
     private static Label SectionTitle(string text)
     {

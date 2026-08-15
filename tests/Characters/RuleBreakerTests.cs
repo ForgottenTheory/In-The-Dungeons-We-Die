@@ -21,7 +21,9 @@ public class RuleBreakerTests
             Store(new SuffixDefinition { Id = suffixId, Name = "Of Something", RuleIds = ruleIds }),
             RealRules());
 
-        var blueprint = composer.Compose(new CharacterBuild("species.s", "class.c", "prefix.p", suffixId), AttributeSet.Uniform(5));
+        var blueprint = composer.Compose(
+            new CharacterBuild(new SpeciesId("species.s"), new BaseClassId("class.c"), new PrefixId("prefix.p"), new SuffixId(suffixId)),
+            AttributeSet.Uniform(5));
         return new Character(blueprint);
     }
 

@@ -1,8 +1,20 @@
+using Dungeons.Content;
+
 namespace Dungeons.Tests;
 
 /// <summary>Locates the repository's shipped content directory from the test output folder.</summary>
 internal static class TestPaths
 {
+    /// <summary>Loads a shipped content subfolder into a store (array or single-object files),
+    /// the one place test suites share instead of each re-implementing a loader.</summary>
+    public static DataStore<T> LoadStore<T>(string subfolder) where T : IDefinition
+    {
+        var store = new DataStore<T>();
+        store.LoadDocuments(
+            Directory.GetFiles(Path.Combine(DataDir, subfolder), "*.json").Select(File.ReadAllText));
+        return store;
+    }
+
     public static string DataDir
     {
         get

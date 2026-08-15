@@ -1,3 +1,4 @@
+using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Crafting;
@@ -22,21 +23,30 @@ public class ContentValidatorTests
     [Fact]
     public void ShippedContentHasNoProblems()
     {
-        var problems = ContentValidator.Validate(
-            Load<MaterialDefinition>("materials"),
-            Load<ProfessionDefinition>("professions"),
-            Load<ProfessionActionDefinition>("profession_actions"),
-            Load<CraftingInteractionDefinition>("crafting_interactions"),
-            Load<AbilityDefinition>("abilities"),
-            Load<ActorDefinition>("actors"),
-            Load<RealmDefinition>("realms"),
-            Load<ConsumableDefinition>("consumables"),
-            Load<EquipmentDefinition>("equipment"));
+        var problems = ContentValidator.Validate(LoadShippedBundle());
 
         Assert.True(problems.Count == 0,
             "Shipped content should validate cleanly, but found:" + Environment.NewLine +
             string.Join(Environment.NewLine, problems));
     }
+
+    private static ContentBundle LoadShippedBundle() => new()
+    {
+        Materials = Load<MaterialDefinition>("materials"),
+        Properties = Load<PropertyDefinition>("properties"),
+        Professions = Load<ProfessionDefinition>("professions"),
+        Actions = Load<ProfessionActionDefinition>("profession_actions"),
+        Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),
+        Abilities = Load<AbilityDefinition>("abilities"),
+        Actors = Load<ActorDefinition>("actors"),
+        Realms = Load<RealmDefinition>("realms"),
+        Consumables = Load<ConsumableDefinition>("consumables"),
+        Equipment = Load<EquipmentDefinition>("equipment"),
+        Species = Load<SpeciesDefinition>("species"),
+        Classes = Load<BaseClassDefinition>("classes"),
+        Prefixes = Load<PrefixDefinition>("prefixes"),
+        Suffixes = Load<SuffixDefinition>("suffixes"),
+    };
 
     private static readonly string[] ValidTags = { "origin:flora", "comp:organic", "form:wood", "state:raw", "rarity:common" };
 
@@ -140,6 +150,36 @@ public class ContentValidatorTests
             Properties = new Dictionary<string, double> { ["mass"] = -5 },
         });
         AssertHasProblem(content, "materials", "range");
+    }
+
+    [Fact]
+    public void Equipment_WithUnknownProperty_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Equipment.Add(new EquipmentDefinition
+        {
+            Id = "equip.bad",
+            Slot = EquipmentSlot.Weapon,
+            Weapon = new WeaponStats(),
+            Properties = new Dictionary<string, double> { ["sparkliness"] = 3 },
+        });
+        AssertHasProblem(content, "equipment", "sparkliness");
+    }
+
+    [Fact]
+    public void CharacterComponent_WithUnknownAbility_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Species.Add(new SpeciesDefinition { Id = "species.bad", AbilityIds = new[] { "ability.ghost" } });
+        AssertHasProblem(content, "species", "ability.ghost");
+    }
+
+    [Fact]
+    public void CharacterComponent_WithKnownUnimplementedAbility_IsTolerated()
+    {
+        var content = ValidBaseline();
+        content.Species.Add(new SpeciesDefinition { Id = "species.ok", AbilityIds = new[] { "ability.guard" } });
+        Assert.Empty(content.Validate());
     }
 
     // --- Tag family namespacing + cardinality --------------------------------
@@ -395,9 +435,7 @@ public class ContentValidatorTests
 
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
     {
-        var store = new DataStore<T>();
-        store.LoadDocuments(Directory.GetFiles(Path.Combine(TestPaths.DataDir, subfolder), "*.json").Select(File.ReadAllText));
-        return store;
+        return TestPaths.LoadStore<T>(subfolder);
     }
 
     private static void AssertHasProblem(TestContent content, string category, string messageFragment)
@@ -416,21 +454,31 @@ public class ContentValidatorTests
         return content;
     }
 
-    /// <summary>Mutable bag of stores mirroring <see cref="ContentValidator.Validate"/>'s arguments.</summary>
+    /// <summary>A <see cref="ContentBundle"/> under construction, with the real property registry
+    /// loaded so material/equipment property validation has its source of truth.</summary>
     private sealed class TestContent
     {
-        public DataStore<MaterialDefinition> Materials { get; } = new();
-        public DataStore<ProfessionDefinition> Professions { get; } = new();
-        public DataStore<ProfessionActionDefinition> Actions { get; } = new();
-        public DataStore<CraftingInteractionDefinition> Interactions { get; } = new();
-        public DataStore<AbilityDefinition> Abilities { get; } = new();
-        public DataStore<ActorDefinition> Actors { get; } = new();
-        public DataStore<RealmDefinition> Realms { get; } = new();
-        public DataStore<ConsumableDefinition> Consumables { get; } = new();
-        public DataStore<EquipmentDefinition> Equipment { get; } = new();
+        private readonly ContentBundle _bundle = new() { Properties = LoadProperties() };
 
-        public IReadOnlyList<ContentProblem> Validate() => ContentValidator.Validate(
-            Materials, Professions, Actions, Interactions,
-            Abilities, Actors, Realms, Consumables, Equipment);
+        public DataStore<MaterialDefinition> Materials => _bundle.Materials;
+        public DataStore<ProfessionDefinition> Professions => _bundle.Professions;
+        public DataStore<ProfessionActionDefinition> Actions => _bundle.Actions;
+        public DataStore<CraftingInteractionDefinition> Interactions => _bundle.Interactions;
+        public DataStore<AbilityDefinition> Abilities => _bundle.Abilities;
+        public DataStore<ActorDefinition> Actors => _bundle.Actors;
+        public DataStore<RealmDefinition> Realms => _bundle.Realms;
+        public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
+        public DataStore<EquipmentDefinition> Equipment => _bundle.Equipment;
+        public DataStore<Dungeons.Characters.Composition.SpeciesDefinition> Species => _bundle.Species;
+
+        public IReadOnlyList<ContentProblem> Validate() => ContentValidator.Validate(_bundle);
+
+        private static DataStore<PropertyDefinition> LoadProperties()
+        {
+            var store = new DataStore<PropertyDefinition>();
+            store.LoadDocuments(
+                Directory.GetFiles(Path.Combine(TestPaths.DataDir, "properties"), "*.json").Select(File.ReadAllText));
+            return store;
+        }
     }
 }

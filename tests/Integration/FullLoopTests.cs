@@ -81,8 +81,8 @@ public class FullLoopTests
 
         // Take a hit's worth of damage, then heal with a crafted salve from the run bag.
         player.Health.Reduce(30);
-        run.RunInventory.Add("item.healing_salve", 1);
-        Assert.True(run.RunInventory.TryRemove("item.healing_salve", 1));
+        run.RunInventory.Add("consumable.healing_salve", 1);
+        Assert.True(run.RunInventory.TryRemove("consumable.healing_salve", 1));
         encounter.UseHealingItem("Healing Salve", 25);
         Assert.Equal(55, player.Health.Current);
 

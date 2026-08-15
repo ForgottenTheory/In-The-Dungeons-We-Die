@@ -37,10 +37,10 @@ public sealed class CharacterComposer
     {
         ArgumentNullException.ThrowIfNull(build);
 
-        var species = Resolve(_species, build.SpeciesId, "species");
-        var baseClass = Resolve(_baseClasses, build.BaseClassId, "base class");
-        var prefix = Resolve(_prefixes, build.PrefixId, "prefix");
-        var suffix = Resolve(_suffixes, build.SuffixId, "suffix");
+        var species = Resolve(_species, build.SpeciesId.Value, "species");
+        var baseClass = Resolve(_baseClasses, build.BaseClassId.Value, "base class");
+        var prefix = Resolve(_prefixes, build.PrefixId.Value, "prefix");
+        var suffix = Resolve(_suffixes, build.SuffixId.Value, "suffix");
 
         var components = new CharacterComponentDefinition[] { species, baseClass, prefix, suffix };
         var modifiers = components.SelectMany(c => c.Modifiers).Select(m => m.ToModifier()).ToList();

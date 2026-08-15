@@ -42,9 +42,9 @@ public static class EquipmentResolver
             StaminaCost = w.StaminaCost,
             Timing = new AbilityTiming
             {
-                TelegraphTicks = w.TelegraphTicks,
-                WindupTicks = w.WindupTicks + (int)Math.Round(mass * EquipmentTuning.WindupTicksPerMass),
-                RecoveryTicks = w.RecoveryTicks,
+                TelegraphTicks = w.Timing.TelegraphTicks,
+                WindupTicks = w.Timing.WindupTicks + (int)Math.Round(mass * EquipmentTuning.WindupTicksPerMass),
+                RecoveryTicks = w.Timing.RecoveryTicks,
             },
         };
     }

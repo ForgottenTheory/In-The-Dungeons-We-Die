@@ -10,7 +10,9 @@ public class SaveSerializerTests
     private static SaveData Sample() => new()
     {
         SavedAtTick = 4242,
-        Build = new CharacterBuild("species.undead", "class.bastion", "prefix.frenzied", "suffix.the_last_laugh"),
+        Build = new CharacterBuild(
+            new SpeciesId("species.undead"), new BaseClassId("class.bastion"),
+            new PrefixId("prefix.frenzied"), new SuffixId("suffix.the_last_laugh")),
         Stash = new List<ItemStack> { new("material.oak_log", 7), new("material.iron_ingot", 2) },
         Professions = new List<ProfessionSave>
         {
@@ -21,6 +23,16 @@ public class SaveSerializerTests
     };
 
     [Fact]
+    public void CharacterBuild_Ids_SerializeAsBareStrings()
+    {
+        var json = new SaveSerializer().Serialize(Sample());
+        // Typed component ids must serialize as plain strings, not {"value":...} objects,
+        // so the save format is unchanged by the strong typing.
+        Assert.Contains("\"species.undead\"", json);
+        Assert.DoesNotContain("\"Value\"", json);
+    }
+
+    [Fact]
     public void RoundTrip_PreservesEverything()
     {
         var serializer = new SaveSerializer();
@@ -28,8 +40,8 @@ public class SaveSerializerTests
 
         Assert.Equal(SaveData.CurrentSchemaVersion, restored.SchemaVersion);
         Assert.Equal(4242, restored.SavedAtTick);
-        Assert.Equal("species.undead", restored.Build!.SpeciesId);
-        Assert.Equal("suffix.the_last_laugh", restored.Build.SuffixId);
+        Assert.Equal("species.undead", restored.Build!.SpeciesId.Value);
+        Assert.Equal("suffix.the_last_laugh", restored.Build.SuffixId.Value);
         Assert.Equal(7, restored.Stash.First(s => s.ItemId == "material.oak_log").Quantity);
         Assert.Equal(350, restored.Professions.Single().Xp);
         Assert.Equal(12, restored.Professions.Single().Mastery["action.chop_oak"]);

@@ -20,7 +20,7 @@ public class EquipmentTests
         Id = "equip.iron_sword",
         Name = "Iron Sword",
         Slot = EquipmentSlot.Weapon,
-        Weapon = new WeaponStats { BaseDamage = 10, DamageType = DamageType.Slashing, TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15, StaminaCost = 5 },
+        Weapon = new WeaponStats { BaseDamage = 10, DamageType = DamageType.Slashing, Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15 }, StaminaCost = 5 },
     };
 
     private static EquipmentDefinition IronArmor() => new()

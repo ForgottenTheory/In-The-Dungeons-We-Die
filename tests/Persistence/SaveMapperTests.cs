@@ -18,7 +18,9 @@ public class SaveMapperTests
     public void CaptureThenApply_RestoresAllPersistentState()
     {
         // --- Build a populated "session" ---
-        var build = new CharacterBuild("species.human", "class.hexslinger", "prefix.ironbound", "suffix.unreasonable_confidence");
+        var build = new CharacterBuild(
+            new SpeciesId("species.human"), new BaseClassId("class.hexslinger"),
+            new PrefixId("prefix.ironbound"), new SuffixId("suffix.unreasonable_confidence"));
         var stash = new Inventory();
         stash.Add("material.oak_log", 4);
         stash.Add("material.iron_ore", 10);
@@ -77,7 +79,7 @@ public class SaveMapperTests
 
         Assert.True(newDiscoveries.IsDiscovered("discovery.barkbound_iron"));
         Assert.Equal(15, newKnowledge["realm.dark_forest"]);
-        Assert.Equal("class.hexslinger", loaded.Build!.BaseClassId);
+        Assert.Equal("class.hexslinger", loaded.Build!.BaseClassId.Value);
 
         // Crafted instance restored with its derived properties + provenance.
         var restoredBark = Assert.Single(newStash.Instances);

@@ -50,7 +50,7 @@ public class ContentValidationTests
         foreach (var pr in prefixes.GetAll())
         foreach (var su in suffixes.GetAll())
         {
-            var build = new CharacterBuild(sp.Id, cl.Id, pr.Id, su.Id);
+            var build = new CharacterBuild(new SpeciesId(sp.Id), new BaseClassId(cl.Id), new PrefixId(pr.Id), new SuffixId(su.Id));
             var character = new Character(composer.Compose(build, AttributeSet.Uniform(5)));
             Assert.True(character.Health.Max > 0, $"{build} produced non-positive health.");
         }

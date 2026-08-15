@@ -10,7 +10,7 @@ namespace Dungeons.Tests.Characters;
 public class CharacterComposerTests
 {
     private static readonly CharacterBuild Build =
-        new("species.s", "class.c", "prefix.p", "suffix.s");
+        new(new SpeciesId("species.s"), new BaseClassId("class.c"), new PrefixId("prefix.p"), new SuffixId("suffix.s"));
 
     private static CharacterComposer FullComposer(
         SpeciesDefinition? species = null,
@@ -78,7 +78,7 @@ public class CharacterComposerTests
     public void UnknownComponentId_FailsLoudly()
     {
         var composer = FullComposer();
-        var badBuild = Build with { SpeciesId = "species.missing" };
+        var badBuild = Build with { SpeciesId = new SpeciesId("species.missing") };
         var ex = Assert.Throws<KeyNotFoundException>(() => composer.Compose(badBuild, AttributeSet.Uniform(5)));
         Assert.Contains("species", ex.Message);
     }

@@ -8,14 +8,13 @@ public enum EquipmentSlot
     Armor,
 }
 
-/// <summary>Weapon base stats (before instance-property derivation).</summary>
+/// <summary>Weapon base stats (before instance-property derivation). Uses the same nested
+/// <see cref="AbilityTiming"/> shape as abilities so timing is authored one way everywhere.</summary>
 public sealed class WeaponStats
 {
     public double BaseDamage { get; init; } = 1;
     public DamageType DamageType { get; init; } = DamageType.Slashing;
-    public int TelegraphTicks { get; init; } = 2;
-    public int WindupTicks { get; init; } = 8;
-    public int RecoveryTicks { get; init; } = 15;
+    public AbilityTiming Timing { get; init; } = new() { TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15 };
     public int StaminaCost { get; init; } = 5;
 }
 
