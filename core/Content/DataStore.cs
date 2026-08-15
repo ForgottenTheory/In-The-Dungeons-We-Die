@@ -66,6 +66,31 @@ public sealed class DataStore<T> where T : IDefinition
     }
 
     /// <summary>
+    /// Loads a set of JSON documents, each of which may be a single object <em>or</em> an
+    /// array of objects (auto-detected per document). This lets a content type be authored
+    /// either one-per-file or grouped into array files (e.g. materials by category) without
+    /// the caller caring which — file access still lives on the Godot/test side.
+    /// </summary>
+    public void LoadDocuments(IEnumerable<string> jsonDocuments)
+    {
+        ArgumentNullException.ThrowIfNull(jsonDocuments);
+        foreach (var json in jsonDocuments)
+        {
+            if (StartsWithArray(json))
+                LoadMany(json);
+            else
+                LoadOne(json);
+        }
+    }
+
+    /// <summary>True if the first meaningful character (ignoring a BOM/whitespace) is '['.</summary>
+    private static bool StartsWithArray(string json)
+    {
+        var trimmed = json.TrimStart('﻿', ' ', '\t', '\r', '\n');
+        return trimmed.StartsWith('[');
+    }
+
+    /// <summary>
     /// Clears the store and reloads it from a set of single-object JSON documents
     /// (one per content file). Development reload / hot-swap builds on this.
     /// </summary>

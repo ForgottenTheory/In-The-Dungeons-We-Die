@@ -14,12 +14,15 @@ public static class ContentLoader
     public static DataStore<MaterialDefinition> LoadMaterials(string directory) =>
         LoadDefinitions<MaterialDefinition>(directory);
 
-    /// <summary>Loads every <c>.json</c> definition of type <typeparamref name="T"/> from a directory.</summary>
+    /// <summary>
+    /// Loads every <c>.json</c> definition of type <typeparamref name="T"/> from a directory.
+    /// Each file may be a single object or an array of objects (e.g. materials grouped by
+    /// category), auto-detected per file.
+    /// </summary>
     public static DataStore<T> LoadDefinitions<T>(string directory) where T : IDefinition
     {
         var store = new DataStore<T>();
-        foreach (var json in ReadJsonFiles(directory))
-            store.LoadOne(json);
+        store.LoadDocuments(ReadJsonFiles(directory));
         return store;
     }
 

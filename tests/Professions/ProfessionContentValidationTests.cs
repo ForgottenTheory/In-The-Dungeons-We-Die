@@ -17,8 +17,7 @@ public class ProfessionContentValidationTests
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
     {
         var store = new DataStore<T>();
-        foreach (var file in Directory.GetFiles(Path.Combine(TestPaths.DataDir, subfolder), "*.json"))
-            store.LoadOne(File.ReadAllText(file));
+        store.LoadDocuments(Directory.GetFiles(Path.Combine(TestPaths.DataDir, subfolder), "*.json").Select(File.ReadAllText));
         return store;
     }
 
@@ -59,5 +58,30 @@ public class ProfessionContentValidationTests
             var outcome = system.Execute(action.Id);
             Assert.True(outcome.Success, $"{action.Id} failed with {outcome.Failure}");
         }
+    }
+
+    [Fact]
+    public void FlatJson_BindsToUnifiedItemStackAndItemChance()
+    {
+        // Guards the unified item+quantity shapes: the flat JSON
+        // ({ itemId, quantity } / { itemId, chance, quantity }) must still bind to
+        // ItemStack / ItemChance value types, quantities and chances included.
+        var actions = Load<ProfessionActionDefinition>("profession_actions");
+
+        var chop = actions.GetById("action.chop_oak");
+        var log = Assert.Single(chop.Outputs);
+        Assert.Equal("material.oak_log", log.ItemId);
+        Assert.Equal(1, log.Quantity);
+
+        var bark = Assert.Single(chop.BonusOutputs);
+        Assert.Equal("material.oak_bark", bark.ItemId);
+        Assert.Equal(0.25, bark.Chance);
+        Assert.Equal(1, bark.Quantity);
+        Assert.Equal(new Dungeons.Items.ItemStack("material.oak_bark", 1), bark.Stack);
+
+        var smelt = actions.GetById("action.smelt_iron");
+        var ore = Assert.Single(smelt.Inputs);
+        Assert.Equal("material.iron_ore", ore.ItemId);
+        Assert.Equal(2, ore.Quantity);
     }
 }

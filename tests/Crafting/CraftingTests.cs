@@ -38,7 +38,7 @@ public class CraftingTests
     {
         Id = "material.barkbound_iron",
         Name = "Barkbound Iron",
-        Properties = new[] { new MaterialProperty { Property = "toxin_resistance", Value = 0.05 } },
+        Properties = new Dictionary<string, double> { ["toxin_resistance"] = 0.05 },
     };
 
     private static (CraftingExperimentSystem sys, Inventory inv, DiscoverySystem disc) Build(int herbloreLevel)
@@ -140,8 +140,8 @@ public class CraftingTests
             DiscoveryId = "discovery.bloodmoss_iron",
         });
         var materials = Materials(
-            new MaterialDefinition { Id = "material.iron_ingot", Name = "Iron Ingot", Properties = new[] { new MaterialProperty { Property = "mass", Value = 3 } } },
-            new MaterialDefinition { Id = "material.bloodmoss", Name = "Bloodmoss", Properties = new[] { new MaterialProperty { Property = "growth", Value = 2 } } },
+            new MaterialDefinition { Id = "material.iron_ingot", Name = "Iron Ingot", Properties = new Dictionary<string, double> { ["mass"] = 3 } },
+            new MaterialDefinition { Id = "material.bloodmoss", Name = "Bloodmoss", Properties = new Dictionary<string, double> { ["growth"] = 2 } },
             new MaterialDefinition { Id = "material.bloodmoss_iron", Name = "Bloodmoss Iron" });
 
         var inv = new Inventory();
@@ -187,7 +187,7 @@ public class CraftingTests
               "id": "material.oak_bark",
               "name": "Oak Bark",
               "tags": ["plant", "oak"],
-              "properties": [ { "property": "toxin_resistance", "value": 0.05 } ]
+              "properties": { "toxin_resistance": 0.05 }
             }
             """);
         Assert.Equal(0.05, materials.GetById("material.oak_bark").GetProperty("toxin_resistance"));

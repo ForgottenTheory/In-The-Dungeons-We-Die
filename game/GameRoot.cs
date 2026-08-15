@@ -121,6 +121,8 @@ public partial class GameRoot : Node
         _consumables = ContentLoader.LoadDefinitions<ConsumableDefinition>("res://data/consumables");
         _equipment = ContentLoader.LoadDefinitions<EquipmentDefinition>("res://data/equipment");
 
+        ValidateContentOrThrow();
+
         var rules = new RuleRegistry(new ICharacterRule[]
         {
             new UnreasonableConfidenceRule(),
@@ -138,6 +140,7 @@ public partial class GameRoot : Node
         _professions.LeveledUp += OnLeveledUp;
         _passiveRunner.Stalled += OnPassiveStalled;
         _stash.Changed += () => InventoryChanged?.Invoke();
+        _playerEquipment.Changed += () => CharacterChanged?.Invoke();
 
         // Crafting happens in the Hideout, against the Stash (field crafting deferred).
         _discoveries = new DiscoverySystem();
@@ -157,6 +160,26 @@ public partial class GameRoot : Node
         _stash.Add("material.iron_ore", 10);
 
         GD.Print($"[GameRoot] Ready. {_materials.Count} materials, {_professionDefs.Count} professions, {_actionDefs.Count} actions, {_interactions.Count} interactions.");
+    }
+
+    /// <summary>
+    /// Runs load-time cross-reference validation over the freshly-loaded content stores
+    /// and fails loudly if anything is broken, so a bad reference is caught at startup
+    /// rather than as a mid-play <see cref="KeyNotFoundException"/> (ROADMAP Phase 4).
+    /// </summary>
+    private void ValidateContentOrThrow()
+    {
+        var problems = ContentValidator.Validate(
+            _materials, _professionDefs, _actionDefs, _interactions,
+            _abilities, _actors, _realms, _consumables, _equipment);
+
+        if (problems.Count == 0)
+            return;
+
+        foreach (var problem in problems)
+            GD.PushError($"[Content] {problem}");
+
+        throw new ContentValidationException(problems);
     }
 
     public override void _Process(double delta)
@@ -295,12 +318,7 @@ public partial class GameRoot : Node
             .ToList();
 
         foreach (var instance in bag.Instances.OrderBy(i => i.DisplayName))
-        {
-            var props = instance.Properties.Count > 0
-                ? " (" + string.Join(", ", instance.Properties.AsDictionary().Select(p => $"{p.Key} {p.Value:0.##}")) + ")"
-                : string.Empty;
-            lines.Add($"  {instance.DisplayName,-16} #{instance.InstanceId}{props}");
-        }
+            lines.Add("  " + InstanceLabel(instance));
 
         return lines.Count == 0 ? "  (empty)" : string.Join("\n", lines);
     }
@@ -494,36 +512,86 @@ public partial class GameRoot : Node
 
     // --- Equipment ----------------------------------------------------------
 
-    /// <summary>Equipment blueprints that can be granted/equipped (excludes the starter kit).</summary>
+    /// <summary>Equipment blueprints that can be granted into the stash (excludes the starter kit).</summary>
     public IReadOnlyList<EquipmentDefinition> EquipmentCatalog =>
         _equipment.GetAll().Where(e => e.Id != StarterWeaponId && e.Id != StarterArmorId).OrderBy(e => e.Name).ToList();
 
-    /// <summary>Debug: instantiates a piece of equipment, equips it, and banks whatever it displaced.</summary>
-    public void GrantAndEquip(string equipmentDefId)
+    /// <summary>The instance equipped in the weapon/armor slot, or null when empty.</summary>
+    public ItemInstance? EquippedWeapon => _playerEquipment.InSlot(EquipmentSlot.Weapon);
+    public ItemInstance? EquippedArmor => _playerEquipment.InSlot(EquipmentSlot.Armor);
+
+    /// <summary>Unequipped weapons/armor sitting in the Stash, ready to equip.</summary>
+    public IReadOnlyList<ItemInstance> StashEquipment =>
+        _stash.Instances.Where(i => i.ItemType is ItemType.Weapon or ItemType.Armor)
+            .OrderBy(i => i.DisplayName).ToList();
+
+    /// <summary>Debug: instantiate a piece of equipment and drop it in the Stash to be equipped from there.</summary>
+    public void GrantToStash(string equipmentDefId)
     {
         if (!_equipment.TryGetById(equipmentDefId, out var def))
             return;
-        var instance = InstantiateEquipment(def);
+        _stash.AddInstance(InstantiateEquipment(def));
+        Emit($"[Equipment] Added {def.Name} to the stash.");
+    }
+
+    /// <summary>Equips a Stash instance in its slot; banks whatever it displaces back to the Stash.</summary>
+    public void EquipFromStash(long instanceId)
+    {
+        var instance = _stash.GetInstance(instanceId);
+        if (instance is null)
+            return;
+        if (!_equipment.TryGetById(instance.BaseDefinitionId, out var def))
+        {
+            Emit($"[Equipment] {instance.DisplayName} is not equippable.");
+            return;
+        }
+
+        _stash.RemoveInstance(instanceId);
         var displaced = _playerEquipment.Equip(def.Slot, instance);
         if (displaced is not null)
             _stash.AddInstance(displaced);
         Emit($"[Equipment] Equipped {instance.DisplayName}.");
-        CharacterChanged?.Invoke();
+    }
+
+    /// <summary>Removes the item in a slot and returns it to the Stash (the player may fight unarmed).</summary>
+    public void UnequipToStash(EquipmentSlot slot)
+    {
+        var removed = _playerEquipment.Unequip(slot);
+        if (removed is null)
+            return;
+        _stash.AddInstance(removed);
+        Emit($"[Equipment] Unequipped {removed.DisplayName}.");
+    }
+
+    public string EquippedWeaponSummary()
+    {
+        var attack = ResolvePlayerWeapon();
+        return $"{attack.BaseDamage:0.#} {attack.DamageType}, impact {attack.Timing.TimeToImpactTicks}t";
+    }
+
+    public string EquippedArmorSummary()
+    {
+        var armorProfile = ResolvePlayerArmor();
+        var resist = armorProfile.Resistances.Count == 0
+            ? string.Empty
+            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r => $"{r.Key} {r.Value:P0}"));
+        return $"{armorProfile.Armor:0.#} armor{resist}";
+    }
+
+    /// <summary>One-line description of an instance: name, id, and any derived properties.</summary>
+    public string InstanceLabel(ItemInstance instance)
+    {
+        var props = instance.Properties.Count > 0
+            ? " (" + string.Join(", ", instance.Properties.AsDictionary().Select(p => $"{p.Key} {p.Value:0.##}")) + ")"
+            : string.Empty;
+        return $"{instance.DisplayName} #{instance.InstanceId}{props}";
     }
 
     public string EquipmentReport()
     {
-        var weapon = _playerEquipment.InSlot(EquipmentSlot.Weapon);
-        var armor = _playerEquipment.InSlot(EquipmentSlot.Armor);
-        var attack = ResolvePlayerWeapon();
-        var armorProfile = ResolvePlayerArmor();
-
         var sb = new StringBuilder();
-        sb.AppendLine($"Weapon: {(weapon?.DisplayName ?? "— (unarmed)")}  →  {attack.BaseDamage:0.#} {attack.DamageType}, impact {attack.Timing.TimeToImpactTicks}t");
-        var resist = armorProfile.Resistances.Count == 0
-            ? string.Empty
-            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r => $"{r.Key} {r.Value:P0}"));
-        sb.Append($"Armor:  {(armor?.DisplayName ?? "— (none)")}  →  {armorProfile.Armor:0.#} armor{resist}");
+        sb.AppendLine($"Weapon: {(EquippedWeapon?.DisplayName ?? "— (unarmed)")}  →  {EquippedWeaponSummary()}");
+        sb.Append($"Armor:  {(EquippedArmor?.DisplayName ?? "— (none)")}  →  {EquippedArmorSummary()}");
         return sb.ToString();
     }
 

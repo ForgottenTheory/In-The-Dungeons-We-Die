@@ -1,8 +1,0 @@
-{
-  "id": "material.oak_bark",
-  "name": "Oak Bark",
-  "tags": ["material", "plant", "bark", "oak"],
-  "properties": [
-    { "property": "toxin_resistance", "value": 0.05 }
-  ]
-}

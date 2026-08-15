@@ -1,4 +1,5 @@
 using System;
+using Dungeons.Items;
 using Dungeons.Realms;
 using Godot;
 
@@ -24,6 +25,7 @@ public partial class MainMvpUI : Control
     private Label _combatLabel = null!;
     private Label _realmLabel = null!;
     private VBoxContainer _realmControls = null!;
+    private VBoxContainer _equipmentControls = null!;
     private Button _runButton = null!;
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
@@ -117,6 +119,7 @@ public partial class MainMvpUI : Control
         simButtons.AddChild(MakeButton("Load", () => _game.LoadGame()));
 
         BuildCharacterSection(root);
+        BuildEquipmentSection(root);
         BuildProfessionSection(root);
         BuildCraftingSection(root);
         BuildRealmSection(root);
@@ -147,16 +150,68 @@ public partial class MainMvpUI : Control
 
         _characterLabel = new Label { Text = "…" };
         root.AddChild(_characterLabel);
+    }
 
-        var equipRow = new HBoxContainer();
-        equipRow.AddThemeConstantOverride("separation", 8);
-        root.AddChild(equipRow);
-        equipRow.AddChild(new Label { Text = "Equip:" });
+    private void BuildEquipmentSection(VBoxContainer root)
+    {
+        root.AddChild(new HSeparator());
+        root.AddChild(Header("EQUIPMENT"));
+
+        _equipmentControls = new VBoxContainer();
+        _equipmentControls.AddThemeConstantOverride("separation", 4);
+        root.AddChild(_equipmentControls);
+
+        // Debug: conjure gear into the stash so the equip-from-stash flow has something to act on.
+        var grantRow = new HBoxContainer();
+        grantRow.AddThemeConstantOverride("separation", 8);
+        root.AddChild(grantRow);
+        grantRow.AddChild(new Label { Text = "Grant to stash:" });
         foreach (var gear in _game.EquipmentCatalog)
         {
             var id = gear.Id;
-            equipRow.AddChild(MakeButton(gear.Name, () => _game.GrantAndEquip(id)));
+            grantRow.AddChild(MakeButton(gear.Name, () => _game.GrantToStash(id)));
         }
+    }
+
+    private void RebuildEquipmentControls()
+    {
+        foreach (var child in _equipmentControls.GetChildren())
+        {
+            _equipmentControls.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        AddSlotRow(EquipmentSlot.Weapon, _game.EquippedWeapon, _game.EquippedWeaponSummary());
+        AddSlotRow(EquipmentSlot.Armor, _game.EquippedArmor, _game.EquippedArmorSummary());
+
+        _equipmentControls.AddChild(new Label { Text = "In stash:" });
+        var stash = _game.StashEquipment;
+        if (stash.Count == 0)
+        {
+            _equipmentControls.AddChild(new Label { Text = "  (no unequipped gear)" });
+            return;
+        }
+
+        foreach (var instance in stash)
+        {
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 8);
+            _equipmentControls.AddChild(row);
+            row.AddChild(new Label { Text = _game.InstanceLabel(instance), CustomMinimumSize = new Vector2(340, 0) });
+            var id = instance.InstanceId;
+            row.AddChild(MakeButton("Equip", () => _game.EquipFromStash(id)));
+        }
+    }
+
+    private void AddSlotRow(EquipmentSlot slot, ItemInstance? equipped, string summary)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        _equipmentControls.AddChild(row);
+        var name = equipped?.DisplayName ?? "— (empty)";
+        row.AddChild(new Label { Text = $"{slot}: {name}  →  {summary}", CustomMinimumSize = new Vector2(420, 0) });
+        if (equipped is not null)
+            row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot)));
     }
 
     private void BuildProfessionSection(VBoxContainer root)
@@ -325,12 +380,17 @@ public partial class MainMvpUI : Control
 
     private void RefreshRunButton() => _runButton.Text = _game.IsRunning ? "Pause" : "Play";
 
-    private void RefreshCharacter() => _characterLabel.Text = _game.CharacterReport();
+    private void RefreshCharacter()
+    {
+        _characterLabel.Text = _game.CharacterReport();
+        RebuildEquipmentControls(); // equipped slots changed
+    }
 
     private void RefreshProfessionsAndInventory()
     {
         _professionSummaryLabel.Text = _game.ProfessionSummary();
         _inventoryLabel.Text = _game.InventoryReport();
+        RebuildEquipmentControls(); // stash equipment may have changed
         RefreshCrafting(); // herblore level shown in the crafting requirement can change
     }
 

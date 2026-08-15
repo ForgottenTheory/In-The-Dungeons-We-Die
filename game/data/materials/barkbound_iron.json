@@ -1,8 +1,0 @@
-{
-  "id": "material.barkbound_iron",
-  "name": "Barkbound Iron",
-  "tags": ["material", "metal", "alloy", "treated"],
-  "properties": [
-    { "property": "toxin_resistance", "value": 0.05 }
-  ]
-}

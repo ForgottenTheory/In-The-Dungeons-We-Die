@@ -79,7 +79,7 @@ public class ItemModelTests
         {
             Id = "material.oak_bark",
             Name = "Oak Bark",
-            Properties = new[] { new Dungeons.Content.MaterialProperty { Property = "toxin_resistance", Value = 0.05 } },
+            Properties = new Dictionary<string, double> { ["toxin_resistance"] = 0.05 },
         };
         Assert.Equal(ItemType.Material, mat.ItemType);
         Assert.True(mat.Stackable);

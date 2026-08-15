@@ -1,0 +1,39 @@
+[
+  { "id": "material.iron_ingot", "name": "Iron Ingot", "tags": ["processed", "metal", "ingot", "common"], "properties": { "hardness": 65, "mass": 62, "affinity": 30, "conductivity": 55, "insulation": 10, "solubility": 2, "heat_resistance": 60, "cold_resistance": 60 } },
+  { "id": "material.copper_ingot", "name": "Copper Ingot", "tags": ["processed", "metal", "ingot", "common"], "properties": { "hardness": 45, "mass": 58, "affinity": 35, "conductivity": 92, "insulation": 4, "solubility": 2, "heat_resistance": 55 } },
+  { "id": "material.tin_ingot", "name": "Tin Ingot", "tags": ["processed", "metal", "ingot", "common"], "properties": { "hardness": 30, "mass": 52, "affinity": 38, "conductivity": 62, "insulation": 8, "solubility": 2 } },
+  { "id": "material.lead_ingot", "name": "Lead Ingot", "tags": ["processed", "metal", "ingot", "common"], "properties": { "hardness": 26, "mass": 82, "affinity": 30, "conductivity": 42, "insulation": 20, "solubility": 2, "toxicity": 25 } },
+  { "id": "material.nickel_ingot", "name": "Nickel Ingot", "tags": ["processed", "metal", "ingot", "uncommon"], "properties": { "hardness": 58, "mass": 60, "affinity": 34, "conductivity": 55, "insulation": 12, "solubility": 2, "heat_resistance": 62, "cold_resistance": 55 } },
+  { "id": "material.cobalt_ingot", "name": "Cobalt Ingot", "tags": ["processed", "metal", "ingot", "uncommon"], "properties": { "hardness": 62, "mass": 62, "affinity": 34, "conductivity": 50, "insulation": 14, "solubility": 2, "heat_resistance": 68, "cold_resistance": 55 } },
+  { "id": "material.silver_ingot", "name": "Silver Ingot", "tags": ["processed", "metal", "ingot", "uncommon"], "properties": { "hardness": 40, "mass": 62, "affinity": 40, "conductivity": 95, "insulation": 4, "solubility": 2, "arcane": 15 } },
+  { "id": "material.gold_ingot", "name": "Gold Ingot", "tags": ["processed", "metal", "ingot", "uncommon"], "properties": { "hardness": 28, "mass": 76, "affinity": 45, "conductivity": 82, "insulation": 6, "solubility": 2, "arcane": 12 } },
+  { "id": "material.electrum_ingot", "name": "Electrum Ingot", "tags": ["processed", "metal", "ingot", "uncommon"], "properties": { "hardness": 36, "mass": 70, "affinity": 44, "conductivity": 88, "insulation": 5, "solubility": 2, "arcane": 15 } },
+
+  { "id": "material.oak_plank", "name": "Oak Plank", "tags": ["processed", "wood", "common"], "properties": { "hardness": 38, "mass": 26, "flexibility": 28, "affinity": 35, "insulation": 48, "heat_resistance": 22 } },
+  { "id": "material.pine_plank", "name": "Pine Plank", "tags": ["processed", "wood", "common"], "properties": { "hardness": 26, "mass": 18, "flexibility": 40, "affinity": 38, "insulation": 46 } },
+  { "id": "material.maple_plank", "name": "Maple Plank", "tags": ["processed", "wood", "common"], "properties": { "hardness": 42, "mass": 26, "flexibility": 34, "affinity": 36, "insulation": 46 } },
+  { "id": "material.teak_plank", "name": "Teak Plank", "tags": ["processed", "wood", "uncommon"], "properties": { "hardness": 50, "mass": 32, "flexibility": 22, "affinity": 30, "insulation": 46, "decay": 3 } },
+
+  { "id": "material.rawhide", "name": "Rawhide", "tags": ["processed", "hide", "common"], "properties": { "hardness": 26, "mass": 20, "flexibility": 40, "affinity": 32, "insulation": 45 } },
+  { "id": "material.leather", "name": "Leather", "tags": ["processed", "hide", "common"], "properties": { "hardness": 22, "mass": 18, "flexibility": 65, "affinity": 30, "insulation": 52 } },
+  { "id": "material.boiled_leather", "name": "Boiled Leather", "tags": ["processed", "hide", "common"], "properties": { "hardness": 40, "mass": 20, "flexibility": 35, "affinity": 28, "insulation": 50, "heat_resistance": 35 } },
+
+  { "id": "material.bone_meal", "name": "Bone Meal", "tags": ["processed", "bone", "powder", "catalyst", "common"], "properties": { "mass": 20, "affinity": 55, "solubility": 55, "growth": 45 } },
+  { "id": "material.herb_powder", "name": "Herb Powder", "tags": ["processed", "herb", "powder", "common"], "properties": { "mass": 4, "affinity": 55, "solubility": 75, "growth": 15 } },
+  { "id": "material.refined_resin", "name": "Refined Resin", "tags": ["processed", "resin", "catalyst", "common"], "properties": { "hardness": 15, "mass": 10, "affinity": 82, "insulation": 65, "solubility": 18 } },
+  { "id": "material.charcoal", "name": "Charcoal", "tags": ["processed", "fuel", "common"], "properties": { "hardness": 20, "mass": 22, "affinity": 30, "conductivity": 25, "insulation": 45, "heat": 35, "heat_resistance": 55 } },
+  { "id": "material.tallow", "name": "Tallow", "tags": ["processed", "fuel", "common"], "properties": { "mass": 16, "affinity": 50, "insulation": 55, "solubility": 28, "heat": 15 } },
+  { "id": "material.wax", "name": "Wax", "tags": ["processed", "common"], "properties": { "hardness": 10, "mass": 12, "flexibility": 40, "affinity": 50, "insulation": 62, "solubility": 15 } },
+  { "id": "material.refined_oil", "name": "Refined Oil", "tags": ["processed", "oil", "fuel", "liquid", "common"], "properties": { "mass": 12, "affinity": 50, "insulation": 55, "solubility": 22, "heat": 28 } },
+
+  { "id": "material.cloth", "name": "Cloth", "tags": ["processed", "fiber", "common"], "properties": { "hardness": 4, "mass": 6, "flexibility": 80, "affinity": 40, "insulation": 48 } },
+  { "id": "material.linen_thread", "name": "Linen Thread", "tags": ["processed", "fiber", "common"], "properties": { "hardness": 5, "mass": 3, "flexibility": 85, "affinity": 40, "insulation": 42 } },
+  { "id": "material.canvas", "name": "Canvas", "tags": ["processed", "fiber", "common"], "properties": { "hardness": 8, "mass": 8, "flexibility": 68, "affinity": 40, "insulation": 46 } },
+  { "id": "material.rope", "name": "Rope", "tags": ["processed", "fiber", "common"], "properties": { "hardness": 10, "mass": 8, "flexibility": 70, "affinity": 38, "insulation": 40 } },
+
+  { "id": "material.glass", "name": "Glass", "tags": ["processed", "mineral", "common"], "properties": { "hardness": 55, "mass": 45, "flexibility": 3, "affinity": 20, "insulation": 60, "heat_resistance": 55 } },
+  { "id": "material.mortar", "name": "Mortar", "tags": ["processed", "mineral", "common"], "properties": { "hardness": 45, "mass": 54, "affinity": 30, "insulation": 45, "heat_resistance": 55 } },
+  { "id": "material.parchment", "name": "Parchment", "tags": ["processed", "hide", "common"], "properties": { "hardness": 6, "mass": 4, "flexibility": 55, "affinity": 35, "insulation": 30 } },
+
+  { "id": "material.barkbound_iron", "name": "Barkbound Iron", "tags": ["processed", "metal", "alloy", "treated", "uncommon"], "properties": { "hardness": 66, "mass": 60, "affinity": 32, "conductivity": 50, "insulation": 12, "heat_resistance": 55, "toxin_resistance": 0.05 } }
+]

@@ -17,8 +17,7 @@ public class RealmContentValidationTests
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
     {
         var store = new DataStore<T>();
-        foreach (var file in Directory.GetFiles(Path.Combine(TestPaths.DataDir, subfolder), "*.json"))
-            store.LoadOne(File.ReadAllText(file));
+        store.LoadDocuments(Directory.GetFiles(Path.Combine(TestPaths.DataDir, subfolder), "*.json").Select(File.ReadAllText));
         return store;
     }
 

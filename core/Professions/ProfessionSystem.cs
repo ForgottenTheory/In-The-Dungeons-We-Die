@@ -1,4 +1,3 @@
-using System.Linq;
 using Dungeons.Content;
 using Dungeons.Items;
 using Dungeons.Randomness;
@@ -98,7 +97,7 @@ public sealed class ProfessionSystem
             return ActionFailure.UnknownAction;
         if (GetProgress(action.ProfessionId).Level < action.RequiredLevel)
             return ActionFailure.LevelTooLow;
-        if (action.Inputs.Count > 0 && !_inventoryProvider().CanRemoveAll(action.Inputs.Select(i => i.ToStack()).ToList()))
+        if (action.Inputs.Count > 0 && !_inventoryProvider().CanRemoveAll(action.Inputs))
             return ActionFailure.MissingInputs;
         return ActionFailure.None;
     }
@@ -119,9 +118,8 @@ public sealed class ProfessionSystem
         var progress = GetProgress(action.ProfessionId);
 
         var bag = _inventoryProvider();
-        var inputs = action.Inputs.Select(i => i.ToStack()).ToList();
-        if (inputs.Count > 0)
-            bag.TryRemoveAll(inputs); // guaranteed by CheckExecutable above
+        if (action.Inputs.Count > 0)
+            bag.TryRemoveAll(action.Inputs); // guaranteed by CheckExecutable above
 
         var mastery = progress.GetMastery(actionId);
         var yield = ActionResolver.Resolve(action, mastery, performance, _rng);
@@ -137,7 +135,7 @@ public sealed class ProfessionSystem
         {
             ActionId = actionId,
             Success = true,
-            Consumed = inputs,
+            Consumed = action.Inputs,
             Produced = yield.Produced,
             XpGained = yield.Xp,
             MasteryGained = ProfessionTuning.MasteryPerAction,

@@ -113,7 +113,9 @@ public sealed class CraftingExperimentSystem
         {
             _inventory.Add(interaction.ResultItemId, interaction.ResultQuantity);
             resultProperties = _materials.TryGetById(interaction.ResultItemId, out var material)
-                ? material.Properties
+                ? material.BaseProperties.AsDictionary()
+                    .Select(kv => new MaterialProperty { Property = kv.Key, Value = kv.Value })
+                    .ToList()
                 : Array.Empty<MaterialProperty>();
         }
 

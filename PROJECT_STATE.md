@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo; `docs/current-state.md` is a deeper audit (written before the equipment system, so trust this file + code where they differ).
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 137 passing cases (130 methods). Core-only; no Godot/UI tests.
+- **Tests**: 160 passing cases. Core-only; no Godot/UI tests.
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
 - Build/verify: `dotnet build InTheDungeonsWeDie.slnx` && `dotnet test`.
 
@@ -12,6 +12,7 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 ## Simulation & content plumbing
 - ✅ `TickEngine` (deterministic schedule/advance/cancel + events); one shared instance drives combat + passive gathering at 20 ticks/s.
 - ✅ `DataStore<T>` (JSON→definitions, duplicate-id fails loudly, path-agnostic). `ContentLoader` (Godot) reads `res://data`.
+- ✅ `ContentValidator` (Core): load-time cross-reference validation of the loaded stores (actors→abilities/loot, actions→profession/materials, crafting→materials/consumables/professions, realm nodes→actors/actions/rewards + symmetric edges, equipment slot↔stat block). `GameRoot._Ready` runs it and fails loudly (logs + throws `ContentValidationException`). Character-component refs stay validated by `CharacterComposer`.
 - ✅ Seeded `IRandomSource`/`SeededRandom`.
 
 ## Character & professions
@@ -23,12 +24,13 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ✅ Professions: Forestry/Herblore/Smithing; passive (`PassiveProfessionRunner` on TickEngine) + active (timing-performance) + XP/level + per-action mastery. ⬜ No Mining (ore is seeded), no offline progress.
 
 ## Items, inventory, equipment  (the current focus)
-- ✅ Item model: `IItemDefinition`, `MaterialDefinition`, `EquipmentDefinition`, `ItemInstance` (id/base/quality/derived-props/provenance/traits), `InstanceIdSource`, `PropertySet` (string-keyed), `ItemProperties` (Physical/Processing/Reactive constants).
+- ✅ Item model: `IItemDefinition`, `MaterialDefinition`, `EquipmentDefinition`, `ItemInstance` (id/base/quality/derived-props/provenance/traits), `InstanceIdSource`, `PropertySet` (string-keyed), `ItemProperties` (Physical/Processing/Reactive/Response constants).
+- ✅ Material library: **~470 raw/processed material definitions** on a 0–100 property scale, flat `properties` map, in `game/data/materials/` category array files (flora 108 / fauna 114 / fungal 45 / minerals 84 / environmental 54 / elemental 36 / processed 31). Authored biome-by-biome (as a design lens — **no biome type/field**, just variety), mundane-majority, multi-part creatures/plants, rarity as a tag (common→exceptional). Load-time validated (range + known names + one rarity tag each). This is the ingredient set the future crafting reaction sim will operate on — **no reaction rules / derived combinations authored yet** (by design).
 - ✅ `Inventory` holds both stacks (quantity) and unique instances. Stash vs run inventory split; extraction moves both.
 - ✅ Equipment: `Equipment` slot container (Weapon/Armor), `EquipmentResolver` → neutral `AttackProfile`/`ArmorProfile`. Starter loadout (Rusty Sword/Tattered Armor) auto-equipped; gear safe on death.
 - 🧱 **Property → combat effects**: `EquipmentResolver` maps only Mass→damage/speed and Hardness→armor as an illustrative seam. The rest (Heat/Cold/Charge/Toxicity/Growth/Decay/Arcane → on-hit effects, resistances, status) is NOT built.
 - ✅ Save persists stash stacks + instances + equipment + the instance-id counter (SaveData v3).
-- 🟡 Equipment UI: character panel shows equipped gear + resolved stats; debug "Equip <name>" buttons. ⬜ No proper equip/unequip-from-inventory panel yet.
+- ✅ Equipment UI: `MainMvpUI` EQUIPMENT section — per-slot rows (weapon/armor) with resolved stat summaries + Unequip, a Stash list of unequipped instances each with Equip, and a debug "Grant to stash" row. Backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + `EquippedWeapon`/`EquippedArmor`/`StashEquipment`/`InstanceLabel`. (Still code-built debug shell, no art.)
 
 ## Crafting
 - ✅ `CraftingExperimentSystem`: submit materials → match interaction → gate on profession level → consume inputs → produce result → record discovery.

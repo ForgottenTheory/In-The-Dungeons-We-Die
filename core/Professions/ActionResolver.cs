@@ -28,7 +28,7 @@ public static class ActionResolver
 
         var produced = new List<ItemStack>();
         foreach (var output in action.Outputs)
-            produced.Add(output.ToStack());
+            produced.Add(output);
 
         var masteryBonus = ProfessionTuning.MasteryBonusChance(mastery);
         var activeBonus = performance * ProfessionTuning.ActiveBonusChanceAtFullPerformance;
@@ -36,7 +36,7 @@ public static class ActionResolver
         {
             var chance = bonus.Chance + masteryBonus + activeBonus;
             if (rng.NextDouble() < chance)
-                produced.Add(bonus.ToStack());
+                produced.Add(bonus.Stack);
         }
 
         var xp = (long)Math.Round(action.Experience * (1.0 + (performance * ProfessionTuning.ActiveXpBonusAtFullPerformance)));

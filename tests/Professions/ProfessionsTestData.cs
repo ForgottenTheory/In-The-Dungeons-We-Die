@@ -1,4 +1,5 @@
 using Dungeons.Content;
+using Dungeons.Items;
 using Dungeons.Professions;
 using Dungeons.Randomness;
 
@@ -31,8 +32,8 @@ internal static class ProfessionsTestData
         return store;
     }
 
-    public static ItemAmountData Amount(string itemId, int quantity = 1) => new() { ItemId = itemId, Quantity = quantity };
+    public static ItemStack Amount(string itemId, int quantity = 1) => new(itemId, quantity);
 
-    public static ItemChanceData Chance(string itemId, double chance, int quantity = 1) =>
-        new() { ItemId = itemId, Chance = chance, Quantity = quantity };
+    public static ItemChance Chance(string itemId, double chance, int quantity = 1) =>
+        new(itemId, chance, quantity);
 }

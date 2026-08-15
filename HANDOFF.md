@@ -6,16 +6,18 @@ For the next Claude session. Read `CLAUDE.md`, then this, then `PROJECT_STATE.md
 Building the **equipment + item-instance system** in phases on top of the completed MVP vertical slice. This session did: design docs → Phase 1 (item/property/instance + equipment model) → Phase 2 (weapon-driven combat, armor, starter loadout, gear safe on death) → Phase 3 (crafting produces derived instances) → **Phase 4a (save persistence of instances + equipment)** — the last thing committed.
 
 ## Current objective
-Finish **Phase 4** of the equipment/crafting work, then make crafting real. Immediate remaining Phase 4 items, in recommended order:
-1. **Content validation at load** (cross-references validated when DataStores load, not only in tests).
-2. **Unify item+quantity shapes** (`ItemStack` vs `ItemAmountData`/`ItemChanceData`).
-3. **Equipment/inventory UI** (equip/unequip-from-stash panel; shell reorg).
+Finish **Phase 4** of the equipment/crafting work, then make crafting real. Remaining Phase 4 items, in recommended order:
+1. ✅ **Content validation at load** — done. `core/Content/ContentValidator` (+ `ContentProblem`, `ContentValidationException`) validates content cross-references; wired into `GameRoot._Ready` via `ValidateContentOrThrow`. Covered by `tests/Content/ContentValidatorTests.cs`.
+2. ✅ **Unify item+quantity shapes** — done. `ItemStack(ItemId, Quantity=1)` is the single item+quantity shape; new `ItemChance(ItemId, Chance, Quantity=1)` (in `core/Items/`, exposes `.Stack`) replaces the old `ItemChanceData`; `ItemAmountData` removed. Profession action JSON unchanged.
+3. ✅ **Equipment/inventory UI** — done. `MainMvpUI` EQUIPMENT section (per-slot rows + Unequip, Stash list + Equip, debug Grant-to-stash), backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + queries. Godot-side — user verifies visually.
+
+**Phase 4 is complete.** The **static material library is now authored** (~470 defs, 0–100 flat properties, category array files, biome-diverse, rarity-tagged; `docs/itemization.md §2`). Biome/rarity are tags only — no biome type/field (user's explicit call). Next: "make crafting real" (the emergent reaction simulation) — do this together with the user; do NOT hardcode crafting combinations or build reaction rules yet without them. Likely prerequisites: crafting with `ItemInstance` inputs (recursion input half), then the universal interaction pipeline behind `CraftingDerivation` (`docs/crafting.md §17.3`). More equipment authoring is also outstanding.
 
 The user stated: after Phase 4 we **populate items** and then build the **crafting reaction simulation**. So do 1 & 2 before big item authoring.
 
 ## Repo/git state
-- Branch `main`, working tree **clean**. Latest commit `afa2d05` (save persistence).
-- `dotnet build InTheDungeonsWeDie.slnx` clean; `dotnet test` → **137 passing** (0 failing). Godot is not on PATH — verify via dotnet only; the user runs the game from their Godot 4.7.1 editor.
+- Branch `main`, latest commit `afa2d05` (save persistence). Uncommitted (this session, not yet committed — commit on request): content-validator, item-shape unification, equipment UI, material-property schema change, **~470-material biome-diverse library (rarity via tags, no biome schema)**.
+- `dotnet build InTheDungeonsWeDie.slnx` clean; `dotnet test` → **160 passing** (0 failing; was 137 at session start). Godot is not on PATH — verify via dotnet only; the user runs the game from their Godot 4.7.1 editor.
 - Recent commits: `afa2d05` P4a save · `0377872` P3 crafting instances · `4d1ccc8` P1–2 equipment · `988357f` M9 · … (see `git log`).
 
 ## Files changed most recently (this session)
@@ -26,8 +28,8 @@ The user stated: after Phase 4 we **populate items** and then build the **crafti
 - Tests: `tests/Items/*`, plus updates to Combat/Crafting/Persistence/Realms tests.
 
 ## Outstanding problems / questions
-- **Content validation is tests-only** — a bad JSON ships and only throws later via `GetById`. First Phase-4 task fixes this.
-- **Two item+quantity shapes** — unify before authoring lots of items.
+- ~~Content validation is tests-only~~ — **fixed**; validated at load by `ContentValidator`. (Note: character-component refs — rule ids, class ability ids incl. the known-dead `ability.guard`/`hex_bolt` — are intentionally NOT in the validator; they're resolved/validated by the `CharacterComposer` path instead.)
+- ~~Two item+quantity shapes~~ — **fixed**; unified on `ItemStack` + `ItemChance`.
 - **Crafting recursion input half not wired** — `CraftingExperimentSystem.Experiment` matches submitted *stackable* ids; it can't yet consume an `ItemInstance` as an input. Needed for true recursive crafting.
 - **`GameRoot` ~850 lines** — composition root + app glue + report formatting; extract an Application layer before piling on more systems.
 - **Reaction simulation is architecture-only** — `CraftingDerivation` is a trivial additive merge; the real rules are deferred by user instruction. Don't hardcode per-combination recipes.
@@ -35,8 +37,7 @@ The user stated: after Phase 4 we **populate items** and then build the **crafti
 - The old verbose `CLAUDE.md` (full design bible) was replaced with a concise rules file this session; the detailed design lives in `/docs` and these handoff files. If you need the old vision text, see `docs/*` and git history.
 
 ## Exact recommended next steps
-1. `dotnet test InTheDungeonsWeDie.slnx` — confirm 137 green.
+1. `dotnet test InTheDungeonsWeDie.slnx` — confirm 155 green.
 2. Skim `docs/itemization.md` + `docs/crafting.md §17` (the item/crafting model) and `SYSTEM_INDEX.md`.
-3. Start Phase 4 item #1: add **load-time content validation**. Suggested approach: after `GameRoot` loads all `DataStore`s, run a validator that checks cross-references (actors→abilities & loot materials; profession_actions→professions & item ids; crafting_interactions→materials/consumables/equipment & professions; realm locations→actors/actions/materials; equipment well-formed). Prefer a small Core validator that takes the loaded stores and returns a list of problems, called from `GameRoot._Ready` (fail loudly / log). Add a test that the shipped content passes.
-4. Then Phase 4 item #2 (unify item shapes), then #3 (equipment UI).
-5. Keep tests green; commit only when the user asks.
+3. **Phase 4 is complete.** Next is "make crafting real" — the emergent **reaction simulation** (`docs/crafting.md §17.3`), which the user described as "basically Conway's Game of Life" for crafting. The user wants to design/build this **together** with item population. Read `docs/crafting.md §17` thoroughly and discuss the model before writing rules. Do NOT hardcode per-combination recipes; the sim slots in behind `CraftingDerivation` + the crafting matcher. Also note the "input half" gap: `CraftingExperimentSystem` can't yet consume an `ItemInstance` as an input (recursion) — likely a prerequisite.
+4. Keep tests green; commit only when the user asks.

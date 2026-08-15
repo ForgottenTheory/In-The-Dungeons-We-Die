@@ -135,23 +135,23 @@ Runtime item state does not belong here.
 
 # 7. MaterialData
 
+`properties` is a **flat name→value object** on a 0–100 scale (matching EquipmentData); list only the properties the material actually has (absent = 0). Files under `game/data/materials/` are grouped into category **arrays** (`flora.json`, `fauna.json`, …), auto-detected by the loader.
+
 {
-  "id": "material.oak_bark",
-  "name": "Oak Bark",
-  "properties": [
-    {
-      "property": "toxin_resistance",
-      "value": 0.05
-    }
-  ],
-  "tags": [
-    "plant",
-    "bark",
-    "oak"
-  ]
+  "id": "material.copper_ore",
+  "name": "Copper Ore",
+  "tags": ["raw", "metal", "ore", "mineral"],
+  "properties": {
+    "hardness": 40,
+    "mass": 50,
+    "conductivity": 85,
+    "insulation": 5,
+    "heat_resistance": 55,
+    "harvest_resistance": 45
+  }
 }
 
-Material properties may participate in crafting.
+Property names are validated at load against `ItemProperties`; values must be 0–100 (`ContentValidator`). See `docs/itemization.md §2` for the property meanings. Material properties are the intrinsic starting point crafting derives from.
 
 ---
 

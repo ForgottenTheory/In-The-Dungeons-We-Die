@@ -38,7 +38,7 @@ public class FullLoopTests
         ProfessionId = "profession.forestry",
         BaseIntervalTicks = 100,
         Experience = 10,
-        Outputs = new[] { new ItemAmountData { ItemId = "material.oak_log", Quantity = 1 } },
+        Outputs = new[] { new ItemStack("material.oak_log", 1) },
     };
 
     [Fact]
