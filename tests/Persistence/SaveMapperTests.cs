@@ -33,8 +33,28 @@ public class SaveMapperTests
 
         var knowledge = new Dictionary<string, int> { ["realm.dark_forest"] = 15 };
 
+        // A crafted material instance in the stash, and an equipped weapon.
+        var instanceIds = new InstanceIdSource(5);
+        stash.AddInstance(new ItemInstance
+        {
+            InstanceId = instanceIds.Next(),
+            BaseDefinitionId = "material.barkbound_iron",
+            ItemType = ItemType.Material,
+            DisplayName = "Barkbound Iron",
+            Properties = new PropertySet(new Dictionary<string, double> { ["toxin_resistance"] = 0.05 }),
+            Provenance = new[] { "material.iron_ingot", "material.oak_bark" },
+        });
+        var equipment = new Equipment();
+        equipment.Equip(EquipmentSlot.Weapon, new ItemInstance
+        {
+            InstanceId = instanceIds.Next(),
+            BaseDefinitionId = "equip.iron_sword",
+            ItemType = ItemType.Weapon,
+            DisplayName = "Iron Sword",
+        });
+
         // --- Capture → serialize → deserialize → apply to a FRESH session ---
-        var save = SaveMapper.Capture(build, stash, professions, discoveries, knowledge, savedAtTick: 999);
+        var save = SaveMapper.Capture(build, stash, professions, discoveries, knowledge, savedAtTick: 999, equipment, instanceIds);
         var json = new SaveSerializer().Serialize(save);
         var loaded = new SaveSerializer().Deserialize(json);
 
@@ -42,8 +62,10 @@ public class SaveMapperTests
         var newProfessions = MakeProfessions(newStash);
         var newDiscoveries = new DiscoverySystem();
         var newKnowledge = new Dictionary<string, int>();
+        var newEquipment = new Equipment();
+        var newInstanceIds = new InstanceIdSource();
 
-        SaveMapper.Apply(loaded, newStash, newProfessions, newDiscoveries, newKnowledge);
+        SaveMapper.Apply(loaded, newStash, newProfessions, newDiscoveries, newKnowledge, newEquipment, newInstanceIds);
 
         // --- Assert the fresh session matches ---
         Assert.Equal(4, newStash.GetQuantity("material.oak_log"));
@@ -56,6 +78,18 @@ public class SaveMapperTests
         Assert.True(newDiscoveries.IsDiscovered("discovery.barkbound_iron"));
         Assert.Equal(15, newKnowledge["realm.dark_forest"]);
         Assert.Equal("class.hexslinger", loaded.Build!.BaseClassId);
+
+        // Crafted instance restored with its derived properties + provenance.
+        var restoredBark = Assert.Single(newStash.Instances);
+        Assert.Equal("Barkbound Iron", restoredBark.DisplayName);
+        Assert.Equal(0.05, restoredBark.Properties.Get("toxin_resistance"));
+        Assert.Contains("material.oak_bark", restoredBark.Provenance);
+
+        // Equipment restored.
+        Assert.Equal("Iron Sword", newEquipment.InSlot(EquipmentSlot.Weapon)!.DisplayName);
+
+        // Id counter advanced past the loaded ids (no future collisions).
+        Assert.True(newInstanceIds.Next() >= instanceIds.Peek());
     }
 
     [Fact]

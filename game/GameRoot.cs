@@ -758,10 +758,10 @@ public partial class GameRoot : Node
 
     public void SaveGame()
     {
-        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick);
+        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds);
         _saveStore.Save(data);
         Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
-             $"{data.Discoveries.Count} discovery(ies).");
+             $"{data.StashInstances.Count} instance(s), {data.Equipment.Count} equipped, {data.Discoveries.Count} discovery(ies).");
     }
 
     public void LoadGame()
@@ -779,12 +779,14 @@ public partial class GameRoot : Node
             return;
         }
 
-        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge);
+        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds);
         if (save.Build is not null)
         {
             _build = save.Build;
             RebuildCharacter(); // raises CharacterChanged
         }
+
+        EquipStarterLoadout(); // fill any empty slots (fresh/old saves) so the player is never unarmed
 
         Emit($"[Load] Loaded save (schema v{save.SchemaVersion}, saved at tick {save.SavedAtTick}).");
         InventoryChanged?.Invoke();

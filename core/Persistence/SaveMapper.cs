@@ -18,7 +18,9 @@ public static class SaveMapper
         ProfessionSystem professions,
         DiscoverySystem discoveries,
         IReadOnlyDictionary<string, int> realmKnowledge,
-        long savedAtTick)
+        long savedAtTick,
+        Equipment? equipment = null,
+        InstanceIdSource? instanceIds = null)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -30,6 +32,11 @@ public static class SaveMapper
             SavedAtTick = savedAtTick,
             Build = build,
             Stash = stash.Snapshot().ToList(),
+            StashInstances = stash.Instances.Select(ToSave).ToList(),
+            Equipment = equipment is null
+                ? new Dictionary<string, ItemInstanceSave>()
+                : equipment.Slots.ToDictionary(pair => pair.Key.ToString(), pair => ToSave(pair.Value)),
+            NextInstanceId = instanceIds?.Peek() ?? 1,
             Professions = professions.AllProgress
                 .Select(p => new ProfessionSave
                 {
@@ -48,13 +55,29 @@ public static class SaveMapper
         Inventory stash,
         ProfessionSystem professions,
         DiscoverySystem discoveries,
-        IDictionary<string, int> realmKnowledge)
+        IDictionary<string, int> realmKnowledge,
+        Equipment? equipment = null,
+        InstanceIdSource? instanceIds = null)
     {
         ArgumentNullException.ThrowIfNull(save);
 
         stash.Clear();
         foreach (var stack in save.Stash)
             stash.Add(stack);
+        foreach (var instance in save.StashInstances)
+            stash.AddInstance(FromSave(instance));
+
+        if (equipment is not null)
+        {
+            equipment.Clear();
+            foreach (var pair in save.Equipment)
+            {
+                if (Enum.TryParse<EquipmentSlot>(pair.Key, out var slot))
+                    equipment.Equip(slot, FromSave(pair.Value));
+            }
+        }
+
+        instanceIds?.EnsureAtLeast(save.NextInstanceId);
 
         professions.RestoreProgress(save.Professions.Select(ToProgress));
 
@@ -72,4 +95,28 @@ public static class SaveMapper
             progress.AddMastery(pair.Key, pair.Value);
         return progress;
     }
+
+    private static ItemInstanceSave ToSave(ItemInstance instance) => new()
+    {
+        InstanceId = instance.InstanceId,
+        BaseDefinitionId = instance.BaseDefinitionId,
+        ItemType = instance.ItemType,
+        DisplayName = instance.DisplayName,
+        Quality = instance.Quality,
+        Properties = new Dictionary<string, double>(instance.Properties.AsDictionary()),
+        Provenance = instance.Provenance.ToList(),
+        Traits = instance.Traits.ToList(),
+    };
+
+    private static ItemInstance FromSave(ItemInstanceSave save) => new()
+    {
+        InstanceId = save.InstanceId,
+        BaseDefinitionId = save.BaseDefinitionId,
+        ItemType = save.ItemType,
+        DisplayName = save.DisplayName,
+        Quality = save.Quality,
+        Properties = new PropertySet(save.Properties),
+        Provenance = save.Provenance,
+        Traits = save.Traits,
+    };
 }
