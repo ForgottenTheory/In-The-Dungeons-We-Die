@@ -76,6 +76,7 @@ public static class ContentValidator
         ValidateProcesses(content.Processes, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
+        ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
         ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
         ValidateSuffixes(content.Suffixes, content.ModifierKeys, problems);
@@ -240,6 +241,36 @@ public static class ContentValidator
 
                 if (ForbiddenNameWords.Contains(word))
                     problems.Add(new("name_grammar", $"{entry.Id} word '{word}' is a tier word; use a stronger vocabulary word instead."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Validates the modifier registry itself (docs/effect-foundation.md §4.1–4.2, D-12).
+    ///
+    /// <para>Two rules, both closing a failure that only shows up long after load. A
+    /// <c>scoped_by</c> naming a dimension nothing supplies is a key nothing can ever resolve;
+    /// a <c>danger</c> family without a ceiling is unbounded avoidance, which the design cannot
+    /// recover from once it is in players' hands.</para>
+    /// </summary>
+    private static void ValidateModifierKeys(
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        foreach (var key in modifierKeys.GetAll())
+        {
+            if (key.IsScoped && !Modifiers.ScopeDimensions.IsKnown(key.ScopedBy))
+            {
+                problems.Add(new("modifier_keys",
+                    $"{key.Id} is scoped by unknown dimension '{key.ScopedBy}'. Valid: {string.Join(", ", Modifiers.ScopeDimensions.All)}."));
+            }
+
+            // The cap is the whole point of marking a family dangerous. Leaving `max` off is how
+            // "98.5% is close enough to immunity" becomes 100%.
+            if (key.Danger && key.Max is null)
+            {
+                problems.Add(new("modifier_keys",
+                    $"{key.Id} is marked danger and has no max. A dangerous family without a ceiling cannot be balanced after the fact."));
             }
         }
     }

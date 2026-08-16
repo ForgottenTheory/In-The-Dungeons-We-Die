@@ -5,6 +5,16 @@
   //   additive        → base + Σ contributions        (default 0)
   //   multiplicative  → base × Π contributions        (default 1)
   //   flag            → any nonzero contribution wins (default 0)
+  //   diminishing     → 1 − Π(1 − x)                  (default 0) — never reaches 1
+  //   highest_only    → max(x)                        (default 0) — does not stack with itself
+  //
+  // `scoped_by` names the one dimension a contribution to this key may be narrowed by, and the
+  // dimension a resolution context MUST supply — resolving without it throws rather than
+  // returning a plausible wrong number (docs/effect-foundation.md §4.2.2). An unscoped
+  // contribution to a scoped key is still legal: that is the global case.
+  //
+  // `danger` marks a family that cannot be recovered from if it reaches its ceiling. The
+  // validator refuses to load one without a `max`.
 
   // --- Attributes -----------------------------------------------------------------------
   { "id": "attr.strength",     "name": "Strength",     "kind": "additive", "family": "attribute", "min": 0 },
@@ -26,7 +36,7 @@
   { "id": "resource.cost.mult",     "name": "Resource Cost",        "kind": "multiplicative", "family": "resource", "min": 0, "lower_is_better": true },
 
   // --- Offence --------------------------------------------------------------------------
-  { "id": "combat.damage.flat", "name": "Flat Damage",   "kind": "additive",       "family": "offence" },
+  { "id": "combat.damage.flat", "name": "Flat Damage",   "kind": "additive",       "family": "offence", "scoped_by": "move_tag" },
   { "id": "combat.damage.mult", "name": "Damage",        "kind": "multiplicative", "family": "offence", "min": 0 },
   { "id": "combat.damage.slashing", "name": "Slashing Damage", "kind": "multiplicative", "family": "offence", "min": 0 },
   { "id": "combat.damage.crushing", "name": "Crushing Damage", "kind": "multiplicative", "family": "offence", "min": 0 },
@@ -45,6 +55,9 @@
   { "id": "combat.armor",             "name": "Armour",         "kind": "additive",       "family": "defence", "min": 0 },
   { "id": "combat.damage_taken.mult", "name": "Damage Taken",   "kind": "multiplicative", "family": "defence", "min": 0, "lower_is_better": true },
   { "id": "combat.block.mult",        "name": "Block Strength", "kind": "multiplicative", "family": "defence", "min": 0 },
+  // Left additive deliberately: D-07 retires this key in favour of `combat.avoid.lane` (0.25)
+  // and `combat.evade.chance` (0.15), both diminishing. Re-shaping it here would be balancing a
+  // key that is scheduled to stop existing.
   { "id": "combat.dodge.chance",      "name": "Dodge Chance",   "kind": "additive",       "family": "defence", "min": 0, "max": 1 },
   { "id": "combat.resist.slashing",   "name": "Slashing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
   { "id": "combat.resist.crushing",   "name": "Crushing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
@@ -58,12 +71,15 @@
   { "id": "combat.no_refund",          "name": "No Refunds",          "kind": "flag", "family": "rule" },
 
   // --- Professions ------------------------------------------------------------------------
-  { "id": "profession.interval.mult", "name": "Profession Interval",   "kind": "multiplicative", "family": "profession", "min": 0.2, "lower_is_better": true },
-  { "id": "profession.yield.mult",    "name": "Profession Yield",      "kind": "multiplicative", "family": "profession", "min": 0 },
-  { "id": "profession.preserve.chance", "name": "Resource Preservation", "kind": "additive",     "family": "profession", "min": 0, "max": 0.8 },
-  { "id": "profession.double.chance", "name": "Double Output Chance",  "kind": "additive",       "family": "profession", "min": 0, "max": 1 },
-  { "id": "profession.xp.mult",       "name": "Profession XP",         "kind": "multiplicative", "family": "profession", "min": 0 },
-  { "id": "profession.mastery.mult",  "name": "Mastery XP",            "kind": "multiplicative", "family": "profession", "min": 0 },
+  // Every profession key is scoped by profession — this is the whole of D-12's leverage. Without
+  // it the registry forks per skill (`profession.yield.mining`, `.fishing`, …) and ~55 keys
+  // becomes ~330. A tool grants its bonus scoped; a ring grants the same key unscoped.
+  { "id": "profession.interval.mult", "name": "Profession Interval",   "kind": "multiplicative", "family": "profession", "min": 0.2, "lower_is_better": true, "scoped_by": "profession" },
+  { "id": "profession.yield.mult",    "name": "Profession Yield",      "kind": "multiplicative", "family": "profession", "min": 0, "scoped_by": "profession" },
+  { "id": "profession.preserve.chance", "name": "Resource Preservation", "kind": "diminishing",  "family": "profession", "min": 0, "max": 0.8, "scoped_by": "profession", "danger": true },
+  { "id": "profession.double.chance", "name": "Double Output Chance",  "kind": "diminishing",    "family": "profession", "min": 0, "max": 1, "scoped_by": "profession", "danger": true },
+  { "id": "profession.xp.mult",       "name": "Profession XP",         "kind": "multiplicative", "family": "profession", "min": 0, "scoped_by": "profession" },
+  { "id": "profession.mastery.mult",  "name": "Mastery XP",            "kind": "multiplicative", "family": "profession", "min": 0, "scoped_by": "profession" },
 
   // --- Crafting ---------------------------------------------------------------------------
   { "id": "craft.quality",              "name": "Craft Quality",   "kind": "additive",       "family": "craft", "min": 0, "max": 1 },

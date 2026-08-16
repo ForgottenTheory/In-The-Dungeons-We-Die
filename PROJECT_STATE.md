@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 532 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 554 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
@@ -30,7 +30,8 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - 🟡 **Species** is out of this pass — still 3 thin stat packages against a designed roster of 10.
 
 ## Core mechanisms behind it (new, reusable)
-- ✅ **Modifier vocabulary** (`core/Modifiers/`) — 51 data-defined keys replacing `StatId` as the modifier *target* surface. Additive/multiplicative/flag kinds, clamps on the key, contributions carry provenance. `StatId` bridges in, so there is one modifier system.
+- ✅ **Modifier vocabulary** (`core/Modifiers/`) — 51 data-defined keys replacing `StatId` as the modifier *target* surface. Five kinds (additive / multiplicative / flag / **diminishing** / **highest_only**), clamps on the key, contributions carry provenance. `StatId` bridges in, so there is one modifier system.
+- ✅ **Scoped contributions** (E3b, D-12) — a contribution may carry one `ModifierScope` over eight closed dimensions, and `Resolve` takes a `ModifierContext` that is never defaulted. A key declaring `scoped_by` **throws** if resolved without that dimension, rather than returning a plausible wrong number. **No production caller yet** — E3c's handlers are the first.
 - ✅ **Game event bus** (`core/Events/`) — 30 events spanning combat, crafting, loot and extraction. Synchronous and ordered (a determinism requirement); handler-raised events queue rather than re-enter.
 - ✅ **Declarative trigger rules** (`core/Rules/`) — `event + conditions + effect + cooldown + chance`, interpreted generically. Prefixes, Suffix expressions and gauge feeds are all just lists of these. Effects with no registered handler land in `Unhandled`, so content referencing unbuilt systems is **visibly inert rather than silently missing**.
 - ✅ **Combat raises them** (E0). `CombatEncounter` publishes 14 existing event kinds; `GameRoot` owns the bus + `TriggerRuleEngine` and re-attaches the build's hooks on every rebuild. Effects still land in `Unhandled` until E3 — visibly inert, not missing.

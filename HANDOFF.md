@@ -7,11 +7,14 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`, latest commit **`99cdceb`** (E1 + E2). Before it: `90faf27` (E0),
-  `f55349c` (the effect-foundation design package).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **532 passing**.
-- ⚠ **Uncommitted: E3a is complete and green in the working tree.** See the E3 section below for
-  the file list. Commit it before starting E3b.
+- Branch `main`, latest commit **`2bf9902`** (E3a). Before it: `99cdceb` (E1 + E2),
+  `90faf27` (E0), `f55349c` (the effect-foundation design package).
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **554 passing**.
+- ⚠ **Uncommitted: E3b is complete and green in the working tree.** Files:
+  `core/Modifiers/ModifierScope.cs` (new) · `core/Modifiers/ModifierKeyDefinition.cs` ·
+  `core/Modifiers/ModifierSet.cs` · `core/Content/ContentValidator.cs` ·
+  `game/data/modifier_keys/modifier_keys.json` · `tests/Modifiers/ModifierSetTests.cs` ·
+  `tests/Content/ContentValidatorTests.cs` · doc updates. Commit it before starting E3c.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -92,22 +95,58 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a done, b/c next) →
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a and b done, c next) →
 E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
 E7 Overreach.
 
-### 🔄 E3 — E3a done and **uncommitted**; E3b is the next thing to build
+### 🔄 E3 — E3a committed, E3b done and **uncommitted**; E3c is next
 
-> ⚠ **Uncommitted work in the tree.** E3a is complete and green but not committed — the user was
-> asked and the session ended first. **Commit it before starting E3b**, or the two slices tangle
-> the way E1/E2 did (they had to share a commit because they interleaved in four files).
->
-> Uncommitted: `core/Rules/EffectContext.cs` (new) · `core/Rules/TriggerRule.cs` ·
-> `core/Rules/TriggerRuleEngine.cs` · `core/Events/GameEvent.cs` ·
-> `core/Content/ContentValidator.cs` · `game/GameRoot.cs` · `tests/Rules/ProcSafetyTests.cs`
-> (new) · doc updates.
+> ⚠ **Uncommitted work in the tree: E3b.** Complete and green. **Commit it before starting
+> E3c**, or the two slices tangle the way E1/E2 did (they had to share a commit because they
+> interleaved in four files). File list is under "Repo / build state" above.
 
-`dotnet test` → **532 passing** (was 519), build 0 warnings.
+### ✅ E3b shipped — scoped modifier contributions (D-12)
+
+`dotnet test` → **554 passing** (was 532), build 0 warnings. **Uncommitted.**
+
+The change called "highest leverage in the package", and the one that introduced the package's
+only *silently wrong answer* failure mode. Both halves landed together.
+
+- **`ModifierScope(Dimension, Value)`** on `ModifierContribution`, over eight closed dimensions
+  (`lane aspect essence profession move_tag form item status`). A contribution carries **at most
+  one** scope; two dimensions means two contributions from one source, both of which must match.
+- **`ModifierContext`** — the situation being resolved in. `ModifierSet.Resolve(key, context,
+  baseValue?)` takes one and **there is no overload that defaults it**. Callers with genuinely no
+  situation pass `ModifierContext.None`, which greps; an omitted argument does not.
+- **`scoped_by` and `danger`** on `ModifierKeyDefinition`.
+- **`diminishing`** (`1 − Π(1−x)`, base value included as one more term) and **`highest_only`**.
+  Authored as snake_case; a property-level converter reads both spellings, because a converter in
+  `JsonSerializerOptions.Converters` outranks a `[JsonConverter]` on the enum type.
+- **All three §4.2.2 guards, each with its own test:** resolving a `scoped_by` key with a context
+  lacking that dimension **throws** (not the unscoped subtotal, not the baseline); a contribution
+  whose scope dimension disagrees with the key is rejected at `Add`; a `danger` key without a
+  `max` fails content validation.
+- **Registry:** the six `profession.*` keys are `scoped_by: profession` — this is the whole of
+  D-12's leverage, and without it the registry forks per skill and ~55 keys becomes ~330.
+  `combat.damage.flat` is `scoped_by: move_tag`. Preservation and double-output became
+  `diminishing` + `danger`, matching §4.4's "(exists)" rows exactly.
+
+**Two things worth not re-deriving:**
+- **`Resolve` on a multiplicative key is meant to return the *multiplier*, which the caller then
+  applies.** Passing an absolute `baseValue` hands the key's floor a product to clamp, and the
+  floor exists to stop stacked haste rather than to stop short intervals. The §4.2.2 worked trace
+  is pinned as a test in the correct shape.
+- **A key's "nothing contributed" value is its baseline *after clamps*, not its baseline.**
+  `resource.max_health` has `min: 1` precisely so that nothing-contributed can never mean zero
+  health. A test asserted the raw baseline and was wrong, not the code.
+
+**Two registry contradictions found and deliberately left alone** — both are settled decisions the
+shipped data does not yet implement, and both are balance numbers that want the user's call:
+- **D-20 sets the `combat.interval.mult` floor at 0.55**; the registry still has **0.25**. D-20 is
+  ✅ DECIDED, so this is an unapplied decision rather than an open question.
+- **D-07 retires `combat.dodge.chance`** in favour of `combat.avoid.lane` (diminishing, max 0.25)
+  and `combat.evade.chance` (diminishing, max 0.15). Neither key exists. The dodge key was
+  therefore left additive — re-shaping a key scheduled to stop existing is balancing a ghost.
 
 **E3a — the rule engine upgrade.**
 - **`effects[]`**: one chance roll, N effects. "25% to Shock *and* restore 8 Stamina" was
@@ -133,35 +172,7 @@ E7 Overreach.
 - **`OncePerChain` defaults to true.** Content opts *into* risk; it never opts out of safety by
   omission.
 
-### E3b — scoped modifier contributions  ← **START HERE**
-
-Decision **D-12**, the one called "highest leverage in the package". Spec:
-`docs/effect-foundation.md` §4.2–4.2.2.
-
-The problem, three ways: `+10 damage **with swords**` (PoE local-vs-global),
-`−12% interval **for Fishing**` (Melvor per-skill), `+8 flat damage to **Melee** moves`. None is
-expressible — `ModifierContribution` is `(Key, Value, Source)` with nowhere to say *when it
-applies*. Without this the registry forks per profession and per weapon class: ~55 keys becomes
-~330.
-
-**What to build:**
-1. `ModifierScope(string Dimension, string Value)`; `ModifierContribution` gains `Scope?`.
-2. `ModifierKeyDefinition` gains `scoped_by` (the dimension a key *requires*) and `danger`.
-3. `ModifierSet.Resolve(key, base, context)` filters non-matching scopes; unscoped always apply.
-4. Stacking modes `diminishing` (`1 − Π(1−x)`) and `highest_only`.
-5. Validator: `danger: true` keys **fail to load without a `max`**; a contribution whose scope
-   dimension ≠ the key's `scoped_by` is rejected at `Add` time.
-
-**The failure mode this introduces, and the guard.** Resolution stops being a pure key lookup, so
-a *wrong* context silently produces a *wrong number* — worse than a missing feature, because
-nothing surfaces it. **Resolving a `scoped_by` key with a context lacking that dimension must
-throw**, not return the unscoped subtotal and not return the baseline. Same bargain
-`ModifierSet.Add` already strikes by throwing on unknown keys. **Do not add a convenience
-overload that defaults the context.**
-
-Eight closed dimensions: `lane` `aspect` `essence` `profession` `move_tag` `form` `item` `status`.
-
-### E3c — the effect handlers
+### E3c — the effect handlers  ← **START HERE**
 
 Register handlers so effects stop landing in `Unhandled`: `damage`, `applyStatus`,
 `grantResource`, `heal`, `areaDamage`, `interrupt` at minimum, plus the new condition kinds
@@ -171,6 +182,13 @@ Register handlers so effects stop landing in `Unhandled`: `damage`, `applyStatus
 ⚠ **Every handler must propagate `invocation.Context`** onto any event it raises. Forget it once
 and the chain restarts at depth 0, making the whole proc budget decorative. This is the first
 slice where that discipline is actually exercised.
+
+⚠ **E3c is also the first code that resolves modifiers, so it is where `ModifierContext` gets
+built for real.** `ModifierSet.Resolve` has had **no production caller** through E3b — a handler
+that reaches for `combat.damage.flat` must supply a `move_tag`, and one that reaches for anything
+`profession.*` must supply a `profession`, or it throws. That throw is the feature. Build the
+context from the event/hit being handled; do not reach for `ModifierContext.None` to make a call
+compile.
 
 ### A method note worth repeating
 
@@ -319,6 +337,10 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
   — because the expensive cost terms are traits and signatures, which are P2/P4).
 - **Integrity is excluded from material identity** (per spec §12.1), so an archetype keeps the
   integrity of its first discovery. Judged self-balancing; filed in D20, not fixed.
+- **Two settled decisions the modifier registry does not implement yet** (found during E3b, left
+  alone because both are balance numbers): **D-20** sets the `combat.interval.mult` floor at
+  **0.55** and the registry has **0.25**; **D-07** retires `combat.dodge.chance` for
+  `combat.avoid.lane` (max 0.25) and `combat.evade.chance` (max 0.15), neither of which exists.
 - **`PropertyDefinition.transferable` is unconsumed.** Give it a job or drop it.
 - **Response properties drop on transformation** — iron's authored heat resistance of 60 becomes
   a derived ~14 after any craft. Arguably the more honest number, but a visible discontinuity.
@@ -337,7 +359,7 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
 ---
 
 ## Guardrails
-- Keep `dotnet test` green (**459** now) and the build at **0 warnings**, in tested increments.
+- Keep `dotnet test` green (**554** now) and the build at **0 warnings**, in tested increments.
 - Core stays Godot-free. Nothing authoritative in `GameRoot` or the UI.
 - Content is data; code owns structure and closed vocabularies (D16). Adding a content type is
   one store on `ContentBundle` plus one line in `ContentLoader.LoadAll`.

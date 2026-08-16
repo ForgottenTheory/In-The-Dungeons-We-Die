@@ -622,6 +622,35 @@ public class ContentValidatorTests
         AssertHasProblem(content, "byproducts", "form 'wood' is used by the material library");
     }
 
+    // --- The modifier registry (D-12) ----------------------------------------
+
+    /// <summary>A scope dimension nothing supplies is a key nothing can ever resolve, so the
+    /// dimension vocabulary is closed and checked at load like every other one.</summary>
+    [Fact]
+    public void ModifierKey_ScopedByAnUnknownDimension_IsReported()
+    {
+        var content = ValidBaseline();
+        content.ModifierKeys.Add(new Dungeons.Modifiers.ModifierKeyDefinition
+        {
+            Id = "combat.damage.weather", Name = "Weather Damage", Family = "offence", ScopedBy = "weather",
+        });
+        AssertHasProblem(content, "modifier_keys", "unknown dimension 'weather'");
+    }
+
+    /// <summary>The cap is the entire point of marking a family dangerous. Leaving <c>max</c> off
+    /// is how a family reaches certainty and stops being balanceable after the fact.</summary>
+    [Fact]
+    public void ModifierKey_MarkedDangerousWithNoCeiling_IsReported()
+    {
+        var content = ValidBaseline();
+        content.ModifierKeys.Add(new Dungeons.Modifiers.ModifierKeyDefinition
+        {
+            Id = "combat.avoid.everything", Name = "Avoidance", Family = "defence",
+            Kind = Dungeons.Modifiers.ModifierKind.Diminishing, Danger = true,
+        });
+        AssertHasProblem(content, "modifier_keys", "no max");
+    }
+
     private static ChannelEntry[] Channel(string property, double rate) =>
         new[] { new ChannelEntry { Property = property, Rate = rate } };
 
@@ -688,6 +717,7 @@ public class ContentValidatorTests
         public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
         public DataStore<EquipmentDefinition> Equipment => _bundle.Equipment;
         public DataStore<Dungeons.Characters.Composition.SpeciesDefinition> Species => _bundle.Species;
+        public DataStore<Dungeons.Modifiers.ModifierKeyDefinition> ModifierKeys => _bundle.ModifierKeys;
 
         public IReadOnlyList<ContentProblem> Validate() => ContentValidator.Validate(_bundle);
 
