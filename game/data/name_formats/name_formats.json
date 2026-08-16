@@ -1,0 +1,43 @@
+[
+  // Sentence shapes for generated class names. Only the trailing clause is templated; the lead
+  // "The {prefix} {archetype}" is universal.
+  //
+  // A clause starting with a comma or dash attaches directly; anything else attaches after a
+  // space. Presentation only — nothing here is ever read by the rule engine.
+
+  { "id": "standard", "name": "Standard",
+    "clause": "of {suffix}",
+    "example": "The Galvanic Bastion of Questionable Ethics" },
+
+  { "id": "citation", "name": "Citation",
+    "clause": "[Cited for {suffix}]",
+    "example": "The Explosive Vanguard [Cited for Improper Safety Procedures]" },
+
+  { "id": "investigation", "name": "Investigation",
+    "clause": ", Currently Under Investigation for {suffix}",
+    "example": "The Venomous Operative, Currently Under Investigation for Unscheduled Violence" },
+
+  { "id": "warning", "name": "Warning",
+    "clause": "(Warning: {suffix})",
+    "example": "The Trickster Bard (Warning: Excessive Enthusiasm)" },
+
+  { "id": "medical", "name": "Medical",
+    "clause": ", Diagnosed With {suffix}",
+    "example": "The Recursive Warlock, Against Medical Advice" },
+
+  { "id": "liability", "name": "Liability",
+    "clause": "({suffix} Accepted)",
+    "example": "The Seismic Juggernaut (Personal Liability Accepted)" },
+
+  { "id": "bureaucratic", "name": "Bureaucratic",
+    "clause": "[Subject to {suffix}]",
+    "example": "The Bureaucratic Artificer [Subject to Mandatory Overtime]" },
+
+  { "id": "consequence", "name": "Consequence",
+    "clause": ", Due to {suffix}",
+    "example": "The Quantum Wizard, Due to Repeated Bad Decisions" },
+
+  { "id": "notice", "name": "Notice",
+    "clause": "— {suffix}",
+    "example": "The Glitched Necromancer — Absolutely No Refunds" }
+]

@@ -1,0 +1,299 @@
+[
+  // The 50 Suffixes. Ten are fully expressed (one mechanic per channel, so every build can use
+  // them); the other forty are roster entries — named, formatted, and awaiting design.
+  //
+  // `channel` is the ONLY field coupling a suffix to the composition model. If channels change,
+  // that field changes and nothing else does.
+  //
+  // `format` and `custom_phrase` are presentation only and must never affect mechanics.
+
+  // ============================ FULLY EXPRESSED (10) ============================
+
+  {
+    "id": "suffix.exploding_kneecaps", "name": "Exploding Kneecaps", "format": "standard",
+    "fantasy": "Something detonates whenever you connect hard enough.",
+    "tags": ["explosive", "area"],
+    "expressions": [
+      { "channel": "strike", "drawback": "The blast does not discriminate. Adjacent means adjacent.",
+        "rule": { "id": "kneecaps_strike", "event": "DamageDealt",
+          "when": [ { "kind": "hasTag", "text": "heavy" } ],
+          "effect": { "kind": "areaDamage", "amount": 0.4, "scales_with": "amount" },
+          "cooldown_ticks": 60 } },
+      { "channel": "guard", "drawback": "You are inside your own explosion.",
+        "rule": { "id": "kneecaps_guard", "event": "Blocked",
+          "effect": { "kind": "areaDamage", "amount": 0.5, "scales_with": "amount" },
+          "cooldown_ticks": 60 } },
+      { "channel": "surge", "drawback": "Large spends are loud spends.",
+        "rule": { "id": "kneecaps_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "amountAtLeast", "value": 25 } ],
+          "effect": { "kind": "areaDamage", "amount": 18 },
+          "cooldown_ticks": 60 } }
+    ]
+  },
+
+  {
+    "id": "suffix.improper_safety_procedures", "name": "Improper Safety Procedures", "format": "citation",
+    "fantasy": "Hazards spread in ways the manual explicitly prohibits.",
+    "tags": ["hazard", "spread"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Spread does not check whose side anything is on.",
+        "rule": { "id": "safety_strike", "event": "StatusApplied",
+          "effect": { "kind": "applyStatus", "text": "status.spreading", "duration_ticks": 120 },
+          "cooldown_ticks": 45 } },
+      { "channel": "guard", "drawback": "The ground you defended is now on fire.",
+        "rule": { "id": "safety_guard", "event": "Blocked",
+          "effect": { "kind": "spawnEntity", "text": "zone.hazard", "duration_ticks": 100 },
+          "cooldown_ticks": 60 } },
+      { "channel": "surge", "drawback": "The pool persists, and so does your route through it.",
+        "rule": { "id": "safety_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "amountAtLeast", "value": 20 } ],
+          "effect": { "kind": "spawnEntity", "text": "zone.hazard", "duration_ticks": 140 },
+          "cooldown_ticks": 90 } }
+    ]
+  },
+
+  {
+    "id": "suffix.the_last_laugh", "name": "The Last Laugh", "format": "standard",
+    "fantasy": "Dying is your best move.",
+    "tags": ["death", "finale"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Still dead. Scales with what you had left, so hoarding is punished.",
+        "rule": { "id": "laugh_strike", "event": "Defeated",
+          "effect": { "kind": "damage", "amount": 60 } } },
+      { "channel": "guard", "drawback": "Still dead, but the line holds a little longer.",
+        "rule": { "id": "laugh_guard", "event": "Defeated",
+          "effect": { "kind": "spawnEntity", "text": "zone.corpse_barrier", "duration_ticks": 300 } } },
+      { "channel": "surge", "drawback": "Still dead, and everything you saved goes at once.",
+        "rule": { "id": "laugh_surge", "event": "Defeated",
+          "effect": { "kind": "areaDamage", "amount": 1.2, "scales_with": "gauge_value" } } }
+    ]
+  },
+
+  {
+    "id": "suffix.questionable_ethics", "name": "Questionable Ethics", "format": "investigation",
+    "fantasy": "You harvest things from corpses that no reasonable person would.",
+    "tags": ["harvest", "loot"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Harvesting is noisy. Realm danger rises.",
+        "rule": { "id": "ethics_strike", "event": "Killed",
+          "when": [ { "kind": "hasTag", "text": "finisher" } ],
+          "effect": { "kind": "grantItem", "text": "harvest.extra", "amount": 1 } } },
+      { "channel": "guard", "drawback": "Same noise, same attention.",
+        "rule": { "id": "ethics_guard", "event": "Killed",
+          "when": [ { "kind": "hasTag", "text": "retaliation" } ],
+          "effect": { "kind": "grantItem", "text": "harvest.extra", "amount": 1 } } },
+      { "channel": "surge", "drawback": "Efficient, thorough, and extremely conspicuous.",
+        "rule": { "id": "ethics_surge", "event": "Killed",
+          "when": [ { "kind": "gaugeAtLeast", "value": 0.5 } ],
+          "effect": { "kind": "grantItem", "text": "harvest.extra", "amount": 2 } } }
+    ]
+  },
+
+  {
+    "id": "suffix.mandatory_overtime", "name": "Mandatory Overtime", "format": "bureaucratic",
+    "fantasy": "You may not stop working, and the work gets better the longer you don't.",
+    "tags": ["sustain", "escalating"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Clocking out staggers you. Idling is punished, not merely unrewarded.",
+        "rule": { "id": "overtime_strike", "event": "MoveExecuted",
+          "when": [ { "kind": "hasTag", "text": "consecutive" } ],
+          "effect": { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.06, "duration_ticks": 90 } } },
+      { "channel": "guard", "drawback": "Dropping your guard after a long shift is a mistake.",
+        "rule": { "id": "overtime_guard", "event": "Blocked",
+          "when": [ { "kind": "hasTag", "text": "consecutive" } ],
+          "effect": { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.94, "duration_ticks": 90 } } },
+      { "channel": "surge", "drawback": "Stopping causes exhaustion.",
+        "rule": { "id": "overtime_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "hasTag", "text": "consecutive" } ],
+          "effect": { "kind": "grantModifier", "text": "resource.gauge.gain", "amount": 1.08, "duration_ticks": 90 } } }
+    ]
+  },
+
+  {
+    "id": "suffix.unlicensed_surgery", "name": "Unlicensed Surgery", "format": "medical",
+    "custom_phrase": "Against Medical Advice",
+    "fantasy": "You perform medicine on yourself, mid-fight, badly.",
+    "tags": ["healing", "self_harm"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Every operation leaves an injury stack that lowers max Health until treated.",
+        "rule": { "id": "surgery_strike", "event": "DamageDealt",
+          "effect": { "kind": "heal", "amount": 0.15, "scales_with": "amount" },
+          "cooldown_ticks": 40 } },
+      { "channel": "guard", "drawback": "Blocking with an open wound is exactly as advisable as it sounds.",
+        "rule": { "id": "surgery_guard", "event": "Blocked",
+          "effect": { "kind": "heal", "amount": 0.25, "scales_with": "amount" },
+          "cooldown_ticks": 40 } },
+      { "channel": "surge", "drawback": "The heal is unstable and partially reverses later.",
+        "rule": { "id": "surgery_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "amountAtLeast", "value": 30 } ],
+          "effect": { "kind": "heal", "amount": 28 },
+          "cooldown_ticks": 200 } }
+    ]
+  },
+
+  {
+    "id": "suffix.the_emergency_exit", "name": "The Emergency Exit", "format": "standard",
+    "fantasy": "When things are dire enough, a door appears.",
+    "tags": ["escape", "extraction"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Limited uses per run, and you leave unsecured loot behind.",
+        "rule": { "id": "exit_strike", "event": "Killed",
+          "when": [ { "kind": "selfHealthBelow", "value": 0.25 } ],
+          "effect": { "kind": "reposition", "text": "escape" },
+          "cooldown_ticks": 900 } },
+      { "channel": "guard", "drawback": "Same cost, and it requires precision under pressure.",
+        "rule": { "id": "exit_guard", "event": "Blocked",
+          "when": [ { "kind": "hasTag", "text": "perfect" }, { "kind": "selfHealthBelow", "value": 0.25 } ],
+          "effect": { "kind": "reposition", "text": "escape" },
+          "cooldown_ticks": 900 } },
+      { "channel": "surge", "drawback": "Dumping everything leaves you empty on the other side.",
+        "rule": { "id": "exit_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "gaugeAtLeast", "value": 0.9 } ],
+          "effect": { "kind": "reposition", "text": "escape" },
+          "cooldown_ticks": 900 } }
+    ]
+  },
+
+  {
+    "id": "suffix.personal_liability", "name": "Personal Liability", "format": "liability",
+    "fantasy": "Everything is logged, and the accounting always settles.",
+    "tags": ["debt", "risk"],
+    "expressions": [
+      { "channel": "strike", "drawback": "A fraction of the damage you deal is billed back to you at encounter end.",
+        "rule": { "id": "liability_strike", "event": "DamageDealt",
+          "effect": { "kind": "applyStatus", "text": "status.liability", "amount": 0.15, "scales_with": "amount" } } },
+      { "channel": "guard", "drawback": "The payout only comes if you survive to collect it.",
+        "rule": { "id": "liability_guard", "event": "Blocked",
+          "effect": { "kind": "applyStatus", "text": "status.liability_credit", "amount": 0.2, "scales_with": "amount" } } },
+      { "channel": "surge", "drawback": "Unpaid debt hurts; overpayment rewards.",
+        "rule": { "id": "liability_surge", "event": "ResourceSpent",
+          "effect": { "kind": "applyStatus", "text": "status.liability", "amount": 0.1, "scales_with": "amount" } } }
+    ]
+  },
+
+  {
+    "id": "suffix.terminal_curiosity", "name": "Terminal Curiosity", "format": "warning",
+    "fantasy": "You cannot leave unknown things alone, and you learn a great deal.",
+    "tags": ["discovery", "compulsion"],
+    "expressions": [
+      { "channel": "strike", "drawback": "You are compelled — ignoring something unknown carries a penalty.",
+        "rule": { "id": "curiosity_strike", "event": "DamageDealt",
+          "when": [ { "kind": "firstInEncounter", "value": 1 } ],
+          "effect": { "kind": "revealInfo", "text": "enemy_weaknesses" } } },
+      { "channel": "guard", "drawback": "Learning this way means being hit by it first.",
+        "rule": { "id": "curiosity_guard", "event": "DamageTaken",
+          "when": [ { "kind": "firstInEncounter", "value": 1 } ],
+          "effect": { "kind": "revealInfo", "text": "enemy_moveset" } } },
+      { "channel": "surge", "drawback": "Study costs resource you might have wanted for the fight.",
+        "rule": { "id": "curiosity_surge", "event": "ResourceSpent",
+          "when": [ { "kind": "amountAtLeast", "value": 20 } ],
+          "effect": { "kind": "revealInfo", "text": "hidden_locations" },
+          "cooldown_ticks": 400 } }
+    ]
+  },
+
+  {
+    "id": "suffix.absolutely_no_refunds", "name": "Absolutely No Refunds", "format": "notice",
+    "fantasy": "Every commitment is final, and final commitments hit harder.",
+    "tags": ["commitment", "irreversible"],
+    "expressions": [
+      { "channel": "strike", "drawback": "Queued attacks cannot be cancelled. Directly fights The Trickster.",
+        "rule": { "id": "refunds_strike", "event": "ActionQueued",
+          "when": [ { "kind": "hasTag", "text": "attack" } ],
+          "effect": { "kind": "grantModifier", "text": "combat.uncancellable", "amount": 1, "duration_ticks": 120 } } },
+      { "channel": "guard", "drawback": "Stances cannot be dropped early.",
+        "rule": { "id": "refunds_guard", "event": "MoveExecuted",
+          "when": [ { "kind": "hasTag", "text": "defensive" } ],
+          "effect": { "kind": "grantModifier", "text": "combat.block.mult", "amount": 1.3, "duration_ticks": 90 } } },
+      { "channel": "surge", "drawback": "Spends can never be refunded by any effect.",
+        "rule": { "id": "refunds_surge", "event": "ResourceSpent",
+          "effect": { "kind": "grantModifier", "text": "combat.no_refund", "amount": 1, "duration_ticks": 200 } } }
+    ]
+  },
+
+  // ============================ ROSTER ONLY (40) ============================
+  // Named, formatted, and awaiting design. The naming system ships now; the mechanics follow
+  // once the ten above prove the three-expression model.
+
+  { "id": "suffix.relentless_screaming", "name": "Relentless Screaming", "format": "warning",
+    "fantasy": "Sustained aggression builds Fear pressure on everything nearby." },
+  { "id": "suffix.unscheduled_violence", "name": "Unscheduled Violence", "format": "investigation",
+    "fantasy": "Combat begins at times and places it was not supposed to." },
+  { "id": "suffix.excessive_force", "name": "Excessive Force", "format": "citation",
+    "fantasy": "Overkill damage refuses to be wasted." },
+  { "id": "suffix.poor_impulse_control", "name": "Poor Impulse Control", "format": "medical",
+    "fantasy": "Rapidly switching targets builds something unstable." },
+  { "id": "suffix.the_final_warning", "name": "The Final Warning", "format": "warning",
+    "fantasy": "One threat, delivered once, with escalating consequences for ignoring it." },
+  { "id": "suffix.unnecessary_escalation", "name": "Unnecessary Escalation", "format": "citation",
+    "fantasy": "Every exchange raises the stakes, whether or not that was required." },
+  { "id": "suffix.catastrophic_mismanagement", "name": "Catastrophic Mismanagement", "format": "consequence",
+    "fantasy": "Resources are handled so badly that it occasionally works." },
+  { "id": "suffix.weaponized_incompetence", "name": "Weaponized Incompetence", "format": "notice",
+    "fantasy": "Doing a thing wrong produces results doing it right would not." },
+  { "id": "suffix.unpaid_debts", "name": "Unpaid Debts", "format": "liability",
+    "fantasy": "Damage received accumulates into a retaliatory account." },
+  { "id": "suffix.suspicious_circumstances", "name": "Suspicious Circumstances", "format": "investigation",
+    "fantasy": "Improbable things happen around you, and mostly in your favour." },
+  { "id": "suffix.the_wrong_lever", "name": "The Wrong Lever", "format": "consequence",
+    "fantasy": "Interacting with anything has a chance of doing something else entirely." },
+  { "id": "suffix.repeated_workplace_incidents", "name": "Repeated Workplace Incidents", "format": "bureaucratic",
+    "fantasy": "The same accident keeps happening, and you keep getting better at it." },
+  { "id": "suffix.unreasonable_confidence", "name": "Unreasonable Confidence", "format": "standard",
+    "fantasy": "Enormous benefits near full Health, lost sharply the moment you are wounded.",
+    "tags": ["confident", "conditional"], "ruleIds": ["rule.unreasonable_confidence"] },
+  { "id": "suffix.sudden_deceleration", "name": "Sudden Deceleration", "format": "consequence",
+    "fantasy": "Movement stops abruptly, and the stopping is the damage." },
+  { "id": "suffix.improvised_explosives", "name": "Improvised Explosives", "format": "citation",
+    "fantasy": "Any material can be made to detonate given poor enough judgement." },
+  { "id": "suffix.unfortunate_timing", "name": "Unfortunate Timing", "format": "consequence",
+    "fantasy": "Things resolve at the worst possible moment — occasionally for the enemy." },
+  { "id": "suffix.hostile_negotiations", "name": "Hostile Negotiations", "format": "investigation",
+    "fantasy": "Event encounters gain combat-based solutions." },
+  { "id": "suffix.unresolved_grievances", "name": "Unresolved Grievances", "format": "bureaucratic",
+    "fantasy": "Enemies that escaped you are remembered, and dealt with later." },
+  { "id": "suffix.persistent_bleeding", "name": "Persistent Bleeding", "format": "medical",
+    "fantasy": "Wounds you inflict do not close, including your own." },
+  { "id": "suffix.gross_negligence", "name": "Gross Negligence", "format": "citation",
+    "fantasy": "Safety measures you skip pay dividends until they don't." },
+  { "id": "suffix.the_exit_wound", "name": "The Exit Wound", "format": "medical",
+    "fantasy": "Damage passes through its target and keeps going." },
+  { "id": "suffix.unwanted_attention", "name": "Unwanted Attention", "format": "warning",
+    "fantasy": "Everything in the Realm knows where you are, and some of it is worth killing." },
+  { "id": "suffix.aggressive_recycling", "name": "Aggressive Recycling", "format": "notice",
+    "fantasy": "Broken equipment and spent materials become something usable, violently." },
+  { "id": "suffix.questionable_ingredients", "name": "Questionable Ingredients", "format": "warning",
+    "fantasy": "Consumables made from things that should not be eaten work unusually well." },
+  { "id": "suffix.unauthorized_modification", "name": "Unauthorized Modification", "format": "citation",
+    "fantasy": "Equipment can be altered in ways the form template does not permit." },
+  { "id": "suffix.predictable_consequences", "name": "Predictable Consequences", "format": "consequence",
+    "fantasy": "You can see exactly what your choices will cost, which does not stop you." },
+  { "id": "suffix.excessive_enthusiasm", "name": "Excessive Enthusiasm", "format": "warning",
+    "fantasy": "Commitment beyond what the situation called for." },
+  { "id": "suffix.the_meat_budget", "name": "The Meat Budget", "format": "bureaucratic",
+    "fantasy": "Health is an allocated resource and may be spent as one." },
+  { "id": "suffix.weaponized_friendship", "name": "Weaponized Friendship", "format": "notice",
+    "fantasy": "Allies and summons become ordnance." },
+  { "id": "suffix.repeated_bad_decisions", "name": "Repeated Bad Decisions", "format": "consequence",
+    "fantasy": "Making the same mistake repeatedly eventually pays off." },
+  { "id": "suffix.the_customer_complaint", "name": "The Customer Complaint", "format": "bureaucratic",
+    "fantasy": "Enemies that wrong you are formally escalated." },
+  { "id": "suffix.improper_disposal", "name": "Improper Disposal", "format": "citation",
+    "fantasy": "Corpses and spent materials are left where they cause problems." },
+  { "id": "suffix.administrative_violence", "name": "Administrative Violence", "format": "bureaucratic",
+    "fantasy": "Paperwork, applied directly." },
+  { "id": "suffix.unfortunate_geometry", "name": "Unfortunate Geometry", "format": "consequence",
+    "fantasy": "Positioning produces results nobody intended." },
+  { "id": "suffix.the_second_explosion", "name": "The Second Explosion", "format": "notice",
+    "fantasy": "There is always a second one, and it is the dangerous one." },
+  { "id": "suffix.noncompliance", "name": "Noncompliance", "format": "citation",
+    "fantasy": "Rules that apply to others are treated as advisory." },
+  { "id": "suffix.the_fine_print", "name": "The Fine Print", "format": "liability",
+    "fantasy": "Effects have clauses nobody read, and some of them favour you." },
+  { "id": "suffix.unstable_employment", "name": "Unstable Employment", "format": "bureaucratic",
+    "fantasy": "Your capabilities are reassigned without notice." },
+  { "id": "suffix.experimental_treatment", "name": "Experimental Treatment", "format": "medical",
+    "fantasy": "Healing has side effects that have not been fully characterised." },
+  { "id": "suffix.someone_elses_problem", "name": "Someone Else's Problem", "format": "liability",
+    "fantasy": "Consequences are transferred to a nearby party." }
+]

@@ -18,9 +18,11 @@ public class ContentValidationTests
 
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
     {
+        // LoadDocuments, not LoadOne: content types are free to be authored as array files
+        // (the Base roster is one), and this loader should not care which.
         var store = new DataStore<T>();
-        foreach (var file in Directory.GetFiles(Path.Combine(DataDir, subfolder), "*.json"))
-            store.LoadOne(File.ReadAllText(file));
+        store.LoadDocuments(
+            Directory.GetFiles(Path.Combine(DataDir, subfolder), "*.json").Select(File.ReadAllText));
         return store;
     }
 

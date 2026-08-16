@@ -12,7 +12,7 @@ public class SaveSerializerTests
         SavedAtTick = 4242,
         Build = new CharacterBuild(
             new SpeciesId("species.undead"), new BaseClassId("class.bastion"),
-            new PrefixId("prefix.frenzied"), new SuffixId("suffix.the_last_laugh")),
+            new PrefixId("prefix.galvanic"), new SuffixId("suffix.the_last_laugh")),
         Stash = new List<ItemStack> { new("material.oak_log", 7), new("material.iron_ingot", 2) },
         Professions = new List<ProfessionSave>
         {

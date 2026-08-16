@@ -32,13 +32,15 @@ public partial class GameRoot : Node
     /// <summary>Simulation ticks advanced per real second while running.</summary>
     public const int TicksPerSecond = 20;
 
+    /// <summary>Debug rotation through the fully-expressed suffixes — the ones that actually
+    /// do something on every channel today.</summary>
     private static readonly string[] SuffixCycle =
     {
         "suffix.unreasonable_confidence",
-        "suffix.inappropriate_optimism",
         "suffix.exploding_kneecaps",
-        "suffix.the_bigger_hammer",
         "suffix.the_last_laugh",
+        "suffix.mandatory_overtime",
+        "suffix.absolutely_no_refunds",
     };
 
     private readonly TickEngine _tick = new();
@@ -71,6 +73,7 @@ public partial class GameRoot : Node
     private IEmergentRegistry _emergentRegistry = null!;
     private IReactionEngine _reactions = null!;
     private MaterialProfileResolver _profiles = null!;
+    private BuildResolver _buildResolver = null!;
     private CombatEncounter _encounter = null!;
     private bool _everFought;
 
@@ -82,8 +85,8 @@ public partial class GameRoot : Node
     private Inventory CurrentBag => _run is { Active: true } ? _run.RunInventory : _stash;
 
     private CharacterBuild _build = new(
-        new SpeciesId("species.fey_touched"), new BaseClassId("class.hexslinger"),
-        new PrefixId("prefix.frenzied"), new SuffixId(SuffixCycle[0]));
+        new SpeciesId("species.fey_touched"), new BaseClassId("class.wizard"),
+        new PrefixId("prefix.galvanic"), new SuffixId(SuffixCycle[0]));
     private int _suffixIndex;
 
     private bool _running;
@@ -123,6 +126,7 @@ public partial class GameRoot : Node
             new InappropriateOptimismRule(),
         });
         _composer = new CharacterComposer(content.Species, content.Classes, content.Prefixes, content.Suffixes, rules);
+        _buildResolver = new BuildResolver(content);
         RebuildCharacter();
         EquipStarterLoadout();
 
@@ -217,6 +221,86 @@ public partial class GameRoot : Node
     }
 
     public void AdvanceTick(long ticks) => _tick.Advance(ticks);
+
+    // --- Character Lab -------------------------------------------------------
+    //
+    // Thin forwards over Core's BuildResolver. Every rule about how Base + Prefix + Suffix
+    // compose lives there; this just exposes it and formats the report.
+
+    public IReadOnlyList<BaseClassDefinition> Bases =>
+        _content.Classes.GetAll().OrderBy(b => b.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    public IReadOnlyList<PrefixDefinition> PrefixCatalog =>
+        _content.Prefixes.GetAll().OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    public IReadOnlyList<SuffixDefinition> SuffixCatalog =>
+        _content.Suffixes.GetAll()
+            .OrderByDescending(s => s.IsFullyExpressed)   // the ones that do something, first
+            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    public CharacterBuild CurrentBuild => _build;
+
+    public ResolvedBuild ResolveBuild(CharacterBuild build) => _buildResolver.Resolve(build);
+
+    /// <summary>Swaps one or more components and rebuilds. Null leaves that slot alone.</summary>
+    public void SetBuild(string? baseId = null, string? prefixId = null, string? suffixId = null)
+    {
+        var previous = _buildResolver.Resolve(_build);
+
+        _build = _build with
+        {
+            BaseClassId = baseId is null ? _build.BaseClassId : new BaseClassId(baseId),
+            PrefixId = prefixId is null ? _build.PrefixId : new PrefixId(prefixId),
+            SuffixId = suffixId is null ? _build.SuffixId : new SuffixId(suffixId),
+        };
+
+        RebuildCharacter();
+
+        foreach (var change in BuildResolver.Diff(previous, _buildResolver.Resolve(_build)))
+            Emit("  " + change);
+    }
+
+    /// <summary>Full readout of the current build, for the Lab.</summary>
+    public string BuildReport()
+    {
+        var build = _buildResolver.Resolve(_build);
+        var sb = new StringBuilder();
+
+        sb.AppendLine(build.Name);
+        sb.AppendLine();
+        sb.AppendLine($"Engine     {build.Base.Engine}");
+        sb.AppendLine($"Weakness   {build.Base.Weakness}");
+        sb.AppendLine($"Resource   {build.Base.PrimaryResource}    Channel  {build.Channel}");
+        sb.AppendLine();
+
+        sb.AppendLine("Growth per level (budget " + AttributeGrowth.BudgetPerLevel.ToString("0.#") + ")");
+        foreach (var (attribute, weight) in build.GrowthPerLevel.OrderByDescending(p => p.Value))
+            sb.AppendLine($"  {attribute,-13} {weight,5:0.###}   → +{build.GrowthAt(21)[attribute]} by L21");
+        sb.AppendLine();
+
+        sb.AppendLine(build.Gauges.Count == 0
+            ? "Gauges     (none — this Base runs without a meter)"
+            : "Gauges");
+        foreach (var gauge in build.Gauges)
+            sb.AppendLine($"  {gauge.Name,-12} {gauge.Behaviour}, max {gauge.Max:0}, {gauge.Feeds.Count} feed(s), {gauge.Bands.Count} band(s)");
+        sb.AppendLine();
+
+        sb.AppendLine($"Hooks ({build.Rules.Count})");
+        foreach (var rule in build.Rules)
+            sb.AppendLine($"  {rule.Origin,-28} on {rule.Rule.Event} → {rule.Rule.Effect.Kind}");
+
+        if (build.Suffix is { } suffix)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"Suffix     {suffix.Fantasy}");
+            sb.AppendLine(suffix.IsFullyExpressed
+                ? $"           {suffix.For(build.Channel)!.Drawback}"
+                : "           (roster entry — no mechanics authored yet)");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
 
     // --- Character ----------------------------------------------------------
 

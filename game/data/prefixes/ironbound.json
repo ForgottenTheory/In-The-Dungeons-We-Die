@@ -1,9 +1,0 @@
-{
-  "id": "prefix.ironbound",
-  "name": "Ironbound",
-  "tags": ["defensive", "iron"],
-  "modifiers": [
-    { "stat": "Constitution", "op": "Add", "value": 1 },
-    { "stat": "MaxHealth", "op": "Multiply", "value": 1.1 }
-  ]
-}

@@ -29,6 +29,8 @@ public static class ContentLoader
         Processes = LoadDefinitions<ProcessDefinition>($"{dataRoot}/processes"),
         Byproducts = LoadDefinitions<ByproductDefinition>($"{dataRoot}/byproducts"),
         NameGrammar = LoadDefinitions<NameWordDefinition>($"{dataRoot}/name_grammar"),
+        ModifierKeys = LoadDefinitions<Dungeons.Modifiers.ModifierKeyDefinition>($"{dataRoot}/modifier_keys"),
+        NameFormats = LoadDefinitions<NameFormatDefinition>($"{dataRoot}/name_formats"),
         Professions = LoadDefinitions<ProfessionDefinition>($"{dataRoot}/professions"),
         Actions = LoadDefinitions<ProfessionActionDefinition>($"{dataRoot}/profession_actions"),
         Interactions = LoadDefinitions<CraftingInteractionDefinition>($"{dataRoot}/crafting_interactions"),

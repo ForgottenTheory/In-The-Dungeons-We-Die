@@ -1,3 +1,4 @@
+using Dungeons.Characters;
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Crafting;
@@ -75,6 +76,9 @@ public static class ContentValidator
         ValidateProcesses(content.Processes, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
+        ValidateBases(content.Classes, content.ModifierKeys, problems);
+        ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
+        ValidateSuffixes(content.Suffixes, content.ModifierKeys, problems);
         ValidateActors(content.Actors, content.Abilities, content.Materials, problems);
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
@@ -237,6 +241,220 @@ public static class ContentValidator
                     problems.Add(new("name_grammar", $"{entry.Id} word '{word}' is a tier word; use a stronger vocabulary word instead."));
             }
         }
+    }
+
+    /// <summary>
+    /// Validates the Base roster (docs/classes.md §3).
+    ///
+    /// <para>The load-bearing rule is the <b>growth budget</b>: every Base must distribute the
+    /// same total per level. If one Base could exceed it, Base choice would stop being a trade
+    /// and start being a menu where some options are strictly larger.</para>
+    /// </summary>
+    private static void ValidateBases(
+        DataStore<BaseClassDefinition> bases,
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        var attributes = Enum.GetNames<AttributeType>().ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var @base in bases.GetAll())
+        {
+            var listed = 0.0;
+
+            foreach (var (attribute, weight) in @base.Growth)
+            {
+                if (!attributes.Contains(attribute))
+                    problems.Add(new("classes", $"{@base.Id} grows unknown attribute '{attribute}'."));
+
+                if (weight < 0)
+                    problems.Add(new("classes", $"{@base.Id} has negative growth for '{attribute}'."));
+
+                listed += weight;
+            }
+
+            if (listed > AttributeGrowth.BudgetPerLevel + 0.001)
+            {
+                problems.Add(new("classes",
+                    $"{@base.Id} growth weights total {listed:0.##}, over the {AttributeGrowth.BudgetPerLevel:0.##} budget."));
+            }
+
+            if (@base.Growth.Count == 0)
+                problems.Add(new("classes", $"{@base.Id} declares no growth, so it has no identity."));
+
+            if (string.IsNullOrWhiteSpace(@base.Engine))
+                problems.Add(new("classes", $"{@base.Id} has no engine description — a Base is distinguished by its engine."));
+
+            ValidateGauge(@base, modifierKeys, problems);
+        }
+    }
+
+    /// <summary>
+    /// Validates the Prefix roster (docs/classes.md §4).
+    ///
+    /// <para>The rule worth enforcing mechanically is that <b>a Prefix may never reference a
+    /// Base</b>. That single constraint is what keeps the roster at 25 authored mechanics
+    /// instead of 15 × 25 = 375 hand-written combinations, and it is exactly the kind of thing
+    /// that erodes quietly when someone needs "just one special case".</para>
+    /// </summary>
+    private static void ValidatePrefixes(
+        DataStore<PrefixDefinition> prefixes,
+        DataStore<BaseClassDefinition> bases,
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        var baseIds = bases.GetAll().Select(b => b.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var prefix in prefixes.GetAll())
+        {
+            if (string.IsNullOrWhiteSpace(prefix.Mechanic))
+                problems.Add(new("prefixes", $"{prefix.Id} states no mechanic — a Prefix adds one recognizable thing."));
+
+            if (prefix.Rules.Count == 0 && prefix.Gauge is null && prefix.Modifiers.Count == 0)
+                problems.Add(new("prefixes", $"{prefix.Id} does nothing at all."));
+
+            foreach (var text in PrefixTextFields(prefix))
+            {
+                if (baseIds.Contains(text))
+                    problems.Add(new("prefixes", $"{prefix.Id} references Base '{text}'. Prefixes must adapt through events, never by naming a Base."));
+            }
+
+            foreach (var rule in prefix.Rules)
+                ValidateTriggerRule(rule, $"{prefix.Id} rule '{rule.Id}'", modifierKeys, problems);
+
+            if (prefix.Gauge is { } gauge)
+            {
+                foreach (var feed in gauge.Feeds)
+                    ValidateTriggerRule(feed, $"{prefix.Id} gauge feed '{feed.Id}'", modifierKeys, problems);
+
+                foreach (var band in gauge.Bands.Where(b => !modifierKeys.Contains(b.Modifier)))
+                    problems.Add(new("prefixes", $"{prefix.Id} gauge band references unknown modifier key '{band.Modifier}'."));
+            }
+        }
+    }
+
+    /// <summary>Known name-format styles (docs/classes.md). Presentation only — a Suffix's
+    /// format must never influence its mechanics, so this is validated but never read by the
+    /// rule engine.</summary>
+    public static readonly IReadOnlySet<string> NameFormats = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "standard", "citation", "investigation", "warning",
+        "medical", "liability", "bureaucratic", "consequence", "notice",
+    };
+
+    /// <summary>
+    /// Validates the Suffix roster (docs/classes.md §6).
+    ///
+    /// <para>The rule that matters: a Suffix with <i>any</i> expressions must have <b>one per
+    /// channel</b>. A partially-expressed Suffix is worse than an unexpressed one — it looks
+    /// usable, and then turns out to be meant for somebody else's build, which is precisely the
+    /// failure the three-expression model exists to prevent.</para>
+    /// </summary>
+    private static void ValidateSuffixes(
+        DataStore<SuffixDefinition> suffixes,
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        foreach (var suffix in suffixes.GetAll())
+        {
+            if (string.IsNullOrWhiteSpace(suffix.Fantasy))
+                problems.Add(new("suffixes", $"{suffix.Id} states no fantasy — a Suffix is an idea before it is a mechanic."));
+
+            if (!NameFormats.Contains(suffix.Format))
+                problems.Add(new("suffixes", $"{suffix.Id} uses unknown name format '{suffix.Format}'."));
+
+            if (suffix.Expressions.Count == 0)
+                continue; // Roster entry awaiting design — legitimate, not an error.
+
+            foreach (var channel in Enum.GetValues<ExpressionChannel>())
+            {
+                var matching = suffix.Expressions.Count(e => e.Channel == channel);
+
+                if (matching == 0)
+                    problems.Add(new("suffixes", $"{suffix.Id} has expressions but none for {channel} — that build could see it and not use it."));
+                else if (matching > 1)
+                    problems.Add(new("suffixes", $"{suffix.Id} has {matching} expressions for {channel}; exactly one is allowed."));
+            }
+
+            foreach (var expression in suffix.Expressions)
+            {
+                ValidateTriggerRule(
+                    expression.Rule, $"{suffix.Id} {expression.Channel} expression", modifierKeys, problems);
+
+                if (string.IsNullOrWhiteSpace(expression.Drawback))
+                    problems.Add(new("suffixes", $"{suffix.Id} {expression.Channel} expression states no drawback."));
+            }
+        }
+    }
+
+    /// <summary>Every author-supplied string on a prefix that could smuggle in a Base id.</summary>
+    private static IEnumerable<string> PrefixTextFields(PrefixDefinition prefix) =>
+        prefix.Tags
+            .Concat(prefix.Rules.Select(r => r.Effect.Text))
+            .Concat(prefix.Rules.SelectMany(r => r.When.Select(c => c.Text)))
+            .Concat(prefix.Gauge?.Feeds.Select(f => f.Effect.Text) ?? Enumerable.Empty<string>())
+            .Where(t => !string.IsNullOrEmpty(t));
+
+    private static void ValidateGauge(
+        BaseClassDefinition @base,
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        if (@base.Gauge is not { } gauge)
+            return; // Bases without a gauge are a deliberate design choice, not an omission.
+
+        if (string.IsNullOrWhiteSpace(gauge.Name))
+            problems.Add(new("classes", $"{@base.Id} has an unnamed gauge."));
+
+        if (gauge.Max <= 0)
+            problems.Add(new("classes", $"{@base.Id} gauge '{gauge.Name}' has a non-positive maximum."));
+
+        foreach (var band in gauge.Bands)
+        {
+            if (!modifierKeys.Contains(band.Modifier))
+                problems.Add(new("classes", $"{@base.Id} gauge band references unknown modifier key '{band.Modifier}'."));
+
+            if (band.AtMost is { } atMost && atMost < band.AtLeast)
+                problems.Add(new("classes", $"{@base.Id} gauge band has at_most below at_least."));
+        }
+
+        foreach (var feed in gauge.Feeds)
+            ValidateTriggerRule(feed, $"{@base.Id} gauge feed", modifierKeys, problems);
+    }
+
+    /// <summary>
+    /// Shared validation for any declarative hook — gauge feeds, prefix rules, suffix
+    /// expressions. Everything a typo could hide behind is checked here: the event, the
+    /// condition kinds, the effect kind, and any modifier key an effect names.
+    /// </summary>
+    internal static void ValidateTriggerRule(
+        Dungeons.Rules.TriggerRule rule,
+        string context,
+        DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
+        List<ContentProblem> problems)
+    {
+        if (!Dungeons.Events.GameEvents.All.Contains(rule.Event))
+            problems.Add(new("rules", $"{context} listens for unknown event '{rule.Event}'."));
+
+        foreach (var condition in rule.When)
+        {
+            if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
+                problems.Add(new("rules", $"{context} uses unknown condition '{condition.Kind}'."));
+        }
+
+        if (!Dungeons.Rules.RuleVocabulary.Effects.Contains(rule.Effect.Kind))
+            problems.Add(new("rules", $"{context} uses unknown effect '{rule.Effect.Kind}'."));
+
+        if (Dungeons.Rules.RuleVocabulary.ModifierKeyed.Contains(rule.Effect.Kind)
+            && !modifierKeys.Contains(rule.Effect.Text))
+        {
+            problems.Add(new("rules", $"{context} grants unknown modifier key '{rule.Effect.Text}'."));
+        }
+
+        if (rule.Chance is < 0 or > 1)
+            problems.Add(new("rules", $"{context} has a chance of {rule.Chance:0.##}, outside 0–1."));
+
+        if (rule.CooldownTicks < 0)
+            problems.Add(new("rules", $"{context} has a negative cooldown."));
     }
 
     private static void ValidateRoleWeights(ProcessDefinition process, List<ContentProblem> problems)

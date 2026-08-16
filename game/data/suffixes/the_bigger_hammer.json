@@ -1,8 +1,0 @@
-{
-  "id": "suffix.the_bigger_hammer",
-  "name": "Of The Bigger Hammer",
-  "tags": ["heavy", "slow"],
-  "modifiers": [
-    { "stat": "Strength", "op": "Add", "value": 2 }
-  ]
-}

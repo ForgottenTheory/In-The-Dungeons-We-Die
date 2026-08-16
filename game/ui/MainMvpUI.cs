@@ -46,6 +46,16 @@ public partial class MainMvpUI : Control
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
 
+    // --- Character Lab ------------------------------------------------------
+    private OptionButton _basePicker = null!;
+    private OptionButton _prefixPicker = null!;
+    private OptionButton _suffixPicker = null!;
+    private Label _labNameLabel = null!;
+    private Label _labEngineLabel = null!;
+    private Label _labMechanicLabel = null!;
+    private Label _labDiffLabel = null!;
+    private Label _labReportLabel = null!;
+
     // --- Crafting bench -----------------------------------------------------
     private OptionButton _processPicker = null!;
     private OptionButton _substratePicker = null!;
@@ -154,6 +164,7 @@ public partial class MainMvpUI : Control
         body.AddChild(BuildLogPanel());
 
         BuildCharacterSection(MakeTab("Character"));
+        BuildCharacterLabSection(MakeTab("Char Lab"));
         BuildEquipmentSection(MakeTab("Equipment"));
         BuildProfessionSection(MakeTab("Professions"));
         BuildCraftingSection(MakeTab("Crafting"));
@@ -301,6 +312,129 @@ public partial class MainMvpUI : Control
         _passiveBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
         passiveRow.AddChild(_passiveBar);
         passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
+    }
+
+    /// <summary>
+    /// The Character Lab (docs/classes.md).
+    ///
+    /// <para>Its purpose is one sentence: <b>swap any one component and immediately understand
+    /// what changed.</b> With 15 × 25 × 50 combinations there is no other way to judge whether
+    /// a Base, Prefix or Suffix is pulling its weight — so the diff panel is the feature, and
+    /// the readout is the supporting evidence.</para>
+    /// </summary>
+    private void BuildCharacterLabSection(VBoxContainer root)
+    {
+        root.AddChild(SectionTitle("Character Lab"));
+
+        _labNameLabel = Wrapping(Accent);
+        _labNameLabel.AddThemeFontSizeOverride("font_size", 17);
+        root.AddChild(Card(_labNameLabel));
+
+        // --- Selectors -------------------------------------------------------
+        var baseRow = Row();
+        root.AddChild(baseRow);
+        baseRow.AddChild(new Label { Text = "Base:", CustomMinimumSize = new Vector2(64, 0) });
+        _basePicker = new OptionButton { CustomMinimumSize = new Vector2(200, 0) };
+        foreach (var @base in _game.Bases)
+            _basePicker.AddItem(@base.Name);
+        _basePicker.ItemSelected += _ => ApplyLabSelection();
+        baseRow.AddChild(_basePicker);
+
+        // On its own line, not in the row: an autowrapping Label inside an HBoxContainer gets
+        // squeezed to its minimum width and wraps one character per line.
+        _labEngineLabel = Wrapping(Muted);
+        root.AddChild(_labEngineLabel);
+
+        var prefixRow = Row();
+        root.AddChild(prefixRow);
+        prefixRow.AddChild(new Label { Text = "Prefix:", CustomMinimumSize = new Vector2(64, 0) });
+        _prefixPicker = new OptionButton { CustomMinimumSize = new Vector2(200, 0) };
+        foreach (var prefix in _game.PrefixCatalog)
+            _prefixPicker.AddItem(prefix.Name);
+        _prefixPicker.ItemSelected += _ => ApplyLabSelection();
+        prefixRow.AddChild(_prefixPicker);
+
+        _labMechanicLabel = Wrapping(Muted);
+        root.AddChild(_labMechanicLabel);
+
+        var suffixRow = Row();
+        root.AddChild(suffixRow);
+        suffixRow.AddChild(new Label { Text = "Suffix:", CustomMinimumSize = new Vector2(64, 0) });
+        _suffixPicker = new OptionButton { CustomMinimumSize = new Vector2(200, 0) };
+        foreach (var suffix in _game.SuffixCatalog)
+            _suffixPicker.AddItem(suffix.IsFullyExpressed ? suffix.Name : suffix.Name + "  (roster only)");
+        _suffixPicker.ItemSelected += _ => ApplyLabSelection();
+        suffixRow.AddChild(_suffixPicker);
+        suffixRow.AddChild(MakeButton("Random", RandomiseLabBuild, Accent));
+
+        // --- What changed ----------------------------------------------------
+        root.AddChild(new HSeparator());
+        var diffHead = new Label { Text = "What changed:" };
+        diffHead.AddThemeColorOverride("font_color", Muted);
+        root.AddChild(diffHead);
+        _labDiffLabel = Wrapping(Positive);
+        root.AddChild(Card(_labDiffLabel));
+
+        // --- Full readout ----------------------------------------------------
+        // Deliberately not wrapping: the report is pre-formatted with column padding and its
+        // own line breaks, and autowrap would cut the table apart mid-row.
+        _labReportLabel = new Label();
+        root.AddChild(Card(_labReportLabel));
+
+        SyncLabPickers();
+        RefreshCharacterLab(Array.Empty<string>());
+    }
+
+    /// <summary>Points the pickers at whatever build is currently active.</summary>
+    private void SyncLabPickers()
+    {
+        var build = _game.CurrentBuild;
+
+        _basePicker.Selected = Math.Max(0, _game.Bases.ToList().FindIndex(b => b.Id == build.BaseClassId.Value));
+        _prefixPicker.Selected = Math.Max(0, _game.PrefixCatalog.ToList().FindIndex(p => p.Id == build.PrefixId.Value));
+        _suffixPicker.Selected = Math.Max(0, _game.SuffixCatalog.ToList().FindIndex(s => s.Id == build.SuffixId.Value));
+    }
+
+    private void ApplyLabSelection()
+    {
+        var bases = _game.Bases;
+        var prefixes = _game.PrefixCatalog;
+        var suffixes = _game.SuffixCatalog;
+
+        if (_basePicker.Selected < 0 || _prefixPicker.Selected < 0 || _suffixPicker.Selected < 0)
+            return;
+
+        var previous = _game.ResolveBuild(_game.CurrentBuild);
+
+        _game.SetBuild(
+            bases[_basePicker.Selected].Id,
+            prefixes[_prefixPicker.Selected].Id,
+            suffixes[_suffixPicker.Selected].Id);
+
+        RefreshCharacterLab(Dungeons.Characters.Composition.BuildResolver.Diff(
+            previous, _game.ResolveBuild(_game.CurrentBuild)));
+    }
+
+    private void RandomiseLabBuild()
+    {
+        _basePicker.Selected = (int)(GD.Randi() % (uint)_basePicker.ItemCount);
+        _prefixPicker.Selected = (int)(GD.Randi() % (uint)_prefixPicker.ItemCount);
+        _suffixPicker.Selected = (int)(GD.Randi() % (uint)_suffixPicker.ItemCount);
+        ApplyLabSelection();
+    }
+
+    private void RefreshCharacterLab(IReadOnlyList<string> diff)
+    {
+        if (_labReportLabel is null)
+            return; // tab not built yet
+
+        var build = _game.ResolveBuild(_game.CurrentBuild);
+
+        _labNameLabel.Text = build.Name;
+        _labEngineLabel.Text = build.Base.Engine;
+        _labMechanicLabel.Text = build.Prefix?.Mechanic ?? string.Empty;
+        _labReportLabel.Text = _game.BuildReport();
+        _labDiffLabel.Text = diff.Count == 0 ? "(pick a different component)" : string.Join("\n", diff);
     }
 
     /// <summary>
@@ -741,6 +875,14 @@ public partial class MainMvpUI : Control
     {
         _characterLabel.Text = _game.CharacterReport();
         RebuildEquipmentControls(); // equipped slots changed
+
+        // The build can also change from the Character tab (Cycle Suffix), so the Lab follows.
+        // Setting OptionButton.Selected does not raise ItemSelected, so this cannot loop.
+        if (_labReportLabel is not null)
+        {
+            SyncLabPickers();
+            RefreshCharacterLab(Array.Empty<string>());
+        }
     }
 
     private void RefreshProfessionsAndInventory()
@@ -795,6 +937,28 @@ public partial class MainMvpUI : Control
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", separation);
         return row;
+    }
+
+    /// <summary>
+    /// A Label that wraps on words and actually takes the width available to it.
+    ///
+    /// <para><b>Only put one of these in a VBoxContainer or a Card.</b> An autowrapping Label
+    /// inside an HBoxContainer collapses to its minimum width and wraps a single character per
+    /// line — the row gives it no width to work with.</para>
+    /// </summary>
+    private static Label Wrapping(Color? color = null)
+    {
+        var label = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(320, 0),
+        };
+
+        if (color.HasValue)
+            label.AddThemeColorOverride("font_color", color.Value);
+
+        return label;
     }
 
     private static PanelContainer Card(Control inner)

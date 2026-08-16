@@ -1,8 +1,0 @@
-{
-  "id": "suffix.exploding_kneecaps",
-  "name": "Of The Exploding Kneecaps",
-  "tags": ["critical", "explosion"],
-  "modifiers": [
-    { "stat": "Luck", "op": "Add", "value": 1 }
-  ]
-}

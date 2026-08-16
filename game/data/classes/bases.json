@@ -1,0 +1,221 @@
+[
+  // The 15 Bases. Each is distinguished by its ENGINE — how resource flows and how the loop
+  // feels against a ticking clock — not by its flavour.
+  //
+  // Growth weights name only the notable attributes; the rest of the 4.0/level budget trickles
+  // evenly. Every Base gains the same total. Only the shape differs.
+  //
+  // `gauge` is optional on purpose. Seven Bases have none: giving everyone a bar would flatten
+  // exactly the distinctions this roster exists to create.
+
+  {
+    "id": "class.fighter", "name": "Fighter",
+    "engine": "Moveset comes from the weapon, not the class. Reconfigures by re-equipping.",
+    "weakness": "Only as good as their gear; no floor when underequipped.",
+    "primaryResource": "Stamina", "default_channel": "strike",
+    "tags": ["martial", "versatile", "weapon_master"],
+    "growth": { "Strength": 1.5, "Dexterity": 1.2, "Endurance": 0.8 }
+  },
+
+  {
+    "id": "class.juggernaut", "name": "Juggernaut",
+    "engine": "Momentum builds from damage dealt AND taken; high Momentum shortens windups and ignores interrupts.",
+    "weakness": "Lulls and forced repositioning kill the engine.",
+    "primaryResource": "Stamina", "default_channel": "strike",
+    "tags": ["martial", "unstoppable", "heavy_armor"],
+    "growth": { "Strength": 1.5, "Constitution": 1.2, "Endurance": 0.8 },
+    "gauge": {
+      "name": "Momentum", "behaviour": "buildSpend", "max": 100,
+      "decay_per_tick": 0.4, "decay_grace_ticks": 40,
+      "feeds": [
+        { "id": "dealt", "event": "DamageDealt", "effect": { "kind": "grantResource", "text": "Momentum", "amount": 6 } },
+        { "id": "taken", "event": "DamageTaken", "effect": { "kind": "grantResource", "text": "Momentum", "amount": 4 } }
+      ],
+      "bands": [
+        { "at_least": 0.5, "modifier": "combat.windup.mult", "value": 0.85 },
+        { "at_least": 0.8, "modifier": "combat.interrupt.immune", "value": 1 }
+      ]
+    }
+  },
+
+  {
+    "id": "class.operative", "name": "Operative",
+    "engine": "Spends actions creating openings, then dumps into the window. The meter lives on the enemy, not on you.",
+    "weakness": "Nothing banked between fights; poor when denied setup time.",
+    "primaryResource": "Stamina", "default_channel": "strike",
+    "tags": ["precision", "stealth", "setup"],
+    "growth": { "Dexterity": 1.5, "Luck": 1.2, "Intelligence": 0.8 }
+  },
+
+  {
+    "id": "class.outlander", "name": "Outlander",
+    "engine": "Finite prepared resources — ammunition, traps, ground — spent at range. Strongest before contact.",
+    "weakness": "Runs dry; collapses once closed on.",
+    "primaryResource": "Stamina", "default_channel": "strike",
+    "tags": ["ranged", "survival", "prepared"],
+    "growth": { "Dexterity": 1.5, "Wisdom": 1.2, "Constitution": 0.8 }
+  },
+
+  {
+    "id": "class.kineticist", "name": "Kineticist",
+    "engine": "Charge Force, release as displacement. Damage comes from collision and geometry, not from the spell.",
+    "weakness": "Low direct damage; needs terrain and bodies to work with.",
+    "primaryResource": "Mana", "default_channel": "strike",
+    "tags": ["force", "displacement", "positional"],
+    "growth": { "Intelligence": 1.5, "Strength": 1.2, "Dexterity": 0.8 },
+    "gauge": {
+      "name": "Force", "behaviour": "chargeHold", "max": 100,
+      "decay_per_tick": 0.2, "decay_grace_ticks": 80,
+      "feeds": [
+        { "id": "charge", "event": "ResourceSpent", "when": [ { "kind": "hasTag", "text": "spell" } ],
+          "effect": { "kind": "grantResource", "text": "Force", "amount": 0.8, "scales_with": "amount" } }
+      ],
+      "bands": [ { "at_least": 0.75, "modifier": "combat.damage.crushing", "value": 1.25 } ]
+    }
+  },
+
+  {
+    "id": "class.vitalist", "name": "Vitalist",
+    "engine": "No second bar — banks and moves life between targets. Drain, buffer, redistribute.",
+    "weakness": "Every cast is a real risk; loses to burst.",
+    "primaryResource": "Mana", "default_channel": "guard",
+    "tags": ["life", "support", "attrition"],
+    "growth": { "Wisdom": 1.5, "Constitution": 1.2, "Endurance": 0.8 }
+  },
+
+  {
+    "id": "class.wizard", "name": "Wizard",
+    "engine": "Charge one big spell and HOLD it, releasing on the right tick. The skill is the wait.",
+    "weakness": "Committed and interruptible; a wasted hold is a wasted fight.",
+    "primaryResource": "Mana", "default_channel": "strike",
+    "tags": ["arcane", "burst", "committed"],
+    "growth": { "Intelligence": 1.5, "Wisdom": 1.2, "Dexterity": 0.8 },
+    "gauge": {
+      "name": "Held Spell", "behaviour": "chargeHold", "max": 100,
+      "feeds": [
+        { "id": "channel", "event": "MoveExecuted", "when": [ { "kind": "hasTag", "text": "channel" } ],
+          "effect": { "kind": "grantResource", "text": "Held Spell", "amount": 12 } }
+      ],
+      "bands": [ { "at_least": 1.0, "modifier": "combat.damage.magic", "value": 1.6 } ]
+    }
+  },
+
+  {
+    "id": "class.invoker", "name": "Invoker",
+    "engine": "Sustained channels that ramp the longer they are held, draining continuously.",
+    "weakness": "Fragile mid-channel; all-or-nothing.",
+    "primaryResource": "Mana", "default_channel": "surge",
+    "tags": ["arcane", "channel", "ramping"],
+    "growth": { "Intelligence": 1.5, "Endurance": 1.2, "Constitution": 0.8 },
+    "gauge": {
+      "name": "Intensity", "behaviour": "sustainRamp", "max": 100,
+      "decay_per_tick": 3.0, "decay_grace_ticks": 4,
+      "feeds": [
+        { "id": "sustain", "event": "MoveExecuted", "when": [ { "kind": "hasTag", "text": "channel" } ],
+          "effect": { "kind": "grantResource", "text": "Intensity", "amount": 5 } }
+      ],
+      "bands": [
+        { "at_least": 0.4, "modifier": "combat.damage.magic", "value": 1.2 },
+        { "at_least": 0.8, "modifier": "combat.damage.magic", "value": 1.4 }
+      ]
+    }
+  },
+
+  {
+    "id": "class.druid", "name": "Druid",
+    "engine": "Forms swap the entire moveset and survivability profile at a transformation cost.",
+    "weakness": "Caught in the wrong form is fatal.",
+    "primaryResource": "Mana", "default_channel": "guard",
+    "tags": ["nature", "shapeshift", "adaptive"],
+    "growth": { "Wisdom": 1.5, "Strength": 1.2, "Constitution": 0.8 }
+  },
+
+  {
+    "id": "class.bastion", "name": "Bastion",
+    "engine": "Rechargeable block pool spent absorbing and intercepting; precise blocks refund it.",
+    "weakness": "Very low damage; must hold ground.",
+    "primaryResource": "Stamina", "default_channel": "guard",
+    "tags": ["martial", "defensive", "heavy_armor"],
+    "growth": { "Constitution": 1.5, "Endurance": 1.2, "Strength": 0.8 },
+    "gauge": {
+      "name": "Guard", "behaviour": "depleteRecover", "max": 60,
+      "starts_full": true, "regen_per_tick": 0.5,
+      "feeds": [
+        { "id": "perfect", "event": "Blocked", "when": [ { "kind": "hasTag", "text": "perfect" } ],
+          "effect": { "kind": "grantResource", "text": "Guard", "amount": 15 } }
+      ],
+      "bands": [ { "at_least": 0, "at_most": 0.01, "modifier": "combat.stagger.vulnerable", "value": 1 } ]
+    }
+  },
+
+  {
+    "id": "class.bard", "name": "Bard",
+    "engine": "Maintained songs that manipulate THE CLOCK — action intervals, telegraph length, recovery.",
+    "weakness": "Low direct damage; needs uptime to matter.",
+    "primaryResource": "Mana", "default_channel": "surge",
+    "tags": ["support", "tempo", "aura"],
+    "growth": { "Luck": 1.5, "Wisdom": 1.2, "Dexterity": 0.8 }
+  },
+
+  {
+    "id": "class.necromancer", "name": "Necromancer",
+    "engine": "Kills make bodies; thralls act on their own independent intervals. Scales with fight length.",
+    "weakness": "Nothing at the start; long ramp.",
+    "primaryResource": "Mana", "default_channel": "surge",
+    "tags": ["death", "summoner", "attrition"],
+    "growth": { "Wisdom": 1.5, "Intelligence": 1.2, "Constitution": 0.8 }
+  },
+
+  {
+    "id": "class.artificer", "name": "Artificer",
+    "engine": "Deployables that tick on their own timers. Consumes crafted and emergent gear more than anyone.",
+    "weakness": "Setup time; deployables are destroyable.",
+    "primaryResource": "Stamina", "default_channel": "surge",
+    "tags": ["invention", "deployable", "crafting"],
+    "growth": { "Intelligence": 1.5, "Dexterity": 1.2, "Endurance": 0.8 },
+    "gauge": {
+      "name": "Charges", "behaviour": "buildSpend", "max": 3,
+      "starts_full": true, "regen_per_tick": 0.01,
+      "feeds": [],
+      "bands": []
+    }
+  },
+
+  {
+    "id": "class.warlock", "name": "Warlock",
+    "engine": "Power is cheap in mana and expensive in Debt — which grows, empowers, then collects.",
+    "weakness": "Self-destructive; mismanaging the meter kills you.",
+    "primaryResource": "Mana", "default_channel": "surge",
+    "tags": ["pact", "risk", "corruption"],
+    "growth": { "Intelligence": 1.5, "Luck": 1.2, "Constitution": 0.8 },
+    "gauge": {
+      "name": "Debt", "behaviour": "debtCollect", "max": 100,
+      "feeds": [
+        { "id": "borrow", "event": "ResourceSpent", "when": [ { "kind": "hasTag", "text": "spell" } ],
+          "effect": { "kind": "grantResource", "text": "Debt", "amount": 0.5, "scales_with": "amount" } }
+      ],
+      "bands": [
+        { "at_least": 0.5, "modifier": "combat.damage.magic", "value": 1.3 },
+        { "at_least": 0.9, "modifier": "combat.damage_taken.mult", "value": 1.35 }
+      ]
+    }
+  },
+
+  {
+    "id": "class.vanguard", "name": "Vanguard",
+    "engine": "Generates Threat that forces enemy targeting — dictates where and when the fight happens.",
+    "weakness": "Fragile the moment it stops dictating.",
+    "primaryResource": "Stamina", "default_channel": "guard",
+    "tags": ["martial", "initiator", "control"],
+    "growth": { "Strength": 1.5, "Endurance": 1.2, "Dexterity": 0.8 },
+    "gauge": {
+      "name": "Threat", "behaviour": "buildSpend", "max": 100,
+      "decay_per_tick": 0.6, "decay_grace_ticks": 30,
+      "feeds": [
+        { "id": "engage", "event": "MoveExecuted", "effect": { "kind": "grantResource", "text": "Threat", "amount": 5 } },
+        { "id": "punish", "event": "Blocked", "effect": { "kind": "grantResource", "text": "Threat", "amount": 8 } }
+      ],
+      "bands": [ { "at_least": 0.6, "modifier": "combat.damage_taken.mult", "value": 0.9 } ]
+    }
+  }
+]

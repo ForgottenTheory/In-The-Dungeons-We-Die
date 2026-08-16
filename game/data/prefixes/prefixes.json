@@ -1,0 +1,383 @@
+[
+  // The 25 Prefixes. Each adds ONE recognizable mechanic, authored once against events.
+  //
+  // HARD RULE: no prefix may name a Base. Adaptation is emergent — Galvanic hooks
+  // `ResourceSpent`, so a Juggernaut charges by swinging, a Wizard by releasing a held spell,
+  // a Bastion by absorbing, and a Warlock fastest of all. One implementation, fifteen feels.
+  //
+  // Effects referencing systems that don't exist yet (statuses, summons, repositioning) are
+  // authorable now and land in the engine's Unhandled list until their owner ships — visibly
+  // inert rather than silently missing.
+
+  {
+    "id": "prefix.trickster", "name": "The Trickster",
+    "mechanic": "Feint — telegraphed actions can be cancelled into another, punishing anyone who committed to reacting.",
+    "tags": ["deception", "tempo"],
+    "rules": [
+      { "id": "feint_window", "event": "ActionTelegraphed",
+        "when": [ { "kind": "sourceIsSelf", "text": "self" } ],
+        "effect": { "kind": "applyStatus", "text": "status.feint_ready", "duration_ticks": 20 },
+        "description": "Telegraphing opens a feint window." },
+      { "id": "punish", "event": "ActionInterrupted",
+        "effect": { "kind": "grantModifier", "text": "combat.crit.chance", "amount": 0.25, "duration_ticks": 40 },
+        "description": "A baited reaction leaves the enemy open." }
+    ]
+  },
+
+  {
+    "id": "prefix.galvanic", "name": "The Galvanic",
+    "mechanic": "Charge — accumulates whenever you spend any resource, discharging as a chain arc on your next hit.",
+    "tags": ["lightning", "conversion"],
+    "gauge": {
+      "name": "Charge", "behaviour": "buildSpend", "max": 100,
+      "decay_per_tick": 0.3, "decay_grace_ticks": 60,
+      "feeds": [
+        { "id": "spend", "event": "ResourceSpent",
+          "effect": { "kind": "grantResource", "text": "Charge", "amount": 1.2, "scales_with": "amount" } }
+      ],
+      "bands": [ { "at_least": 0.6, "modifier": "combat.damage.magic", "value": 1.15 } ]
+    },
+    "rules": [
+      { "id": "discharge", "event": "DamageDealt",
+        "when": [ { "kind": "gaugeAtLeast", "value": 0.5 } ],
+        "effect": { "kind": "areaDamage", "amount": 0.3, "scales_with": "amount" },
+        "cooldown_ticks": 30, "description": "Stored charge arcs to nearby enemies." }
+    ]
+  },
+
+  {
+    "id": "prefix.explosive", "name": "The Explosive",
+    "mechanic": "Planted charges — damaging a target plants a charge that detonates on a timer, or instantly if it dies.",
+    "tags": ["fire", "delayed"],
+    "rules": [
+      { "id": "plant", "event": "DamageDealt",
+        "effect": { "kind": "applyStatus", "text": "status.planted_charge", "duration_ticks": 60 },
+        "cooldown_ticks": 20 },
+      { "id": "detonate", "event": "Killed",
+        "effect": { "kind": "areaDamage", "amount": 14 },
+        "description": "Death sets the charge off early." }
+    ]
+  },
+
+  {
+    "id": "prefix.venomous", "name": "The Venomous",
+    "mechanic": "Toxin stacks that grow over time, and can be burst early by a heavy action for the remaining total.",
+    "tags": ["poison", "stacking"],
+    "rules": [
+      { "id": "apply", "event": "DamageDealt",
+        "effect": { "kind": "applyStatus", "text": "status.toxin", "amount": 1, "duration_ticks": 120 } },
+      { "id": "burst", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "heavy" } ],
+        "effect": { "kind": "damage", "text": "status.toxin", "amount": 1.5, "scales_with": "amount" },
+        "cooldown_ticks": 60, "description": "A heavy blow cashes the stacks in at once." }
+    ]
+  },
+
+  {
+    "id": "prefix.gravitic", "name": "The Gravitic",
+    "mechanic": "Wells — your actions leave pull and slow zones behind them.",
+    "tags": ["gravity", "control"],
+    "rules": [
+      { "id": "well", "event": "MoveExecuted",
+        "effect": { "kind": "spawnEntity", "text": "zone.gravity_well", "duration_ticks": 80 },
+        "cooldown_ticks": 90 },
+      { "id": "heavy_pull", "event": "DamageDealt",
+        "when": [ { "kind": "hasTag", "text": "heavy" } ],
+        "effect": { "kind": "reposition", "text": "pull", "amount": 1 } }
+    ]
+  },
+
+  {
+    "id": "prefix.vampiric", "name": "The Vampiric",
+    "mechanic": "Siphon — damage banks stolen life that must be CLAIMED by an action. Never auto-healed.",
+    "tags": ["blood", "sustain"],
+    "gauge": {
+      "name": "Siphon", "behaviour": "buildSpend", "max": 60,
+      "decay_per_tick": 0.5, "decay_grace_ticks": 120,
+      "feeds": [
+        { "id": "steal", "event": "DamageDealt",
+          "effect": { "kind": "grantResource", "text": "Siphon", "amount": 0.2, "scales_with": "amount" } }
+      ],
+      "bands": []
+    },
+    "rules": [
+      { "id": "claim", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "claim" }, { "kind": "gaugeAtLeast", "value": 0.2 } ],
+        "effect": { "kind": "heal", "text": "Siphon", "amount": 1.0, "scales_with": "gauge_value" },
+        "description": "Spend the banked blood deliberately." }
+    ]
+  },
+
+  {
+    "id": "prefix.clockwork", "name": "The Clockwork",
+    "mechanic": "Cadence — acting at consistent intervals builds a bonus; irregular timing drops it.",
+    "tags": ["rhythm", "precision"],
+    "gauge": {
+      "name": "Cadence", "behaviour": "sustainRamp", "max": 100,
+      "decay_per_tick": 1.5, "decay_grace_ticks": 10,
+      "feeds": [
+        { "id": "on_beat", "event": "MoveExecuted",
+          "when": [ { "kind": "hasTag", "text": "on_beat" } ],
+          "effect": { "kind": "grantResource", "text": "Cadence", "amount": 14 } }
+      ],
+      "bands": [
+        { "at_least": 0.5, "modifier": "combat.recovery.mult", "value": 0.85 },
+        { "at_least": 0.85, "modifier": "combat.interval.mult", "value": 0.85 }
+      ]
+    },
+    "rules": []
+  },
+
+  {
+    "id": "prefix.spectral", "name": "The Spectral",
+    "mechanic": "Phase — periodically go intangible: immune to physical damage, unable to affect it either.",
+    "tags": ["ghost", "evasion"],
+    "rules": [
+      { "id": "phase", "event": "DamageTaken",
+        "when": [ { "kind": "selfHealthBelow", "value": 0.5 } ],
+        "effect": { "kind": "applyStatus", "text": "status.phased", "duration_ticks": 40 },
+        "cooldown_ticks": 200 }
+    ]
+  },
+
+  {
+    "id": "prefix.sylvan", "name": "The Sylvan",
+    "mechanic": "Rooting — holding position grows stacks that empower everything. Moving resets them.",
+    "tags": ["nature", "stationary"],
+    "rules": [
+      { "id": "root", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "moved", "negate": true } ],
+        "effect": { "kind": "applyStatus", "text": "status.rooted_growth", "amount": 1, "duration_ticks": 200 } },
+      { "id": "uproot", "event": "Moved",
+        "effect": { "kind": "applyStatus", "text": "status.rooted_growth", "amount": -99 },
+        "description": "Stepping away costs you everything you grew." }
+    ]
+  },
+
+  {
+    "id": "prefix.abyssal", "name": "The Abyssal",
+    "mechanic": "Devour — killing steals one of the victim's traits or resistances for the rest of the encounter.",
+    "tags": ["void", "consumption"],
+    "rules": [
+      { "id": "devour", "event": "Killed",
+        "effect": { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.08, "duration_ticks": 1200 },
+        "description": "Each kill leaves something of itself behind in you." }
+    ]
+  },
+
+  {
+    "id": "prefix.radiant", "name": "The Radiant",
+    "mechanic": "Illumination — damaged enemies are lit: bonus damage from all sources, and they cannot hide.",
+    "tags": ["light", "reveal"],
+    "rules": [
+      { "id": "illuminate", "event": "DamageDealt",
+        "effect": { "kind": "applyStatus", "text": "status.illuminated", "duration_ticks": 150 } },
+      { "id": "expose", "event": "EncounterStarted",
+        "effect": { "kind": "revealInfo", "text": "enemy_resistances" } }
+    ]
+  },
+
+  {
+    "id": "prefix.seismic", "name": "The Seismic",
+    "mechanic": "Aftershock — any action with a long windup emits a delayed ground wave on resolution.",
+    "tags": ["earth", "committed"],
+    "rules": [
+      { "id": "aftershock", "event": "MoveExecuted",
+        "when": [ { "kind": "valueAtLeast", "text": "windup_ticks", "value": 20 } ],
+        "effect": { "kind": "areaDamage", "amount": 0.5, "scales_with": "amount" },
+        "description": "Rewards commitment from any build — a held spell counts as committed." }
+    ]
+  },
+
+  {
+    "id": "prefix.chrono", "name": "The Chrono",
+    "mechanic": "Rewind — periodic state snapshots you can spend to restore health, position and resource.",
+    "tags": ["time", "recovery"],
+    "gauge": {
+      "name": "Rewind", "behaviour": "chargeHold", "max": 100,
+      "regen_per_tick": 0.25, "feeds": [], "bands": []
+    },
+    "rules": [
+      { "id": "rewind", "event": "DamageTaken",
+        "when": [ { "kind": "selfHealthBelow", "value": 0.25 }, { "kind": "gaugeAtLeast", "value": 1.0 } ],
+        "effect": { "kind": "heal", "amount": 0.5, "scales_with": "self_max_health" },
+        "cooldown_ticks": 600 }
+    ]
+  },
+
+  {
+    "id": "prefix.psionic", "name": "The Psionic",
+    "mechanic": "Overload — builds by OBSERVING enemy telegraphs, spent to interrupt or stun. Rewards reading the fight.",
+    "tags": ["mind", "reactive"],
+    "gauge": {
+      "name": "Overload", "behaviour": "buildSpend", "max": 100,
+      "feeds": [
+        { "id": "observe", "event": "ActionTelegraphed",
+          "when": [ { "kind": "sourceIsSelf", "text": "self", "negate": true } ],
+          "effect": { "kind": "grantResource", "text": "Overload", "amount": 12 } }
+      ],
+      "bands": []
+    },
+    "rules": [
+      { "id": "crush", "event": "MoveExecuted",
+        "when": [ { "kind": "gaugeAtLeast", "value": 0.75 } ],
+        "effect": { "kind": "interrupt", "amount": 1 },
+        "cooldown_ticks": 120 }
+    ]
+  },
+
+  {
+    "id": "prefix.crystalline", "name": "The Crystalline",
+    "mechanic": "Lattice — layers of huge mitigation that shatter into area damage when broken.",
+    "tags": ["crystal", "brittle"],
+    "gauge": {
+      "name": "Lattice", "behaviour": "depleteRecover", "max": 50,
+      "starts_full": true, "regen_per_tick": 0.2,
+      "feeds": [
+        { "id": "reform", "event": "Blocked",
+          "effect": { "kind": "grantResource", "text": "Lattice", "amount": 8 } }
+      ],
+      "bands": [ { "at_least": 0.3, "modifier": "combat.damage_taken.mult", "value": 0.7 } ]
+    },
+    "rules": [
+      { "id": "shatter", "event": "DamageTaken",
+        "when": [ { "kind": "gaugeAtLeast", "value": 0.02, "negate": true } ],
+        "effect": { "kind": "areaDamage", "amount": 25 },
+        "cooldown_ticks": 300, "description": "When the lattice fails, it fails loudly." }
+    ]
+  },
+
+  {
+    "id": "prefix.bureaucratic", "name": "The Bureaucratic",
+    "mechanic": "Filed intent — declare your next action in advance; following through escalates, deviating penalizes.",
+    "tags": ["order", "commitment"],
+    "rules": [
+      { "id": "file", "event": "ActionQueued",
+        "effect": { "kind": "applyStatus", "text": "status.filed_intent", "duration_ticks": 120 } },
+      { "id": "compliance", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "as_filed" } ],
+        "effect": { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.1, "duration_ticks": 200 } },
+      { "id": "deviation", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "as_filed", "negate": true } ],
+        "effect": { "kind": "grantModifier", "text": "combat.recovery.mult", "amount": 1.2, "duration_ticks": 60 } }
+    ]
+  },
+
+  {
+    "id": "prefix.recursive", "name": "The Recursive",
+    "mechanic": "Echo — every move re-fires at reduced power a moment later, and echoes can chain.",
+    "tags": ["repetition", "arcane"],
+    "rules": [
+      { "id": "echo", "event": "MoveExecuted",
+        "effect": { "kind": "damage", "amount": 0.35, "scales_with": "amount", "duration_ticks": 24 },
+        "cooldown_ticks": 12 }
+    ]
+  },
+
+  {
+    "id": "prefix.dissonant", "name": "The Dissonant",
+    "mechanic": "Interference — statuses applied near you are corrupted: enemy buffs invert, debuffs amplify.",
+    "tags": ["discord", "control"],
+    "rules": [
+      { "id": "corrupt", "event": "StatusApplied",
+        "when": [ { "kind": "targetIsSelf", "text": "self", "negate": true } ],
+        "effect": { "kind": "applyStatus", "text": "status.dissonance", "duration_ticks": 90 } }
+    ]
+  },
+
+  {
+    "id": "prefix.parasitic", "name": "The Parasitic",
+    "mechanic": "Latch — attach a parasite that drains continuously into you, and leaps to a new host on death.",
+    "tags": ["parasite", "drain"],
+    "rules": [
+      { "id": "latch", "event": "DamageDealt",
+        "when": [ { "kind": "hasTag", "text": "melee" } ],
+        "effect": { "kind": "applyStatus", "text": "status.latched", "duration_ticks": 300 },
+        "cooldown_ticks": 100 },
+      { "id": "leap", "event": "Killed",
+        "effect": { "kind": "applyStatus", "text": "status.latched", "duration_ticks": 300 } }
+    ]
+  },
+
+  {
+    "id": "prefix.infested", "name": "The Infested",
+    "mechanic": "Brood — damage dealt AND taken spawns small autonomous swarmlings on their own intervals.",
+    "tags": ["swarm", "summon"],
+    "rules": [
+      { "id": "spawn_offence", "event": "DamageDealt",
+        "effect": { "kind": "spawnEntity", "text": "entity.swarmling", "amount": 1, "duration_ticks": 200 },
+        "cooldown_ticks": 80 },
+      { "id": "spawn_defence", "event": "DamageTaken",
+        "effect": { "kind": "spawnEntity", "text": "entity.swarmling", "amount": 1, "duration_ticks": 200 },
+        "cooldown_ticks": 80 }
+    ]
+  },
+
+  {
+    "id": "prefix.masochistic", "name": "The Masochistic",
+    "mechanic": "Suffering — damage taken becomes a spendable currency. Being healed destroys it.",
+    "tags": ["pain", "risk"],
+    "gauge": {
+      "name": "Suffering", "behaviour": "buildSpend", "max": 100,
+      "feeds": [
+        { "id": "endure", "event": "DamageTaken",
+          "effect": { "kind": "grantResource", "text": "Suffering", "amount": 1.0, "scales_with": "amount" } },
+        { "id": "comfort", "event": "Healed",
+          "effect": { "kind": "drainResource", "text": "Suffering", "amount": 1.5, "scales_with": "amount" } }
+      ],
+      "bands": [ { "at_least": 0.7, "modifier": "combat.damage.mult", "value": 1.25 } ]
+    },
+    "rules": []
+  },
+
+  {
+    "id": "prefix.mnemonic", "name": "The Mnemonic",
+    "mechanic": "Recall — stores your recent moves; replay a stored one instantly, with no windup.",
+    "tags": ["memory", "tempo"],
+    "rules": [
+      { "id": "store", "event": "MoveExecuted",
+        "effect": { "kind": "applyStatus", "text": "status.recalled_move", "duration_ticks": 300 } },
+      { "id": "replay", "event": "MoveExecuted",
+        "when": [ { "kind": "hasTag", "text": "recall" } ],
+        "effect": { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.25, "duration_ticks": 10 },
+        "cooldown_ticks": 150 }
+    ]
+  },
+
+  {
+    "id": "prefix.biomechanical", "name": "The Biomechanical",
+    "mechanic": "Grafts — equipment gains an implant slot whose material contributes properties to YOU, not the item.",
+    "tags": ["implant", "crafting"],
+    "rules": [
+      { "id": "graft", "event": "CraftCompleted",
+        "effect": { "kind": "grantModifier", "text": "combat.armor", "amount": 2, "duration_ticks": 0 },
+        "description": "What you make, you can wear under the skin." }
+    ]
+  },
+
+  {
+    "id": "prefix.glitched", "name": "The Glitched",
+    "mechanic": "Fault — actions can misfire into a wrong, occasionally better, outcome. Seeded, so reproducible.",
+    "tags": ["chaos", "unstable"],
+    "rules": [
+      { "id": "misfire", "event": "MoveExecuted", "chance": 0.12,
+        "effect": { "kind": "applyStatus", "text": "status.fault", "duration_ticks": 60 },
+        "description": "Something happens. It was not the thing you asked for." }
+    ]
+  },
+
+  {
+    "id": "prefix.quantum", "name": "The Quantum",
+    "mechanic": "Superposition — your action resolves as one of two outcomes, collapsing on a condition you can steer.",
+    "tags": ["probability", "branching"],
+    "rules": [
+      { "id": "collapse_low", "event": "ActionResolved",
+        "when": [ { "kind": "selfHealthBelow", "value": 0.5 } ],
+        "effect": { "kind": "grantModifier", "text": "combat.crit.mult", "amount": 1.5, "duration_ticks": 40 } },
+      { "id": "collapse_high", "event": "ActionResolved",
+        "when": [ { "kind": "selfHealthAbove", "value": 0.5 } ],
+        "effect": { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.2, "duration_ticks": 40 },
+        "description": "Which branch you get is readable, and therefore steerable." }
+    ]
+  }
+]

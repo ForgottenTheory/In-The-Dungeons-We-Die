@@ -1,0 +1,78 @@
+[
+  // Every target a modifier can address. Adding a mechanic means adding an entry here, not
+  // changing an enum. Ids are namespaced by system; `kind` decides how contributions combine.
+  //
+  //   additive        → base + Σ contributions        (default 0)
+  //   multiplicative  → base × Π contributions        (default 1)
+  //   flag            → any nonzero contribution wins (default 0)
+
+  // --- Attributes -----------------------------------------------------------------------
+  { "id": "attr.strength",     "name": "Strength",     "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.dexterity",    "name": "Dexterity",    "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.intelligence", "name": "Intelligence", "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.constitution", "name": "Constitution", "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.wisdom",       "name": "Wisdom",       "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.endurance",    "name": "Endurance",    "kind": "additive", "family": "attribute", "min": 0 },
+  { "id": "attr.luck",         "name": "Luck",         "kind": "additive", "family": "attribute", "min": 0 },
+
+  // --- Resources ------------------------------------------------------------------------
+  { "id": "resource.max_health",  "name": "Max Health",  "kind": "additive", "family": "resource", "min": 1 },
+  { "id": "resource.max_mana",    "name": "Max Mana",    "kind": "additive", "family": "resource", "min": 0 },
+  { "id": "resource.max_stamina", "name": "Max Stamina", "kind": "additive", "family": "resource", "min": 0 },
+  { "id": "resource.regen.stamina", "name": "Stamina Regeneration", "kind": "additive", "family": "resource", "min": 0 },
+  { "id": "resource.regen.mana",    "name": "Mana Regeneration",    "kind": "additive", "family": "resource", "min": 0 },
+  { "id": "resource.gauge.max",     "name": "Gauge Capacity",       "kind": "additive", "family": "resource", "min": 0 },
+  { "id": "resource.gauge.gain",    "name": "Gauge Generation",     "kind": "multiplicative", "family": "resource", "min": 0 },
+  { "id": "resource.cost.mult",     "name": "Resource Cost",        "kind": "multiplicative", "family": "resource", "min": 0, "lower_is_better": true },
+
+  // --- Offence --------------------------------------------------------------------------
+  { "id": "combat.damage.flat", "name": "Flat Damage",   "kind": "additive",       "family": "offence" },
+  { "id": "combat.damage.mult", "name": "Damage",        "kind": "multiplicative", "family": "offence", "min": 0 },
+  { "id": "combat.damage.slashing", "name": "Slashing Damage", "kind": "multiplicative", "family": "offence", "min": 0 },
+  { "id": "combat.damage.crushing", "name": "Crushing Damage", "kind": "multiplicative", "family": "offence", "min": 0 },
+  { "id": "combat.damage.piercing", "name": "Piercing Damage", "kind": "multiplicative", "family": "offence", "min": 0 },
+  { "id": "combat.damage.magic",    "name": "Magic Damage",    "kind": "multiplicative", "family": "offence", "min": 0 },
+  { "id": "combat.crit.chance", "name": "Critical Chance", "kind": "additive",       "family": "offence", "min": 0, "max": 1 },
+  { "id": "combat.crit.mult",   "name": "Critical Damage", "kind": "multiplicative", "family": "offence", "min": 1 },
+
+  // --- Timing (the tick game) -------------------------------------------------------------
+  { "id": "combat.interval.mult",  "name": "Action Interval", "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
+  { "id": "combat.windup.mult",    "name": "Windup",          "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
+  { "id": "combat.recovery.mult",  "name": "Recovery",        "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
+  { "id": "combat.telegraph.mult", "name": "Telegraph",       "kind": "multiplicative", "family": "timing", "min": 0.25 },
+
+  // --- Defence --------------------------------------------------------------------------
+  { "id": "combat.armor",             "name": "Armour",         "kind": "additive",       "family": "defence", "min": 0 },
+  { "id": "combat.damage_taken.mult", "name": "Damage Taken",   "kind": "multiplicative", "family": "defence", "min": 0, "lower_is_better": true },
+  { "id": "combat.block.mult",        "name": "Block Strength", "kind": "multiplicative", "family": "defence", "min": 0 },
+  { "id": "combat.dodge.chance",      "name": "Dodge Chance",   "kind": "additive",       "family": "defence", "min": 0, "max": 1 },
+  { "id": "combat.resist.slashing",   "name": "Slashing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
+  { "id": "combat.resist.crushing",   "name": "Crushing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
+  { "id": "combat.resist.piercing",   "name": "Piercing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
+  { "id": "combat.resist.magic",      "name": "Magic Resistance",    "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
+
+  // --- Rule flags -------------------------------------------------------------------------
+  { "id": "combat.interrupt.immune",   "name": "Uninterruptible",     "kind": "flag", "family": "rule" },
+  { "id": "combat.uncancellable",      "name": "Cannot Cancel",       "kind": "flag", "family": "rule" },
+  { "id": "combat.stagger.vulnerable", "name": "Stagger Vulnerable",  "kind": "flag", "family": "rule" },
+  { "id": "combat.no_refund",          "name": "No Refunds",          "kind": "flag", "family": "rule" },
+
+  // --- Professions ------------------------------------------------------------------------
+  { "id": "profession.interval.mult", "name": "Profession Interval",   "kind": "multiplicative", "family": "profession", "min": 0.2, "lower_is_better": true },
+  { "id": "profession.yield.mult",    "name": "Profession Yield",      "kind": "multiplicative", "family": "profession", "min": 0 },
+  { "id": "profession.preserve.chance", "name": "Resource Preservation", "kind": "additive",     "family": "profession", "min": 0, "max": 0.8 },
+  { "id": "profession.double.chance", "name": "Double Output Chance",  "kind": "additive",       "family": "profession", "min": 0, "max": 1 },
+  { "id": "profession.xp.mult",       "name": "Profession XP",         "kind": "multiplicative", "family": "profession", "min": 0 },
+  { "id": "profession.mastery.mult",  "name": "Mastery XP",            "kind": "multiplicative", "family": "profession", "min": 0 },
+
+  // --- Crafting ---------------------------------------------------------------------------
+  { "id": "craft.quality",              "name": "Craft Quality",   "kind": "additive",       "family": "craft", "min": 0, "max": 1 },
+  { "id": "craft.integrity_cost.mult",  "name": "Integrity Cost",  "kind": "multiplicative", "family": "craft", "min": 0, "lower_is_better": true },
+  { "id": "craft.discovery.chance",     "name": "Discovery Chance","kind": "additive",       "family": "craft", "min": 0, "max": 1 },
+
+  // --- Realm / loot -------------------------------------------------------------------------
+  { "id": "realm.knowledge.mult", "name": "Realm Knowledge", "kind": "multiplicative", "family": "realm", "min": 0 },
+  { "id": "realm.danger",         "name": "Realm Danger",    "kind": "additive",       "family": "realm", "min": 0 },
+  { "id": "loot.quantity.mult",   "name": "Loot Quantity",   "kind": "multiplicative", "family": "loot",  "min": 0 },
+  { "id": "loot.harvest.bonus",   "name": "Harvest Yield",   "kind": "additive",       "family": "loot",  "min": 0 }
+]
