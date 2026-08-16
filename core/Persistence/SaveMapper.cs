@@ -1,4 +1,5 @@
 using Dungeons.Characters.Composition;
+using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Crafting;
 using Dungeons.Items;
@@ -22,7 +23,8 @@ public static class SaveMapper
         long savedAtTick,
         Equipment? equipment = null,
         InstanceIdSource? instanceIds = null,
-        IEmergentRegistry? emergentRegistry = null)
+        IEmergentRegistry? emergentRegistry = null,
+        LearnedMoves? learnedMoves = null)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -52,6 +54,7 @@ public static class SaveMapper
             EmergentArchetypes = emergentRegistry is null
                 ? new List<EmergentArchetypeSave>()
                 : emergentRegistry.All.Select(ToSave).ToList(),
+            LearnedMoves = learnedMoves?.All.ToList() ?? new List<string>(),
         };
     }
 
@@ -63,7 +66,8 @@ public static class SaveMapper
         IDictionary<string, int> realmKnowledge,
         Equipment? equipment = null,
         InstanceIdSource? instanceIds = null,
-        IEmergentRegistry? emergentRegistry = null)
+        IEmergentRegistry? emergentRegistry = null,
+        LearnedMoves? learnedMoves = null)
     {
         ArgumentNullException.ThrowIfNull(save);
 
@@ -96,6 +100,8 @@ public static class SaveMapper
         realmKnowledge.Clear();
         foreach (var pair in save.RealmKnowledge)
             realmKnowledge[pair.Key] = pair.Value;
+
+        learnedMoves?.Restore(save.LearnedMoves);
     }
 
     private static ProfessionProgress ToProgress(ProfessionSave save)

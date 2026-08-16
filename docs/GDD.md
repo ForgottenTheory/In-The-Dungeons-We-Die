@@ -1196,8 +1196,8 @@ These recur across systems and have each been argued for explicitly:
 | 12 | **Suffix Guard expressions skew defensive** | ✅ **Largely answered — D-06.** The Guard channel now has six distinct events to hook (`HitLanded`, `Blocked`, `Parried`, `HitAvoided`, `DamageMitigated`, `BarrierBroken`) instead of only "a block landed", so the six block-triggered expressions can diversify without widening the channel itself |
 | 13 | **`transferable` property flag is unused** | Structural properties are marked non-transferable, yet processes move them on-channel. Give it a job or drop it |
 | 14 | **Response properties drop on transformation** | Iron's authored heat resistance of 60 becomes a derived ~14 after any craft. Arguably the more honest number, but it's a visible discontinuity |
-| 15 | **Fighter's identity hook** | Its engine — "moveset comes from the weapon" — was universalized for everyone in E4. Fighter needs a new hook that is not a license (D25). **NEEDS DESIGN**, targeted at M2′ |
-| 16 | **Casting-speed attribute scaling** | A low-INT caster today is weak and mana-poor but not *slow* — "slowly and inefficiently" is currently only "weakly and expensively". Decide whether/how cast speed scales with attributes **before M2′ authors many spells** |
+| 15 | **Fighter's identity hook** | Its engine — "moveset comes from the weapon" — was universalized for everyone in E4. Fighter needs a new hook that is not a license (D25). **NEEDS DESIGN — deliberately deferred out of M2′** (user call, 2026-08-16): the library is authored without a Fighter kit; candidates on the table were technique breadth and swap fluency (the latter needs a live re-resolve seam in `CombatEncounter`) |
+| 16 | **Casting-speed attribute scaling** | A low-INT caster today is weak and mana-poor but not *slow* — "slowly and inefficiently" is currently only "weakly and expensively". **Deferred to the balance pass** (user call, 2026-08-16) alongside the recorded Fireball/Bastion findings: M2′ spells author plain windups; costs and damage scaling gate for now |
 
 ---
 

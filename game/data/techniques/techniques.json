@@ -1,0 +1,24 @@
+[
+  // Technique items (M2′ acquisition v1). Each teaches one move from the universal library
+  // into the character's learned list — moves are never Base-exclusive (DECISIONS D25).
+  // Droppable/purchasable sources arrive with loot tables (M6); today the debug grant button
+  // and future realm rewards are the faucet.
+  {
+    "id": "technique.grimoire_fireball",
+    "name": "Grimoire: Fireball",
+    "description": "A singed instructional text. The margins are full of increasingly confident annotations.",
+    "teaches": "move.fireball"
+  },
+  {
+    "id": "technique.manual_shield_bash",
+    "name": "Manual: Shield Bash",
+    "description": "Chapter one: the shield is also a weapon. There is no chapter two.",
+    "teaches": "move.shield_bash"
+  },
+  {
+    "id": "technique.manual_heavy_strike",
+    "name": "Manual: Heavy Strike",
+    "description": "Swing harder. Illustrated.",
+    "teaches": "move.heavy_strike"
+  }
+]

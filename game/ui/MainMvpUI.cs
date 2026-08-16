@@ -47,6 +47,7 @@ public partial class MainMvpUI : Control
     private Label _realmLabel = null!;
     private VBoxContainer _realmControls = null!;
     private VBoxContainer _equipmentControls = null!;
+    private VBoxContainer _techniqueControls = null!;
     private Button _runButton = null!;
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
@@ -798,6 +799,45 @@ public partial class MainMvpUI : Control
         root.AddChild(SectionTitle("Inventory"));
         _inventoryLabel = new Label { Text = "…" };
         root.AddChild(Card(_inventoryLabel));
+
+        root.AddChild(SectionTitle("Techniques"));
+        _techniqueControls = new VBoxContainer();
+        root.AddChild(_techniqueControls);
+        root.AddChild(MakeButton("Grant Techniques (debug)", () => _game.GrantTestTechniques(), Accent));
+    }
+
+    private void RebuildTechniqueControls()
+    {
+        foreach (var child in _techniqueControls.GetChildren())
+        {
+            _techniqueControls.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        var owned = _game.OwnedTechniques;
+        if (owned.Count == 0)
+        {
+            _techniqueControls.AddChild(new Label { Text = "  (no technique items in the stash)" });
+            return;
+        }
+
+        foreach (var (technique, quantity, known) in owned)
+        {
+            var row = Row();
+            _techniqueControls.AddChild(row);
+            row.AddChild(new Label
+            {
+                Text = $"{technique.Name} ×{quantity} — {technique.Description}",
+                CustomMinimumSize = new Vector2(420, 0),
+            });
+            if (known)
+                row.AddChild(new Label { Text = "(known)" });
+            else
+            {
+                var id = technique.Id;
+                row.AddChild(MakeButton("Learn", () => _game.LearnTechnique(id), Positive));
+            }
+        }
     }
 
     // --- Dynamic control groups --------------------------------------------
@@ -964,6 +1004,7 @@ public partial class MainMvpUI : Control
         _inventoryLabel.Text = _game.InventoryReport();
         _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed
+        RebuildTechniqueControls(); // technique items granted, learned, or spent
         RebuildMoveButtons(); // a weapon swap changes the granted moves (guarded — no-op if unchanged)
         RefreshCrafting(); // herblore level shown in the crafting requirement can change
 

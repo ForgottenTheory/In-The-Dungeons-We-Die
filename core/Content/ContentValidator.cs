@@ -1061,12 +1061,28 @@ public static class ContentValidator
                     problems.Add(new("move_modifiers", $"{modifier.Id} converts {total:P0} of the {lane} lane — over 100%."));
         }
 
+        // --- Techniques (M2′ acquisition) -----------------------------------------------------
+        //
+        // A technique that teaches a missing move is a dead item; fail at load, not on Learn.
+
+        foreach (var technique in content.Techniques.GetAll())
+        {
+            if (string.IsNullOrWhiteSpace(technique.Teaches))
+                problems.Add(new("techniques", $"{technique.Id} teaches nothing."));
+            else if (!moves.Contains(technique.Teaches))
+                problems.Add(new("techniques", $"{technique.Id} teaches unknown move '{technique.Teaches}'."));
+        }
+
         // --- Reachability ---------------------------------------------------------------------
         //
-        // Every move must be granted by SOMETHING — a component, a weapon, an actor, or an
-        // effect. An orphan is content nobody can ever see, which reads as shipped and isn't.
+        // Every move must be granted by SOMETHING — a component, a weapon, an actor, a
+        // technique item, or an effect. An orphan is content nobody can ever see, which reads
+        // as shipped and isn't.
 
         var reachable = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var technique in content.Techniques.GetAll())
+            reachable.Add(technique.Teaches);
 
         foreach (var component in content.Species.GetAll().Cast<CharacterComponentDefinition>()
                      .Concat(content.Classes.GetAll())

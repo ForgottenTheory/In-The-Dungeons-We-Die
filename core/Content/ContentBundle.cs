@@ -31,6 +31,7 @@ public sealed class ContentBundle
     public DataStore<ActorDefinition> Actors { get; init; } = new();
     public DataStore<RealmDefinition> Realms { get; init; } = new();
     public DataStore<ConsumableDefinition> Consumables { get; init; } = new();
+    public DataStore<TechniqueDefinition> Techniques { get; init; } = new();
     public DataStore<EquipmentDefinition> Equipment { get; init; } = new();
 
     /// <summary>Statuses (E2). Data-driven — there is no C# class per ailment.</summary>

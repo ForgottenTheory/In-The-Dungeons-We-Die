@@ -48,6 +48,7 @@ public partial class GameRoot : Node
     private readonly TickEngine _tick = new();
     private readonly SaveStore _saveStore = new();
     private readonly Inventory _stash = new();
+    private readonly LearnedMoves _learnedMoves = new();
 
     private ContentBundle _content = new();
     private DataStore<MaterialDefinition> _materials = new();
@@ -60,6 +61,7 @@ public partial class GameRoot : Node
     private DataStore<ActorDefinition> _actors = new();
     private DataStore<RealmDefinition> _realms = new();
     private DataStore<ConsumableDefinition> _consumables = new();
+    private DataStore<TechniqueDefinition> _techniques = new();
     private DataStore<EquipmentDefinition> _equipment = new();
 
     private readonly Equipment _playerEquipment = new();
@@ -138,6 +140,7 @@ public partial class GameRoot : Node
         _actors = content.Actors;
         _realms = content.Realms;
         _consumables = content.Consumables;
+        _techniques = content.Techniques;
         _equipment = content.Equipment;
 
         var rules = new RuleRegistry(new ICharacterRule[]
@@ -694,6 +697,52 @@ public partial class GameRoot : Node
     public void CombatDodge() => _encounter.Dodge();
     public void CombatWait() => _encounter.Wait();
 
+    // --- Techniques (M2′ acquisition) ---------------------------------------
+
+    /// <summary>Technique items in the stash, with quantity and whether the move is known.</summary>
+    public IReadOnlyList<(TechniqueDefinition Technique, int Quantity, bool Known)> OwnedTechniques =>
+        _techniques.GetAll()
+            .Select(t => (t, _stash.GetQuantity(t.Id), _learnedMoves.Knows(t.Teaches)))
+            .Where(row => row.Item2 > 0)
+            .OrderBy(row => row.t.Name)
+            .ToList();
+
+    /// <summary>Consumes one technique item from the stash and learns its move. Refuses —
+    /// without consuming — when the move is already known.</summary>
+    public void LearnTechnique(string techniqueId)
+    {
+        if (!_techniques.TryGetById(techniqueId, out var technique))
+            return;
+        if (!_stash.Contains(techniqueId))
+        {
+            Emit($"[Technique] No {technique.Name} in the stash.");
+            return;
+        }
+        if (_learnedMoves.Knows(technique.Teaches))
+        {
+            Emit($"[Technique] {MoveName(technique.Teaches)} is already known — {technique.Name} kept.");
+            return;
+        }
+
+        _stash.TryRemove(techniqueId, 1);
+        _learnedMoves.Learn(technique.Teaches);
+        Emit($"[Technique] Learned {MoveName(technique.Teaches)} from {technique.Name}.");
+        InventoryChanged?.Invoke();
+        CharacterChanged?.Invoke(); // the moveset changed
+    }
+
+    /// <summary>Debug: one copy of every authored technique item into the stash.</summary>
+    public void GrantTestTechniques()
+    {
+        foreach (var technique in _techniques.GetAll())
+            _stash.Add(technique.Id, 1);
+        Emit($"[Technique] Granted {_techniques.Count} technique item(s) to the stash.");
+        InventoryChanged?.Invoke();
+    }
+
+    private string MoveName(string moveId) =>
+        _moves.TryGetById(moveId, out var move) ? move.Name : moveId;
+
     /// <summary>Consumables the player currently carries in the active bag.</summary>
     public IReadOnlyList<ConsumableDefinition> UsableConsumables =>
         _consumables.GetAll().Where(c => CurrentBag.Contains(c.Id)).OrderBy(c => c.Name).ToList();
@@ -909,6 +958,10 @@ public partial class GameRoot : Node
         }
 
         grants.AddRange(Character.Blueprint.MoveGrants);
+
+        // Learned techniques (M2′): universal library moves this character has studied.
+        foreach (var moveId in _learnedMoves.All)
+            grants.Add(new MoveGrant(new MoveGrantSpec { Id = moveId }, "learned"));
 
         foreach (var (modifierId, source) in Character.Blueprint.MoveModifierGrants)
             if (_moveModifierStore.TryGetById(modifierId, out var definition))
@@ -1160,7 +1213,7 @@ public partial class GameRoot : Node
 
     public void SaveGame()
     {
-        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds);
+        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves);
         _saveStore.Save(data);
         Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
              $"{data.StashInstances.Count} instance(s), {data.Equipment.Count} equipped, {data.Discoveries.Count} discovery(ies).");
@@ -1181,7 +1234,7 @@ public partial class GameRoot : Node
             return;
         }
 
-        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds);
+        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves);
         if (save.Build is not null)
         {
             _build = save.Build;
@@ -1354,6 +1407,8 @@ public partial class GameRoot : Node
             return m.Name;
         if (_consumables.TryGetById(itemId, out var c))
             return c.Name;
+        if (_techniques.TryGetById(itemId, out var t))
+            return t.Name;
         return itemId;
     }
 

@@ -48,6 +48,7 @@ public class ContentValidatorTests
         Actors = Load<ActorDefinition>("actors"),
         Realms = Load<RealmDefinition>("realms"),
         Consumables = Load<ConsumableDefinition>("consumables"),
+        Techniques = Load<TechniqueDefinition>("techniques"),
         Equipment = Load<EquipmentDefinition>("equipment"),
         Species = Load<SpeciesDefinition>("species"),
         Classes = Load<BaseClassDefinition>("classes"),
@@ -653,6 +654,51 @@ public class ContentValidatorTests
         AssertHasProblem(content, "modifier_keys", "no max");
     }
 
+    // --- Techniques (M2′ acquisition) ----------------------------------------
+
+    /// <summary>A technique that teaches a missing move is a dead item the player can learn
+    /// nothing from — it must fail at load, not on the Learn click.</summary>
+    [Fact]
+    public void Technique_TeachingAnUnknownMove_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Techniques.Add(new Dungeons.Combat.TechniqueDefinition
+        {
+            Id = "technique.bad", Name = "Bad Manual", Teaches = "move.ghost",
+        });
+        AssertHasProblem(content, "techniques", "unknown move");
+    }
+
+    [Fact]
+    public void Technique_TeachingNothing_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Techniques.Add(new Dungeons.Combat.TechniqueDefinition
+        {
+            Id = "technique.empty", Name = "Blank Pages",
+        });
+        AssertHasProblem(content, "techniques", "teaches nothing");
+    }
+
+    /// <summary>Techniques are a real granting source: a move only a technique teaches is
+    /// reachable, not orphan content.</summary>
+    [Fact]
+    public void Technique_MakesItsMoveReachable()
+    {
+        var content = ValidBaseline();
+        content.Moves.Add(new MoveDefinition
+        {
+            Id = "move.arcana", Name = "Arcana",
+            Tags = new[] { "action:attack", "delivery:projectile" },
+            Packets = new[] { new Packet(DamageType.Magic, 10) },
+        });
+        content.Techniques.Add(new Dungeons.Combat.TechniqueDefinition
+        {
+            Id = "technique.arcana", Name = "Grimoire: Arcana", Teaches = "move.arcana",
+        });
+        Assert.DoesNotContain(content.Validate(), p => p.Message.Contains("move.arcana"));
+    }
+
     private static ChannelEntry[] Channel(string property, double rate) =>
         new[] { new ChannelEntry { Property = property, Rate = rate } };
 
@@ -719,6 +765,7 @@ public class ContentValidatorTests
         public DataStore<ActorDefinition> Actors => _bundle.Actors;
         public DataStore<RealmDefinition> Realms => _bundle.Realms;
         public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
+        public DataStore<Dungeons.Combat.TechniqueDefinition> Techniques => _bundle.Techniques;
         public DataStore<EquipmentDefinition> Equipment => _bundle.Equipment;
         public DataStore<Dungeons.Characters.Composition.SpeciesDefinition> Species => _bundle.Species;
         public DataStore<Dungeons.Modifiers.ModifierKeyDefinition> ModifierKeys => _bundle.ModifierKeys;

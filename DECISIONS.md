@@ -95,7 +95,7 @@ The roster from `docs/classes.md` was **replaced** with 15 Bases, 25 Prefixes an
 `ICharacterRule` (attribute bonuses only) could not express a single documented suffix, so behaviour hooks moved to a **typed game event bus** (30 events, `architecture.md` §14's vocabulary) plus declarative `TriggerRule`s. **Why synchronous and ordered:** an async or queued bus would make combat outcomes depend on scheduling, and the simulation must replay from a seed. **Why unhandled effects are recorded rather than dropped:** content routinely references systems that don't exist yet (statuses, summons, repositioning), and it must be **visibly inert rather than silently missing**.
 
 ### D19 — ID naming convention: `type.slug`
-Ids are namespaced by type: `material.*`, `equip.*`, `ability.*`, `actor.*`, `profession.*`, `action.*`, `interaction.*`, `discovery.*`, `realm.*`, `species.*`/`class.*`/`prefix.*`/`suffix.*`, and `consumable.*` (renamed from the inconsistent `item.*`). Realm-location ids (`loc.*`) are realm-scoped, not globally unique. Property ids are bare (`hardness`) — they are keys, not entities.
+Ids are namespaced by type: `material.*`, `equip.*`, `ability.*`, `actor.*`, `profession.*`, `action.*`, `interaction.*`, `discovery.*`, `realm.*`, `species.*`/`class.*`/`prefix.*`/`suffix.*`, `consumable.*` (renamed from the inconsistent `item.*`), and `technique.*` (M2′ learnable technique items). Realm-location ids (`loc.*`) are realm-scoped, not globally unique. Property ids are bare (`hardness`) — they are keys, not entities.
 
 ### D25 — A Base is a growth archetype plus a starting kit — never a license
 *(Adopted 2026-08-16 after a full design audit; D24 is deliberately skipped so this can never be confused with the effect-foundation package's D-24.)*

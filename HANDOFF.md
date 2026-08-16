@@ -39,9 +39,24 @@ architecture already complied.
 reachability validator and are legitimate "starting kit" under D25. Migrate them to
 technique-item sources when acquisition lands.
 
-**Next per `ROADMAP.md`:** M1 (editor verification + tuning, user-driven) → M2′ (the universal
-move library + technique-item acquisition v1, goblin AI profiles, the Fighter redesign, the
-casting-speed decision). Everything after M2′ (C1 → C2 → E5 → M6 → E6 → E7) is unchanged by D25.
+**M1 is done** (wiring verified in the editor by the user; balance findings recorded below).
+**M2′ is underway:**
+- ✅ **M2′a — acquisition machinery** (uncommitted at time of writing): `TechniqueDefinition`
+  content type (`technique.*`, D19 updated) + `game/data/techniques/` with 3 items;
+  `LearnedMoves` (learn-order-preserving, once-per-move); learned grants join moveset
+  composition with `learned` provenance; save **v5** (`LearnedMoves` field, older saves load
+  empty); `LearnTechnique`/`OwnedTechniques`/`GrantTestTechniques` on `GameRoot`; a Techniques
+  panel with Learn buttons in the Inventory tab; validator rules (teaches-resolves,
+  teaches-nothing, techniques-count-as-reachability-source) each with tests. 610 tests.
+  **Found and fixed in passing: `GameRoot` never passed `_emergentRegistry` to
+  `SaveMapper.Capture/Apply` — emergent archetypes were silently not persisted (v4's whole
+  point). Two-arg fix at both call sites.**
+- **Both M2′ design questions were deliberately deferred by the user (2026-08-16):** the
+  Fighter identity hook (GDD §18 #15 — library authored without a Fighter kit) and
+  casting-speed scaling (§18 #16 — decided at the balance pass; spells author plain windups).
+- **Next: M2′b — the library content pass** (~15–20 universal moves + technique items,
+  soft-gated only), then **M2′c — goblin AI profiles**. Then C1 → C2 → E5 → M6 → E6 → E7,
+  unchanged.
 
 ### Standing constraints from D25 (do not erode)
 - **No class-check condition kind, ever.** The soft gates are attributes, costs and scoped

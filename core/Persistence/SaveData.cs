@@ -75,8 +75,11 @@ public sealed class SaveData
     /// <para>v4 added <see cref="EmergentArchetypes"/>. A v3 save still loads: the new field
     /// simply arrives empty, and any archetype a stack refers to is regenerated the next time
     /// that state is reached. No migration step is needed.</para>
+    ///
+    /// <para>v5 added <see cref="LearnedMoves"/> (M2′ technique acquisition). Same rule: an
+    /// older save loads with an empty learned list.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
@@ -106,4 +109,7 @@ public sealed class SaveData
 
     /// <summary>Emergent material archetypes this save has produced (§12.4).</summary>
     public List<EmergentArchetypeSave> EmergentArchetypes { get; init; } = new();
+
+    /// <summary>Move ids learned from technique items, in learn order (M2′ acquisition).</summary>
+    public List<string> LearnedMoves { get; init; } = new();
 }
