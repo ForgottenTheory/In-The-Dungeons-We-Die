@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 580 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 592 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.

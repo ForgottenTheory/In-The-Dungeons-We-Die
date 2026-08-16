@@ -666,6 +666,12 @@ public sealed class CombatEncounter
         // never happened. Live matching never saw it, because the bus dispatches synchronously.
         tags = new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase);
 
+        // Lanes, in the `family:value` convention, so `hitHasLane` needs no world and a lane can
+        // never be confused with an ordinary tag. A hit already knows what it arrived as; making
+        // content ask the world for that would be asking the wrong thing.
+        foreach (var lane in result.Packets.Select(p => p.Lane).Where(l => l is not null).Distinct())
+            tags.Add(RuleVocabulary.LaneTagPrefix + lane);
+
         var source = Id(attacker);
         var victim = Id(target);
 

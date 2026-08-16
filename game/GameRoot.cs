@@ -93,6 +93,7 @@ public partial class GameRoot : Node
     /// </summary>
     private readonly GaugeController _gauges = new(Array.Empty<GaugeDefinition>());
     private CombatantModifiers _modifiers = null!;
+    private IConditionWorld? _conditionWorld;
 
     private RealmRun? _run;
     private string? _realmCombatLocationId;
@@ -148,7 +149,11 @@ public partial class GameRoot : Node
         // The build's Prefix/Suffix/gauge hooks become live here. Until E3 registers effect
         // handlers nothing they *do* lands, but every rule that fires is recorded — which is
         // exactly the point of E0: the class system stops being theoretical.
-        _ruleEngine = new TriggerRuleEngine(_events, new SeededRandom(0x21FE5), () => _tick.CurrentTick);
+        // The world provider is attached after the encounter exists (below); rules attach here so
+        // the build's hooks are live from the first frame.
+        _ruleEngine = new TriggerRuleEngine(
+            _events, new SeededRandom(0x21FE5), () => _tick.CurrentTick,
+            new DeferredConditionWorld(() => _conditionWorld));
 
         RebuildCharacter();
         EquipStarterLoadout();
@@ -203,9 +208,13 @@ public partial class GameRoot : Node
             _tick, new CombatCalculator(combatRng, _modifiers), _abilities, combatRng, _events, "ability.strike",
             _statuses, _gauges, _modifiers);
 
-        // E3c: effects stop landing in `Unhandled`. Six kinds are combat's; the rest belong to
+        // E3c: effects stop landing in `Unhandled`. Seven kinds are combat's; the rest belong to
         // systems that do not exist yet and stay visibly inert.
         _ruleEngine.RegisterCombatHandlers(_encounter, combatRng);
+
+        // E3c-3: the stateful conditions get something to ask. Equipped tags come from the worn
+        // items' definitions, so `equippedTag` reads what the player is actually wearing.
+        _conditionWorld = new CombatConditionWorld(_encounter, EquippedTags);
         _encounter.Logged += Emit;
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
@@ -1158,6 +1167,17 @@ public partial class GameRoot : Node
         // meter would keep filling from feeds that no longer exist.
         _gauges.Reconfigure(resolved.Gauges, _tick.CurrentTick);
     }
+
+    /// <summary>Tags of everything currently worn, for the <c>equippedTag</c> condition.</summary>
+    private IEnumerable<string> EquippedTags() =>
+        _playerEquipment.Slots.Values
+            .Select(item => _equipment.TryGetById(item.BaseDefinitionId, out var def) ? def : null)
+            .Where(def => def is not null)
+            .SelectMany(def => def!.Tags);
+
+    /// <summary>Conditions no rule could evaluate — the condition half of
+    /// <see cref="UnhandledHooks"/>, and empty in a correctly-wired build.</summary>
+    public IReadOnlyList<string> UnevaluatedConditions => _ruleEngine.UnevaluatedConditions;
 
     /// <summary>Every live gauge and its current fill — the Character Lab's "is the meter moving?"
     /// answer, and the readout that makes Charge visible while a fight is running.</summary>

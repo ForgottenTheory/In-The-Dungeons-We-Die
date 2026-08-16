@@ -9,8 +9,11 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 ## Repo / build state
 - Branch `main`, latest commit **`9f56828`** (E3c + E3c-2). Before it: `bfd7cdc` (E3b),
   `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0), `f55349c` (the design package).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **580 passing**.
-- **Working tree is clean.** Nothing uncommitted except `GDD/`, which is the user's.
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **592 passing**.
+- ⚠ **Uncommitted: E3c-3 is complete and green in the working tree.** New:
+  `core/Rules/ConditionWorld.cs` · `core/Combat/CombatConditionWorld.cs` ·
+  `tests/Rules/StatefulConditionTests.cs`. Modified: `core/Rules/TriggerRule.cs` ·
+  `TriggerRuleEngine.cs` · `core/Combat/CombatEncounter.cs` · `game/GameRoot.cs` · docs.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -36,7 +39,7 @@ retired — `class.hexslinger`, `prefix.frenzied`/`ironbound`/`pyromaniac`,
 ## Where we are
 
 **The combat foundation is being built, slice by slice.** Design settled first (27 decisions),
-then E0 → E1 → E2 → E3a. Full plan and rationale: `docs/effect-foundation.md` §10 and §12.
+then E0 → E1 → E2 → E3a → E3b → E3c → E3c-2 → E3c-3. Full plan and rationale: `docs/effect-foundation.md` §10 and §12.
 
 Standing before that, unchanged and not touched by any of it:
 
@@ -68,7 +71,7 @@ one character per line — there is a `Wrapping()` helper with the rule document
 
 ---
 
-## ✅ THE EFFECT FOUNDATION PACKAGE — **all 27 decisions settled**; E0–E3c-2 built
+## ✅ THE EFFECT FOUNDATION PACKAGE — **all 27 decisions settled**; E0–E3c-3 built
 
 A full design package for a **universal gameplay effect vocabulary** (combat, statuses, moves,
 item affixes, profession tools). **It supersedes the old M0–M6 Move-system plan**, which has
@@ -91,14 +94,23 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a, b, c, c-2 done; c-3
-remains) → E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes →
-E6 tools → E7 Overreach.
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → ✅ **E3** (a, b, c, c-2, c-3 all
+shipped) → **E4 moves ← NEXT** → C1 traits/essence → C2 fabrication + scale reconciliation →
+E5 affixes → E6 tools → E7 Overreach.
 
-### 🔄 E3 — a, b, c and c-2 all shipped; **c-3 is what remains**
+### ✅ E3 is complete — the effect foundation is built
 
 E3c and E3c-2 share commit `9f56828`, for the reason E1/E2 shared one: they interleaved in
-`CombatEncounter.cs` and `CombatEffectHandlers.cs`.
+`CombatEncounter.cs` and `CombatEffectHandlers.cs`. E3c-3 is uncommitted.
+
+**What E3 adds up to:** the class combinator is no longer theoretical. A Prefix's hook fires
+against a real fight, its effect executes, its gauge fills, the modifiers it grants change the
+numbers, and a condition can gate on the state of the world. Every one of those was authored
+content firing into nothing when the package started.
+
+**E4 is next: `MoveDefinition`.** It deletes the D-18 `AttackProfile` bridge and its known
+throwaway tests, and it is what `status.recalled_move` has been waiting for — delete
+`ContentValidator.KnownUnimplementedStatuses` when it lands.
 
 ### ✅ E3c shipped — effects finally do things
 
@@ -185,14 +197,42 @@ carries at most one scope — that part of D-12 is unchanged.
 subtotal for display ("what is Chill doing to me?" is a different question from "what is my
 windup?"). Nothing authoritative may read it. **Collapse it if it stays unused.**
 
-### E3c-3 — the stateful conditions  ← **START HERE**
+### ✅ E3c-3 shipped — the stateful conditions
 
-`targetHasStatus`, `selfHasStatus`, `resourceAbove`/`Below`, `equippedTag`, `hitHasLane`,
-`actionHasTag`, plus a gauge name on `gaugeAtLeast`. **No shipped content uses any of them** —
-they are for future content, which is why they came last. The cost is architectural:
-`TriggerRuleEngine.Evaluate` is a **static pure function of the event** with four call sites, and
-these conditions need world state. Decide whether that becomes an injected context object or the
-engine stops exposing a static evaluator.
+`dotnet test` → **592 passing** (was 580), build 0 warnings. **Uncommitted.**
+
+Every condition through E3c was a pure function of the `GameEvent`, which is why the evaluator
+could be static. "Only while the target is Chilled" is not answerable from an event, and writing
+that state into every event instead would mean every publisher guessing what every future
+condition might want.
+
+- **`IConditionWorld`** — deliberately **four questions, no entity graph, no queries**. A
+  condition vocabulary that can ask anything becomes a query language in content, and the point
+  of the closed vocabularies is that content combines mechanics rather than inventing them.
+  Identity is the event's string id, so `Dungeons.Rules` still knows nothing about combat types.
+- **New kinds:** `targetHasStatus`, `selfHasStatus`, `resourceAbove`/`Below`, `equippedTag`,
+  `hitHasLane`. `gaugeAtLeast` now takes a gauge name, closing E3c's ambiguity for two-gauge
+  builds.
+- **`Evaluate` stays static** with an optional world, so the four existing call sites and the
+  roster tests are untouched.
+- **The failure mode is visible, not silent.** A condition the engine cannot answer is recorded
+  in `TriggerRuleEngine.UnevaluatedConditions` (surfaced as `GameRoot.UnevaluatedConditions`)
+  and returns false. A rule whose condition can never pass is exactly as dead as one whose
+  effect goes nowhere, and D23 says that must be *visible*.
+
+**Three judgement calls:**
+- **`actionHasTag` was not added.** It would be a synonym for `hasTag`. D-11's standing rule:
+  a new *derived tag* is the right answer to a real gap; a new condition kind is not.
+- **`hitHasLane` needs no world.** Combat tags hit events `lane:physical` etc. in the existing
+  `family:value` convention — a hit already knows what it arrived as, and a lane tag can never
+  collide with an ordinary one. This is also the first time D-02's physical-lane collapse shows
+  up in content: a Slashing hit satisfies `hitHasLane: physical`.
+- **A *named* `gaugeAtLeast` refuses to answer without a world** rather than falling back to the
+  fullest meter. An unnamed one still reads the event value, so the seven authored conditions
+  that predate naming keep working untouched.
+
+**No shipped content uses any of the new kinds yet** — they are capability for future content,
+which is why this came last in E3.
 
 ### ✅ E3b shipped — scoped modifier contributions (D-12)
 
@@ -436,7 +476,7 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
 ---
 
 ## Guardrails
-- Keep `dotnet test` green (**580** now) and the build at **0 warnings**, in tested increments.
+- Keep `dotnet test` green (**592** now) and the build at **0 warnings**, in tested increments.
 - Core stays Godot-free. Nothing authoritative in `GameRoot` or the UI.
 - Content is data; code owns structure and closed vocabularies (D16). Adding a content type is
   one store on `ContentBundle` plus one line in `ContentLoader.LoadAll`.

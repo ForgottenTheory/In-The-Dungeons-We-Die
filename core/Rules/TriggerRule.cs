@@ -163,13 +163,43 @@ public static class RuleVocabulary
     public const string TargetIsSelf = "targetIsSelf";
     public const string SelfHealthBelow = "selfHealthBelow";   // fraction, from event Values
     public const string SelfHealthAbove = "selfHealthAbove";
-    public const string GaugeAtLeast = "gaugeAtLeast";         // fraction of capacity
+    /// <summary>Fraction of capacity. <see cref="ConditionSpec.Text"/> names a gauge; empty reads
+    /// the fullest one, which is what shipped single-gauge content means.</summary>
+    public const string GaugeAtLeast = "gaugeAtLeast";
     public const string FirstInEncounter = "firstInEncounter";
+
+    // --- E3c-3: conditions that read the world rather than the event ---------------------------
+    public const string TargetHasStatus = "targetHasStatus";    // Text = status id
+    public const string SelfHasStatus = "selfHasStatus";
+    public const string ResourceAbove = "resourceAbove";        // Text = pool, Value = fraction
+    public const string ResourceBelow = "resourceBelow";
+    public const string EquippedTag = "equippedTag";            // Text = tag
+
+    /// <summary>Text = a damage lane. Reads the <c>lane:</c> tag combat puts on hit events, so
+    /// it needs no world — a hit already knows what lanes it arrived in.</summary>
+    public const string HitHasLane = "hitHasLane";
+
+    /// <summary>The tag family prefix combat uses to mark a hit's lanes, reusing the
+    /// <c>family:value</c> convention so a lane can never collide with an ordinary tag.</summary>
+    public const string LaneTagPrefix = "lane:";
 
     public static readonly IReadOnlySet<string> Conditions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         HasTag, AmountAtLeast, AmountAtMost, ValueAtLeast, ValueAtMost,
         SourceIsSelf, TargetIsSelf, SelfHealthBelow, SelfHealthAbove, GaugeAtLeast, FirstInEncounter,
+        TargetHasStatus, SelfHasStatus, ResourceAbove, ResourceBelow, EquippedTag, HitHasLane,
+    };
+
+    /// <summary>
+    /// Conditions that cannot be answered from the event alone.
+    ///
+    /// <para>There is deliberately no <c>actionHasTag</c>: it would be a synonym for
+    /// <see cref="HasTag"/>, and D-11's standing rule is that a new <i>derived tag</i> is the
+    /// right answer to a real gap while a new condition kind is not.</para>
+    /// </summary>
+    public static readonly IReadOnlySet<string> WorldConditions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        TargetHasStatus, SelfHasStatus, ResourceAbove, ResourceBelow, EquippedTag,
     };
 
     // --- Effects ------------------------------------------------------------------------------

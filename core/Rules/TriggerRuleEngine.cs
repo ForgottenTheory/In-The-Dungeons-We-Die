@@ -48,15 +48,19 @@ public sealed class TriggerRuleEngine : IDisposable
     private readonly List<Registration> _rules = new();
     private readonly Dictionary<string, long> _readyAt = new(StringComparer.Ordinal);
     private readonly List<EffectInvocation> _unhandled = new();
+    private readonly List<string> _unevaluated = new();
+    private readonly IConditionWorld? _world;
     private readonly HashSet<string> _firedInChain = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _chainEffectCount = new(StringComparer.Ordinal);
     private IDisposable? _subscription;
 
-    public TriggerRuleEngine(IGameEventBus bus, IRandomSource random, Func<long> currentTick)
+    public TriggerRuleEngine(
+        IGameEventBus bus, IRandomSource random, Func<long> currentTick, IConditionWorld? world = null)
     {
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
         _random = random ?? throw new ArgumentNullException(nameof(random));
         _currentTick = currentTick ?? throw new ArgumentNullException(nameof(currentTick));
+        _world = world;
         _subscription = _bus.Subscribe(OnEvent);
     }
 
@@ -64,6 +68,13 @@ public sealed class TriggerRuleEngine : IDisposable
     /// which does not exist yet lands here rather than vanishing — the Character Lab surfaces it
     /// so half-wired content is visible instead of mysteriously inert.</summary>
     public IReadOnlyList<EffectInvocation> Unhandled => _unhandled;
+
+    /// <summary>
+    /// Conditions that could not be answered because no <see cref="IConditionWorld"/> was
+    /// supplied. The condition half of <see cref="Unhandled"/>: a rule whose condition can never
+    /// be evaluated is as dead as one whose effect goes nowhere, and it should be as visible.
+    /// </summary>
+    public IReadOnlyList<string> UnevaluatedConditions => _unevaluated;
 
     /// <summary>Every effect that fired, in order. Feeds the log and the tests.</summary>
     public List<EffectInvocation> Fired { get; } = new();
@@ -145,7 +156,7 @@ public sealed class TriggerRuleEngine : IDisposable
                 && _currentTick() < targetReadyAt)
                 continue;
 
-            if (!rule.When.All(condition => Evaluate(condition, gameEvent)))
+            if (!rule.When.All(condition => EvaluateHere(condition, gameEvent, registration.Source)))
                 continue;
 
             // Rolled after conditions, so a chance-gated rule doesn't burn entropy on events
@@ -206,9 +217,16 @@ public sealed class TriggerRuleEngine : IDisposable
             _unhandled.Add(invocation);
     }
 
-    /// <summary>Condition evaluation. One method, one switch — adding a condition kind is a case
-    /// here plus an entry in <see cref="RuleVocabulary.Conditions"/>.</summary>
-    public static bool Evaluate(ConditionSpec condition, GameEvent gameEvent)
+    /// <summary>
+    /// Condition evaluation. One method, one switch — adding a condition kind is a case here plus
+    /// an entry in <see cref="RuleVocabulary.Conditions"/>.
+    /// </summary>
+    /// <param name="world">
+    /// World state for the conditions that need it (E3c-3). Null answers only the conditions that
+    /// are pure functions of the event; the instance path records anything it could not evaluate
+    /// in <see cref="UnevaluatedConditions"/> rather than letting a rule quietly never fire.
+    /// </param>
+    public static bool Evaluate(ConditionSpec condition, GameEvent gameEvent, IConditionWorld? world = null)
     {
         ArgumentNullException.ThrowIfNull(condition);
         ArgumentNullException.ThrowIfNull(gameEvent);
@@ -224,12 +242,52 @@ public sealed class TriggerRuleEngine : IDisposable
             RuleVocabulary.TargetIsSelf => string.Equals(gameEvent.Target, condition.Text, StringComparison.Ordinal),
             RuleVocabulary.SelfHealthBelow => gameEvent.Value("self_health_fraction") < condition.Value,
             RuleVocabulary.SelfHealthAbove => gameEvent.Value("self_health_fraction") > condition.Value,
-            RuleVocabulary.GaugeAtLeast => gameEvent.Value("gauge_fraction") >= condition.Value,
             RuleVocabulary.FirstInEncounter => gameEvent.Value("encounter_index") <= 1,
+
+            // A named gauge needs the world; an unnamed one keeps reading the event's
+            // `gauge_fraction`, which is the fullest meter and what shipped content means.
+            RuleVocabulary.GaugeAtLeast => (string.IsNullOrEmpty(condition.Text) || world is null
+                ? gameEvent.Value("gauge_fraction")
+                : world.GaugeFraction(condition.Text)) >= condition.Value,
+
+            RuleVocabulary.HitHasLane => gameEvent.HasTag(RuleVocabulary.LaneTagPrefix + condition.Text),
+
+            RuleVocabulary.TargetHasStatus => world?.HasStatus(gameEvent.Target, condition.Text) ?? false,
+            RuleVocabulary.SelfHasStatus => world?.SelfHasStatus(condition.Text) ?? false,
+            RuleVocabulary.ResourceAbove => (world?.SelfResourceFraction(condition.Text) ?? 0) > condition.Value,
+            RuleVocabulary.ResourceBelow => (world?.SelfResourceFraction(condition.Text) ?? 1) < condition.Value,
+            RuleVocabulary.EquippedTag => world?.HasEquippedTag(condition.Text) ?? false,
+
             _ => throw new NotSupportedException($"Unknown condition kind '{condition.Kind}'."),
         };
 
         return condition.Negate ? !result : result;
+    }
+
+    /// <summary>
+    /// Whether this condition can be answered without a world.
+    ///
+    /// <para>A named-gauge <c>gaugeAtLeast</c> counts: falling back to the fullest meter when a
+    /// specific one was asked for is a plausible wrong answer, and those are the ones worth
+    /// refusing to give.</para>
+    /// </summary>
+    private static bool NeedsWorld(ConditionSpec condition) =>
+        RuleVocabulary.WorldConditions.Contains(condition.Kind)
+        || (string.Equals(condition.Kind, RuleVocabulary.GaugeAtLeast, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(condition.Text));
+
+    private bool EvaluateHere(ConditionSpec condition, GameEvent gameEvent, string source)
+    {
+        if (_world is null && NeedsWorld(condition))
+        {
+            // Visibly inert rather than silently false — the same bargain `Unhandled` strikes for
+            // effects (DECISIONS D23). A rule that can never pass its conditions is exactly as
+            // dead as one whose effect goes nowhere, and just as worth surfacing.
+            _unevaluated.Add($"{source}: {condition.Kind}");
+            return false;
+        }
+
+        return Evaluate(condition, gameEvent, _world);
     }
 
     public void Dispose()
