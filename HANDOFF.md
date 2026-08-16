@@ -7,17 +7,10 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`, latest commit **`bfd7cdc`** (E3b). Before it: `2bf9902` (E3a),
-  `99cdceb` (E1 + E2), `90faf27` (E0), `f55349c` (the effect-foundation design package).
+- Branch `main`, latest commit **`9f56828`** (E3c + E3c-2). Before it: `bfd7cdc` (E3b),
+  `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0), `f55349c` (the design package).
 - `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **580 passing**.
-- ⚠ **Uncommitted: E3c *and* E3c-2 are complete and green in the working tree.** New files:
-  `core/Characters/GaugeController.cs` · `core/Combat/EffectTargetResolver.cs` ·
-  `core/Combat/CombatEffectHandlers.cs` · `core/Combat/CombatantModifiers.cs` ·
-  `tests/Rules/EffectHandlerTests.cs` · `tests/Combat/ModifierReadPathTests.cs`.
-  Modified: `core/Combat/CombatEncounter.cs` · `CombatCalculator.cs` · `HitPipeline.cs` ·
-  `HitLog.cs` · `StatusController.cs` · `core/Modifiers/ModifierScope.cs` ·
-  `ModifierKeys.cs` · `game/GameRoot.cs` · `tests/Combat/CombatEventTests.cs` · doc updates.
-  **Two slices in the tree at once — commit before starting anything else.**
+- **Working tree is clean.** Nothing uncommitted except `GDD/`, which is the user's.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -75,7 +68,7 @@ one character per line — there is a `Wrapping()` helper with the rule document
 
 ---
 
-## ✅ THE EFFECT FOUNDATION PACKAGE — **all 27 decisions settled**; E0–E3a built
+## ✅ THE EFFECT FOUNDATION PACKAGE — **all 27 decisions settled**; E0–E3c-2 built
 
 A full design package for a **universal gameplay effect vocabulary** (combat, statuses, moves,
 item affixes, profession tools). **It supersedes the old M0–M6 Move-system plan**, which has
@@ -102,16 +95,14 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
 remains) → E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes →
 E6 tools → E7 Overreach.
 
-### 🔄 E3 — a/b committed; c and c-2 done and **uncommitted**
+### 🔄 E3 — a, b, c and c-2 all shipped; **c-3 is what remains**
 
-> ⚠ **Two slices in the tree at once.** Both complete and green. File list is under
-> "Repo / build state" above. E1/E2 had to share a commit because they interleaved in four
-> files; these two interleave in `CombatEncounter.cs` and `CombatEffectHandlers.cs`, so they
-> will too unless split by hand.
+E3c and E3c-2 share commit `9f56828`, for the reason E1/E2 shared one: they interleaved in
+`CombatEncounter.cs` and `CombatEffectHandlers.cs`.
 
 ### ✅ E3c shipped — effects finally do things
 
-`dotnet test` → **569 passing** (was 554), build 0 warnings. **Uncommitted.**
+`dotnet test` → **569 passing** (was 554), build 0 warnings. Committed in `9f56828`.
 
 Everything before this fired into nothing: E0 raised events, E1–E2 gave them damage and
 statuses, E3a gave rules targets and a proc budget, and every effect a shipped Prefix or Suffix
@@ -159,7 +150,7 @@ recent-firings panel, any future replay. Fixed by copying the set; pinned by a t
 
 ### ✅ E3c-2 shipped — the modifier read path
 
-`dotnet test` → **580 passing** (was 569), build 0 warnings. **Uncommitted.**
+`dotnet test` → **580 passing** (was 569), build 0 warnings. Committed in `9f56828`.
 
 Scoped as "`grantModifier`", and the investigation found something bigger: **nothing in combat
 ever read a modifier at all.** Four systems were producing contributions into a void —
@@ -205,7 +196,7 @@ engine stops exposing a static evaluator.
 
 ### ✅ E3b shipped — scoped modifier contributions (D-12)
 
-`dotnet test` → **554 passing** (was 532), build 0 warnings. **Uncommitted.**
+`dotnet test` → **554 passing** (was 532), build 0 warnings. Committed in `bfd7cdc`.
 
 The change called "highest leverage in the package", and the one that introduced the package's
 only *silently wrong answer* failure mode. Both halves landed together.
