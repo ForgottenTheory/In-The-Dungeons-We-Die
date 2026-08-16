@@ -67,6 +67,10 @@ public partial class MainMvpUI : Control
     private OptionButton _substratePicker = null!;
     private OptionButton _reagentPicker = null!;
     private OptionButton _catalystPicker = null!;
+    private OptionButton _formPicker = null!;
+    private VBoxContainer _fabricationSlots = null!;
+    private readonly Dictionary<string, OptionButton> _slotPickers = new();
+    private readonly Dictionary<string, IReadOnlyList<(string Id, string Name, int Quantity)>> _slotEligible = new();
     private VBoxContainer _reagentChain = null!;
     private Label _channelLabel = null!;
     private Label _projectionLabel = null!;
@@ -522,6 +526,22 @@ public partial class MainMvpUI : Control
         commitRow.AddChild(MakeButton("Grant Test Mats", () => _game.GrantCraftTestMaterials(), Accent));
         commitRow.AddChild(MakeButton("Brew Healing Salve", () => _game.BrewHealingSalve()));
 
+        // C2b fabrication: pick a form, then a material per slot — each slot's picker lists
+        // only what its tag gate accepts, crafted (emergent) and authored materials alike.
+        var fabricateRow = Row();
+        root.AddChild(fabricateRow);
+        fabricateRow.AddChild(new Label { Text = "Fabricate:" });
+        _formPicker = new OptionButton { CustomMinimumSize = new Vector2(140, 0) };
+        foreach (var form in _game.Forms)
+            _formPicker.AddItem(form.Name);
+        _formPicker.ItemSelected += _ => RebuildFabricationSlots();
+        fabricateRow.AddChild(_formPicker);
+        fabricateRow.AddChild(MakeButton("Fabricate", CommitFabrication, Positive));
+
+        _fabricationSlots = new VBoxContainer();
+        _fabricationSlots.AddThemeConstantOverride("separation", 4);
+        root.AddChild(_fabricationSlots);
+
         // --- Inspector + legacy report ---------------------------------------
         root.AddChild(new HSeparator());
         var inspectorHead = new Label { Text = "Base material:" };
@@ -559,6 +579,7 @@ public partial class MainMvpUI : Control
         Repopulate(_substratePicker, previousSubstrate, includeNone: false);
         Repopulate(_reagentPicker, previousReagent, includeNone: false);
         Repopulate(_catalystPicker, previousCatalyst, includeNone: true);
+        RebuildFabricationSlots();
 
         // Steps referring to materials no longer on hand would fail the gate confusingly.
         _reagents.RemoveAll(id => _onHand.All(m => m.Id != id));
@@ -580,6 +601,72 @@ public partial class MainMvpUI : Control
             picker.Selected = restored + (includeNone ? 1 : 0);
         else if (picker.ItemCount > 0)
             picker.Selected = 0;
+    }
+
+    /// <summary>One row per slot of the chosen form, each picker filtered by the slot's tag
+    /// gate (C2b). Selections survive rebuilds where the material is still eligible.</summary>
+    private void RebuildFabricationSlots()
+    {
+        var previous = _slotPickers.ToDictionary(
+            p => p.Key,
+            p => _slotEligible.TryGetValue(p.Key, out var list) && p.Value.Selected >= 0 && p.Value.Selected < list.Count
+                ? list[p.Value.Selected].Id
+                : null);
+
+        foreach (var child in _fabricationSlots.GetChildren())
+        {
+            _fabricationSlots.RemoveChild(child);
+            child.QueueFree();
+        }
+        _slotPickers.Clear();
+        _slotEligible.Clear();
+
+        var form = SelectedForm();
+        if (form is null)
+            return;
+
+        foreach (var (slotName, _) in form.Slots)
+        {
+            var row = Row();
+            _fabricationSlots.AddChild(row);
+            row.AddChild(new Label { Text = $"  {slotName}:", CustomMinimumSize = new Vector2(90, 0) });
+
+            var eligible = _game.EligibleForSlot(form.Id, slotName);
+            var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
+            foreach (var material in eligible)
+                picker.AddItem($"{material.Name}  ×{material.Quantity}");
+
+            var restored = eligible.ToList().FindIndex(m => m.Id == previous.GetValueOrDefault(slotName));
+            picker.Selected = restored >= 0 ? restored : (picker.ItemCount > 0 ? 0 : -1);
+
+            _slotPickers[slotName] = picker;
+            _slotEligible[slotName] = eligible;
+            row.AddChild(picker);
+        }
+    }
+
+    private Dungeons.Crafting.FormTemplateDefinition? SelectedForm()
+    {
+        var forms = _game.Forms;
+        return _formPicker.Selected >= 0 && _formPicker.Selected < forms.Count ? forms[_formPicker.Selected] : null;
+    }
+
+    private void CommitFabrication()
+    {
+        var form = SelectedForm();
+        if (form is null)
+            return;
+
+        var chosen = new Dictionary<string, string>();
+        foreach (var (slotName, picker) in _slotPickers)
+        {
+            var eligible = _slotEligible[slotName];
+            if (picker.Selected < 0 || picker.Selected >= eligible.Count)
+                return; // a slot has nothing eligible — nothing sensible to commit
+            chosen[slotName] = eligible[picker.Selected].Id;
+        }
+
+        _game.FabricateItem(form.Id, chosen);
     }
 
     /// <summary>The material id a picker is on, or null for "(none)" / an empty picker.</summary>

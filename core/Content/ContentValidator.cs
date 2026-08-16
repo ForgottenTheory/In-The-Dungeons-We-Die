@@ -76,6 +76,7 @@ public static class ContentValidator
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateTraits(content.Traits, knownProperties, problems);
         ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
+        ValidateForms(content.Forms, content.Moves, knownProperties, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
         ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
@@ -850,6 +851,45 @@ public static class ContentValidator
             if (!trait.IsStateBorn && !mergeTargets.Contains(trait.Id))
                 problems.Add(new("traits",
                     $"{trait.Id} has no condition and is no merge's target — unreachable content."));
+
+            if (!Dungeons.Crafting.FabricationTuning.TraitCategories.Contains(trait.Category))
+                problems.Add(new("traits",
+                    $"{trait.Id} has unknown category '{trait.Category}'. Valid: {string.Join(", ", Dungeons.Crafting.FabricationTuning.TraitCategories)}."));
+        }
+    }
+
+    /// <summary>§16.2 forms (C2a): apertures gate known categories, stat maps read known
+    /// properties from real slots, and granted moves resolve.</summary>
+    private static void ValidateForms(
+        DataStore<Dungeons.Crafting.FormTemplateDefinition> forms,
+        DataStore<Dungeons.Combat.MoveDefinition> moves,
+        IReadOnlySet<string> knownProperties,
+        List<ContentProblem> problems)
+    {
+        foreach (var form in forms.GetAll())
+        {
+            if (form.Slots.Count == 0)
+                problems.Add(new("forms", $"{form.Id} has no slots."));
+            if (form.TraitCap < 1)
+                problems.Add(new("forms", $"{form.Id} trait_cap must be at least 1."));
+
+            foreach (var (slotName, slot) in form.Slots)
+                foreach (var category in slot.Aperture.Keys)
+                    if (!Dungeons.Crafting.FabricationTuning.TraitCategories.Contains(category))
+                        problems.Add(new("forms", $"{form.Id} slot '{slotName}' aperture gates unknown category '{category}'."));
+
+            foreach (var (stat, reads) in form.StatMap)
+                foreach (var read in reads)
+                {
+                    if (!knownProperties.Contains(read.Property))
+                        problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown property '{read.Property}'."));
+                    if (read.Slot != "*" && !form.Slots.ContainsKey(read.Slot))
+                        problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown slot '{read.Slot}'."));
+                }
+
+            foreach (var grant in form.Moves)
+                if (!moves.Contains(grant.Id))
+                    problems.Add(new("forms", $"{form.Id} grants unknown move '{grant.Id}'."));
         }
     }
 
@@ -1279,6 +1319,10 @@ public static class ContentValidator
 
         foreach (var technique in content.Techniques.GetAll())
             reachable.Add(technique.Teaches);
+
+        foreach (var form in content.Forms.GetAll())
+            foreach (var grant in form.Moves)
+                reachable.Add(grant.Id);
 
         foreach (var component in content.Species.GetAll().Cast<CharacterComponentDefinition>()
                      .Concat(content.Classes.GetAll())

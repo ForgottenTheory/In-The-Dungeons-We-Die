@@ -9,7 +9,7 @@
 
   // ---- Structural ---------------------------------------------------------------------
   {
-    "id": "trait.resilient", "name": "Resilient",
+    "id": "trait.resilient", "name": "Resilient", "category": "structural",
     "condition": { "hardness": { "min": 70 }, "flexibility": { "min": 60 } },
     "magnitude_of": ["hardness", "flexibility"],
     "consumes": { "hardness": 5, "flexibility": 5 },
@@ -18,7 +18,7 @@
     "merges": [ { "with": "trait.unyielding", "into": "trait.adamant" } ]
   },
   {
-    "id": "trait.unyielding", "name": "Unyielding",
+    "id": "trait.unyielding", "name": "Unyielding", "category": "structural",
     "condition": { "hardness": { "min": 85 } },
     "magnitude_of": ["hardness"],
     "consumes": { "flexibility": 10 },
@@ -26,7 +26,7 @@
     "drawback": "Whatever suppleness it had is gone."
   },
   {
-    "id": "trait.porous", "name": "Porous",
+    "id": "trait.porous", "name": "Porous", "category": "structural",
     "condition": { "solubility": { "min": 70 }, "hardness": { "max": 40 } },
     "magnitude_of": ["solubility"],
     "consumes": { "hardness": 3 },
@@ -34,7 +34,7 @@
     "drawback": "Softer for it — and it drinks whatever touches it, wanted or not."
   },
   {
-    "id": "trait.keen", "name": "Keen",
+    "id": "trait.keen", "name": "Keen", "category": "structural",
     "condition": { "hardness": { "min": 65 }, "mass": { "max": 35 } },
     "magnitude_of": ["hardness"],
     "consumes": { "hardness": 4 },
@@ -44,7 +44,7 @@
 
   // ---- Elemental ----------------------------------------------------------------------
   {
-    "id": "trait.emberveined", "name": "Emberveined",
+    "id": "trait.emberveined", "name": "Emberveined", "category": "thermal",
     "condition": { "heat": { "min": 60 }, "conductivity": { "min": 40 } },
     "magnitude_of": ["heat"],
     "consumes": { "flexibility": 8 },
@@ -53,7 +53,7 @@
     "merges": [ { "with": "trait.stormlaced", "into": "trait.tempestforged" } ]
   },
   {
-    "id": "trait.frostbound", "name": "Frostbound",
+    "id": "trait.frostbound", "name": "Frostbound", "category": "thermal",
     "condition": { "cold": { "min": 60 }, "insulation": { "min": 40 } },
     "magnitude_of": ["cold"],
     "consumes": { "heat": 6, "flexibility": 4 },
@@ -62,7 +62,7 @@
     "merges": [ { "with": "trait.conductive", "into": "trait.galvanic_rime" } ]
   },
   {
-    "id": "trait.stormlaced", "name": "Stormlaced",
+    "id": "trait.stormlaced", "name": "Stormlaced", "category": "charge",
     "condition": { "charge": { "min": 65 }, "arcane": { "min": 30 } },
     "magnitude_of": ["charge"],
     "consumes": { "charge": 8 },
@@ -70,7 +70,7 @@
     "drawback": "Spends its own charge to keep the lacework alive."
   },
   {
-    "id": "trait.conductive", "name": "Conductive",
+    "id": "trait.conductive", "name": "Conductive", "category": "charge",
     "condition": { "charge": { "min": 50 }, "conductivity": { "min": 60 } },
     "magnitude_of": ["conductivity"],
     "consumes": { "insulation": 8 },
@@ -78,7 +78,7 @@
     "drawback": "It shelters nothing, including its bearer."
   },
   {
-    "id": "trait.volatile", "name": "Volatile",
+    "id": "trait.volatile", "name": "Volatile", "category": "thermal",
     "condition": { "instability": { "min": 60 }, "heat": { "min": 40 } },
     "magnitude_of": ["instability"],
     "consumes": { "solubility": 5 },
@@ -88,7 +88,7 @@
 
   // ---- Living -------------------------------------------------------------------------
   {
-    "id": "trait.verdant", "name": "Verdant",
+    "id": "trait.verdant", "name": "Verdant", "category": "vital",
     "condition": { "growth": { "min": 60 } },
     "magnitude_of": ["growth"],
     "consumes": { "decay": 5, "growth": 5 },
@@ -97,7 +97,7 @@
     "merges": [ { "with": "trait.blighted", "into": "trait.cycled" } ]
   },
   {
-    "id": "trait.blighted", "name": "Blighted",
+    "id": "trait.blighted", "name": "Blighted", "category": "vital",
     "condition": { "decay": { "min": 60 } },
     "magnitude_of": ["decay"],
     "consumes": { "growth": 5 },
@@ -105,7 +105,7 @@
     "drawback": "Everything it touches ages a little."
   },
   {
-    "id": "trait.venomous", "name": "Venomous",
+    "id": "trait.venomous", "name": "Venomous", "category": "toxic",
     "condition": { "toxicity": { "min": 55 }, "solubility": { "min": 40 } },
     "magnitude_of": ["toxicity"],
     "consumes": { "growth": 6 },
@@ -115,25 +115,25 @@
 
   // ---- Merge-born (supersession targets — §10.4's reason to go deep) --------------------
   {
-    "id": "trait.adamant", "name": "Adamant",
+    "id": "trait.adamant", "name": "Adamant", "category": "structural",
     "description": "It bends exactly once — around whatever tried to break it.",
     "drawback": "Carries both parents' bills, already paid.",
     "condition": {}, "magnitude_of": [], "consumes": {}
   },
   {
-    "id": "trait.tempestforged", "name": "Tempestforged",
+    "id": "trait.tempestforged", "name": "Tempestforged", "category": "charge",
     "description": "Fire and lightning, reconciled at last, and angrier for it.",
     "drawback": "A storm does not have a handle.",
     "condition": {}, "magnitude_of": [], "consumes": {}
   },
   {
-    "id": "trait.galvanic_rime", "name": "Galvanic Rime",
+    "id": "trait.galvanic_rime", "name": "Galvanic Rime", "category": "charge",
     "description": "Ice that bites with a spark — cold storage for a live current.",
     "drawback": "Warm hands and bare metal are both mistakes.",
     "condition": {}, "magnitude_of": [], "consumes": {}
   },
   {
-    "id": "trait.cycled", "name": "Cycled",
+    "id": "trait.cycled", "name": "Cycled", "category": "vital",
     "description": "Growth and rot agreed to take turns. The wheel turns in your favour, mostly.",
     "drawback": "Mostly.",
     "condition": {}, "magnitude_of": [], "consumes": {}

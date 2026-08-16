@@ -24,7 +24,8 @@ public static class SaveMapper
         Equipment? equipment = null,
         InstanceIdSource? instanceIds = null,
         IEmergentRegistry? emergentRegistry = null,
-        LearnedMoves? learnedMoves = null)
+        LearnedMoves? learnedMoves = null,
+        IEnumerable<Items.EquipmentDefinition>? emergentEquipment = null)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -55,8 +56,44 @@ public static class SaveMapper
                 ? new List<EmergentArchetypeSave>()
                 : emergentRegistry.All.Select(ToSave).ToList(),
             LearnedMoves = learnedMoves?.All.ToList() ?? new List<string>(),
+            EmergentEquipment = (emergentEquipment ?? Enumerable.Empty<Items.EquipmentDefinition>())
+                .Select(ToSave).ToList(),
         };
     }
+
+    private static EquipmentArchetypeSave ToSave(Items.EquipmentDefinition definition) => new()
+    {
+        Id = definition.Id,
+        Name = definition.Name,
+        Slot = definition.Slot.ToString(),
+        Tags = definition.Tags.ToList(),
+        MoveIds = definition.Moves.Select(m => m.Id).ToList(),
+        HasArmor = definition.Armor is not null,
+        ArmorValue = definition.Armor?.Armor ?? 0,
+        ArmorResistances = new Dictionary<string, double>(definition.Armor?.Resistances ?? new()),
+        Properties = new Dictionary<string, double>(definition.Properties),
+        ExpressedTraits = definition.ExpressedTraits.ToDictionary(t => t.Id, t => t.Magnitude),
+        DormantTraits = definition.DormantTraits.ToDictionary(t => t.Id, t => t.Magnitude),
+        Essence = new Dictionary<string, double>(definition.Essence),
+    };
+
+    private static Items.EquipmentDefinition FromSave(EquipmentArchetypeSave save) => new()
+    {
+        Id = save.Id,
+        Name = save.Name,
+        Slot = Enum.TryParse<Items.EquipmentSlot>(save.Slot, out var slot) ? slot : Items.EquipmentSlot.Weapon,
+        Tags = save.Tags,
+        Moves = save.MoveIds.Select(id => new Combat.MoveGrantSpec { Id = id }).ToList(),
+        Armor = save.HasArmor
+            ? new Items.ArmorStats { Armor = save.ArmorValue, Resistances = new Dictionary<string, double>(save.ArmorResistances) }
+            : null,
+        Properties = new Dictionary<string, double>(save.Properties),
+        ExpressedTraits = save.ExpressedTraits.OrderBy(t => t.Key, StringComparer.Ordinal)
+            .Select(t => new Crafting.TraitInstance(t.Key, t.Value)).ToList(),
+        DormantTraits = save.DormantTraits.OrderBy(t => t.Key, StringComparer.Ordinal)
+            .Select(t => new Crafting.TraitInstance(t.Key, t.Value)).ToList(),
+        Essence = new Dictionary<string, double>(save.Essence),
+    };
 
     public static void Apply(
         SaveData save,
@@ -67,7 +104,8 @@ public static class SaveMapper
         Equipment? equipment = null,
         InstanceIdSource? instanceIds = null,
         IEmergentRegistry? emergentRegistry = null,
-        LearnedMoves? learnedMoves = null)
+        LearnedMoves? learnedMoves = null,
+        DataStore<Items.EquipmentDefinition>? equipmentStore = null)
     {
         ArgumentNullException.ThrowIfNull(save);
 
@@ -102,6 +140,14 @@ public static class SaveMapper
             realmKnowledge[pair.Key] = pair.Value;
 
         learnedMoves?.Restore(save.LearnedMoves);
+
+        // Fabrication-derived gear (C2a) — restored before anything resolves the stash's
+        // instances, exactly like emergent material archetypes.
+        if (equipmentStore is not null)
+        {
+            foreach (var archetype in save.EmergentEquipment.Where(a => !equipmentStore.Contains(a.Id)))
+                equipmentStore.Add(FromSave(archetype));
+        }
     }
 
     private static ProfessionProgress ToProgress(ProfessionSave save)

@@ -30,6 +30,7 @@ public static class ContentLoader
         Byproducts = LoadDefinitions<ByproductDefinition>($"{dataRoot}/byproducts"),
         Traits = LoadDefinitions<TraitDefinition>($"{dataRoot}/traits"),
         Essences = LoadDefinitions<EssenceDefinition>($"{dataRoot}/essences"),
+        Forms = LoadDefinitions<FormTemplateDefinition>($"{dataRoot}/forms"),
         NameGrammar = LoadDefinitions<NameWordDefinition>($"{dataRoot}/name_grammar"),
         ModifierKeys = LoadDefinitions<Dungeons.Modifiers.ModifierKeyDefinition>($"{dataRoot}/modifier_keys"),
         NameFormats = LoadDefinitions<NameFormatDefinition>($"{dataRoot}/name_formats"),

@@ -42,6 +42,17 @@ public sealed class EquipmentDefinition : IItemDefinition
 
     public ArmorStats? Armor { get; init; }
 
+    /// <summary>Traits expressed through the fabrication aperture (C2a §16.3). Empty on
+    /// authored gear.</summary>
+    public IReadOnlyList<Crafting.TraitInstance> ExpressedTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
+
+    /// <summary>Traits the aperture or cap held back — kept for value, flavour, and future
+    /// refabrication (§16.2's dormancy rule).</summary>
+    public IReadOnlyList<Crafting.TraitInstance> DormantTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
+
+    /// <summary>Mass-share-weighted, arcane-amplified essence (§16.3 step 5).</summary>
+    public IReadOnlyDictionary<string, double> Essence { get; init; } = new Dictionary<string, double>();
+
     /// <summary>Intrinsic material-style properties, as a name→value map.</summary>
     public Dictionary<string, double> Properties { get; init; } = new();
 

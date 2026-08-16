@@ -1,0 +1,74 @@
+[
+  // Fabrication forms (C2a, §16.2) — single-slot first, per §20: the 0–100 → combat-unit
+  // calibration is judged on swords before slots multiply. stat_map values land on the
+  // instance in combat units (FabricationTuning.CombatUnitScale), so the existing
+  // EquipmentResolver seam consumes fabricated gear unchanged.
+  {
+    "id": "form.longsword",
+    "name": "Longsword",
+    "type": "Weapon",
+    "tags": ["weapon", "sword", "metal"],
+    "slots": {
+      "edge": {
+        "requires_tags": ["form:metal", "form:crystal"],
+        "mass_share": 0.60,
+        "aperture": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+      },
+      "core": {
+        "requires_tags": ["form:metal", "form:wood"],
+        "mass_share": 0.25,
+        "aperture": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 }
+      },
+      "binding": {
+        "requires_tags": ["form:hide", "form:fiber"],
+        "mass_share": 0.15,
+        "aperture": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "mass":     [ { "slot": "*",    "property": "mass",     "w": 1.0 } ],
+      "hardness": [ { "slot": "edge", "property": "hardness", "w": 0.8 }, { "slot": "core", "property": "hardness", "w": 0.2 } ]
+    },
+    "trait_cap": 4,
+    "moves": ["move.iron_slash", "move.heavy_strike"],
+    "description": "A proper blade. The material decides what kind of proper."
+  },
+  {
+    "id": "form.buckler",
+    "name": "Buckler",
+    "type": "Armor",
+    "tags": ["armor", "shield"],
+    "slots": {
+      "face": {
+        "requires_tags": ["form:metal", "form:wood"],
+        "mass_share": 1.0,
+        "aperture": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 }
+      }
+    },
+    "stat_map": {
+      "hardness": [ { "slot": "face", "property": "hardness", "w": 1.0 } ],
+      "mass":     [ { "slot": "face", "property": "mass",     "w": 0.8 } ]
+    },
+    "trait_cap": 4,
+    "description": "A small answer to large questions. Carrying one makes Shield Bash yours."
+  },
+  {
+    "id": "form.vest",
+    "name": "Vest",
+    "type": "Armor",
+    "tags": ["armor"],
+    "slots": {
+      "shell": {
+        "requires_tags": ["form:hide", "form:fiber", "form:metal"],
+        "mass_share": 1.0,
+        "aperture": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 1.0 }
+      }
+    },
+    "stat_map": {
+      "hardness": [ { "slot": "shell", "property": "hardness", "w": 0.6 }, { "slot": "shell", "property": "flexibility", "w": 0.4 } ],
+      "mass":     [ { "slot": "shell", "property": "mass",     "w": 1.0 } ]
+    },
+    "trait_cap": 4,
+    "description": "Worn close. The material decides whether that is comfort or armour."
+  }
+]

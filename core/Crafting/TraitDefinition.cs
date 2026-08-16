@@ -37,6 +37,10 @@ public sealed class TraitDefinition : IDefinition
     /// opportunity cost — often the <see cref="Consumes"/> bill, sometimes worse).</summary>
     public string Drawback { get; init; } = string.Empty;
 
+    /// <summary>§16.3 expression category — the axis form apertures gate
+    /// (<see cref="FabricationTuning.TraitCategories"/>). Validated.</summary>
+    public string Category { get; init; } = "structural";
+
     /// <summary>
     /// Property thresholds, all of which must hold for the trait to be born from state.
     /// <b>Empty means merge-born only</b> — the trait can never be reached from state-space

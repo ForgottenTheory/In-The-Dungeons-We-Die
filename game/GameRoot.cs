@@ -79,6 +79,7 @@ public partial class GameRoot : Node
     private DiscoverySystem _discoveries = null!;
     private CraftingExperimentSystem _crafting = null!;
     private IEmergentRegistry _emergentRegistry = null!;
+    private FabricationEngine _fabrication = null!;
     private IReactionEngine _reactions = null!;
     private MaterialProfileResolver _profiles = null!;
     private BuildResolver _buildResolver = null!;
@@ -203,6 +204,8 @@ public partial class GameRoot : Node
             new TraitResolver(content.Traits),
             professionLevel: id => _professions.GetProgress(id).Level,
             new SeededRandom(0xC12AF7));
+
+        _fabrication = new FabricationEngine(content, () => CurrentBag, _profiles, _instanceIds);
 
         var combatRng = new SeededRandom(0x0C0FFEE);
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
@@ -606,6 +609,8 @@ public partial class GameRoot : Node
         {
             // Substrates: metal, stone, wood, herb — different forms take different processes.
             "material.iron_ingot", "material.iron_ore", "material.granite", "material.oak_log", "material.sageleaf",
+            // Fabrication components (C2b): binding hides and an attunement vessel.
+            "material.leather", "material.rawhide", "material.ley_crystal",
             // Reagents: soluble (sap, springwater), volatile (cores), hard (stormglass, granite).
             "material.ember_sap", "material.springwater", "material.oak_bark",
             "material.ember_core", "material.frost_core", "material.storm_core", "material.stormglass",
@@ -701,6 +706,49 @@ public partial class GameRoot : Node
     public void CombatBlock() => _encounter.Block();
     public void CombatDodge() => _encounter.Dodge();
     public void CombatWait() => _encounter.Wait();
+
+    // --- Fabrication (C2a) --------------------------------------------------
+
+    /// <summary>Forms the player can fabricate into, for the Crafting tab.</summary>
+    public IReadOnlyList<FormTemplateDefinition> Forms =>
+        _content.Forms.GetAll().OrderBy(f => f.Name).ToList();
+
+    /// <summary>Materials on hand eligible for a form slot (any-of tag gate) — the per-slot
+    /// component pickers' source (C2b).</summary>
+    public IReadOnlyList<(string Id, string Name, int Quantity)> EligibleForSlot(string formId, string slotName)
+    {
+        if (!_content.Forms.TryGetById(formId, out var form) || !form.Slots.TryGetValue(slotName, out var slot))
+            return Array.Empty<(string, string, int)>();
+
+        return MaterialsOnHand
+            .Where(m => _materials.TryGetById(m.Id, out var def)
+                && (slot.RequiresTags.Count == 0
+                    || slot.RequiresTags.Any(t => def.Tags.Contains(t, StringComparer.OrdinalIgnoreCase))))
+            .ToList();
+    }
+
+    /// <summary>Multi-component fabrication (C2b): one material per named slot. Terminal —
+    /// materials consumed, an ItemInstance lands in the current bag.</summary>
+    public void FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
+    {
+        if (!_content.Forms.TryGetById(formId, out var form))
+            return;
+
+        var outcome = _fabrication.Fabricate(new FabricationRequest(formId, slotMaterials));
+
+        if (!outcome.Success)
+        {
+            Emit($"[Fabricate] {form.Name}: {outcome.Failure}.");
+            return;
+        }
+
+        var traits = outcome.Expressed.Count == 0
+            ? ""
+            : $" — {string.Join(", ", outcome.Expressed.Select(t => t.Id))}";
+        var dormant = outcome.Dormant.Count == 0 ? "" : $" ({outcome.Dormant.Count} dormant)";
+        Emit($"[Fabricate] {(outcome.IsFirstOfItsKind ? "✦ " : "")}{outcome.Name}{traits}{dormant}.");
+        InventoryChanged?.Invoke();
+    }
 
     // --- Techniques (M2′ acquisition) ---------------------------------------
 
@@ -1218,7 +1266,8 @@ public partial class GameRoot : Node
 
     public void SaveGame()
     {
-        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves);
+        var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves,
+            emergentEquipment: _equipment.GetAll().Where(e => e.Id.StartsWith("equip.emergent.", StringComparison.Ordinal)));
         _saveStore.Save(data);
         Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
              $"{data.StashInstances.Count} instance(s), {data.Equipment.Count} equipped, {data.Discoveries.Count} discovery(ies).");
@@ -1239,7 +1288,7 @@ public partial class GameRoot : Node
             return;
         }
 
-        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves);
+        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves, equipmentStore: _equipment);
         if (save.Build is not null)
         {
             _build = save.Build;

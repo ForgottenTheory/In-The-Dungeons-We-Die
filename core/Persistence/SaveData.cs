@@ -118,4 +118,26 @@ public sealed class SaveData
 
     /// <summary>Move ids learned from technique items, in learn order (M2′ acquisition).</summary>
     public List<string> LearnedMoves { get; init; } = new();
+
+    /// <summary>Derived equipment definitions minted by fabrication (C2a). Like emergent
+    /// material archetypes: without them, a fabricated item in the stash points at a
+    /// definition that no longer exists after load.</summary>
+    public List<EquipmentArchetypeSave> EmergentEquipment { get; init; } = new();
+}
+
+/// <summary>Serializable form of a fabrication-derived <c>EquipmentDefinition</c> (C2a).</summary>
+public sealed class EquipmentArchetypeSave
+{
+    public string Id { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Slot { get; init; } = "Weapon";
+    public List<string> Tags { get; init; } = new();
+    public List<string> MoveIds { get; init; } = new();
+    public double ArmorValue { get; init; }
+    public Dictionary<string, double> ArmorResistances { get; init; } = new();
+    public Dictionary<string, double> Properties { get; init; } = new();
+    public Dictionary<string, double> ExpressedTraits { get; init; } = new();
+    public Dictionary<string, double> DormantTraits { get; init; } = new();
+    public Dictionary<string, double> Essence { get; init; } = new();
+    public bool HasArmor { get; init; }
 }
