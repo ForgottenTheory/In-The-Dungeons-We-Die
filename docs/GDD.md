@@ -548,7 +548,7 @@ the plumbing and the post-mitigation magnitude rule are in and tested.
 
 ---
 
-# 6. Moves & Movesets — **BUILT (E4)**; the move library + acquisition (M2′) remaining
+# 6. Moves & Movesets — **BUILT (E4)**; library + acquisition **BUILT (M2′)**
 
 > **Settled by D-18; the engine is BUILT.** Full specification in `docs/moves.md`.
 
@@ -584,14 +584,24 @@ that demonstration. `MoveKind` exists for dispatch and filtering; behaviour neve
 - **The Mnemonic loop closes**: `status.recalled_move` stores the executing move's id; Recall
   replays it instantly through `recallMove`, bounded by its cooldown.
 
-**Remaining — the universal move library + acquisition layer (M2′; NEEDS CONTENT):** 9 moves
-ship (weapon moves, the three spec exemplars, Recall, Bare Fists, two enemy ports). The next
-pass authors a **universal** library — moves are never Base-exclusive (D25) — plus the
-acquisition layer that puts it in reach (technique items → learned list, v1). Bases keep **0–1
-*starting* moves** drawn from that library as part of their kit; Wizard's Fireball and Bastion's
-Shield Bash are the shipped exemplars of exactly that. Enemy AI profiles beyond the uniform
-default ride the same pass. Until then, builds compose and hook differently but mostly still
-swing the same weapon.
+**M2′ is BUILT — the library and its acquisition:**
+
+- **27 moves ship** (the 9 E4 moves + 16 library moves + 2 enemy-flavoured universals), soft-
+  gated only: costs, `equippedTag`, cooldowns — never class (D25). Coverage: all four damage
+  types, six aspects, ten statuses exercised, interrupt and heal handlers, a gauge-cost
+  exemplar (Crash spends 40 Momentum), and one arcane-lane "always lands" spell.
+- **Technique items** (`technique.*`, 19 shipped) teach moves into a **persisted learned list**
+  (save v5, learn-order-preserving, once-per-move — a duplicate refuses without consuming).
+  Learned moves join moveset composition as their own grant source with `learned` provenance.
+  Loot/vendor faucets arrive with M6; a debug grant button is the interim source.
+- **One vocabulary extension:** `EffectSpec` takes an optional per-effect `target` override
+  (rule payloads and move riders alike) — Drain lands decay on the enemy while its heal rider
+  names `TriggerSource`. Lifesteal shapes are authorable everywhere now.
+- Bases keep **0–1 starting moves** as kit (Wizard's Fireball, Bastion's Shield Bash — both
+  also exist as findable grimoires for everyone else).
+
+Move-count growth from here is ordinary content work; E5's affix pools author the move
+*modifiers*.
 
 ---
 
@@ -607,12 +617,14 @@ Realms — where time passing carries real risk.
 **Utility** — Beast Lore · Sleight of Hand · Agility · Campcraft · Wayfinding · Devotion ·
 Summoning
 
-**Built: 3** — Forestry, Herblore, Smithing, with one action each.
-
-Recommended slice target: **8** (Mining, Forestry, Fishing, Herblore, Smithing, Alchemy, Cooking,
-Beast Lore), each with 3–5 actions against the real 474-material library. Mining first — it
-removes a hardcoded workaround where iron ore is currently seeded into the stash at startup
-because no profession produces it.
+**Built: 8** — Mining, Forestry, Fishing, Herblore, Smithing, Alchemy, Cooking, Beast Lore —
+**26 actions** against the real material library (the P1–P3 pass hit §7.1's recommended slice
+target exactly). Mining landed first and the startup iron-ore seed is deleted; a test pins that
+some action produces `material.iron_ore` so it can never quietly return. Cooking/Alchemy
+outputs that didn't exist were authored as **prepared materials** (`form:meal`/`form:tincture`,
+carrying `growth` — the recovery property that will gate them as healing consumables later).
+Intervals/XP are relative placeholders for the balance pass; a test asserts the professions
+cross-feed in ≥ 4 chains.
 
 ## 7.2 Interconnection is the point
 
@@ -1013,31 +1025,42 @@ survival** — this is a core intended reward for Realm Knowledge and profession
 
 # 12. Enemies & Encounters
 
-## 12.1 Current state — the model is BUILT, the content is a prototype
+## 12.1 Current state — the framework is BUILT (M2′c); the roster is three
 
-Two enemies (Goblin Raider, Goblin Brute), one move each, one guaranteed loot drop each.
-**Since E1/E4 the machinery around them is real:** the Brute carries per-type vulnerabilities
-(soft to Crushing, tough against Slashing — the first live "swap to the weapon that counters
-it"), both carry Resolve, actors declare movesets, and **the uniform random draw is gone** —
-selection runs through weighted AI rules, with an empty profile behaving uniformly. No shipped
-actor authors a profile yet; no tags, harvestables or elite/boss variants.
+**Enemy identity composes from reusable layers** — the Enemy Framework (D26):
 
-The Goblin Brute matters disproportionately: its slow telegraphed Overhead Smash is the one thing
-proving the core combat idea — *"I see something dangerous coming. What do I do before it lands?"*
+```
+Family (physiology)  +  Role (combat archetype)  +  Actor (identity + overrides)
+```
 
-## 12.2 Intended enemy model — the frame is BUILT, the breadth is PLANNED
+- **`family.*`** (`enemy_families/`) — what a creature IS: baseline attributes, resource
+  silhouette, biological resistances (lanes), Resolve. Never behaviour.
+- **`role.*`** (`enemy_roles/`) — what a creature DOES, as **deltas over any family**: attribute
+  and resource tweaks, armour, the armoured-physique vulnerability pair, a default AI brain.
+  `role.brute` is one definition whether the body is goblin, undead or construct.
+- **`ai.*`** (`ai_profiles/`) — named reusable brains: weighted rules over the shared condition
+  vocabulary, matching moves **by id or by tag** (`moveTag: "mech:stagger"` = "the big hit,
+  whatever it is on this body"), plus `avoid_repeat_weight`. AI chooses intent only.
+- **`ActorResolver`** folds family → role → actor with one merge rule set; a future
+  Elite/Realm/depth **variant is one more delta through the same fold**, never a duplicated
+  definition.
 
-Data-driven, composed from reusable behaviours rather than a bespoke class per enemy:
+**Three shipped enemies, all pure data (~8 lines each):** the Raider (skirmisher — pressure,
+Expose Weakness openers, punish-while-vulnerable), the Brute (armoured at last — `FromActor`
+had hardcoded armour to 0 — heavy telegraphs, Overhead Crush as the stagger threat, Brace when
+hurt), and the **Hexer** (caster — venom/wither/dart entirely from the universal move library;
+the framework proof). Validation covers refs, layer conflicts, unusable moves, tag rules
+matching nothing, and D-02 vulnerability ranges.
 
-identity · type/tags · stats · defences · resistances **(BUILT)** · vulnerabilities **(BUILT)** ·
-moveset **(BUILT)** · **AI profile (BUILT** — weighted rules over the shared condition
-vocabulary**)** · behaviour rules · loot table · **harvestable resources** · biome availability ·
-depth availability · elite/boss modifiers applied *over* a base enemy **(all PLANNED)**.
+The Brute still matters disproportionately: its telegraphed heavies are the thing proving the
+core combat idea — *"I see something dangerous coming. What do I do before it lands?"*
 
-**AI chooses intent; the tick engine resolves timing** — built exactly so, and deterministic
-under the seed. AI may consider target, health, cooldowns, statuses and player state today;
-threat, position and Realm modifiers arrive with their systems. Unique bosses may break the
-composable rule where necessary.
+## 12.2 Remaining enemy breadth — PLANNED
+
+Loot tables · harvestable resources · biome/depth availability · the elite/boss **variant
+layer** (the fold seam exists, unbuilt) · roster growth per §12.3. AI may consider target,
+health, cooldowns, statuses and player state today; threat, position and Realm modifiers arrive
+with their systems. Unique bosses may break the composable rule where necessary.
 
 ## 12.3 Target roster for the slice
 
@@ -1225,7 +1248,7 @@ Decided, argued through, and stable enough to build against.
 
 ## 19.2 Exists in-game — BUILT
 
-Built, tested, and runnable today. 602 passing tests, zero build warnings.
+Built, tested, and runnable today. 626 passing tests, zero build warnings.
 
 | System | What's real |
 |---|---|
@@ -1240,9 +1263,11 @@ Built, tested, and runnable today. 602 passing tests, zero build warnings.
 | **Effect handlers** | 11 combat handlers — damage, area, heal, status, resource, modifier, interrupt, and the four move-granting kinds; unhandled kinds visibly recorded |
 | **The hit pipeline** | Packets × lanes, traced Hit Log, diminishing armour, resistances, enemy vulnerability, crit, Perfect Block, modifier-driven INCREASED/block/damage-taken stages |
 | **Statuses** | 28 data-driven definitions across all four categories; DoTs, timed modifiers combat reads, **Resolve** (buildup, shared immunity, escalation), stagger→Stun |
-| **Moves** | `MoveDefinition` for both sides; weapon-granted movesets with provenance; 11-op move modification in fixed order; weighted enemy AI; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; 9 shipped moves |
+| **Moves** | `MoveDefinition` for both sides; weapon-granted movesets with provenance; 11-op move modification in fixed order; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; **27 shipped moves** (M2′) with per-effect target overrides |
+| **Techniques** | 19 technique items teaching moves into a persisted, learn-order-preserving learned list (save v5); learned grants compose with `learned` provenance; Learn UI + validator rules |
+| **Enemy framework** | Family + Role + Actor composition via `ActorResolver` (D26); reusable AI brains matching by move id or tag, `avoid_repeat_weight`; enemy armour real; 3 data-composed goblins incl. the caster Hexer |
 | **Combat** | Tick-driven encounter, telegraph → windup → execute → recovery as real states, timed block/dodge, queue-time costs/cooldowns/requirements, consumable use, death |
-| **Professions** | 3 professions, 3 actions, active + passive, XP/levels |
+| **Professions** | **8 professions, 26 actions** (P1–P3), active + passive, XP/levels, level-gated ladders, cross-feeding pinned by test; Mining killed the iron-ore seed |
 | **Realm** | Dark Forest — 10 locations, 2 depths, travel, descend, extract, forfeit-on-death |
 | **Persistence** | Single-slot save (v4) covering build, stash, instances, equipment, professions, knowledge, discoveries, emergent archetypes |
 
@@ -1271,13 +1296,13 @@ has not reached them.
 
 Built machinery waiting on authored content, not on code.
 
-- **The universal move library + acquisition (M2′)** — 9 moves exist and no way to learn more.
-  Moves are never Base-exclusive (D25): the pass authors a universal library plus technique-item
-  acquisition v1, with Bases keeping 0–1 *starting* moves each (Wizard's Fireball and Bastion's
-  Shield Bash are the shipped exemplars). Still the single highest-leverage content pass in the
-  game: it is what makes 18,750 builds *play* differently rather than compose differently
-- **Enemy AI profiles and roster** — the weighted-rule machinery is live; no shipped actor
-  authors a profile, and the roster is two goblins against a target of 8–10
+- ~~The universal move library + acquisition~~ ✅ **BUILT (M2′)** — 27 moves, 19 technique
+  items, the learned list. Library growth from here is ordinary content authoring
+- **Enemy roster breadth** — the framework (D26) and three data-composed goblins exist; the
+  §12.3 target is 8–10 enemies plus the elite/boss variant layer (the fold seam exists, unbuilt)
+- **Technique-item faucets** — techniques are debug-granted until M6's loot tables; migrate the
+  Wizard/Bastion starting-grant exemplars to acquisition sources then too if desired (D25 allows
+  either)
 - **Move modifiers** — the 11-op system is live and empty; E5's affix pools are its intended
   author
 - **Remaining 40 suffix mechanics** (~120 expressions) and the Species roster (3 thin of 10)

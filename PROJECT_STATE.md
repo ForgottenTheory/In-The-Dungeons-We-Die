@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 602 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 626 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
@@ -26,7 +26,7 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
   - **9 name formats** (`name_formats.json`) — dynamic grammar (`standard`/`citation`/`investigation`/`warning`/`medical`/`liability`/`bureaucratic`/`consequence`/`notice`). **Presentation only**, verified never to affect mechanics.
 - ✅ **`BuildResolver`** — resolves a build into growth, gauges (max 2), attached hooks with provenance, modifiers, and the generated name. `BuildResolver.Diff` powers the Character Lab.
 - ✅ **Character Lab tab** — swap any component, live diff + full readout. *Layout bug fixed; needs re-verification in the editor.*
-- ✅ **Moves exist** (E4). One `MoveDefinition` shape for attacks, spells and utilities; movesets compose weapon-first with provenance; `MoveModifier` ops rewrite them; enemies pick via weighted AI rules. 🟡 **Content**: 9 moves shipped (weapon moves, the three spec exemplars, Recall, enemy ports). **Next is M2′ — the universal move library + technique-item acquisition (D25)**; moves are never Base-exclusive, and Bases keep 0–1 *starting* moves from the library (Wizard's Fireball and Bastion's Shield Bash are the shipped exemplars of that).
+- ✅ **Moves exist** (E4) **and the library + acquisition are built (M2′)**. One `MoveDefinition` shape for attacks, spells and utilities; movesets compose weapon-first with provenance; `MoveModifier` ops rewrite them. **27 moves shipped**, universal per D25 (soft gates only); `EffectSpec` supports per-effect `target` overrides (Drain's lifesteal shape). **Techniques** (`technique.*`, 19 items) teach moves into a persisted `LearnedMoves` list (save v5, once-per-move, learn-order-preserving); learned grants compose with `learned` provenance; Learn UI in the Inventory tab + debug grant until M6 loot.
 - 🟡 **Species** is out of this pass — still 3 thin stat packages against a designed roster of 10.
 
 ## Core mechanisms behind it (new, reusable)
@@ -46,15 +46,15 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ✅ Composition: Species+Prefix+BaseClass+Suffix → `CharacterBlueprint` → runtime `Character`.
 - 🟡 Character **rules** (`ICharacterRule`): only 2 live (health-conditional suffix bonuses). Other suffixes/prefixes are tags+modifiers only. Class abilities (`ability.guard`/`hex_bolt`) are **dead ids**; Mana is unused.
 - ⬜ No character level, no XP-driven attribute growth, no character-creation UI (build is hardcoded in `GameRoot`, cycled by a debug button, saved/loaded).
-- ✅ Professions: Forestry/Herblore/Smithing; passive (`PassiveProfessionRunner` on TickEngine) + active (timing-performance) + XP/level + per-action mastery. ⬜ No Mining (ore is seeded), no offline progress.
+- ✅ Professions (P1–P3): **8 professions, 26 actions** — Mining, Forestry, Fishing, Herblore, Smithing, Alchemy, Cooking, Beast Lore; passive (`PassiveProfessionRunner` on TickEngine) + active (timing-performance) + XP/level + per-action mastery + level-gated ladders. **The iron-ore stash seed is deleted** (Mining is the source; pinned by test), cross-feeding ≥ 4 chains pinned by test, 4 prepared materials (`form:meal`/`form:tincture`) added with byproduct coverage. ⬜ No offline progress.
 
 ## Items, inventory, equipment  (the current focus)
 - ✅ Item model: `IItemDefinition`, `MaterialDefinition`, `EquipmentDefinition`, `ItemInstance` (id/base/quality/derived-props/provenance/traits), `InstanceIdSource`, `PropertySet` (string-keyed), `ItemProperties` (Physical/Processing/Reactive/Response constants).
 - ✅ Material library: **~470 raw/processed material definitions** on a 0–100 property scale, flat `properties` map, in `game/data/materials/` category array files (flora 108 / fauna 114 / fungal 45 / minerals 84 / environmental 54 / elemental 36 / processed 31). Authored biome-by-biome (as a design lens — **no biome type/field**, just variety), mundane-majority, multi-part creatures/plants, rarity as a tag (common→exceptional). Load-time validated (range + known names + one rarity tag each). This is the ingredient set the future crafting reaction sim will operate on — **no reaction rules / derived combinations authored yet** (by design).
 - ✅ `Inventory` holds both stacks (quantity) and unique instances. Stash vs run inventory split; extraction moves both.
-- ✅ Equipment: `Equipment` slot container (Weapon/Armor), `EquipmentResolver` → neutral `AttackProfile`/`ArmorProfile`. Starter loadout (Rusty Sword/Tattered Armor) auto-equipped; gear safe on death.
+- ✅ Equipment: `Equipment` slot container (Weapon/Armor), `EquipmentResolver` → weapon-granted **moves** (instance mass applied once, split by share; `AttackProfile` was deleted in E4) + neutral `ArmorProfile`. Starter loadout (Rusty Sword/Tattered Armor) auto-equipped; gear safe on death.
 - 🧱 **Property → combat effects**: `EquipmentResolver` maps only Mass→damage/speed and Hardness→armor as an illustrative seam. The rest (Heat/Cold/Charge/Toxicity/Growth/Decay/Arcane → on-hit effects, resistances, status) is NOT built.
-- ✅ Save persists stash stacks + instances + equipment + the instance-id counter (SaveData v3).
+- ✅ Save persists stash stacks + instances + equipment + the instance-id counter (SaveData, now v5).
 - ✅ Equipment UI: `MainMvpUI` EQUIPMENT section — per-slot rows (weapon/armor) with resolved stat summaries + Unequip, a Stash list of unequipped instances each with Equip, and a debug "Grant to stash" row. Backed by `GameRoot.EquipFromStash`/`UnequipToStash`/`GrantToStash` + `EquippedWeapon`/`EquippedArmor`/`StashEquipment`/`InstanceLabel`. (Still code-built debug shell, no art.)
 
 ## Crafting — emergent reaction engine (P1 complete, Core-side)
@@ -73,9 +73,10 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 ## Combat
 - ✅ Tick-driven `CombatEncounter`: enemy self-scheduling telegraph→execute→recovery; player Attack/Block/Dodge/Wait/UseItem. Block/dodge are timed stances (skill test).
 - ✅ **Hit pipeline** (E1): `Hit`/`Packet`/`DamageLanes`/`DamageAspects` + `HitPipeline` + `HitLog`. Ordered stages — packets → flat/attribute scaling → crit → armour (diminishing, `ArmourK=1`) → per-lane resistance → enemy vulnerability → block → floor. `CombatCalculator` is a thin façade over it. Perfect Block negates; ordinary block mitigates. Every hit emits a stage-by-stage trace.
-- ✅ Player attack is the **equipped weapon's** `AttackProfile` (fallback ability if unarmed). Consumables (Heal) usable in combat, cost tempo.
-- 🟡 Single enemy, single position. Enemies: Goblin Raider, Goblin Brute.
-- ⬜ No positioning, status effects, interrupts, multi-enemy, class abilities, mana spells, auto-combat, suffix combat rule-hooks. Enemy armor = CON only.
+- ✅ Player attacks with the **equipped weapon's moves** (species Bare Fists if unarmed); the Combat tab renders one button per resolved move (M1) with gauge readout and a Hit-trace toggle. Consumables (Heal) usable in combat, cost tempo.
+- ✅ **Statuses, interrupts, mana spells and the class combinator's combat hooks are all live** (E2–E4; the pre-E2 "none of these exist" note is obsolete).
+- ✅ **Enemy framework** (M2′c, D26): `EnemyFamilyDefinition` + `CombatRoleDefinition` + `AiProfileDefinition` folded by `ActorResolver`; AI rules match by move id or tag with `avoid_repeat_weight`; enemy armour is real (`FromActor` hardcoded 0 before). **3 enemies, pure data**: Raider (skirmisher), Brute (armoured, heavy telegraphs), Hexer (caster over library moves).
+- ⬜ No positioning, multi-enemy encounters, auto-combat, or elite/boss variants (the fold seam exists).
 
 ## Realm & extraction
 - ✅ `RealmRun` aggregate + `RealmDefinition` location graph; Dark Forest (10 nodes, depths 1–2, tier 1). Travel (adjacency-gated), Descend, combat/gather/event nodes, extract-or-go-deeper.
@@ -83,5 +84,5 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ⬜ Knowledge unlocks nothing; no affixes, tiers>1, camps, hazards, bosses/elites, other location types, other realms, procedural gen, pre-run loadout selection. Loot = single guaranteed drop per enemy (no tables/rarity/currency).
 
 ## Persistence & UI
-- ✅ Save/load: single slot `user://save.json`, schema v3. Persists build, stash (stacks+instances), equipment, instance-id counter, professions, realm knowledge, discoveries. ⬜ No migration, no multi-slot, no mid-run save (blocked during a run). RNG/tick not persisted.
-- 🟡 One code-built debug/test console (`MainMvpUI`) — dark code-only theme, tabbed navigation (Character/Equipment/Professions/Crafting/Realm/Combat/Inventory), persistent header + always-visible event log. Still no art/audio or production screens. `GameRoot` is ~880 lines (composition root + app glue + report formatting), flagged for an Application-layer extraction.
+- ✅ Save/load: single slot `user://save.json`, **schema v5** (v4 added emergent archetypes; v5 added learned moves; older saves load forward-compatibly). Persists build, stash (stacks+instances), equipment, instance-id counter, professions, realm knowledge, discoveries, emergent archetypes, learned moves. **Found in M2′a: `GameRoot` never passed the emergent registry to `SaveMapper` — archetypes were silently unpersisted; fixed.** ⬜ No migration, no multi-slot, no mid-run save (blocked during a run). RNG/tick not persisted.
+- 🟡 One code-built debug/test console (`MainMvpUI`) — dark code-only theme, tabbed navigation (Character/Equipment/Professions/Crafting/Realm/Combat/Inventory), persistent header + always-visible event log, Techniques panel, per-move combat buttons, height-floored combat/realm cards so buttons don't shift mid-fight. Still no art/audio or production screens. `GameRoot` is ~1,420 lines (composition root + app glue + report formatting), flagged for an Application-layer extraction.
