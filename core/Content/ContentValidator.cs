@@ -84,6 +84,7 @@ public static class ContentValidator
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
         ValidateEquipment(content.Equipment, knownProperties, problems);
+        ValidateStatuses(content, problems);
         ValidateCharacterAbilities(content, problems);
 
         return problems;
@@ -606,6 +607,25 @@ public static class ContentValidator
 
             if (!string.IsNullOrEmpty(actor.LootItemId) && !materials.Contains(actor.LootItemId))
                 problems.Add(new("actors", $"{actor.Id} drops unknown material '{actor.LootItemId}'."));
+
+            foreach (var lane in actor.Resistances.Keys)
+                if (!DamageLanes.All.Contains(lane))
+                    problems.Add(new("actors",
+                        $"{actor.Id} resists unknown lane '{lane}'. Valid lanes: {string.Join(", ", DamageLanes.All)}."));
+
+            // Vulnerability is keyed by damage TYPE (D-02) — the one place the three physical
+            // types still matter defensively, so a lane name here is a real mistake.
+            foreach (var (type, multiplier) in actor.Vulnerable)
+            {
+                if (!Enum.TryParse<DamageType>(type, ignoreCase: true, out _))
+                    problems.Add(new("actors",
+                        $"{actor.Id} is vulnerable to unknown damage type '{type}'. Valid: {string.Join(", ", Enum.GetNames<DamageType>())}."));
+
+                if (multiplier < CombatTuning.MinVulnerability || multiplier > CombatTuning.MaxVulnerability)
+                    problems.Add(new("actors",
+                        $"{actor.Id} vulnerability '{type}' is {multiplier}, outside the allowed " +
+                        $"[{CombatTuning.MinVulnerability}, {CombatTuning.MaxVulnerability}] range."));
+            }
         }
     }
 
@@ -705,6 +725,83 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Statuses, and the references to them (E2, docs/statuses.md §6.2).
+    ///
+    /// <para>The rule that matters most is the last one: <b>every <c>applyStatus</c> in shipped
+    /// content must name a real status.</b> Fourteen ids were authored against no status system
+    /// at all and sat in <c>TriggerRuleEngine.Unhandled</c> for two milestones. This is what
+    /// stops that recurring.</para>
+    /// </summary>
+    private static void ValidateStatuses(ContentBundle content, List<ContentProblem> problems)
+    {
+        var statuses = content.Statuses;
+
+        foreach (var status in statuses.GetAll())
+        {
+            if (status.Lane is { } lane && !DamageLanes.All.Contains(lane))
+                problems.Add(new("statuses", $"{status.Id} uses unknown lane '{lane}'."));
+
+            if (status.RequiresStatus is { } gate && !statuses.Contains(gate))
+                problems.Add(new("statuses", $"{status.Id} requires unknown status '{gate}'."));
+
+            if (status.RequiresStatus == status.Id)
+                problems.Add(new("statuses", $"{status.Id} requires itself."));
+
+            // A control outside the Resolve gate would be a permanent lock, and buildup on a
+            // non-control is a number nothing reads.
+            if (status.IsControl && status.ControlBuildup <= 0 && status.Id != "status.stun")
+                problems.Add(new("statuses", $"{status.Id} is a control with no control_buildup — it could never be applied."));
+            if (!status.IsControl && status.ControlBuildup > 0)
+                problems.Add(new("statuses", $"{status.Id} is not a control but declares control_buildup."));
+
+            if (status.StackPolicy != StackPolicy.Stack && status.MaxStacks > 1)
+                problems.Add(new("statuses", $"{status.Id} allows {status.MaxStacks} stacks but its policy is {status.StackPolicy}."));
+
+            if (status.TickInterval > 0 && status.PerTick.Count == 0 && status.Magnitude.Basis == MagnitudeBasis.Flat && status.Magnitude.Coefficient == 0)
+                problems.Add(new("statuses", $"{status.Id} ticks but does nothing on tick."));
+
+            foreach (var modifier in status.WhileActive)
+                if (!content.ModifierKeys.Contains(modifier.Key))
+                    problems.Add(new("statuses", $"{status.Id} contributes to unknown modifier key '{modifier.Key}'."));
+        }
+
+        // Every status reference in character content must resolve.
+        void CheckRules(IEnumerable<Rules.TriggerRule> rules, string owner)
+        {
+            foreach (var rule in rules)
+            {
+                var effect = rule.Effect;
+                if (!string.Equals(effect.Kind, Rules.RuleVocabulary.ApplyStatus, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (string.IsNullOrEmpty(effect.Text) || statuses.Contains(effect.Text))
+                    continue;
+                if (KnownUnimplementedStatuses.Contains(effect.Text))
+                    continue;
+
+                problems.Add(new("statuses", $"{owner} applies unknown status '{effect.Text}'."));
+            }
+        }
+
+        foreach (var prefix in content.Prefixes.GetAll())
+        {
+            CheckRules(prefix.Rules, prefix.Id);
+            if (prefix.Gauge is { } gauge)
+                CheckRules(gauge.Feeds, prefix.Id);
+        }
+
+        foreach (var suffix in content.Suffixes.GetAll())
+            CheckRules(suffix.Expressions.Select(e => e.Rule), suffix.Id);
+    }
+
+    /// <summary>
+    /// Statuses that cannot be authored yet because the system they depend on does not exist.
+    /// <b>Dated, not open-ended</b> — <c>status.recalled_move</c> stores a Move to replay, so it
+    /// unblocks in E4 with <c>MoveDefinition</c>. Delete this entry then.
+    /// </summary>
+    private static readonly IReadOnlySet<string> KnownUnimplementedStatuses =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "status.recalled_move" };
+
     private static void ValidateEquipment(
         DataStore<EquipmentDefinition> equipment,
         IReadOnlySet<string> knownProperties,
@@ -725,6 +822,13 @@ public static class ContentValidator
             foreach (var property in def.Properties.Keys)
                 if (!knownProperties.Contains(property))
                     problems.Add(new("equipment", $"{def.Id} has unknown property '{property}' (typo, or add it to game/data/properties/)."));
+
+            // Resistances are keyed by damage LANE, not by damage-type name (D-02). Authoring
+            // "Slashing" here used to silently resist nothing once the lanes collapsed.
+            foreach (var lane in def.Armor?.Resistances.Keys ?? Enumerable.Empty<string>())
+                if (!DamageLanes.All.Contains(lane))
+                    problems.Add(new("equipment",
+                        $"{def.Id} resists unknown lane '{lane}'. Valid lanes: {string.Join(", ", DamageLanes.All)}."));
         }
     }
 

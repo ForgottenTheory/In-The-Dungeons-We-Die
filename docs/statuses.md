@@ -1,6 +1,6 @@
 # Statuses, Ailments & Crowd Control
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > **Replaces the retired `combat-spec.md` §25.** Amends GDD §5.9.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**
 

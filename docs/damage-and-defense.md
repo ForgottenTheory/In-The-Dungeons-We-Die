@@ -1,6 +1,6 @@
 # Damage & Defence
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > **Replaces the retired `combat-spec.md` §15–16, §22–24.** Amends GDD §5.5.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**
 
@@ -284,8 +284,8 @@ Every stage is a discrete, individually testable step that reads and writes a mu
 
 ── THE HIT LANDS ───────────────────────────────────────────────────────────
  9  HIT LANDED     the hit connected                               → HitLanded  ⚑ thorns hook
-10  CRIT           roll once for the hit; crit multiplies every packet
-11  FLAT ADDED     add flat damage (scope-filtered by tags/lane)
+10  FLAT ADDED     add flat damage (scope-filtered by tags/lane); attribute scaling is one
+11  CRIT           roll once for the hit; multiplies base+flat, and stops there
 12  INCREASED      Σ increased/reduced, applied once per packet
 13  MORE/LESS      Π more/less multipliers per packet
 14  CONVERSION     move amounts between packets (cap 100% out, depth 1)
@@ -315,10 +315,16 @@ Every stage is a discrete, individually testable step that reads and writes a mu
 wastes work and makes the log lie. It also makes the semantic clean: an avoided hit produced no
 packets, so no ailment, no thorns, no on-hit.
 
-**Crit before increases (10 before 12).** Crit multiplies the *base+flat*, not the fully-scaled
-number. If crit came last it would multiply every "more" multiplier as well and crit builds
-would scale quadratically with everything else. This is the difference between crit being *a*
-build and crit being *the* build.
+**Crit after flat, before increases (11, between 10 and 12).** Crit multiplies *base + flat* and
+stops there. If it came last it would multiply every "more" multiplier as well and crit builds
+would scale quadratically with everything else — the difference between crit being *a* build and
+crit being *the* build.
+
+> **Corrected while building E1.** This rationale always said "base+flat", but the stage list had
+> CRIT at 10 and FLAT ADDED at 11 — so *as specified*, crit would have multiplied the base weapon
+> damage only and ignored every flat addition, attribute scaling included. Implementing it against
+> the existing `Crit_MultipliesBeforeArmor` test surfaced the contradiction immediately. The
+> reasoning was right; the ordering contradicted it.
 
 **Conversion after increases (14 after 12–13).** Deliberately **the opposite of PoE**, which
 converts first and lets both the source and destination lanes' increases apply. PoE's ordering
@@ -688,9 +694,23 @@ makes `unparryable` moves and the Trickster's feint mechanic meaningful.
 **[DECIDED — D-25] Change the formula.**
 
 ```
-reduction = armour / (armour + K × packetAmount)      K = 5
+reduction = armour / (armour + K × packetAmount)      K = 1      [D-27]
 final     = packet × (1 − reduction)
 ```
+
+> **`K = 1`, not PoE's 10 — and the reason matters [D-27].** The formula *shape* is borrowed;
+> the constant must not be. PoE's armour values are in the **thousands**, ours are single digits
+> (iron armour + CON 5 ≈ **10**), so a PoE-scaled K gutted armour rather than reshaping it:
+>
+> | Incoming, vs 10 armour | Today (flat) | K = 5 | **K = 1** |
+> |---|---|---|---|
+> | Rusty Slash (9) | 89% ← the cliff | 18% | **53%** |
+> | Overhead Smash (26) | 38% | 7% | **28%** |
+>
+> K = 1 keeps the intended shape — strong against attrition, weaker against spikes — while
+> removing the `max(1, …)` cliff that currently makes iron armour near-immune to chip damage.
+> **Recalibrate in C2**, when material properties start driving equipment stats and the whole
+> armour scale moves.
 
 Current code is `max(1, damage − armour)`. That makes armour *total* against chip damage (a
 5-damage hit becomes 1) and *irrelevant* against the Goblin Brute's Overhead Smash — exactly
@@ -947,7 +967,7 @@ Even the Anomalous version, which raises depth to 3, terminates — it just gets
 | `MaxResistanceCeiling` | 0.90 | with max-res affixes |
 | `RESIST_FLOOR` | −1.00 | 2× damage |
 | `INVERSION_FLOOR` | −0.50 | |
-| `ArmourK` | 5 | `armour/(armour + 5 × packet)` |
+| `ArmourK` | **1** | `armour/(armour + 1 × packet)` — scaled to this game's single-digit armour, **not** PoE's thousands (D-27, §5.4) |
 | `BlockDamageMultiplier` | 0.40 | existing ✅ |
 | `PerfectBlockWindowTicks` | 4 | of a 16-tick block stance |
 | `ParryWindowTicks` | 3 | gear-granted |

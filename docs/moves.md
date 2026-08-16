@@ -1,6 +1,6 @@
 # Moves, Move Modification & the Shared Action Vocabulary
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > Supersedes `AbilityDefinition` and `AttackProfile`; absorbs the retired `combat-spec.md` §5–§9, §21. Amends GDD §6 and DECISIONS **D8**.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**
 
@@ -76,11 +76,18 @@ Three completely different feels, one data shape, zero new code per move.
 
 ## 2.3 Three amendments to the HANDOFF plan **[DECIDED]**
 
-**1. Split telegraph and windup properly, and do it in E1 not E4.**
+**1. Split telegraph and windup properly — in E2, ahead of statuses.**
 `AbilityTiming.TimeToImpactTicks` currently collapses them, so "interrupt during windup" is
 inexpressible (GDD §5.2 flags this as *"the riskiest single change in the combat roadmap"*).
-HANDOFF slices it as M3. **Do it during the Hit pipeline slice instead** — the pipeline already
-rewrites the resolution path, and doing both at once costs less than doing them separately.
+HANDOFF slices it as M3.
+
+> **Corrected [D-27].** This originally said "do it in E1, alongside the pipeline" — which
+> contradicted the reasoning used for D-18, where converging `AttackProfile` in E1 was rejected
+> for putting two high-risk rewrites in one slice with no green checkpoint between them. The
+> same objection applies here and the plan was inconsistent. **Nothing in E1 needs the split;
+> the first thing that genuinely does is Stun interrupting an action in E2.** So it moves to the
+> front of E2, lands on its own, and statuses build on it.
+
 The four phases become real scheduler states:
 
 ```

@@ -1,0 +1,152 @@
+[
+  // The 14 core statuses (docs/statuses.md §3, decision D-09).
+  //
+  // There is deliberately NO C# class per ailment. Everything here is data: `while_active` is a
+  // list of modifier contributions, and the hooks use the same EffectSpec vocabulary moves and
+  // affixes use. That is why fourteen statuses cost roughly what three would.
+  //
+  // CUT, and recorded as such: `Ignite` (Burn supersedes it — in PoE the ignite/burning split
+  // confuses players permanently) and `Slow` (Chill is Slow with the cold lane plus the Freeze
+  // gate; shipping both means one is strictly worse). DEFERRED: Root (needs positioning),
+  // Wither (ships with the decay lane), Brittle (narrow; Vulnerable covers the common case).
+
+  // ============================ AILMENTS ============================
+  //
+  // Magnitude derives from the damage that landed in the status's lane. Because that figure is
+  // already post-mitigation, lane resistance reduces the ailment too — one number, no second
+  // calculation.
+
+  {
+    "id": "status.bleed", "name": "Bleed", "category": "ailment", "lane": "physical",
+    "tags": ["mech:ailment"],
+    "duration_ticks": 100, "tick_interval": 20,
+    "stack_policy": "stack", "max_stacks": 5,
+    "magnitude": { "basis": "laneDamage", "coefficient": 0.15 },
+    "description": "Bleeding. Worse while you keep moving."
+  },
+  {
+    "id": "status.poison", "name": "Poison", "category": "ailment", "lane": "toxin",
+    "tags": ["mech:ailment"],
+    // Low, very long, stacks freely — the attrition ailment. The deliberate contrast with Burn.
+    "duration_ticks": 300, "tick_interval": 30,
+    "stack_policy": "stack", "max_stacks": 20,
+    "magnitude": { "basis": "laneDamage", "coefficient": 0.08 },
+    "description": "Poisoned. It does not hurt much, and it does not stop."
+  },
+  {
+    "id": "status.burn", "name": "Burn", "category": "ailment", "lane": "heat",
+    "tags": ["mech:ailment"],
+    // High, short, does NOT stack — a stronger application overwrites a weaker one.
+    // Burn vs Poison is the pairing that makes heat and toxin play differently.
+    "duration_ticks": 60, "tick_interval": 15,
+    "stack_policy": "refreshHighest", "max_stacks": 1,
+    "magnitude": { "basis": "laneDamage", "coefficient": 0.35 },
+    "description": "Burning. Short, fierce, and it does not stack."
+  },
+
+  // ============================ IMPAIRMENTS ============================
+
+  {
+    "id": "status.chill", "name": "Chill", "category": "impairment", "lane": "cold",
+    "tags": ["mech:impairment"],
+    "duration_ticks": 120, "stack_policy": "refreshHighest", "max_stacks": 1,
+    // Slow, with the cold lane. Only a Chilled target accumulates Freeze buildup, which makes
+    // cold a two-step aspect rather than a third burst aspect.
+    "while_active": [
+      { "key": "combat.windup.mult", "value": 1.25 },
+      { "key": "combat.recovery.mult", "value": 1.25 }
+    ],
+    "description": "Chilled. Everything takes a moment longer."
+  },
+  {
+    "id": "status.shock", "name": "Shock", "category": "impairment", "lane": "charge",
+    "tags": ["mech:impairment"],
+    "duration_ticks": 100, "stack_policy": "refreshHighest", "max_stacks": 1,
+    // Lane-specific, unlike Vulnerable. If Shock raised ALL damage taken it would simply be a
+    // better Vulnerable and the charge lane would have no identity.
+    "while_active": [ { "key": "combat.damage_taken.mult", "value": 1.20 } ],
+    "description": "Shocked. Charge finds you more easily."
+  },
+  {
+    "id": "status.corroded", "name": "Corroded", "category": "impairment", "lane": "corrosion",
+    "tags": ["mech:impairment"],
+    "duration_ticks": 150, "stack_policy": "stack", "max_stacks": 5,
+    // The answer to armoured enemies, and the reason corrosion is its own lane.
+    "while_active": [ { "key": "combat.armor", "value": -3, "per_stack": true } ],
+    "description": "Corroded. Armour eaten away, stack by stack."
+  },
+  {
+    "id": "status.weaken", "name": "Weaken", "category": "impairment",
+    "tags": ["mech:impairment"],
+    "duration_ticks": 120, "stack_policy": "refreshHighest", "max_stacks": 1,
+    "while_active": [ { "key": "combat.damage.mult", "value": 0.80 } ],
+    "description": "Weakened. Blows land softer."
+  },
+
+  // ============================ CONTROLS ============================
+  //
+  // Never applied directly. Each application adds `control_buildup` to the target's Resolve
+  // pool; crossing it lands the control, opens an immunity window that blocks EVERY control,
+  // and raises Resolve 25% for the rest of the encounter.
+
+  {
+    "id": "status.stun", "name": "Stun", "category": "control",
+    "tags": ["mech:control", "mech:stagger"],
+    "duration_ticks": 30, "stack_policy": "unique", "max_stacks": 1,
+    "control_buildup": 0,
+    "description": "Stunned. The impact control — short, and mostly earned by stagger."
+  },
+  {
+    "id": "status.freeze", "name": "Freeze", "category": "control", "lane": "cold",
+    "tags": ["mech:control"],
+    "duration_ticks": 50, "stack_policy": "unique", "max_stacks": 1,
+    "control_buildup": 40,
+    // The gate that makes cold two-step. An unchilled target accumulates NO freeze buildup —
+    // this is a gate, not a resistance.
+    "requires_status": "status.chill",
+    "description": "Frozen. Longer than a stun, and it shatters."
+  },
+  {
+    "id": "status.fear", "name": "Fear", "category": "control",
+    "tags": ["mech:control"],
+    "duration_ticks": 80, "stack_policy": "unique", "max_stacks": 1,
+    "control_buildup": 30,
+    // Soft control: it does not stop the target acting, it changes WHAT it does. Without
+    // positioning it cannot mean "flee", so it forbids attacks instead (docs/statuses.md §3.3).
+    "description": "Afraid. Cannot bring itself to attack."
+  },
+  {
+    "id": "status.silence", "name": "Silence", "category": "control",
+    "tags": ["mech:control"],
+    "duration_ticks": 60, "stack_policy": "unique", "max_stacks": 1,
+    "control_buildup": 30,
+    "description": "Silenced. No spells."
+  },
+
+  // ============================ STATES ============================
+
+  {
+    "id": "status.guarded", "name": "Guarded", "category": "state",
+    "tags": ["mech:block"],
+    "duration_ticks": 40, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "while_active": [ { "key": "combat.damage_taken.mult", "value": 0.75 } ],
+    "description": "Guarded. Braced against what is coming."
+  },
+  {
+    "id": "status.vulnerable", "name": "Vulnerable", "category": "state",
+    "tags": [],
+    "duration_ticks": 60, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "while_active": [ { "key": "combat.damage_taken.mult", "value": 1.30 } ],
+    "description": "Open. Everything hurts more."
+  },
+  {
+    "id": "status.barrier", "name": "Barrier", "category": "state",
+    "tags": ["mech:barrier"],
+    // The recovery answer (D-15). A temporary pool absorbed before Health, so sustain exists
+    // without passive Health regeneration trivialising Realm attrition. Renders as an overlay
+    // on the Health bar, not a third meter, so it does not spend the GDD §3.6 budget.
+    "duration_ticks": 200, "stack_policy": "refreshHighest", "max_stacks": 1,
+    "magnitude": { "basis": "flat", "coefficient": 1.0 },
+    "description": "Shielded. Absorbs before Health, and fades."
+  }
+]

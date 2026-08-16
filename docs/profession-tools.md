@@ -1,6 +1,6 @@
 # Profession Tools & the Yield Pipeline
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > **Supersedes `ActionResolver`.** Extends `professions.md` and GDD §7.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**
 

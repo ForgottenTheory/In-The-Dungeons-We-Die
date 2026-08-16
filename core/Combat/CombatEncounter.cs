@@ -12,12 +12,58 @@ public enum CombatResult
     Defeat,
 }
 
+/// <summary>
+/// Where an action is in its lifecycle (docs/moves.md §2.3).
+///
+/// <para><c>QUEUE → TELEGRAPH → WINDUP → EXECUTION → RECOVERY → READY</c>. Before E2 the first
+/// two were collapsed into a single time-to-impact, which is why GDD §5.2 recorded
+/// "interrupt during windup" as inexpressible.</para>
+/// </summary>
+public enum ActionPhase
+{
+    /// <summary>Intent is visible. The defender can read it and answer.</summary>
+    Telegraph,
+
+    /// <summary>Committed and swinging — the window where an interrupt lands.</summary>
+    Windup,
+}
+
+/// <summary>
+/// One action between commitment and execution, for either side.
+///
+/// <para>Player and enemy share this because the phases are the same for both; the divergence
+/// is only in who chooses the action. E4's <c>MoveDefinition</c> collapses that difference too.</para>
+/// </summary>
+public sealed class ActionInFlight
+{
+    public required Combatant Actor { get; init; }
+    public required Combatant Target { get; init; }
+    public required string Name { get; init; }
+    public required DamageType DamageType { get; init; }
+    public required double BaseDamage { get; init; }
+    public required AbilityTiming Timing { get; init; }
+    public required HashSet<string> Tags { get; init; }
+
+    /// <summary>Null for the player, whose action comes from the equipped weapon.</summary>
+    public AbilityDefinition? Ability { get; init; }
+
+    public ActionPhase Phase { get; internal set; } = ActionPhase.Telegraph;
+
+    /// <summary>Tick the current phase ends. During Windup this is the moment of impact.</summary>
+    public long PhaseEndsTick { get; internal set; }
+
+    internal ScheduledAction? Scheduled { get; set; }
+}
+
 /// <summary>A pending enemy attack the player can see and react to.</summary>
 public sealed class EnemyIntent
 {
     public required Combatant Attacker { get; init; }
     public required AbilityDefinition Ability { get; init; }
     public required long ExecuteTick { get; init; }
+
+    /// <summary>Telegraph is "something is coming"; Windup is "and it is too late to stop it gently".</summary>
+    public required ActionPhase Phase { get; init; }
 }
 
 /// <summary>The result of a finished encounter, including who was defeated (for loot).</summary>
@@ -55,12 +101,16 @@ public sealed class CombatEncounter
     private readonly IGameEventBus _bus;
     private readonly string _playerFallbackAbilityId;
 
-    private readonly Dictionary<Combatant, EnemyIntent> _intents = new();
-    private readonly Dictionary<Combatant, ScheduledAction> _enemyPending = new();
+    /// <summary>Every action currently between commitment and impact, both sides.</summary>
+    private readonly Dictionary<Combatant, ActionInFlight> _inFlight = new();
+
+    /// <summary>Enemy recovery timers — separate because they exist *between* actions.</summary>
+    private readonly Dictionary<Combatant, ScheduledAction> _recovery = new();
+
     private readonly List<Combatant> _defeatedEnemies = new();
     private readonly Dictionary<string, int> _eventCounts = new(StringComparer.Ordinal);
-    private ScheduledAction? _playerPending;
     private ScheduledAction? _regenPending;
+    private ScheduledAction? _statusPending;
 
     private Combatant _player = null!;
     private List<Combatant> _enemies = new();
@@ -71,7 +121,8 @@ public sealed class CombatEncounter
         DataStore<AbilityDefinition> abilities,
         IRandomSource rng,
         IGameEventBus bus,
-        string playerFallbackAbilityId)
+        string playerFallbackAbilityId,
+        StatusController? statuses = null)
     {
         _tick = tick ?? throw new ArgumentNullException(nameof(tick));
         _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
@@ -79,7 +130,16 @@ public sealed class CombatEncounter
         _rng = rng ?? throw new ArgumentNullException(nameof(rng));
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
         _playerFallbackAbilityId = playerFallbackAbilityId;
+
+        // Optional so combat-calculation tests need not construct a status store. Every path
+        // that reads it null-checks; nothing silently degrades.
+        Statuses = statuses;
+        if (Statuses is not null)
+            Statuses.Ticked += OnStatusTick;
     }
+
+    /// <summary>Statuses on every combatant, and the Resolve pool gating controls (E2).</summary>
+    public StatusController? Statuses { get; }
 
     /// <summary>The player's basic attack: the equipped-weapon profile, or the fallback ability if unarmed.</summary>
     private AttackProfile PlayerAttackProfile =>
@@ -98,11 +158,37 @@ public sealed class CombatEncounter
     public event Action? StateChanged;
     public event Action<CombatOutcome>? Ended;
 
+    /// <summary>
+    /// The full stage-by-stage trace of every hit (docs/damage-and-defense.md §3.3). Required
+    /// scope, not polish: a pipeline with this many multiplicative sources is unplayable if it
+    /// cannot answer "why did that hit for 17?". The Combat Lab renders it; the narration in
+    /// <see cref="Logged"/> stays a single readable sentence.
+    /// </summary>
+    public event Action<HitResult>? HitResolved;
+
+    /// <summary>The most recent hit's trace, for the debug console.</summary>
+    public HitResult? LastHit { get; private set; }
+
     public bool IsActive { get; private set; }
     public Combatant Player => _player;
     public IReadOnlyList<Combatant> Enemies => _enemies;
     public IReadOnlyList<Combatant> Combatants => _enemies.Prepend(_player).ToList();
-    public IReadOnlyList<EnemyIntent> Intents => _intents.Values.ToList();
+    public IReadOnlyList<EnemyIntent> Intents => _inFlight.Values
+        .Where(a => a.Actor.Team == CombatTeam.Enemy && a.Ability is not null)
+        .Select(a => new EnemyIntent
+        {
+            Attacker = a.Actor,
+            Ability = a.Ability!,
+            ExecuteTick = a.Phase == ActionPhase.Windup
+                ? a.PhaseEndsTick
+                : a.PhaseEndsTick + Math.Max(1, a.Timing.WindupTicks),
+            Phase = a.Phase,
+        })
+        .ToList();
+
+    /// <summary>The action this combatant is currently committed to, if any.</summary>
+    public ActionInFlight? ActionOf(Combatant combatant) =>
+        _inFlight.TryGetValue(combatant, out var action) ? action : null;
     public long CurrentTick => _tick.CurrentTick;
     public bool PlayerReady => IsActive && _player.IsReady(_tick.CurrentTick);
 
@@ -110,8 +196,8 @@ public sealed class CombatEncounter
     {
         _player = player ?? throw new ArgumentNullException(nameof(player));
         _enemies = enemies?.ToList() ?? throw new ArgumentNullException(nameof(enemies));
-        _intents.Clear();
-        _enemyPending.Clear();
+        _inFlight.Clear();
+        _recovery.Clear();
         _defeatedEnemies.Clear();
         _eventCounts.Clear();
         IsActive = true;
@@ -120,6 +206,7 @@ public sealed class CombatEncounter
         Log($"Combat started: {_player.Name} vs {string.Join(", ", _enemies.Select(e => e.Name))}.");
         Publish(GameEvents.EncounterStarted, source: SelfId, amount: _enemies.Count);
         ScheduleStaminaRegen();
+        ScheduleStatusTick();
         foreach (var enemy in _enemies)
             BeginEnemyDecision(enemy);
 
@@ -152,16 +239,22 @@ public sealed class CombatEncounter
         _player.Stamina.Reduce(attack.StaminaCost);
         var executeIn = Math.Max(1, attack.Timing.TimeToImpactTicks);
         _player.ReadyTick = _tick.CurrentTick + executeIn + attack.Timing.RecoveryTicks;
-        _playerPending = _tick.Schedule(executeIn, () => ResolvePlayerAttack(attack));
         Log($"You ready {attack.Name}.");
 
-        var tags = AttackTags(attack.DamageType, attack.Timing);
         Publish(GameEvents.ResourceSpent, source: SelfId, amount: attack.StaminaCost,
             tags: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "stamina", "attack" });
-        Publish(GameEvents.ActionQueued, source: SelfId, target: Id(target), tags: tags);
-        Publish(GameEvents.ActionTelegraphed, source: SelfId, target: Id(target), tags: tags);
 
-        StateChanged?.Invoke();
+        Commit(new ActionInFlight
+        {
+            Actor = _player,
+            Target = target,
+            Name = attack.Name,
+            DamageType = attack.DamageType,
+            BaseDamage = attack.BaseDamage,
+            Timing = attack.Timing,
+            Tags = AttackTags(attack.DamageType, attack.Timing),
+        });
+
         return true;
     }
 
@@ -202,68 +295,166 @@ public sealed class CombatEncounter
         if (!IsActive || !enemy.IsAlive || enemy.AbilityIds.Count == 0)
             return;
 
+        _recovery.Remove(enemy);
+
+        // Stunned or Frozen: nothing at all. Feared: it will not attack, and with no positioning
+        // to flee to, hesitating is what Fear means (docs/statuses.md §3.3). Either way it
+        // re-checks shortly rather than being dropped from the loop forever.
+        if (!CanAct(enemy))
+        {
+            _recovery[enemy] = _tick.Schedule(CombatTuning.StatusTickIntervalTicks, () => BeginEnemyDecision(enemy));
+            return;
+        }
+
         var abilityId = enemy.AbilityIds[_rng.NextInt(0, enemy.AbilityIds.Count)];
         var ability = _abilities.GetById(abilityId);
-        var executeIn = Math.Max(1, ability.Timing.TimeToImpactTicks);
-        var executeTick = _tick.CurrentTick + executeIn;
 
-        _intents[enemy] = new EnemyIntent { Attacker = enemy, Ability = ability, ExecuteTick = executeTick };
-        _enemyPending[enemy] = _tick.Schedule(executeIn, () => ResolveEnemyAttack(enemy, ability));
+        Commit(new ActionInFlight
+        {
+            Actor = enemy,
+            Target = _player,
+            Name = ability.Name,
+            DamageType = ability.DamageType,
+            BaseDamage = ability.BaseValue,
+            Timing = ability.Timing,
+            Tags = AttackTags(ability.DamageType, ability.Timing),
+            Ability = ability,
+        });
 
         Log($"{enemy.Name} begins {ability.Name}!");
-        var tags = AttackTags(ability.DamageType, ability.Timing);
-        Publish(GameEvents.ActionQueued, source: Id(enemy), target: SelfId, tags: tags);
-        Publish(GameEvents.ActionTelegraphed, source: Id(enemy), target: SelfId, tags: tags);
+    }
+
+    // --- The action lifecycle -----------------------------------------------
+    //
+    // QUEUE → TELEGRAPH → WINDUP → EXECUTION → RECOVERY. Telegraph and windup are separate
+    // scheduler states rather than one collapsed time-to-impact, which is what makes
+    // "interrupt during windup" expressible at all (GDD §5.2). Total time to impact is
+    // unchanged: telegraph + windup, exactly as before.
+
+    private void Commit(ActionInFlight action)
+    {
+        _inFlight[action.Actor] = action;
+
+        Publish(GameEvents.ActionQueued, Id(action.Actor), Id(action.Target), tags: action.Tags);
+
+        var telegraph = Math.Max(0, action.Timing.TelegraphTicks);
+        if (telegraph == 0)
+        {
+            // No telegraph: the action is already committed and swinging. Ambushes and instant
+            // moves land here, and they are correspondingly harder to answer.
+            EnterWindup(action);
+        }
+        else
+        {
+            action.Phase = ActionPhase.Telegraph;
+            action.PhaseEndsTick = _tick.CurrentTick + telegraph;
+            action.Scheduled = _tick.Schedule(telegraph, () => EnterWindup(action));
+            Publish(GameEvents.ActionTelegraphed, Id(action.Actor), Id(action.Target), tags: action.Tags);
+        }
+
         StateChanged?.Invoke();
     }
 
-    private void ResolveEnemyAttack(Combatant enemy, AbilityDefinition ability)
+    private void EnterWindup(ActionInFlight action)
     {
-        _intents.Remove(enemy);
-        _enemyPending.Remove(enemy);
-        if (!IsActive || !enemy.IsAlive)
+        if (!IsActive || !_inFlight.TryGetValue(action.Actor, out var current) || !ReferenceEquals(current, action))
+            return;
+        if (!action.Actor.IsAlive)
+        {
+            _inFlight.Remove(action.Actor);
+            return;
+        }
+
+        var windup = Math.Max(1, action.Timing.WindupTicks);
+        action.Phase = ActionPhase.Windup;
+        action.PhaseEndsTick = _tick.CurrentTick + windup;
+        action.Scheduled = _tick.Schedule(windup, () => Execute(action));
+
+        StateChanged?.Invoke();
+    }
+
+    private void Execute(ActionInFlight action)
+    {
+        if (!IsActive || !_inFlight.TryGetValue(action.Actor, out var current) || !ReferenceEquals(current, action))
             return;
 
-        if (_player.IsAlive)
+        _inFlight.Remove(action.Actor);
+
+        var attacker = action.Actor;
+        var target = attacker.Team == CombatTeam.Enemy ? _player : FirstAliveEnemy();
+
+        if (!attacker.IsAlive || target is null)
+            return;
+
+        if (target.IsAlive)
         {
-            var result = _calculator.Resolve(enemy, _player, ability.DamageType, ability.BaseValue, _tick.CurrentTick);
-            ApplyResult(enemy, _player, ability.Name, result, AttackTags(ability.DamageType, ability.Timing));
-            if (!_player.IsAlive)
+            var result = _calculator.Resolve(attacker, target, action.DamageType, action.BaseDamage, _tick.CurrentTick);
+            ApplyResult(attacker, target, action.Name, result, action.Tags);
+
+            if (!target.IsAlive)
             {
-                Publish(GameEvents.Killed, source: Id(enemy), target: SelfId);
-                Publish(GameEvents.Defeated, source: SelfId, target: Id(enemy));
-                EndCombat(CombatResult.Defeat);
-                return;
+                Publish(GameEvents.Killed, source: Id(attacker), target: Id(target));
+                Publish(GameEvents.Defeated, source: Id(target), target: Id(attacker));
+
+                if (target.Team == CombatTeam.Player)
+                {
+                    EndCombat(CombatResult.Defeat);
+                    return;
+                }
+
+                _defeatedEnemies.Add(target);
+                Log($"{target.Name} is defeated!");
+                CancelActionsOf(target);
+                if (_enemies.All(e => !e.IsAlive))
+                {
+                    EndCombat(CombatResult.Victory);
+                    return;
+                }
             }
         }
 
-        var recovery = Math.Max(1, ability.Timing.RecoveryTicks);
-        _enemyPending[enemy] = _tick.Schedule(recovery, () => BeginEnemyDecision(enemy));
+        // Enemies self-schedule their next decision; the player's tempo is their ReadyTick.
+        if (attacker.Team == CombatTeam.Enemy && attacker.IsAlive)
+        {
+            var recovery = Math.Max(1, action.Timing.RecoveryTicks);
+            _recovery[attacker] = _tick.Schedule(recovery, () => BeginEnemyDecision(attacker));
+        }
     }
 
-    private void ResolvePlayerAttack(AttackProfile attack)
+    /// <summary>
+    /// Cuts an action short. Returns false if the combatant has nothing committed.
+    ///
+    /// <para>This is the capability the telegraph/windup split exists to enable — Stun, Psionic's
+    /// Overload and the interrupt family all land here in E2b/E3. The <c>phase</c> tag on
+    /// <see cref="GameEvents.ActionInterrupted"/> lets content distinguish "stopped them before
+    /// they swung" from "stopped them mid-swing".</para>
+    /// </summary>
+    public bool Interrupt(Combatant actor, string reason = "interrupted")
     {
-        _playerPending = null;
-        if (!IsActive)
-            return;
+        if (!IsActive || !_inFlight.TryGetValue(actor, out var action))
+            return false;
 
-        var target = FirstAliveEnemy();
-        if (target is null)
-            return;
+        _inFlight.Remove(actor);
+        if (action.Scheduled is not null)
+            _tick.Cancel(action.Scheduled.Id);
 
-        var result = _calculator.Resolve(_player, target, attack.DamageType, attack.BaseDamage, _tick.CurrentTick);
-        ApplyResult(_player, target, attack.Name, result, AttackTags(attack.DamageType, attack.Timing));
-
-        if (!target.IsAlive)
+        var tags = new HashSet<string>(action.Tags, StringComparer.OrdinalIgnoreCase)
         {
-            _defeatedEnemies.Add(target);
-            Log($"{target.Name} is defeated!");
-            Publish(GameEvents.Killed, source: SelfId, target: Id(target));
-            Publish(GameEvents.Defeated, source: Id(target), target: SelfId);
-            CancelEnemy(target);
-            if (_enemies.All(e => !e.IsAlive))
-                EndCombat(CombatResult.Victory);
+            action.Phase == ActionPhase.Telegraph ? "telegraph" : "windup",
+        };
+
+        Log($"{actor.Name}'s {action.Name} is {reason}!");
+        Publish(GameEvents.ActionInterrupted, source: Id(actor), target: Id(action.Target), tags: tags);
+
+        // The interrupted actor still pays recovery — being stopped is not free tempo.
+        if (actor.Team == CombatTeam.Enemy && actor.IsAlive)
+        {
+            var recovery = Math.Max(1, action.Timing.RecoveryTicks);
+            _recovery[actor] = _tick.Schedule(recovery, () => BeginEnemyDecision(actor));
         }
+
+        StateChanged?.Invoke();
+        return true;
     }
 
     // --- Shared -------------------------------------------------------------
@@ -281,9 +472,14 @@ public sealed class CombatEncounter
         _player.Stamina.Reduce(staminaCost);
         var until = _tick.CurrentTick + (isBlock ? CombatTuning.BlockDurationTicks : CombatTuning.DodgeDurationTicks);
         if (isBlock)
+        {
             _player.BlockUntilTick = until;
+            _player.BlockStartTick = _tick.CurrentTick;   // the Perfect Block window starts here
+        }
         else
+        {
             _player.DodgeUntilTick = until;
+        }
 
         Log($"You {verb}.");
         Publish(GameEvents.ResourceSpent, source: SelfId, amount: staminaCost,
@@ -293,34 +489,46 @@ public sealed class CombatEncounter
     }
 
     private void ApplyResult(
-        Combatant attacker, Combatant target, string attackName, DamageResult result, HashSet<string> tags)
+        Combatant attacker, Combatant target, string attackName, HitResult result, HashSet<string> tags)
     {
         var source = Id(attacker);
         var victim = Id(target);
+
+        LastHit = result;
+        HitResolved?.Invoke(result);
 
         // The attack happened regardless of how it landed — this is what MoveExecuted means, and
         // it is the single most-referenced event in shipped content (18 hooks).
         Publish(GameEvents.MoveExecuted, source, victim, result.Amount, tags);
         Publish(GameEvents.ActionResolved, source, victim, result.Amount, tags);
 
-        if (result.Dodged)
+        // `Blocked` is raised from the *defender's* perspective (source is who blocked) and for
+        // BOTH block outcomes (D-06 §6.2). Hooking on-block affixes to a landed hit instead would
+        // mean a *perfect* block produced no retaliation — punishing the better play.
+        if (result.Blocked)
         {
-            Log($"{target.Name} dodges {attacker.Name}'s {attackName}!");
-            Publish(GameEvents.Dodged, source: victim, target: source, tags: tags);
+            tags.Add("blocked");
+            if (result.PerfectBlock)
+                tags.Add("perfect");
+            Publish(GameEvents.Blocked, source: victim, target: source, amount: result.Amount, tags: tags);
+        }
+
+        if (result.Avoided)
+        {
+            var how = result.PerfectBlock ? "blocks perfectly" : "dodges";
+            Log($"{target.Name} {how} {attacker.Name}'s {attackName}!");
+
+            // Dodged is the only avoidance event in E0's vocabulary; E1 does not widen it.
+            // HitAvoided arrives in E3 with the rest of §3.1.
+            if (result.Dodged)
+                Publish(GameEvents.Dodged, source: victim, target: source, tags: tags);
+
             StateChanged?.Invoke();
             return;
         }
 
         if (result.Crit)
             tags.Add("critical");
-        if (result.Blocked)
-        {
-            tags.Add("blocked");
-            // Raised from the *defender's* perspective: source is who blocked, target is who was
-            // blocked. Exploding Kneecaps' Guard expression detonates "against the attacker",
-            // so the attacker has to be reachable from the event.
-            Publish(GameEvents.Blocked, source: victim, target: source, amount: result.Amount, tags: tags);
-        }
 
         target.Health.Reduce(result.Amount);
 
@@ -330,6 +538,11 @@ public sealed class CombatEncounter
         var suffix = (result.Crit ? " (crit!)" : string.Empty) + (result.Blocked ? " (blocked)" : string.Empty);
         Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{suffix}. " +
             $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
+
+        // Ailments resolve LAST and from the damage that actually landed in each lane — so the
+        // target's lane resistance reduces the ailment with the same number that reduced the hit
+        // (docs/damage-and-defense.md §3.2, stage 26). No second calculation, no second stat.
+        ApplyLaneAilments(attacker, target, result);
 
         StateChanged?.Invoke();
     }
@@ -341,7 +554,6 @@ public sealed class CombatEncounter
         IsActive = false;
 
         CancelAll();
-        _intents.Clear();
 
         Log(result == CombatResult.Victory ? "Victory!" : "You have been defeated.");
         Publish(GameEvents.EncounterEnded, source: SelfId, amount: _defeatedEnemies.Count,
@@ -361,6 +573,27 @@ public sealed class CombatEncounter
                 combatant.Stamina.Restore(CombatTuning.StaminaRegenAmount);
             StateChanged?.Invoke();
             ScheduleStaminaRegen();
+        });
+    }
+
+    /// <summary>
+    /// Advances every status on the shared clock.
+    ///
+    /// <para>Statuses ride one periodic sweep rather than each scheduling itself, so ordering
+    /// stays deterministic under a seed — twenty poison stacks resolving in registration order
+    /// beats twenty independent timers racing.</para>
+    /// </summary>
+    private void ScheduleStatusTick()
+    {
+        if (Statuses is null)
+            return;
+
+        _statusPending = _tick.Schedule(CombatTuning.StatusTickIntervalTicks, () =>
+        {
+            if (!IsActive)
+                return;
+            Statuses.Advance(Combatants.Where(c => c.IsAlive).ToList());
+            ScheduleStatusTick();
         });
     }
 
@@ -412,30 +645,189 @@ public sealed class CombatEncounter
             timing.TimeToImpactTicks >= CombatTuning.HeavyTimeToImpactTicks ? "heavy" : "light",
         };
 
-    private Combatant? FirstAliveEnemy() => _enemies.FirstOrDefault(e => e.IsAlive);
+    // --- Statuses -----------------------------------------------------------
 
-    private void CancelEnemy(Combatant enemy)
+    /// <summary>
+    /// Applies whatever ailments the attacker's per-lane chances call for, sized by the damage
+    /// that landed in that lane.
+    ///
+    /// <para>E1 left the application *chances* with no source — no affix grants them until E5.
+    /// The plumbing exists so the magnitude rule is pinned now: an ailment is worth a fraction of
+    /// the post-mitigation damage in its own lane, which is why resistance reduces both with one
+    /// number.</para>
+    /// </summary>
+    private void ApplyLaneAilments(Combatant attacker, Combatant target, HitResult result)
     {
-        if (_enemyPending.TryGetValue(enemy, out var pending))
+        if (Statuses is null || result.Amount <= 0)
+            return;
+
+        foreach (var packet in result.Packets)
         {
-            _tick.Cancel(pending.Id);
-            _enemyPending.Remove(enemy);
+            if (packet.Lane is not { } lane || packet.Amount <= 0)
+                continue;
+
+            var chance = attacker.AilmentChanceFor(lane);
+            if (chance <= 0 || _rng.NextDouble() >= chance)
+                continue;
+
+            var statusId = AilmentForLane(lane);
+            if (statusId is null || !Statuses.Definitions.TryGetById(statusId, out var definition))
+                continue;
+
+            var magnitude = definition.Magnitude.Basis == MagnitudeBasis.LaneDamage
+                ? packet.Amount * definition.Magnitude.Coefficient
+                : definition.Magnitude.Coefficient;
+
+            ApplyStatus(target, statusId, Id(attacker), magnitude);
+        }
+    }
+
+    /// <summary>
+    /// The signature ailment of each lane — the test for whether a lane earns its place
+    /// (docs/damage-and-defense.md §4.1). Hard-coded rather than data because it *is* the lane
+    /// vocabulary: a lane without an ailment identity should not exist.
+    /// </summary>
+    private static string? AilmentForLane(string lane) => lane switch
+    {
+        DamageLanes.Physical => "status.bleed",
+        DamageLanes.Heat => "status.burn",
+        DamageLanes.Toxin => "status.poison",
+        DamageLanes.Cold => "status.chill",
+        DamageLanes.Charge => "status.shock",
+        DamageLanes.Corrosion => "status.corroded",
+        _ => null,
+    };
+
+    /// <summary>
+    /// Whether a combatant may act at all, and with what. Stun and Freeze stop everything;
+    /// Fear forbids attacks specifically (it changes *what* the target does rather than
+    /// stopping it, which is what makes it a soft control without positioning); Silence
+    /// forbids spells.
+    /// </summary>
+    public bool CanAct(Combatant combatant, string actionTag = "attack")
+    {
+        if (Statuses is null)
+            return true;
+
+        if (Statuses.Has(combatant, "status.stun") || Statuses.Has(combatant, "status.freeze"))
+            return false;
+
+        if (actionTag == "attack" && Statuses.Has(combatant, "status.fear"))
+            return false;
+
+        if (actionTag == "spell" && Statuses.Has(combatant, "status.silence"))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Applies a status through the controller, publishing whatever the attempt produced. The
+    /// controller decides whether a control actually lands; combat only reports it.
+    /// </summary>
+    public ControlOutcome ApplyStatus(Combatant target, string statusId, string sourceId, double magnitude = 0)
+    {
+        if (Statuses is null)
+            return ControlOutcome.Ungated;
+
+        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude);
+
+        if (outcome == ControlOutcome.Applied)
+            Log($"{target.Name} is affected by {Statuses.Find(target, statusId)?.Definition.Name ?? statusId}.");
+
+        StateChanged?.Invoke();
+        return outcome;
+    }
+
+    /// <summary>
+    /// A damage-over-time tick. Raises <c>DamageTaken</c> but deliberately <b>never</b>
+    /// <c>HitLanded</c>/<c>MoveExecuted</c> — a Poison tick is not a hit, so it cannot proc
+    /// thorns. That single rule kills an entire class of DoT-driven proc loops
+    /// (docs/damage-and-defense.md §6.3).
+    /// </summary>
+    private void OnStatusTick(Combatant target, StatusInstance instance)
+    {
+        if (!IsActive || instance.Magnitude <= 0)
+            return;
+
+        var amount = (int)Math.Round(instance.Magnitude * instance.Stacks, MidpointRounding.AwayFromZero);
+        if (amount <= 0)
+            return;
+
+        target.Health.Reduce(amount);
+
+        var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ailment", instance.Id,
+        };
+        if (instance.Definition.Lane is { } lane)
+            tags.Add(lane);
+
+        Log($"{target.Name} suffers {amount} from {instance.Definition.Name}. " +
+            $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
+
+        Publish(GameEvents.DamageTaken, source: Id(target), target: instance.SourceId, amount: amount, tags: tags);
+
+        if (!target.IsAlive)
+        {
+            Publish(GameEvents.Defeated, source: Id(target), target: instance.SourceId);
+            if (target.Team == CombatTeam.Player)
+            {
+                EndCombat(CombatResult.Defeat);
+            }
+            else
+            {
+                _defeatedEnemies.Add(target);
+                Log($"{target.Name} is defeated!");
+                CancelActionsOf(target);
+                if (_enemies.All(e => !e.IsAlive))
+                    EndCombat(CombatResult.Victory);
+            }
         }
 
-        _intents.Remove(enemy);
+        StateChanged?.Invoke();
+    }
+
+    private Combatant? FirstAliveEnemy() => _enemies.FirstOrDefault(e => e.IsAlive);
+
+    /// <summary>Drops a combatant's in-flight action and recovery timer — used on death.</summary>
+    private void CancelActionsOf(Combatant combatant)
+    {
+        if (_inFlight.TryGetValue(combatant, out var action))
+        {
+            if (action.Scheduled is not null)
+                _tick.Cancel(action.Scheduled.Id);
+            _inFlight.Remove(combatant);
+        }
+
+        if (_recovery.TryGetValue(combatant, out var pending))
+        {
+            _tick.Cancel(pending.Id);
+            _recovery.Remove(combatant);
+        }
     }
 
     private void CancelAll()
     {
-        foreach (var pending in _enemyPending.Values)
+        foreach (var action in _inFlight.Values)
+            if (action.Scheduled is not null)
+                _tick.Cancel(action.Scheduled.Id);
+        _inFlight.Clear();
+
+        foreach (var pending in _recovery.Values)
             _tick.Cancel(pending.Id);
-        _enemyPending.Clear();
-        if (_playerPending is not null)
-            _tick.Cancel(_playerPending.Id);
-        _playerPending = null;
+        _recovery.Clear();
+
         if (_regenPending is not null)
             _tick.Cancel(_regenPending.Id);
         _regenPending = null;
+
+        if (_statusPending is not null)
+            _tick.Cancel(_statusPending.Id);
+        _statusPending = null;
+
+        // Resolve escalation is per-encounter by design, so it goes with everything else.
+        Statuses?.Clear();
     }
 
     private void Log(string message) => Logged?.Invoke(message);

@@ -85,9 +85,87 @@ below** by putting statuses and the damage pipeline in front of it. Read the ent
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0 done** → E1 hit pipeline → E2 statuses → E3 effect-vocabulary
-upgrade → E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes →
-E6 tools → E7 Overreach.
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → E3 effect-vocabulary upgrade →
+E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
+E7 Overreach.
+
+### ✅ E2 shipped — lifecycle split, then statuses
+
+`dotnet test` → **519 passing** (was 493), build 0 warnings. Not committed.
+
+**E2a — the telegraph/windup split.** GDD §5.2 called this "the riskiest single change in the
+combat roadmap"; it landed with **zero existing tests changed**, because total time-to-impact is
+identical. `ActionInFlight` now unifies player and enemy actions on one model, `ActionPhase`
+distinguishes Telegraph from Windup, and `Interrupt(actor)` cuts an action and **tags which
+phase it cut** — so content can tell "stopped them before they swung" from "stopped them
+mid-swing". That distinction is the entire reason the split exists.
+
+**E2b — statuses.** `StatusDefinition` + `StatusController` + **27 status definitions**: the 14
+core (D-09) plus **13 of the 14 previously-dangling authored ids**. Every one is data — Chill is
+literally `{ key: combat.windup.mult, value: 1.25 }` — which is why 27 statuses cost roughly what
+3 would. `ContentValidator` now **proves every `applyStatus` in shipped content resolves**, so
+the fourteen-dangling-ids situation cannot recur.
+
+**Two real bugs found by the tests, both fixed:**
+- **Control buildup never decayed** when the target had no active status — i.e. exactly the case
+  that matters, part-way to a Stun. The decay was nested under the status loop.
+- **DoTs ticked one time short.** A `duration 60, interval 15` Burn ticked three times, not four,
+  because expiry pre-empted the final tick. Authored numbers should mean what they look like.
+
+**Resolve escalation is linear, not compounding** — +25% *of base* per landed control
+(100 → 125 → 150 → 175). Compounding reaches 9× after ten controls, which stops being a curve and
+becomes a wall.
+
+**Still inert, deliberately:** `status.recalled_move` stores a Move, so **Mnemonic stays dark
+until E4**. `ContentValidator.KnownUnimplementedStatuses` holds exactly that one id — delete the
+allowlist when `MoveDefinition` lands.
+
+**Ailment application chances have no source yet** (E5 affixes grant them), so ailments do not
+fire in play. The plumbing and the magnitude rule are pinned: an ailment is a fraction of the
+*post-mitigation* damage in its own lane, so lane resistance reduces hit and ailment with one
+number.
+
+### ✅ E1 shipped — the hit pipeline
+
+`dotnet test` → **493 passing** (was 471), build 0 warnings. Not committed.
+
+- **`CombatCalculator` is now a thin façade over `HitPipeline`.** Resolution is an ordered,
+  traced sequence over `Packet`s. The old `(DamageType, double)` entry point survives only as the
+  D-18 bridge and is deleted in E4.
+- **Two bugs found in the design while building it**, both recorded in the docs:
+  - **Crit ordering contradicted its own rationale.** §3.2 said "crit multiplies base+flat" but
+    the stage list had CRIT at 10 and FLAT ADDED at 11 — so crit would have ignored attribute
+    scaling. Order is now flat → crit → increased.
+  - **Attribute scaling was applied per packet**, so a hybrid hit got the STR bonus twice and
+    adding a 1-damage heat rider was free damage. It is now granted once per hit and split by
+    share. Found by rendering a worked trace, not by a test — worth doing again in E2/E3.
+- **`ArmourK = 1`** (D-27). Iron armour goes 89% → 53% against a light hit; the `max(1, …)` cliff
+  is gone. Recalibrate in C2.
+- **Perfect Block is live.** Blocking within 4 ticks of impact negates the hit and still raises
+  `Blocked`, so on-block hooks fire on both outcomes (D-06).
+- **`ArmorProfile.Resistances` is keyed by LANE, not damage-type name.** `"Slashing": 0.15`
+  silently resists nothing now; `ContentValidator` rejects it at load and a test pins the runtime
+  behaviour so the two cannot disagree.
+- **The Goblin Brute has vulnerabilities** (`Crushing 1.25, Slashing 0.85`) — the first live
+  content for D-02, and what makes "swap to the weapon that counters it" real.
+- **The Hit Log is wired** to `CombatEncounter.HitResolved` / `LastHit`, surfaced via
+  `GameRoot.LastHitLog` and a `ShowHitLog` toggle (off by default — seven lines a swing would
+  drown the narration). **Needs a visual check in the editor.**
+
+Sample trace:
+```
+Flaming Sword — You -> Frost Drake
+  Packets       Slashing 80 · Slashing/heat 20
+  Scaling       attributes  100 → 105
+  Crit          no (50% chance)
+  Armour        Slashing — armour 14.4 vs 84 → −15%  84 → 71.71
+  Resistance    physical 30%  71.71 → 50.2
+  Vulnerability Slashing ×1.2  50.2 → 60.23
+  Armour        Slashing/heat — armour 14.4 vs 21 → −41%  21 → 12.46
+  Resistance    heat 60%  12.46 → 4.98
+  Vulnerability Slashing/heat ×1.2  4.98 → 5.98
+  Applied       66 Slashing
+```
 
 ### ✅ E0 shipped — combat is on the bus
 

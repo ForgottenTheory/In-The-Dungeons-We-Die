@@ -1,6 +1,6 @@
 # Worked Examples — Builds, Tools, and Resolution Traces
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > Proves the architecture composes. All materials are **real entries from `game/data/materials/`**;
 > all property values are illustrative but plausible. Affix numbers are placeholders.
 > Catalog references `[n]` point at `effect-catalog.md`.

@@ -40,7 +40,7 @@ Ordered so each step is testable before the next:
 ## 🔜 Next — the Move system
 **The largest gap in the game: no class currently has a class ability.** Bases contribute growth, gauges and channels but no moves, so builds compose without playing differently. A slice plan (M0–M6) is in `HANDOFF.md`, unapproved.
 
-**✅ E0 done** — `CombatEncounter` is on the event bus and `GameRoot` owns the bus + rule engine. Next is E1, the hit pipeline. See `docs/effect-foundation.md` §10.
+**✅ E0 + E1 + E2 done** — combat is on the event bus; damage resolves through the traced packet pipeline; telegraph and windup are separate scheduler states; 27 statuses and Resolve are live. Next is **E3**: the effect-vocabulary upgrade (`effects[]`, target selectors, proc safety, scoped modifiers). See `docs/effect-foundation.md` §10.
 
 ## Later (deferred; roughly by dependency)
 - ⬜ **Combat depth**: status effects; class abilities + Mana spells; multi-enemy + targeting; interrupts; suffix combat rule-hooks; positioning.

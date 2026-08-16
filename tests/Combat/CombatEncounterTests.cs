@@ -62,11 +62,31 @@ public class CombatEncounterTests
         var player = Player(hp: 100, attrs: Attrs(con: 5));
         enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
 
+        // Guard raised at tick 5, impact at 16 — outside the 4-tick Perfect Block window, so
+        // this is ordinary mitigation.
+        tick.Advance(5);
+        enc.Block();
+        tick.Advance(11);
+
+        // 6 + STR3 = 9; armour 1.5 → 1.5/(1.5+9) = 14.3% → 7.71; block ×0.4 = 3.09 → 3.
+        Assert.Equal(97, player.Health.Current);
+    }
+
+    [Fact]
+    public void BlockingInsideThePerfectWindow_NegatesTheHitEntirely()
+    {
+        var (enc, tick) = Build();
+        var player = Player(hp: 100, attrs: Attrs(con: 5));
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+
+        // Guard raised at tick 15, impact at 16 — one tick, well inside the window. Blocking at
+        // the last possible moment is precise blocking, and D-06 makes that avoidance rather
+        // than mitigation: it is what gives the Bastion "precise blocks refund Guard".
         tick.Advance(15);
         enc.Block();
         tick.Advance(1);
 
-        Assert.Equal(97, player.Health.Current); // 7.5 * 0.4 = 3
+        Assert.Equal(100, player.Health.Current);
     }
 
     [Fact]

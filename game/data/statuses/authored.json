@@ -1,0 +1,110 @@
+[
+  // The status ids that shipped prefix/suffix content ALREADY references (docs/statuses.md §3.5).
+  //
+  // Before E2 all fourteen landed in TriggerRuleEngine.Unhandled — authored, validated, and
+  // completely inert. Thirteen go live here; `status.recalled_move` is the exception, because it
+  // stores a Move to replay and the Move system is E4. That is a dated dependency now rather
+  // than a mystery.
+  //
+  // Most are three-to-five lines, which is the whole argument for the data contract: a marker
+  // with a duration is not worth a C# class.
+
+  {
+    "id": "status.toxin", "name": "Toxin", "category": "ailment", "lane": "toxin",
+    "tags": ["mech:ailment"],
+    // The Venomous prefix was authored before the roster existed. Rather than ship two
+    // toxin-lane stacking DoTs — the beginning of exactly the sprawl the taxonomy prevents —
+    // this mirrors Poison exactly. Retire it in favour of status.poison when Venomous is revised.
+    "duration_ticks": 300, "tick_interval": 30,
+    "stack_policy": "stack", "max_stacks": 20,
+    "magnitude": { "basis": "laneDamage", "coefficient": 0.08 },
+    "description": "Toxin stacks. An alias of Poison, kept until Venomous is revised."
+  },
+  {
+    "id": "status.planted_charge", "name": "Planted Charge", "category": "state",
+    "tags": ["mech:trigger"],
+    "duration_ticks": 60, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "on_expire": [ { "kind": "areaDamage", "amount": 14 } ],
+    "description": "A charge is counting down. The Explosive prefix set it there."
+  },
+  {
+    "id": "status.feint_ready", "name": "Feint Ready", "category": "state",
+    "tags": ["mech:trigger"],
+    // Marker only. The Trickster cancels a telegraph into something else — which is expressible
+    // at all only because E2a split telegraph from windup.
+    "duration_ticks": 20, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "description": "A telegraph that can still become something else."
+  },
+  {
+    "id": "status.illuminated", "name": "Illuminated", "category": "impairment",
+    "tags": [],
+    "duration_ticks": 120, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "on_apply": [ { "kind": "revealInfo" } ],
+    "description": "Lit up. Cannot hide."
+  },
+  {
+    "id": "status.phased", "name": "Phased", "category": "state",
+    "tags": [],
+    "duration_ticks": 40, "stack_policy": "unique", "max_stacks": 1,
+    // Intangible BOTH ways — the Spectral prefix's drawback is the second line, not a footnote.
+    "while_active": [
+      { "key": "combat.damage_taken.mult", "value": 0.0 },
+      { "key": "combat.damage.mult", "value": 0.0 }
+    ],
+    "description": "Out of phase. Untouchable, and unable to touch anything."
+  },
+  {
+    "id": "status.rooted_growth", "name": "Rooted Growth", "category": "state",
+    "tags": [],
+    "duration_ticks": 200, "stack_policy": "stack", "max_stacks": 10,
+    "while_active": [ { "key": "combat.damage.mult", "value": 1.04, "per_stack": true } ],
+    "description": "Holding ground pays. Moving does not."
+  },
+  {
+    "id": "status.latched", "name": "Latched", "category": "ailment", "lane": "toxin",
+    "tags": ["mech:ailment"],
+    "duration_ticks": 200, "tick_interval": 40,
+    "stack_policy": "unique", "max_stacks": 1,
+    "magnitude": { "basis": "flat", "coefficient": 3 },
+    "description": "Something has attached itself, and it is feeding."
+  },
+  {
+    "id": "status.spreading", "name": "Spreading", "category": "state",
+    "tags": ["mech:trigger"],
+    "duration_ticks": 120, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "description": "Marked to spread. Improper Safety Procedures, as filed."
+  },
+  {
+    "id": "status.dissonance", "name": "Dissonance", "category": "impairment",
+    "tags": [],
+    "duration_ticks": 100, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "description": "Statuses applied nearby come out wrong."
+  },
+  {
+    "id": "status.fault", "name": "Fault", "category": "state",
+    "tags": [],
+    "duration_ticks": 60, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "description": "A fault in the works. Outcomes drift, occasionally upward."
+  },
+  {
+    "id": "status.filed_intent", "name": "Filed Intent", "category": "state",
+    "tags": [],
+    "duration_ticks": 80, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "description": "An action has been declared. Comply, or be penalised."
+  },
+  {
+    "id": "status.liability", "name": "Liability", "category": "state",
+    "tags": [],
+    "duration_ticks": 300, "stack_policy": "stack", "max_stacks": 10,
+    "description": "Accrued liability. Personal, and accepted."
+  },
+  {
+    "id": "status.liability_credit", "name": "Liability Credit", "category": "state",
+    "tags": [],
+    "duration_ticks": 300, "stack_policy": "stack", "max_stacks": 10,
+    "description": "Credit against liability, spendable."
+  }
+
+  // status.recalled_move — NOT AUTHORABLE UNTIL E4. It stores a Move to replay instantly, and
+  // MoveDefinition does not exist yet. The Mnemonic prefix stays inert until then, deliberately.
+]

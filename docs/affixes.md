@@ -1,6 +1,6 @@
 # Item Affixes, Material Genetics & the Crafting Casino
 
-> **DECIDED** — settled by the 26 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
+> **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > **Extends `emergent-item-system.md` §16 (fabrication); does not replace it.** Amends GDD §10.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**
 

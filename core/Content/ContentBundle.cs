@@ -31,6 +31,9 @@ public sealed class ContentBundle
     public DataStore<RealmDefinition> Realms { get; init; } = new();
     public DataStore<ConsumableDefinition> Consumables { get; init; } = new();
     public DataStore<EquipmentDefinition> Equipment { get; init; } = new();
+
+    /// <summary>Statuses (E2). Data-driven — there is no C# class per ailment.</summary>
+    public DataStore<Dungeons.Combat.StatusDefinition> Statuses { get; init; } = new();
     public DataStore<SpeciesDefinition> Species { get; init; } = new();
     public DataStore<BaseClassDefinition> Classes { get; init; } = new();
     public DataStore<PrefixDefinition> Prefixes { get; init; } = new();

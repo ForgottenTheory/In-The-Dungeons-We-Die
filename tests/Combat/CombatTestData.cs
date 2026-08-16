@@ -28,14 +28,21 @@ internal static class CombatTestData
         attack: attack,
         armorProfile: armor);
 
-    public static Combatant Enemy(string name, int hp, AttributeSet attrs, string abilityId, string? loot = "material.goblin_scrap") => new(
+    public static Combatant Enemy(
+        string name, int hp, AttributeSet attrs, string abilityId,
+        string? loot = "material.goblin_scrap",
+        ArmorProfile? armor = null,
+        IReadOnlyDictionary<string, double>? vulnerable = null) => new(
         name, CombatTeam.Enemy,
         new ResourcePool(ResourceType.Health, hp),
         new ResourcePool(ResourceType.Stamina, 100),
         new ResourcePool(ResourceType.Mana, 0),
         new[] { abilityId },
         () => attrs,
-        loot);
+        loot,
+        attack: null,
+        armorProfile: armor,
+        vulnerability: vulnerable);
 
     public static AbilityDefinition Ability(string id, DamageType type, double baseValue, int telegraph, int windup, int recovery, int stamina = 0) => new()
     {

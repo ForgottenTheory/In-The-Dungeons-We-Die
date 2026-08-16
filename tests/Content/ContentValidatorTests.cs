@@ -38,6 +38,7 @@ public class ContentValidatorTests
         Byproducts = Load<ByproductDefinition>("byproducts"),
         NameGrammar = Load<NameWordDefinition>("name_grammar"),
         ModifierKeys = Load<Dungeons.Modifiers.ModifierKeyDefinition>("modifier_keys"),
+        Statuses = Load<StatusDefinition>("statuses"),
         NameFormats = Load<NameFormatDefinition>("name_formats"),
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),

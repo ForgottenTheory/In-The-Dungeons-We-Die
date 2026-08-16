@@ -39,6 +39,7 @@ public static class ContentLoader
         Realms = LoadDefinitions<RealmDefinition>($"{dataRoot}/realms"),
         Consumables = LoadDefinitions<ConsumableDefinition>($"{dataRoot}/consumables"),
         Equipment = LoadDefinitions<EquipmentDefinition>($"{dataRoot}/equipment"),
+        Statuses = LoadDefinitions<Dungeons.Combat.StatusDefinition>($"{dataRoot}/statuses"),
         Species = LoadDefinitions<SpeciesDefinition>($"{dataRoot}/species"),
         Classes = LoadDefinitions<BaseClassDefinition>($"{dataRoot}/classes"),
         Prefixes = LoadDefinitions<PrefixDefinition>($"{dataRoot}/prefixes"),

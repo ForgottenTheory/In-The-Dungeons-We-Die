@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 471 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 519 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
@@ -67,7 +67,7 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 
 ## Combat
 - ✅ Tick-driven `CombatEncounter`: enemy self-scheduling telegraph→execute→recovery; player Attack/Block/Dodge/Wait/UseItem. Block/dodge are timed stances (skill test).
-- ✅ `CombatCalculator`: base→STR/INT scaling→crit→armor (CON + equipped armor)→typed resistance→block/dodge. Resolves by (damageType, baseDamage) so weapon attacks and enemy abilities share the pipeline.
+- ✅ **Hit pipeline** (E1): `Hit`/`Packet`/`DamageLanes`/`DamageAspects` + `HitPipeline` + `HitLog`. Ordered stages — packets → flat/attribute scaling → crit → armour (diminishing, `ArmourK=1`) → per-lane resistance → enemy vulnerability → block → floor. `CombatCalculator` is a thin façade over it. Perfect Block negates; ordinary block mitigates. Every hit emits a stage-by-stage trace.
 - ✅ Player attack is the **equipped weapon's** `AttackProfile` (fallback ability if unarmed). Consumables (Heal) usable in combat, cost tempo.
 - 🟡 Single enemy, single position. Enemies: Goblin Raider, Goblin Brute.
 - ⬜ No positioning, status effects, interrupts, multi-enemy, class abilities, mana spells, auto-combat, suffix combat rule-hooks. Enemy armor = CON only.

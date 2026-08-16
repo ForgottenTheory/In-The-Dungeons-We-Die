@@ -58,8 +58,9 @@ public static class EquipmentResolver
         var props = instance?.Properties ?? definition.BaseProperties;
         var hardness = props.Get(ItemProperties.Hardness);
 
+        // Keyed by DamageLane, not by damage-type name (D-02). Future: derive lane resistances
+        // from instance reactive properties here — insulation → heat/cold, etc.
         var resistances = new Dictionary<string, double>(definition.Armor.Resistances, StringComparer.OrdinalIgnoreCase);
-        // Future: derive typed resistances from instance reactive properties here.
 
         return new ArmorProfile
         {

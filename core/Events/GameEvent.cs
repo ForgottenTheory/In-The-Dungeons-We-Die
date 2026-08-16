@@ -61,6 +61,13 @@ public static class GameEvents
     public const string Healed = "Healed";
     public const string StatusApplied = "StatusApplied";
     public const string StatusExpired = "StatusExpired";
+
+    /// <summary>
+    /// A control attempt failed to land — buildup added but Resolve not crossed, the target was
+    /// inside its immunity window, or a gate status was missing. The hook for
+    /// "when you resist control…" affixes (E2, docs/statuses.md §4.4).
+    /// </summary>
+    public const string ControlResisted = "ControlResisted";
     public const string Killed = "Killed";
     public const string Defeated = "Defeated";
     public const string Moved = "Moved";
@@ -86,7 +93,7 @@ public static class GameEvents
     {
         ActionQueued, ActionTelegraphed, ActionResolved, ActionInterrupted, RecoveryStarted, MoveExecuted,
         DamageDealt, DamageTaken, CriticalLanded, Blocked, Dodged, Healed, StatusApplied, StatusExpired,
-        Killed, Defeated, Moved, ResourceGenerated, ResourceSpent,
+        Killed, Defeated, Moved, ResourceGenerated, ResourceSpent, ControlResisted,
         ItemReceived, ChestOpened, CraftCompleted, CraftFailed, DiscoveryMade, LocationDiscovered,
         RealmEntered, DepthChanged, ExtractionCompleted, EncounterStarted, EncounterEnded,
     };

@@ -85,6 +85,7 @@ public partial class GameRoot : Node
     /// </summary>
     private readonly GameEventBus _events = new();
     private TriggerRuleEngine _ruleEngine = null!;
+    private StatusController _statuses = null!;
 
     private RealmRun? _run;
     private string? _realmCombatLocationId;
@@ -180,10 +181,13 @@ public partial class GameRoot : Node
             new SeededRandom(0xC12AF7));
 
         var combatRng = new SeededRandom(0x0C0FFEE);
-        _encounter = new CombatEncounter(_tick, new CombatCalculator(combatRng), _abilities, combatRng, _events, "ability.strike");
+        _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
+        _encounter = new CombatEncounter(
+            _tick, new CombatCalculator(combatRng), _abilities, combatRng, _events, "ability.strike", _statuses);
         _encounter.Logged += Emit;
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
+        _encounter.HitResolved += OnHitResolved;
 
         // Seed some ore so Smithing is demonstrable (Mining is deferred).
         _stash.Add("material.iron_ore", 10);
@@ -1140,6 +1144,29 @@ public partial class GameRoot : Node
     /// </summary>
     public IReadOnlyList<string> UnhandledHooks =>
         _ruleEngine.Unhandled.Select(u => $"{u.Source}: {u.Kind}").ToList();
+
+    /// <summary>
+    /// Renders the Hit Log into the event log when <see cref="ShowHitLog"/> is on. Off by
+    /// default: the trace is a debugging and Combat-Lab surface, and printing seven lines per
+    /// swing would drown the narration it exists to explain.
+    /// </summary>
+    private void OnHitResolved(HitResult hit)
+    {
+        if (!ShowHitLog)
+            return;
+
+        foreach (var line in hit.Log.Lines)
+            Emit("    " + line);
+    }
+
+    /// <summary>Debug toggle for the per-hit damage trace (docs/damage-and-defense.md §3.3).</summary>
+    public bool ShowHitLog { get; set; }
+
+    /// <summary>The last hit's full trace, for the Combat tab / Combat Lab.</summary>
+    public string LastHitLog =>
+        _encounter.LastHit is null
+            ? "(no hit resolved yet)"
+            : _encounter.LastHit.Log.Render($"Last hit — {_encounter.LastHit.Amount} {_encounter.LastHit.Type}");
 
     private void OnActionCompleted(ActionOutcome outcome)
     {
