@@ -390,9 +390,9 @@ public static class ContentValidator
     /// <summary>Every author-supplied string on a prefix that could smuggle in a Base id.</summary>
     private static IEnumerable<string> PrefixTextFields(PrefixDefinition prefix) =>
         prefix.Tags
-            .Concat(prefix.Rules.Select(r => r.Effect.Text))
+            .Concat(prefix.Rules.SelectMany(r => r.Payload.Select(e => e.Text)))
             .Concat(prefix.Rules.SelectMany(r => r.When.Select(c => c.Text)))
-            .Concat(prefix.Gauge?.Feeds.Select(f => f.Effect.Text) ?? Enumerable.Empty<string>())
+            .Concat(prefix.Gauge?.Feeds.SelectMany(f => f.Payload.Select(e => e.Text)) ?? Enumerable.Empty<string>())
             .Where(t => !string.IsNullOrEmpty(t));
 
     private static void ValidateGauge(
@@ -442,13 +442,33 @@ public static class ContentValidator
                 problems.Add(new("rules", $"{context} uses unknown condition '{condition.Kind}'."));
         }
 
-        if (!Dungeons.Rules.RuleVocabulary.Effects.Contains(rule.Effect.Kind))
-            problems.Add(new("rules", $"{context} uses unknown effect '{rule.Effect.Kind}'."));
+        // Payload, not Effect — a rule may author either the single `effect` or the multi
+        // `effects[]` form, and checking only the first would leave the second unvalidated.
+        if (rule.Payload.Count == 0)
+            problems.Add(new("rules", $"{context} declares no effect."));
 
-        if (Dungeons.Rules.RuleVocabulary.ModifierKeyed.Contains(rule.Effect.Kind)
-            && !modifierKeys.Contains(rule.Effect.Text))
+        foreach (var effect in rule.Payload)
         {
-            problems.Add(new("rules", $"{context} grants unknown modifier key '{rule.Effect.Text}'."));
+            if (!Dungeons.Rules.RuleVocabulary.Effects.Contains(effect.Kind))
+                problems.Add(new("rules", $"{context} uses unknown effect '{effect.Kind}'."));
+
+            if (Dungeons.Rules.RuleVocabulary.ModifierKeyed.Contains(effect.Kind)
+                && !modifierKeys.Contains(effect.Text))
+            {
+                problems.Add(new("rules", $"{context} grants unknown modifier key '{effect.Text}'."));
+            }
+        }
+
+        // Only Anomalous content — won from Overreach — may recurse past the default, and then
+        // by exactly one. Anywhere else, this is someone reaching for a bigger number.
+        if (rule.Proc.MaxDepth > Dungeons.Rules.ProcSafety.MaxDepth)
+        {
+            if (rule.Proc.MaxDepth > Dungeons.Rules.ProcSafety.AnomalousMaxDepth)
+                problems.Add(new("rules",
+                    $"{context} sets proc depth {rule.Proc.MaxDepth}; {Dungeons.Rules.ProcSafety.AnomalousMaxDepth} is the ceiling even for Anomalous affixes."));
+            else if (!context.Contains("anomalous", StringComparison.OrdinalIgnoreCase))
+                problems.Add(new("rules",
+                    $"{context} raises proc depth above the default, which only Anomalous affixes may do."));
         }
 
         if (rule.Chance is < 0 or > 1)
@@ -771,15 +791,17 @@ public static class ContentValidator
         {
             foreach (var rule in rules)
             {
-                var effect = rule.Effect;
-                if (!string.Equals(effect.Kind, Rules.RuleVocabulary.ApplyStatus, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (string.IsNullOrEmpty(effect.Text) || statuses.Contains(effect.Text))
-                    continue;
-                if (KnownUnimplementedStatuses.Contains(effect.Text))
-                    continue;
+                foreach (var effect in rule.Payload)
+                {
+                    if (!string.Equals(effect.Kind, Rules.RuleVocabulary.ApplyStatus, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (string.IsNullOrEmpty(effect.Text) || statuses.Contains(effect.Text))
+                        continue;
+                    if (KnownUnimplementedStatuses.Contains(effect.Text))
+                        continue;
 
-                problems.Add(new("statuses", $"{owner} applies unknown status '{effect.Text}'."));
+                    problems.Add(new("statuses", $"{owner} applies unknown status '{effect.Text}'."));
+                }
             }
         }
 

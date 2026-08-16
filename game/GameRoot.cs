@@ -307,7 +307,7 @@ public partial class GameRoot : Node
 
         sb.AppendLine($"Hooks ({build.Rules.Count})");
         foreach (var rule in build.Rules)
-            sb.AppendLine($"  {rule.Origin,-28} on {rule.Rule.Event} → {rule.Rule.Effect.Kind}");
+            sb.AppendLine($"  {rule.Origin,-28} on {rule.Rule.Event} → {string.Join(" + ", rule.Rule.Payload.Select(e => e.Kind))}");
 
         if (build.Suffix is { } suffix)
         {

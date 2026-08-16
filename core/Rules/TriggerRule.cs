@@ -85,7 +85,33 @@ public sealed class TriggerRule
     /// <summary>All must pass. Empty means "always".</summary>
     public IReadOnlyList<ConditionSpec> When { get; init; } = Array.Empty<ConditionSpec>();
 
+    /// <summary>The single-effect form. Shipped content authors this; both shapes stay valid.</summary>
     public EffectSpec Effect { get; init; } = new();
+
+    /// <summary>
+    /// The multi-effect form (E3).
+    ///
+    /// <para><b>One chance roll, N effects.</b> Before this, "25% chance to Shock <i>and</i>
+    /// restore 8 Stamina" needed two rules with duplicated conditions and <i>independent</i>
+    /// rolls — which is a different mechanic, not a formatting difference.</para>
+    /// </summary>
+    public IReadOnlyList<EffectSpec> Effects { get; init; } = Array.Empty<EffectSpec>();
+
+    /// <summary>
+    /// What this rule actually does — <see cref="Effects"/> when authored, else the single
+    /// <see cref="Effect"/>. Callers should read this and never the two fields directly.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<EffectSpec> Payload =>
+        Effects.Count > 0 ? Effects
+        : string.IsNullOrEmpty(Effect.Kind) ? Array.Empty<EffectSpec>()
+        : new[] { Effect };
+
+    /// <summary>Who the effects act on. Defaults to whoever the triggering event targeted.</summary>
+    public EffectTarget Target { get; init; } = EffectTarget.TriggerTarget;
+
+    /// <summary>Recursion limits. Defaults are the safe ones (`Dungeons.Rules.ProcRules`).</summary>
+    public ProcRules Proc { get; init; } = new();
 
     /// <summary>Ticks before this rule may fire again. 0 means every time.</summary>
     [JsonPropertyName("cooldown_ticks")]
@@ -96,6 +122,31 @@ public sealed class TriggerRule
 
     /// <summary>Player-facing explanation, for the Character Lab and tooltips.</summary>
     public string Description { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// Who a rule's effects act on.
+///
+/// <para>Before E3 an effect had no target selector at all — <c>areaDamage</c> had no way to say
+/// who it hit. Exploding Kneecaps' Guard expression detonates "against the attacker", which is
+/// <see cref="TriggerSource"/>; its Surge expression detonates "around you", which is
+/// <see cref="Self"/>. Same effect kind, different target, and the difference is the mechanic.</para>
+/// </summary>
+public enum EffectTarget
+{
+    /// <summary>Whoever the event happened to. The default.</summary>
+    TriggerTarget,
+
+    /// <summary>Whoever caused the event — the attacker, for anything defensive.</summary>
+    TriggerSource,
+
+    /// <summary>The owner of the rule, whatever the event said.</summary>
+    Self,
+
+    AllEnemies,
+    AllAllies,
+    RandomEnemy,
+    LowestHealthEnemy,
 }
 
 /// <summary>The closed vocabularies content may use. The validator checks against these, so a

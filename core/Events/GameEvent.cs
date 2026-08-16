@@ -18,13 +18,26 @@ namespace Dungeons.Events;
 /// <param name="Tags">Free-form markers a condition can test: <c>heavy</c>, <c>critical</c>,
 /// <c>slashing</c>, <c>spell</c>. Lowercase by convention.</param>
 /// <param name="Values">Secondary numbers, e.g. <c>self_health_fraction</c>.</param>
+/// <param name="ChainId">
+/// The causal chain this belongs to. Null starts a new one. Carried as a bare string rather than
+/// an <c>EffectContext</c> so <c>Dungeons.Events</c> stays dependency-free.
+/// </param>
+/// <param name="Depth">0 for a real action, 1 for a proc, 2 for a proc's proc.</param>
+/// <param name="CanTrigger">
+/// False bars this event from matching any rule at all, whatever its depth. Retaliation damage
+/// and ailment ticks set it, and between them those two cases account for most of the
+/// recursion the design has to survive (docs/effect-foundation.md §6.2).
+/// </param>
 public sealed record GameEvent(
     string Kind,
     string? Source = null,
     string? Target = null,
     double Amount = 0.0,
     IReadOnlySet<string>? Tags = null,
-    IReadOnlyDictionary<string, double>? Values = null)
+    IReadOnlyDictionary<string, double>? Values = null,
+    string? ChainId = null,
+    int Depth = 0,
+    bool CanTrigger = true)
 {
     private static readonly HashSet<string> NoTags = new(StringComparer.OrdinalIgnoreCase);
 

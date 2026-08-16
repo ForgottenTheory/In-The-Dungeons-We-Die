@@ -7,14 +7,25 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`, latest commit **`5bdab2e`** (class combinator).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **459 passing**.
-- **Uncommitted:** `docs/GDD.md` and the doc updates in this handoff. The user declined to commit
-  the GDD; leave that to them.
+- Branch `main`, latest commit **`99cdceb`** (E1 + E2). Before it: `90faf27` (E0),
+  `f55349c` (the effect-foundation design package).
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **532 passing**.
+- ⚠ **Uncommitted: E3a is complete and green in the working tree.** See the E3 section below for
+  the file list. Commit it before starting E3b.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
-  `docs/GDD.md` is the project's GDD.
+  `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
   from their Godot 4.7.1 editor and checks UI visually.
+
+## ⚠️ Godot-side work that has never been run
+Three things were written without being executed, because Godot is not on PATH here. All are
+presentation-only and low risk, but none is verified:
+- **Character Lab "Live hooks" panel** (E0) — fired/unhandled counts + the last six firings,
+  appended to `BuildReport()`.
+- **The Hit Log** (E1) — `GameRoot.LastHitLog` and a `ShowHitLog` toggle, wired but unrendered.
+  Worth deciding whether the Combat tab shows the last trace permanently or behind the toggle.
+- **Crafting bench / Character Lab layout** (pre-existing) — the user has verified Crafting; the
+  Character Lab had an autowrap bug fixed but not re-checked.
 
 ## ⚠️ Before running the game
 **Delete `user://save.json`.** `CharacterBuild` ids are persisted and half the roster was
@@ -25,16 +36,19 @@ retired — `class.hexslinger`, `prefix.frenzied`/`ironbound`/`pyromaniac`,
 
 ## Where we are
 
-Two large systems landed this session, both data-driven and both complete enough to play with.
+**The combat foundation is being built, slice by slice.** Design settled first (27 decisions),
+then E0 → E1 → E2 → E3a. Full plan and rationale: `docs/effect-foundation.md` §10 and §12.
+
+Standing before that, unchanged and not touched by any of it:
 
 **Emergent crafting P1** (`9917d68`) — the universal reaction engine. No recipes; 7 processes,
 the full algebra, potency/integrity, destruction with byproducts, signature registry, naming,
 Reaction Log, pre-commit projection, and a Crafting bench UI. See `docs/emergent-item-system.md`
-for the spec and `DECISIONS.md` D20/D21 for what changed.
+for the spec and `DECISIONS.md` D20/D21.
 
 **The class combinator** (`5bdab2e`) — 15 Bases, 25 Prefixes, 50 Suffixes (10 fully expressed),
-composing into 18,750 builds with none of the combinations authored. Built on three new Core
-mechanisms: an open modifier vocabulary, a game event bus, and declarative trigger rules. See
+composing into 18,750 builds with none of the combinations authored. **Its hooks are now live** —
+E0 put combat on the event bus and E2 gave 13 of its 14 dangling status ids real definitions. See
 `docs/classes.md`.
 
 ### The rules that keep both tractable — do not erode these
@@ -49,28 +63,21 @@ mechanisms: an open modifier vocabulary, a game event bus, and declarative trigg
 
 ---
 
-## Two UI tabs need eyes in the editor
-
-Everything is covered by Core tests **except the Godot UI**, which was written without being run.
-
-- **Crafting bench** — the user has verified this. Looks good.
-- **Character Lab** — a layout bug was found and fixed (autowrapping `Label`s inside an
-  `HBoxContainer` collapse to one character per line; there is now a `Wrapping()` helper with the
-  rule documented). **Re-verify.** Best check: swap the Base from Wizard to Bastion and confirm
-  the diff panel reports the channel flip, Held Spell dropping, Guard appearing, and the growth
-  deltas.
+*(Godot-side verification is listed at the top, under "Godot-side work that has never been run".
+The one Godot detail worth keeping: autowrapping `Label`s inside an `HBoxContainer` collapse to
+one character per line — there is a `Wrapping()` helper with the rule documented.)*
 
 ---
 
-## ✅ THE EFFECT FOUNDATION PACKAGE — **all 26 decisions settled**, nothing built yet
+## ✅ THE EFFECT FOUNDATION PACKAGE — **all 27 decisions settled**; E0–E3a built
 
 A full design package for a **universal gameplay effect vocabulary** (combat, statuses, moves,
-item affixes, profession tools) was written this session. **It supersedes the Move-system plan
-below** by putting statuses and the damage pipeline in front of it. Read the entry doc first:
+item affixes, profession tools). **It supersedes the old M0–M6 Move-system plan**, which has
+been deleted from this file — statuses and the damage pipeline come first. Read the entry doc:
 
 | Doc | Covers |
 |---|---|
-| **`docs/effect-foundation.md`** | **START HERE** — audit, architecture, triggers/conditions/effects, modifiers & stacking, proc safety, tags, build order, ****26 settled decisions** (§12) + §12.1 change log |
+| **`docs/effect-foundation.md`** | **START HERE** — audit, architecture, triggers/conditions/effects, modifiers & stacking, proc safety, tags, build order, **27 settled decisions** (§12) + §12.1 change log |
 | `docs/damage-and-defense.md` | damage types × aspects · the resolution pipeline · defence layers · resistance/penetration/inversion · thorns |
 | `docs/statuses.md` | status taxonomy · **Resolve** (the CC answer) · the status data contract |
 | `docs/moves.md` | the Move model · move modification · the shared Action vocabulary |
@@ -85,13 +92,96 @@ below** by putting statuses and the damage pipeline in front of it. Read the ent
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → E3 effect-vocabulary upgrade →
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a done, b/c next) →
 E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
 E7 Overreach.
 
+### 🔄 E3 — E3a done and **uncommitted**; E3b is the next thing to build
+
+> ⚠ **Uncommitted work in the tree.** E3a is complete and green but not committed — the user was
+> asked and the session ended first. **Commit it before starting E3b**, or the two slices tangle
+> the way E1/E2 did (they had to share a commit because they interleaved in four files).
+>
+> Uncommitted: `core/Rules/EffectContext.cs` (new) · `core/Rules/TriggerRule.cs` ·
+> `core/Rules/TriggerRuleEngine.cs` · `core/Events/GameEvent.cs` ·
+> `core/Content/ContentValidator.cs` · `game/GameRoot.cs` · `tests/Rules/ProcSafetyTests.cs`
+> (new) · doc updates.
+
+`dotnet test` → **532 passing** (was 519), build 0 warnings.
+
+**E3a — the rule engine upgrade.**
+- **`effects[]`**: one chance roll, N effects. "25% to Shock *and* restore 8 Stamina" was
+  previously two rules with duplicated conditions and *independent* rolls — a different mechanic,
+  not a formatting difference. The legacy single `effect` stays valid, so **no content migrated**;
+  read `rule.Payload`, never `rule.Effect`.
+- **`EffectTarget`**: `TriggerTarget` (default) · `TriggerSource` · `Self` · `AllEnemies` ·
+  `AllAllies` · `RandomEnemy` · `LowestHealthEnemy`. Exploding Kneecaps' Guard expression
+  detonates against the attacker and its Surge expression around you — same effect kind, and the
+  target selector is the whole difference.
+- **Proc safety, complete**: `EffectContext` (chain id, origin, depth, origin tags), depth budget
+  of 2, once-per-chain **on by default**, per-target ICD, `GameEvent.CanTrigger`, and a
+  64-effect-per-chain fuse. Chain ids are **sequential, not GUIDs** — the sim must replay from a
+  seed.
+- **Validator**: proc depth above the default is rejected outside Anomalous content, so "may
+  recurse one level further" stays something you win from Overreach rather than a field anyone
+  can type.
+
+**Two properties worth not breaking:**
+- **Handlers must propagate `invocation.Context`** onto any event they raise. If one forgets, the
+  chain restarts at depth 0 and the entire budget becomes decorative. E3c's handlers are the
+  first real test of this.
+- **`OncePerChain` defaults to true.** Content opts *into* risk; it never opts out of safety by
+  omission.
+
+### E3b — scoped modifier contributions  ← **START HERE**
+
+Decision **D-12**, the one called "highest leverage in the package". Spec:
+`docs/effect-foundation.md` §4.2–4.2.2.
+
+The problem, three ways: `+10 damage **with swords**` (PoE local-vs-global),
+`−12% interval **for Fishing**` (Melvor per-skill), `+8 flat damage to **Melee** moves`. None is
+expressible — `ModifierContribution` is `(Key, Value, Source)` with nowhere to say *when it
+applies*. Without this the registry forks per profession and per weapon class: ~55 keys becomes
+~330.
+
+**What to build:**
+1. `ModifierScope(string Dimension, string Value)`; `ModifierContribution` gains `Scope?`.
+2. `ModifierKeyDefinition` gains `scoped_by` (the dimension a key *requires*) and `danger`.
+3. `ModifierSet.Resolve(key, base, context)` filters non-matching scopes; unscoped always apply.
+4. Stacking modes `diminishing` (`1 − Π(1−x)`) and `highest_only`.
+5. Validator: `danger: true` keys **fail to load without a `max`**; a contribution whose scope
+   dimension ≠ the key's `scoped_by` is rejected at `Add` time.
+
+**The failure mode this introduces, and the guard.** Resolution stops being a pure key lookup, so
+a *wrong* context silently produces a *wrong number* — worse than a missing feature, because
+nothing surfaces it. **Resolving a `scoped_by` key with a context lacking that dimension must
+throw**, not return the unscoped subtotal and not return the baseline. Same bargain
+`ModifierSet.Add` already strikes by throwing on unknown keys. **Do not add a convenience
+overload that defaults the context.**
+
+Eight closed dimensions: `lane` `aspect` `essence` `profession` `move_tag` `form` `item` `status`.
+
+### E3c — the effect handlers
+
+Register handlers so effects stop landing in `Unhandled`: `damage`, `applyStatus`,
+`grantResource`, `heal`, `areaDamage`, `interrupt` at minimum, plus the new condition kinds
+(`targetHasStatus`, `selfHasStatus`, `resourceAbove`/`Below`, `equippedTag`, `hitHasLane`,
+`actionHasTag`). **This is where Galvanic's Charge finally accumulates.**
+
+⚠ **Every handler must propagate `invocation.Context`** onto any event it raises. Forget it once
+and the chain restarts at depth 0, making the whole proc budget decorative. This is the first
+slice where that discipline is actually exercised.
+
+### A method note worth repeating
+
+The two best bugs of E1/E2 were found by **rendering a worked example and reading the numbers**,
+not by a test: attribute scaling applied per packet (so splitting a hit was free damage), and the
+crit ordering contradicting its own spec. Before calling E3 done, wire a real fight with statuses
+and scoped modifiers on and *read the Hit Log*. Cheap, and it has paid twice.
+
 ### ✅ E2 shipped — lifecycle split, then statuses
 
-`dotnet test` → **519 passing** (was 493), build 0 warnings. Not committed.
+`dotnet test` → **519 passing** (was 493). Committed in `99cdceb`.
 
 **E2a — the telegraph/windup split.** GDD §5.2 called this "the riskiest single change in the
 combat roadmap"; it landed with **zero existing tests changed**, because total time-to-impact is
@@ -127,7 +217,7 @@ number.
 
 ### ✅ E1 shipped — the hit pipeline
 
-`dotnet test` → **493 passing** (was 471), build 0 warnings. Not committed.
+`dotnet test` → **493 passing** (was 471). Committed in `99cdceb`.
 
 - **`CombatCalculator` is now a thin façade over `HitPipeline`.** Resolution is an ordered,
   traced sequence over `Packet`s. The old `(DamageType, double)` entry point survives only as the
@@ -169,7 +259,7 @@ Flaming Sword — You -> Frost Drake
 
 ### ✅ E0 shipped — combat is on the bus
 
-`dotnet test` → **471 passing** (was 459), build 0 warnings. Not committed.
+`dotnet test` → **471 passing** (was 459). Committed in `90faf27`.
 
 - **`CombatEncounter` now takes an `IGameEventBus`** and publishes 14 event kinds. **No new
   vocabulary** — only constants that already existed in `GameEvents`. `HitLanded`/`HitAvoided`
@@ -215,61 +305,6 @@ to match — the GDD does not contradict the decisions anywhere.**
   Tests written against the bridge are known throwaway.
 - **`status.recalled_move` cannot be authored until E4** — it stores a Move. Mnemonic stays inert
   until then, deliberately.
-
----
-
-## THE NEXT TASK (superseded — see above): the Move system
-
-This is the largest gap in the game. **No class currently has a class ability** — Bases
-contribute growth, gauges and channels but no moves, so builds compose without playing
-differently. A plan was proposed and discussed but **not approved**; the user stopped to have the
-GDD written. Re-present it before building.
-
-> The effect-foundation package endorses this plan but **reorders it**: statuses before moves,
-> because 14 status ids are already authored and Shield Bash needs Stun to exist.
-
-### The key architectural insight
-A Move's payload is **exactly what a Prefix or Suffix hook already emits**, so a `MoveDefinition`
-is about eight fields rather than the ~25 the brief listed:
-
-```
-MoveDefinition
-  id, name, moveType, tags[]
-  timing        → AbilityTiming        (exists)
-  requires[]    → ConditionSpec[]      (exists)
-  effects[]     → EffectSpec[]         (exists — 12 kinds, dispatch, handlers)
-  costs[]       → {resource, amount}   (new; uniform across stamina/mana/health/gauge)
-  cooldownTicks, targeting, interruptible
-```
-
-One effect vocabulary shared by moves and hooks. `moveType` is a closed enum used for dispatch
-and filtering only — behaviour lives in tags and effects, never a type switch.
-
-### Proposed slices
-
-| # | Slice | Why | Risk |
-|---|---|---|---|
-| **M0** | **Wire combat to the event bus** | ~20 lines: `CombatEncounter` raises `DamageDealt`, `Blocked`, `Dodged`, `ResourceSpent`, `Killed`. **Galvanic starts charging and Exploding Kneecaps starts detonating with no move system at all.** Makes the entire class system observable and de-risks everything after | Very low |
-| M1 | `MoveDefinition` + port the 3 abilities | Data type, validation, tests. No behaviour change | Low |
-| M2 | Moveset composition | Sources with provenance and replacement. **Weapon-granted moves are mandatory** — Fighter's identity is "moveset comes from the weapon". Move Viewer lab | Medium |
-| M3 | Addressable lifecycle | Split time-to-impact into real telegraph/windup phases so "interrupt during windup" is expressible | **Highest** |
-| M4 | Moves in combat | Player casts moves; costs, cooldowns, requirements, effect dispatch | Medium |
-| M5 | Statuses | `applyStatus` has no handler; several moves and suffixes want one | Medium |
-| M6 | Enemy movesets + AI profiles | Replaces uniform-random ability selection with intent | Medium |
-
-**Strong recommendation: do M0 first and standalone.** An hour of work that makes the class
-system visible in a real fight before any moves exist.
-
-### Decisions the user still owes on this
-1. M0 first, standalone?
-2. **`AttackProfile` and `MoveDefinition` overlap and must converge** — an `AttackProfile` is a
-   degenerate Move. Converging touches `EquipmentResolver`, `Combatant`, `CombatCalculator`,
-   `CombatEncounter` and their tests, and amends DECISIONS D8 (whose *intent* survives: combat
-   would read neutral `MoveDefinition`s instead of neutral `AttackProfile`s). Converge in M2
-   (cleaner, riskier) or M4 (safer, temporary duplication)?
-3. Range/positioning — declare `targeting` now and defer `range` entirely, or author range as
-   unused data?
-4. Statuses (M5) before or after enemy AI (M6)?
 
 ---
 

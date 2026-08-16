@@ -7,6 +7,16 @@ namespace Dungeons.Rules;
 public sealed record EffectInvocation(EffectSpec Effect, double Magnitude, GameEvent Trigger, string Source)
 {
     public string Kind => Effect.Kind;
+
+    /// <summary>Who this effect acts on.</summary>
+    public EffectTarget Target { get; init; } = EffectTarget.TriggerTarget;
+
+    /// <summary>
+    /// The causal chain this belongs to. <b>Handlers must propagate it</b> onto any event they
+    /// raise, or the chain restarts at depth 0 and the proc budget means nothing.
+    /// </summary>
+    public EffectContext Context { get; init; } =
+        EffectContext.Origin("detached", string.Empty);
 }
 
 /// <summary>
@@ -38,6 +48,8 @@ public sealed class TriggerRuleEngine : IDisposable
     private readonly List<Registration> _rules = new();
     private readonly Dictionary<string, long> _readyAt = new(StringComparer.Ordinal);
     private readonly List<EffectInvocation> _unhandled = new();
+    private readonly HashSet<string> _firedInChain = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _chainEffectCount = new(StringComparer.Ordinal);
     private IDisposable? _subscription;
 
     public TriggerRuleEngine(IGameEventBus bus, IRandomSource random, Func<long> currentTick)
@@ -55,6 +67,12 @@ public sealed class TriggerRuleEngine : IDisposable
 
     /// <summary>Every effect that fired, in order. Feeds the log and the tests.</summary>
     public List<EffectInvocation> Fired { get; } = new();
+
+    /// <summary>
+    /// Chains stopped by the <see cref="ProcSafety.MaxEffectsPerChain"/> fuse. This is a bug
+    /// surface, not a balance one — shipped content must never appear here, and a test says so.
+    /// </summary>
+    public List<string> Aborted { get; } = new();
 
     public TriggerRuleEngine Register(IEffectHandler handler)
     {
@@ -84,10 +102,20 @@ public sealed class TriggerRuleEngine : IDisposable
     {
         _rules.Clear();
         _readyAt.Clear();
+        _firedInChain.Clear();
+        _chainEffectCount.Clear();
     }
 
     private void OnEvent(GameEvent gameEvent)
     {
+        // An event explicitly barred from triggering — retaliation damage, an ailment tick —
+        // matches nothing. This is rule 4 of proc safety and it is what actually breaks the
+        // thorns→shock→retaliate→thorns loop, well before the depth ceiling is reached.
+        if (!gameEvent.CanTrigger)
+            return;
+
+        var chainId = gameEvent.ChainId ?? NextChainId();
+
         foreach (var registration in _rules.ToList())
         {
             var rule = registration.Rule;
@@ -95,8 +123,26 @@ public sealed class TriggerRuleEngine : IDisposable
             if (!string.Equals(rule.Event, gameEvent.Kind, StringComparison.Ordinal))
                 continue;
 
+            // Depth: a rule may only fire if the event that triggered it is below the ceiling.
+            // Anomalous affixes raise their OWN ceiling by exactly one; nothing removes it.
+            if (gameEvent.Depth >= rule.Proc.MaxDepth)
+                continue;
+
+            // Once-per-chain: kills A→B→A ping-pong even inside the depth budget.
+            var chainKey = chainId + "|" + registration.Source + "|" + rule.Id;
+            if (rule.Proc.OncePerChain && !_firedInChain.Add(chainKey))
+                continue;
+
             var cooldownKey = registration.Source + "|" + rule.Id;
             if (_readyAt.TryGetValue(cooldownKey, out var readyAt) && _currentTick() < readyAt)
+                continue;
+
+            // Per-target internal cooldown. Chosen over PoE-style proc coefficients deliberately:
+            // an ICD is readable in a tooltip ("once every 2s") and a proc coefficient is not.
+            var icdKey = cooldownKey + "|" + (gameEvent.Target ?? string.Empty);
+            if (rule.Proc.IcdTicks > 0
+                && _readyAt.TryGetValue(icdKey, out var targetReadyAt)
+                && _currentTick() < targetReadyAt)
                 continue;
 
             if (!rule.When.All(condition => Evaluate(condition, gameEvent)))
@@ -110,11 +156,45 @@ public sealed class TriggerRuleEngine : IDisposable
 
             if (rule.CooldownTicks > 0)
                 _readyAt[cooldownKey] = _currentTick() + rule.CooldownTicks;
+            if (rule.Proc.IcdTicks > 0)
+                _readyAt[icdKey] = _currentTick() + rule.Proc.IcdTicks;
 
-            Dispatch(new EffectInvocation(
-                rule.Effect, rule.Effect.Magnitude(gameEvent), gameEvent, registration.Source));
+            var context = new EffectContext(
+                chainId,
+                gameEvent.Source ?? registration.Source,
+                registration.Source,
+                gameEvent.Depth + 1,
+                gameEvent.Tags ?? EmptyTags);
+
+            // ONE chance roll, N effects — which is the whole reason `effects[]` exists.
+            foreach (var effect in rule.Payload)
+            {
+                if (_chainEffectCount.GetValueOrDefault(chainId) >= ProcSafety.MaxEffectsPerChain)
+                {
+                    Aborted.Add(chainId);
+                    return;
+                }
+
+                _chainEffectCount[chainId] = _chainEffectCount.GetValueOrDefault(chainId) + 1;
+
+                Dispatch(new EffectInvocation(effect, effect.Magnitude(gameEvent), gameEvent, registration.Source)
+                {
+                    Target = rule.Target,
+                    Context = context,
+                });
+            }
         }
     }
+
+    private static readonly IReadOnlySet<string> EmptyTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    private long _chainCounter;
+
+    /// <summary>
+    /// Chain ids are sequential, not random — the simulation must replay identically from a
+    /// seed, and a GUID here would break that quietly.
+    /// </summary>
+    private string NextChainId() => "chain." + (++_chainCounter);
 
     private void Dispatch(EffectInvocation invocation)
     {
