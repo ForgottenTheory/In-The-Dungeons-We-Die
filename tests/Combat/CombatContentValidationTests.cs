@@ -61,15 +61,22 @@ public class CombatContentValidationTests
     [Fact]
     public void GoblinBrute_HasLongTelegraph_ForReadability()
     {
-        var actors = Load<ActorDefinition>("actors");
         var moves = Load<MoveDefinition>("moves");
 
-        var brute = actors.GetById("actor.goblin_brute");
-        Assert.Equal(12, brute.Attributes.Strength); // AttributeSet deserialized
+        // Post-framework (M2′c) the Brute's strength composes: goblin 7 + brute role +5.
+        var brute = ResolveShipped("actor.goblin_brute");
+        Assert.Equal(12, brute.Attributes.Strength);
         var smash = moves.GetById(brute.Moves[0].Id);
         // The Brute's whole point: a big readable wind-up.
         Assert.True(smash.Timing.TimeToImpactTicks >= 40);
     }
+
+    private static ResolvedActor ResolveShipped(string actorId) =>
+        ActorResolver.Resolve(
+            Load<ActorDefinition>("actors").GetById(actorId),
+            Load<EnemyFamilyDefinition>("enemy_families"),
+            Load<CombatRoleDefinition>("enemy_roles"),
+            Load<AiProfileDefinition>("ai_profiles"));
 
     [Fact]
     public void ShippedActorVulnerabilities_AreValidDamageTypesInRange()
@@ -95,8 +102,9 @@ public class CombatContentValidationTests
     public void TheGoblinBrute_IsSoftToCrushingAndToughAgainstSlashing()
     {
         // The content that makes the Fighter's "swap to the weapon that counters it" identity
-        // real, now that the three physical resistances collapsed into one lane.
-        var brute = Load<ActorDefinition>("actors").GetById("actor.goblin_brute");
+        // real, now that the three physical resistances collapsed into one lane. Post-M2′c the
+        // pair rides role.brute, so it is asserted on the resolved actor.
+        var brute = ResolveShipped("actor.goblin_brute");
 
         Assert.True(brute.Vulnerable["Crushing"] > 1.0);
         Assert.True(brute.Vulnerable["Slashing"] < 1.0);

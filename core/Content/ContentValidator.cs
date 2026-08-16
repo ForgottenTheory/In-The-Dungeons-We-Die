@@ -79,7 +79,8 @@ public static class ContentValidator
         ValidateBases(content.Classes, content.ModifierKeys, problems);
         ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
         ValidateSuffixes(content.Suffixes, content.ModifierKeys, problems);
-        ValidateActors(content.Actors, content.Moves, content.Materials, problems);
+        ValidateActors(content.Actors, content.Moves, content.Materials,
+            content.EnemyFamilies, content.EnemyRoles, content.AiProfiles, problems);
         ValidateMoves(content, problems);
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
@@ -648,53 +649,162 @@ public static class ContentValidator
         DataStore<ActorDefinition> actors,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
         DataStore<MaterialDefinition> materials,
+        DataStore<EnemyFamilyDefinition> families,
+        DataStore<CombatRoleDefinition> roles,
+        DataStore<AiProfileDefinition> aiProfiles,
         List<ContentProblem> problems)
     {
+        // --- The composition layers stand alone first, so a broken shared piece reports once —
+        // not once per actor that references it.
+
+        foreach (var family in families.GetAll())
+        {
+            ValidateLanes(family.Id, "enemy_families", family.Resistances, problems);
+            ValidateVulnerability(family.Id, "enemy_families", family.Vulnerable, problems);
+        }
+
+        foreach (var role in roles.GetAll())
+        {
+            ValidateLanes(role.Id, "enemy_roles", role.Resistances, problems);
+            ValidateVulnerability(role.Id, "enemy_roles", role.Vulnerable, problems);
+            if (role.AiProfile is { } roleProfile && !aiProfiles.Contains(roleProfile))
+                problems.Add(new("enemy_roles", $"{role.Id} references unknown AI profile '{roleProfile}'."));
+        }
+
+        foreach (var profile in aiProfiles.GetAll())
+        {
+            if (profile.AvoidRepeatWeight is < 0 or > 1)
+                problems.Add(new("ai_profiles", $"{profile.Id} avoid_repeat_weight {profile.AvoidRepeatWeight} is outside [0, 1]."));
+
+            foreach (var rule in profile.Rules)
+                ValidateAiRule(profile.Id, "ai_profiles", rule, problems);
+        }
+
         foreach (var actor in actors.GetAll())
         {
+            // --- Layer references, and the fields the layers own -----------------------------
+            var referencesResolve = true;
+            if (actor.Family is { } familyId && !families.Contains(familyId))
+            {
+                problems.Add(new("actors", $"{actor.Id} references unknown family '{familyId}'."));
+                referencesResolve = false;
+            }
+            if (actor.Role is { } roleId && !roles.Contains(roleId))
+            {
+                problems.Add(new("actors", $"{actor.Id} references unknown role '{roleId}'."));
+                referencesResolve = false;
+            }
+            if (actor.AiProfile is { } profileId && !aiProfiles.Contains(profileId))
+            {
+                problems.Add(new("actors", $"{actor.Id} references unknown AI profile '{profileId}'."));
+                referencesResolve = false;
+            }
+
+            if (actor.Family is not null)
+            {
+                // A layered actor authors deltas; an absolute field alongside a family would be
+                // silently treated as one or the other, so it is a load error instead.
+                if (!actor.Attributes.Equals(default(AttributeSet)))
+                    problems.Add(new("actors",
+                        $"{actor.Id} authors absolute attributes AND a family — use attribute_tweaks."));
+                if (actor.Resources.Health != 1 || actor.Resources.Mana != 0 || actor.Resources.Stamina != 0)
+                    problems.Add(new("actors",
+                        $"{actor.Id} authors absolute resources AND a family — use resource_tweaks."));
+            }
+
             foreach (var grant in actor.Moves)
+            {
                 if (!moves.Contains(grant.Id))
+                {
                     problems.Add(new("actors", $"{actor.Id} grants unknown move '{grant.Id}'."));
+                    continue;
+                }
+
+                // Enemies carry no equipment, so an equippedTag requirement can never pass —
+                // the move would sit in the moveset, silently unusable, forever.
+                if (moves.GetById(grant.Id).Requires.Any(c =>
+                        string.Equals(c.Kind, Dungeons.Rules.RuleVocabulary.EquippedTag, StringComparison.OrdinalIgnoreCase)))
+                    problems.Add(new("actors",
+                        $"{actor.Id} grants '{grant.Id}', which requires equipment — enemies cannot satisfy equippedTag."));
+            }
 
             if (actor.Moves.Count == 0)
                 problems.Add(new("actors", $"{actor.Id} has no moves — it would stand there doing nothing."));
 
-            // The AI profile chooses among the actor's own moves, with the shared condition
-            // vocabulary. A rule naming a move the actor doesn't have is dead weight forever.
-            foreach (var rule in actor.Ai)
+            // --- The RESOLVED brain must select from the actor's own moves -------------------
+            // Rules come from the referenced profile plus inline extras; both must land.
+            if (referencesResolve)
             {
-                if (actor.Moves.All(m => !string.Equals(m.Id, rule.Move, StringComparison.Ordinal)))
-                    problems.Add(new("actors", $"{actor.Id} AI selects '{rule.Move}', which the actor does not have."));
+                var resolved = ActorResolver.Resolve(actor, families, roles, aiProfiles);
+                var grantedTags = actor.Moves
+                    .Where(g => moves.Contains(g.Id))
+                    .SelectMany(g => moves.GetById(g.Id).Tags)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                if (rule.Weight <= 0)
-                    problems.Add(new("actors", $"{actor.Id} AI rule for '{rule.Move}' has non-positive weight."));
-
-                foreach (var condition in rule.When)
-                    if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
-                        problems.Add(new("actors", $"{actor.Id} AI uses unknown condition '{condition.Kind}'."));
+                foreach (var rule in resolved.Ai)
+                {
+                    if (!string.IsNullOrEmpty(rule.MoveTag))
+                    {
+                        if (!grantedTags.Contains(rule.MoveTag))
+                            problems.Add(new("actors",
+                                $"{actor.Id} AI matches tag '{rule.MoveTag}', which none of its moves carry."));
+                    }
+                    else if (actor.Moves.All(m => !string.Equals(m.Id, rule.Move, StringComparison.Ordinal)))
+                    {
+                        problems.Add(new("actors", $"{actor.Id} AI selects '{rule.Move}', which the actor does not have."));
+                    }
+                }
             }
+
+            foreach (var rule in actor.Ai)
+                ValidateAiRule(actor.Id, "actors", rule, problems);
 
             if (!string.IsNullOrEmpty(actor.LootItemId) && !materials.Contains(actor.LootItemId))
                 problems.Add(new("actors", $"{actor.Id} drops unknown material '{actor.LootItemId}'."));
 
-            foreach (var lane in actor.Resistances.Keys)
-                if (!DamageLanes.All.Contains(lane))
-                    problems.Add(new("actors",
-                        $"{actor.Id} resists unknown lane '{lane}'. Valid lanes: {string.Join(", ", DamageLanes.All)}."));
+            ValidateLanes(actor.Id, "actors", actor.Resistances, problems);
+            ValidateVulnerability(actor.Id, "actors", actor.Vulnerable, problems);
+        }
+    }
 
-            // Vulnerability is keyed by damage TYPE (D-02) — the one place the three physical
-            // types still matter defensively, so a lane name here is a real mistake.
-            foreach (var (type, multiplier) in actor.Vulnerable)
-            {
-                if (!Enum.TryParse<DamageType>(type, ignoreCase: true, out _))
-                    problems.Add(new("actors",
-                        $"{actor.Id} is vulnerable to unknown damage type '{type}'. Valid: {string.Join(", ", Enum.GetNames<DamageType>())}."));
+    /// <summary>Shape checks a rule carries wherever it lives — profile or inline.</summary>
+    private static void ValidateAiRule(string owner, string category, AiRuleSpec rule, List<ContentProblem> problems)
+    {
+        var hasMove = !string.IsNullOrEmpty(rule.Move);
+        var hasTag = !string.IsNullOrEmpty(rule.MoveTag);
+        if (hasMove == hasTag)
+            problems.Add(new(category, $"{owner} AI rule must set exactly one of move/moveTag."));
 
-                if (multiplier < CombatTuning.MinVulnerability || multiplier > CombatTuning.MaxVulnerability)
-                    problems.Add(new("actors",
-                        $"{actor.Id} vulnerability '{type}' is {multiplier}, outside the allowed " +
-                        $"[{CombatTuning.MinVulnerability}, {CombatTuning.MaxVulnerability}] range."));
-            }
+        if (rule.Weight <= 0)
+            problems.Add(new(category, $"{owner} AI rule for '{rule.Move}{rule.MoveTag}' has non-positive weight."));
+
+        foreach (var condition in rule.When)
+            if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
+                problems.Add(new(category, $"{owner} AI uses unknown condition '{condition.Kind}'."));
+    }
+
+    private static void ValidateLanes(string owner, string category, Dictionary<string, double> resistances, List<ContentProblem> problems)
+    {
+        foreach (var lane in resistances.Keys)
+            if (!DamageLanes.All.Contains(lane))
+                problems.Add(new(category,
+                    $"{owner} resists unknown lane '{lane}'. Valid lanes: {string.Join(", ", DamageLanes.All)}."));
+    }
+
+    /// <summary>Vulnerability is keyed by damage TYPE (D-02) — the one place the three physical
+    /// types still matter defensively, so a lane name here is a real mistake.</summary>
+    private static void ValidateVulnerability(string owner, string category, Dictionary<string, double> vulnerable, List<ContentProblem> problems)
+    {
+        foreach (var (type, multiplier) in vulnerable)
+        {
+            if (!Enum.TryParse<DamageType>(type, ignoreCase: true, out _))
+                problems.Add(new(category,
+                    $"{owner} is vulnerable to unknown damage type '{type}'. Valid: {string.Join(", ", Enum.GetNames<DamageType>())}."));
+
+            if (multiplier < CombatTuning.MinVulnerability || multiplier > CombatTuning.MaxVulnerability)
+                problems.Add(new(category,
+                    $"{owner} vulnerability '{type}' is {multiplier}, outside the allowed " +
+                    $"[{CombatTuning.MinVulnerability}, {CombatTuning.MaxVulnerability}] range."));
         }
     }
 

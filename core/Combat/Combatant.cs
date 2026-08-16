@@ -63,6 +63,10 @@ public sealed class Combatant
     /// <summary>Weighted move selection for enemies and (later) auto-combat. Empty = uniform.</summary>
     public IReadOnlyList<AiRuleSpec> Ai { get; }
 
+    /// <summary>Weight multiplier on whichever move this combatant used last, in [0, 1] (M2′c).
+    /// 1 = indifferent to repeats; 0 = never the same move twice running.</summary>
+    public double AvoidRepeatWeight { get; init; } = 1.0;
+
     public string? LootItemId { get; }
 
     /// <summary>Equipped-armor mitigation applied when this combatant is hit.</summary>
@@ -150,7 +154,10 @@ public sealed class Combatant
         lootItemId: null,
         armorProfile: armorProfile);
 
-    public static Combatant FromActor(ActorDefinition actor, IReadOnlyList<ResolvedMove> moveset)
+    /// <summary>Builds the runtime combatant from a <see cref="ResolvedActor"/> — the output of
+    /// <see cref="ActorResolver"/>'s family → role → actor fold (M2′c). Armour is real here:
+    /// the pre-framework path hardcoded <c>Armor = 0</c>, so enemy armour was unusable.</summary>
+    public static Combatant FromActor(ResolvedActor actor, IReadOnlyList<ResolvedMove> moveset)
     {
         var attributes = actor.Attributes;
         return new Combatant(
@@ -162,13 +169,14 @@ public sealed class Combatant
             moveset,
             () => attributes,
             actor.LootItemId,
-            armorProfile: actor.Resistances.Count == 0
+            armorProfile: actor.Armor <= 0 && actor.Resistances.Count == 0
                 ? null
-                : new ArmorProfile { Armor = 0, Resistances = actor.Resistances },
+                : new ArmorProfile { Armor = actor.Armor, Resistances = new Dictionary<string, double>(actor.Resistances) },
             vulnerability: actor.Vulnerable,
             ai: actor.Ai)
         {
             Resolve = actor.Resolve,
+            AvoidRepeatWeight = actor.AvoidRepeatWeight,
         };
     }
 }

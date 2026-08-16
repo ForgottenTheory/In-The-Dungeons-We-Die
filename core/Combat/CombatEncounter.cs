@@ -123,6 +123,9 @@ public sealed class CombatEncounter
     /// <summary>Enemy recovery timers — separate because they exist *between* actions.</summary>
     private readonly Dictionary<Combatant, ScheduledAction> _recovery = new();
 
+    /// <summary>Last move each enemy committed, for <see cref="Combatant.AvoidRepeatWeight"/>.</summary>
+    private readonly Dictionary<Combatant, string> _lastMoveUsed = new();
+
     private readonly List<Combatant> _defeatedEnemies = new();
     private readonly Dictionary<string, int> _eventCounts = new(StringComparer.Ordinal);
     private ScheduledAction? _regenPending;
@@ -235,6 +238,7 @@ public sealed class CombatEncounter
         _enemies = enemies?.ToList() ?? throw new ArgumentNullException(nameof(enemies));
         _inFlight.Clear();
         _recovery.Clear();
+        _lastMoveUsed.Clear();
         _defeatedEnemies.Clear();
         _eventCounts.Clear();
         IsActive = true;
@@ -485,6 +489,7 @@ public sealed class CombatEncounter
 
         PayCosts(enemy, move);
         StartCooldown(enemy, move);
+        _lastMoveUsed[enemy] = move.Id; // feeds AvoidRepeatWeight on the next decision (M2′c)
 
         Commit(new ActionInFlight
         {
@@ -510,20 +515,35 @@ public sealed class CombatEncounter
 
         var decision = RequirementEvent(enemy);
         var candidates = new List<(ResolvedMove Move, double Weight)>();
+        _lastMoveUsed.TryGetValue(enemy, out var lastMoveId);
 
         foreach (var rule in rules)
         {
-            var move = enemy.Moveset.FirstOrDefault(m => string.Equals(m.Id, rule.Move, StringComparison.Ordinal));
-            if (move is null || rule.Weight <= 0)
+            if (rule.Weight <= 0)
                 continue;
 
             if (!rule.When.All(condition => TriggerRuleEngine.Evaluate(condition, decision, ConditionWorld)))
                 continue;
 
-            if (!CanUse(enemy, move, out _))
-                continue;
+            // A rule names a move by id, or by tag — the tag form is what lets one authored
+            // brain serve many bodies (M2′c). Moveset order keeps expansion deterministic.
+            var matches = !string.IsNullOrEmpty(rule.MoveTag)
+                ? enemy.Moveset.Where(m => m.HasTag(rule.MoveTag!))
+                : enemy.Moveset.Where(m => string.Equals(m.Id, rule.Move, StringComparison.Ordinal));
 
-            candidates.Add((move, rule.Weight));
+            foreach (var move in matches)
+            {
+                if (!CanUse(enemy, move, out _))
+                    continue;
+
+                var weight = string.Equals(move.Id, lastMoveId, StringComparison.Ordinal)
+                    ? rule.Weight * enemy.AvoidRepeatWeight
+                    : rule.Weight;
+                if (weight <= 0)
+                    continue;
+
+                candidates.Add((move, weight));
+            }
         }
 
         if (candidates.Count == 0)
@@ -728,9 +748,9 @@ public sealed class CombatEncounter
 
             EffectSink.Execute(new EffectInvocation(effect, effect.Magnitude(trigger), trigger, move.Id)
             {
-                Target = move.Targeting == Targeting.Self ? EffectTarget.Self
+                Target = effect.Target ?? (move.Targeting == Targeting.Self ? EffectTarget.Self
                     : move.Targeting == Targeting.AllEnemies ? EffectTarget.AllEnemies
-                    : EffectTarget.TriggerTarget,
+                    : EffectTarget.TriggerTarget),
                 Context = riderContext,
             });
         }

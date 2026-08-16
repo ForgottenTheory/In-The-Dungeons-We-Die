@@ -1,0 +1,28 @@
+[
+  // Combat-archetype layer (M2′c): what a creature DOES, as deltas over any family.
+  // role.brute on a goblin, an undead or a construct is the same definition.
+  {
+    "id": "role.skirmisher", "name": "Skirmisher",
+    "attribute_tweaks": { "dexterity": 2, "luck": 1 },
+    "resolve": 35,
+    "ai_profile": "ai.skirmisher"
+  },
+  {
+    "id": "role.brute", "name": "Brute",
+    "attribute_tweaks": { "strength": 5, "constitution": 4, "endurance": 3, "dexterity": -3 },
+    "resource_tweaks": { "health": 30 },
+    "armor": 12,
+    // The armoured physique reads the same on any body: hammers find the gaps, cuts glance off
+    // the plates (D-02, two-way, clamped [0.50, 1.50]).
+    "vulnerable": { "Crushing": 1.25, "Slashing": 0.85 },
+    "resolve": 80,
+    "ai_profile": "ai.brute"
+  },
+  {
+    "id": "role.caster", "name": "Caster",
+    "attribute_tweaks": { "intelligence": 5, "wisdom": 3, "strength": -2 },
+    "resource_tweaks": { "mana": 40, "health": -6 },
+    "resolve": 45,
+    "ai_profile": "ai.caster"
+  }
+]

@@ -1,14 +1,10 @@
-﻿{
+{
+  // The Crushing/Slashing pair now rides role.brute — an Undead Brute will inherit it without
+  // inheriting goblin biology. Real armour at last: the role's 12 flows through ArmorProfile.
   "id": "actor.goblin_brute",
   "name": "Goblin Brute",
-  "attributes": { "strength": 12, "dexterity": 5, "intelligence": 3, "constitution": 10, "wisdom": 3, "endurance": 10, "luck": 3 },
-  "resources": { "health": 60, "mana": 0, "stamina": 40 },
-  "moves": ["move.goblin_smash"],
-  "lootItemId": "material.goblin_scrap",
-
-  // Heavy and slow: thick enough that cuts glance off, but a hammer finds the gaps.
-  // This is where "swap to the weapon that counters it" lives now that the three physical
-  // resistances collapsed into one lane (D-02). Two-way, clamped [0.50, 1.50].
-  "vulnerable": { "Crushing": 1.25, "Slashing": 0.85 }
+  "family": "family.goblin",
+  "role": "role.brute",
+  "moves": ["move.goblin_smash", "move.overhead_crush", "move.brace"],
+  "lootItemId": "material.goblin_scrap"
 }
-

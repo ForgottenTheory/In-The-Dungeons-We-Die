@@ -1,0 +1,223 @@
+[
+  // The universal move library (M2′b, DECISIONS D25). Every move here is learnable by any
+  // build via its technique item — gates are costs, equipped tags and cooldowns, never class.
+  // Numbers are conservative placeholders, tuned relative to each other; absolute tuning
+  // happens at the deferred balance pass (GDD §18 #16 note: spells author plain windups).
+
+  // ---- Martial techniques (stamina) --------------------------------------------------------
+  {
+    "id": "move.sunder", "name": "Sunder",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 16 },
+    "costs": [ { "resource": "stamina", "amount": 10 } ],
+    "requires": [ { "kind": "equippedTag", "text": "sword" } ],
+    "packets": [ { "type": "Crushing", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" }
+    ],
+    "description": "Aim for the straps and rivets. Armour is only as strong as its fittings."
+  },
+  {
+    "id": "move.skewer", "name": "Skewer",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 14 },
+    "costs": [ { "resource": "stamina", "amount": 8 } ],
+    "requires": [ { "kind": "equippedTag", "text": "sword" } ],
+    "packets": [ { "type": "Piercing", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 6, "duration_ticks": 60, "chance": 0.5 }
+    ],
+    "description": "In, twist, out. What follows is the point."
+  },
+  {
+    "id": "move.whirlwind", "name": "Whirlwind",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "delivery:area", "form:sword"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 20 },
+    "costs": [ { "resource": "stamina", "amount": 14 } ],
+    "requires": [ { "kind": "equippedTag", "text": "sword" } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Slashing", "amount": 9 } ],
+    "description": "Everyone nearby, once."
+  },
+  {
+    "id": "move.execute", "name": "Execute",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword", "mech:stagger"],
+    "timing": { "telegraphTicks": 10, "windupTicks": 16, "recoveryTicks": 20 },
+    "costs": [ { "resource": "stamina", "amount": 16 } ],
+    "requires": [ { "kind": "equippedTag", "text": "sword" } ],
+    "cooldown_ticks": 240,
+    "packets": [ { "type": "Crushing", "amount": 30 } ],
+    "stagger_power": 30,
+    "description": "Announce the ending. Then keep the appointment."
+  },
+  {
+    "id": "move.feint", "name": "Feint",
+    "kind": "Utility",
+    "tags": ["action:utility", "delivery:melee"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 3, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "cooldown_ticks": 90,
+    "effects": [
+      { "kind": "interrupt" }
+    ],
+    "description": "Sell the swing you never make. Their answer dies mid-motion."
+  },
+  {
+    "id": "move.crash", "name": "Crash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:resource", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 16 },
+    "costs": [ { "resource": "Momentum", "amount": 40 } ],
+    "packets": [ { "type": "Crushing", "amount": 20 } ],
+    "stagger_power": 15,
+    "description": "Spend everything you have built up in one arriving mass."
+  },
+
+  // ---- Spells (mana) -----------------------------------------------------------------------
+  {
+    "id": "move.frost_lance", "name": "Frost Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 22 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "Cold enough to slow the world around the wound."
+  },
+  {
+    "id": "move.arc_surge", "name": "Arc Surge",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:chain"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.35 }
+    ],
+    "description": "Lightning is a poor listener. It answers to whoever is closest, twice."
+  },
+  {
+    "id": "move.venom_bolt", "name": "Venom Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 3, "duration_ticks": 90 }
+    ],
+    "description": "The hit is a courtesy knock. The poison lets itself in."
+  },
+  {
+    "id": "move.wither", "name": "Wither",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Nothing dramatic. They are simply less than they were."
+  },
+  {
+    "id": "move.drain", "name": "Drain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 12 } ],
+    "effects": [
+      { "kind": "heal", "amount": 6, "target": "TriggerSource" }
+    ],
+    "description": "What leaves them arrives in you, lighter by the crossing."
+  },
+  {
+    "id": "move.arcane_dart", "name": "Arcane Dart",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 9 } ],
+    "description": "Small, quick, and impossible to argue with — arcane answers to no resistance."
+  },
+  {
+    "id": "move.mend", "name": "Mend",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "effects": [
+      { "kind": "heal", "amount": 20 }
+    ],
+    "description": "Knit what tore. Slowly, and at a price the mana pool remembers."
+  },
+  {
+    "id": "move.stoneskin", "name": "Stoneskin",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.stoneskin" }
+    ],
+    "description": "Wear the mountain for a while."
+  },
+
+  // ---- Enemy-flavoured but universal (M2′c) — no equipment gates, any body may learn them --
+  {
+    "id": "move.quick_stab", "name": "Quick Stab",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 8 },
+    "costs": [ { "resource": "stamina", "amount": 3 } ],
+    "packets": [ { "type": "Piercing", "amount": 4 } ],
+    "description": "Barely a wind-up. Barely a wound. They add up."
+  },
+  {
+    "id": "move.overhead_crush", "name": "Overhead Crush",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:stagger"],
+    "timing": { "telegraphTicks": 14, "windupTicks": 12, "recoveryTicks": 24 },
+    "costs": [ { "resource": "stamina", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "packets": [ { "type": "Crushing", "amount": 26 } ],
+    "stagger_power": 40,
+    "description": "You can see it coming from a county away. That is not the same as surviving it."
+  },
+
+  // ---- Utility (stamina) -------------------------------------------------------------------
+  {
+    "id": "move.brace", "name": "Brace",
+    "kind": "Defensive",
+    "tags": ["action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 4, "recoveryTicks": 8 },
+    "costs": [ { "resource": "stamina", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "Plant your feet and mean it."
+  },
+  {
+    "id": "move.expose_weakness", "name": "Expose Weakness",
+    "kind": "Utility",
+    "tags": ["action:utility", "delivery:melee", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "Every guard has a seam. Point at it."
+  }
+]

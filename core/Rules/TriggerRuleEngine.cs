@@ -208,7 +208,7 @@ public sealed class TriggerRuleEngine : IDisposable, IEffectSink
 
                 Dispatch(new EffectInvocation(effect, effect.Magnitude(gameEvent), gameEvent, registration.Source)
                 {
-                    Target = rule.Target,
+                    Target = effect.Target ?? rule.Target,
                     Context = context,
                 });
             }

@@ -1,9 +1,9 @@
-﻿{
+{
+  // Family + role + identity (M2′c): everything else composes.
   "id": "actor.goblin_raider",
   "name": "Goblin Raider",
-  "attributes": { "strength": 7, "dexterity": 10, "intelligence": 4, "constitution": 6, "wisdom": 4, "endurance": 7, "luck": 5 },
-  "resources": { "health": 30, "mana": 0, "stamina": 40 },
-  "moves": ["move.goblin_slash"],
+  "family": "family.goblin",
+  "role": "role.skirmisher",
+  "moves": ["move.goblin_slash", "move.quick_stab", "move.expose_weakness"],
   "lootItemId": "material.goblin_scrap"
 }
-

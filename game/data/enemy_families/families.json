@@ -1,0 +1,12 @@
+[
+  // Physiology layer (M2′c): what a creature IS. Behaviour lives in enemy_roles/ai_profiles.
+  {
+    "id": "family.goblin", "name": "Goblin",
+    "tags": ["family:goblin"],
+    "attributes": { "strength": 7, "dexterity": 8, "intelligence": 3, "constitution": 6, "wisdom": 4, "endurance": 7, "luck": 4 },
+    "resources": { "health": 30, "mana": 0, "stamina": 40 },
+    // A lifetime of eating things nothing should eat.
+    "resistances": { "toxin": 0.25 },
+    "resolve": 50
+  }
+]

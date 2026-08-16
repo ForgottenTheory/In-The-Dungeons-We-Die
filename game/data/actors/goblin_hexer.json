@@ -1,0 +1,12 @@
+{
+  // The framework proof (M2′c): ranged/spell/status behaviour from pure configuration —
+  // every move is the shared library's, the brain is the shared caster profile, and the
+  // actor-level mana tweak demonstrates the final override layer.
+  "id": "actor.goblin_hexer",
+  "name": "Goblin Hexer",
+  "family": "family.goblin",
+  "role": "role.caster",
+  "resource_tweaks": { "mana": 20 },
+  "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.goblin_slash"],
+  "lootItemId": "material.goblin_scrap"
+}

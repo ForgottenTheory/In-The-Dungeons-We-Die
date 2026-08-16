@@ -62,6 +62,9 @@ public partial class GameRoot : Node
     private DataStore<RealmDefinition> _realms = new();
     private DataStore<ConsumableDefinition> _consumables = new();
     private DataStore<TechniqueDefinition> _techniques = new();
+    private DataStore<EnemyFamilyDefinition> _enemyFamilies = new();
+    private DataStore<CombatRoleDefinition> _enemyRoles = new();
+    private DataStore<AiProfileDefinition> _aiProfiles = new();
     private DataStore<EquipmentDefinition> _equipment = new();
 
     private readonly Equipment _playerEquipment = new();
@@ -141,6 +144,9 @@ public partial class GameRoot : Node
         _realms = content.Realms;
         _consumables = content.Consumables;
         _techniques = content.Techniques;
+        _enemyFamilies = content.EnemyFamilies;
+        _enemyRoles = content.EnemyRoles;
+        _aiProfiles = content.AiProfiles;
         _equipment = content.Equipment;
 
         var rules = new RuleRegistry(new ICharacterRule[]
@@ -667,8 +673,9 @@ public partial class GameRoot : Node
         _passiveRunner.Stop(); // one activity at a time
         _everFought = true;
         var actor = _actors.GetById(actorId);
+        var resolvedActor = ActorResolver.Resolve(actor, _enemyFamilies, _enemyRoles, _aiProfiles);
         var player = Combatant.FromCharacter(Character, ResolvePlayerMoveset(), ResolvePlayerArmor());
-        _encounter.Start(player, new[] { Combatant.FromActor(actor, ResolveActorMoveset(actor)) });
+        _encounter.Start(player, new[] { Combatant.FromActor(resolvedActor, ResolveActorMoveset(actor)) });
         SetRunning(true); // telegraphs advance in real time
         CombatChanged?.Invoke();
     }

@@ -151,6 +151,60 @@ public class MoveSystemTests
             "the 20% rider should have landed on a 0.10 roll");
     }
 
+    /// <summary>An enemy whose swing never lands inside a short test window, so caster-side
+    /// health assertions stay clean.</summary>
+    private static readonly MoveDefinition Stall = Move("move.stall", DamageType.Crushing, 1, 200, 200, 10);
+
+    /// <summary>M2′b's Drain from shipped content: the decay packet lands on the enemy while
+    /// the heal rider names <c>TriggerSource</c> — the per-effect target override that makes
+    /// lifesteal shapes authorable at all.</summary>
+    [Fact]
+    public void DrainDamagesTheEnemyAndHealsItsCaster()
+    {
+        var moves = TestPaths.LoadStore<MoveDefinition>("moves");
+        var drain = MovesetBuilder.Apply(moves.GetById("move.drain"), Array.Empty<MoveOpSpec>(), new[] { "learned" });
+
+        var h = Build(moves, roll: 0.99);
+        var caster = new Combatant(
+            "Hero", CombatTeam.Player,
+            new ResourcePool(ResourceType.Health, 100),
+            new ResourcePool(ResourceType.Stamina, 50),
+            new ResourcePool(ResourceType.Mana, 40),
+            new[] { drain },
+            () => Attrs());
+        caster.Health.Reduce(30);
+
+        var raider = Enemy("Raider", 200, Attrs(str: 6), Stall);
+        h.Encounter.Start(caster, new[] { raider });
+
+        Assert.True(h.Encounter.UseMove("move.drain"));
+        h.Tick.Advance(20); // telegraph 4 + windup 12 → impact, riders included
+
+        Assert.True(raider.Health.Current < 200, "the decay packet should land on the enemy");
+        Assert.Equal(76, caster.Health.Current); // 70 + the 6-point heal crossing back
+        Assert.Equal(26, caster.Mana.Current);   // 40 − 14
+    }
+
+    /// <summary>A Self-targeted move's rider lands on its user: Brace applies Guarded to the
+    /// caster, not the enemy.</summary>
+    [Fact]
+    public void BraceGuardsItsUser()
+    {
+        var moves = TestPaths.LoadStore<MoveDefinition>("moves");
+        var brace = MovesetBuilder.Apply(moves.GetById("move.brace"), Array.Empty<MoveOpSpec>(), new[] { "learned" });
+
+        var h = Build(moves, roll: 0.99);
+        var caster = Player(moveset: new[] { brace }, stamina: 50);
+        var raider = Enemy("Raider", 200, Attrs(str: 6), Stall);
+        h.Encounter.Start(caster, new[] { raider });
+
+        Assert.True(h.Encounter.UseMove("move.brace"));
+        h.Tick.Advance(10); // telegraph 1 + windup 4 → impact
+
+        Assert.True(h.Encounter.Statuses!.Has(caster, "status.guarded"));
+        Assert.False(h.Encounter.Statuses.Has(raider, "status.guarded"));
+    }
+
     /// <summary>Shield Bash's stagger is control buildup against Resolve — enough of it lands a
     /// Stun without the move dealing meaningful damage (D-08).</summary>
     [Fact]

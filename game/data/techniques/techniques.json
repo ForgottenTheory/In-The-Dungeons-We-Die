@@ -2,7 +2,10 @@
   // Technique items (M2′ acquisition v1). Each teaches one move from the universal library
   // into the character's learned list — moves are never Base-exclusive (DECISIONS D25).
   // Droppable/purchasable sources arrive with loot tables (M6); today the debug grant button
-  // and future realm rewards are the faucet.
+  // and future realm rewards are the faucet. Convention: Manual = martial/utility technique,
+  // Grimoire = spell.
+
+  // ---- The three exemplars ----------------------------------------------------------------
   {
     "id": "technique.grimoire_fireball",
     "name": "Grimoire: Fireball",
@@ -20,5 +23,107 @@
     "name": "Manual: Heavy Strike",
     "description": "Swing harder. Illustrated.",
     "teaches": "move.heavy_strike"
+  },
+
+  // ---- Martial techniques -----------------------------------------------------------------
+  {
+    "id": "technique.manual_sunder",
+    "name": "Manual: Sunder",
+    "description": "An armourer's handbook, annotated by someone who wanted armour to stop working.",
+    "teaches": "move.sunder"
+  },
+  {
+    "id": "technique.manual_skewer",
+    "name": "Manual: Skewer",
+    "description": "A duelist's pamphlet. The diagrams are unpleasantly specific.",
+    "teaches": "move.skewer"
+  },
+  {
+    "id": "technique.manual_whirlwind",
+    "name": "Manual: Whirlwind",
+    "description": "Step one: commit. There is no step two that helps you stop.",
+    "teaches": "move.whirlwind"
+  },
+  {
+    "id": "technique.manual_execute",
+    "name": "Manual: Execute",
+    "description": "A headsman's ledger. The technique is in the patience, not the swing.",
+    "teaches": "move.execute"
+  },
+  {
+    "id": "technique.manual_feint",
+    "name": "Manual: Feint",
+    "description": "A gambler's guide to fencing. Every page is a lie that works.",
+    "teaches": "move.feint"
+  },
+  {
+    "id": "technique.manual_crash",
+    "name": "Manual: Crash",
+    "description": "Written by a Juggernaut who never learned to stop. Momentum is an argument mass always wins.",
+    "teaches": "move.crash"
+  },
+
+  // ---- Grimoires --------------------------------------------------------------------------
+  {
+    "id": "technique.grimoire_frost_lance",
+    "name": "Grimoire: Frost Lance",
+    "description": "The ink is frozen to the page. Reading it feels like winter arriving early.",
+    "teaches": "move.frost_lance"
+  },
+  {
+    "id": "technique.grimoire_arc_surge",
+    "name": "Grimoire: Arc Surge",
+    "description": "The binding crackles. The author's signature is a scorch mark.",
+    "teaches": "move.arc_surge"
+  },
+  {
+    "id": "technique.grimoire_venom_bolt",
+    "name": "Grimoire: Venom Bolt",
+    "description": "Do not lick your finger to turn the pages.",
+    "teaches": "move.venom_bolt"
+  },
+  {
+    "id": "technique.grimoire_wither",
+    "name": "Grimoire: Wither",
+    "description": "The flowers pressed between its pages died twice.",
+    "teaches": "move.wither"
+  },
+  {
+    "id": "technique.grimoire_drain",
+    "name": "Grimoire: Drain",
+    "description": "The previous owner's bookplate fades a little more each year.",
+    "teaches": "move.drain"
+  },
+  {
+    "id": "technique.grimoire_arcane_dart",
+    "name": "Grimoire: Arcane Dart",
+    "description": "Lesson one in every academy, because it has never once missed the point.",
+    "teaches": "move.arcane_dart"
+  },
+  {
+    "id": "technique.grimoire_mend",
+    "name": "Grimoire: Mend",
+    "description": "Field surgery for people who skipped surgery and went straight to field.",
+    "teaches": "move.mend"
+  },
+  {
+    "id": "technique.grimoire_stoneskin",
+    "name": "Grimoire: Stoneskin",
+    "description": "Bound in slate. Heavier every time you doubt it.",
+    "teaches": "move.stoneskin"
+  },
+
+  // ---- Utility ----------------------------------------------------------------------------
+  {
+    "id": "technique.manual_brace",
+    "name": "Manual: Brace",
+    "description": "A siege engineer's notes on not moving, applied to people.",
+    "teaches": "move.brace"
+  },
+  {
+    "id": "technique.manual_expose_weakness",
+    "name": "Manual: Expose Weakness",
+    "description": "An appraiser's guide to flaws — armour, stance, and otherwise.",
+    "teaches": "move.expose_weakness"
   }
 ]

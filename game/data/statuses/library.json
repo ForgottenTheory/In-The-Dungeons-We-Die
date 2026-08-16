@@ -1,0 +1,13 @@
+[
+  // Statuses introduced by the M2′ move library. Data-only, like the core 28 — a new buff
+  // costs a JSON object, not a class (E2's whole bargain).
+  {
+    "id": "status.stoneskin", "name": "Stoneskin", "category": "state",
+    "tags": ["mech:block"],
+    "duration_ticks": 150, "stack_policy": "refreshDuration", "max_stacks": 1,
+    // Armour, not damage_taken — the martial mirror (status.guarded) reduces throughput;
+    // this hardens the armour stage, so the two defensive buffs answer different hits.
+    "while_active": [ { "key": "combat.armor", "value": 12 } ],
+    "description": "Skin like granite. Blows glance off."
+  }
+]

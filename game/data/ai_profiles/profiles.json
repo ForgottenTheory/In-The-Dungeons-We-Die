@@ -1,0 +1,46 @@
+[
+  // Reusable brains (M2′c): weighted rules over the shared condition vocabulary, matching
+  // moves by id or by TAG — the tag form is what lets one brain serve many bodies. AI chooses
+  // intent only; the tick/action lifecycle resolves timing exactly as before.
+
+  // Pressure → punish: open (and re-open) the target, then lean on attacks while it's open.
+  {
+    "id": "ai.skirmisher", "name": "Skirmisher Brain",
+    "avoid_repeat_weight": 0.5,
+    "rules": [
+      { "move": "move.expose_weakness", "weight": 10,
+        "when": [ { "kind": "targetHasStatus", "text": "status.vulnerable", "negate": true } ] },
+      { "moveTag": "action:attack", "weight": 4 },
+      { "moveTag": "action:attack", "weight": 6,
+        "when": [ { "kind": "targetHasStatus", "text": "status.vulnerable" } ] }
+    ]
+  },
+
+  // The "answer this telegraph" brain: heavy hits by default, the stagger threat weighted up,
+  // and a defensive turtle when hurt.
+  {
+    "id": "ai.brute", "name": "Brute Brain",
+    "avoid_repeat_weight": 0.4,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 3 },
+      { "moveTag": "mech:stagger", "weight": 5 },
+      { "move": "move.brace", "weight": 10,
+        "when": [ { "kind": "selfHealthBelow", "value": 0.4 } ] }
+    ]
+  },
+
+  // DoT/debuff upkeep: keep poison and weaken applied, fill with cheap darts, poke in melee
+  // only when the mana is gone.
+  {
+    "id": "ai.caster", "name": "Caster Brain",
+    "avoid_repeat_weight": 0.5,
+    "rules": [
+      { "move": "move.venom_bolt", "weight": 8,
+        "when": [ { "kind": "targetHasStatus", "text": "status.poison", "negate": true } ] },
+      { "move": "move.wither", "weight": 8,
+        "when": [ { "kind": "targetHasStatus", "text": "status.weaken", "negate": true } ] },
+      { "moveTag": "action:spell", "weight": 3 },
+      { "moveTag": "action:attack", "weight": 1 }
+    ]
+  }
+]

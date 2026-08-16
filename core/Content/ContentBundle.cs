@@ -29,6 +29,9 @@ public sealed class ContentBundle
     public DataStore<MoveDefinition> Moves { get; init; } = new();
     public DataStore<MoveModifierDefinition> MoveModifiers { get; init; } = new();
     public DataStore<ActorDefinition> Actors { get; init; } = new();
+    public DataStore<EnemyFamilyDefinition> EnemyFamilies { get; init; } = new();
+    public DataStore<CombatRoleDefinition> EnemyRoles { get; init; } = new();
+    public DataStore<AiProfileDefinition> AiProfiles { get; init; } = new();
     public DataStore<RealmDefinition> Realms { get; init; } = new();
     public DataStore<ConsumableDefinition> Consumables { get; init; } = new();
     public DataStore<TechniqueDefinition> Techniques { get; init; } = new();

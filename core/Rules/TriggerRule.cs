@@ -60,6 +60,16 @@ public sealed class EffectSpec
     /// </summary>
     public double Chance { get; init; } = 1.0;
 
+    /// <summary>
+    /// Optional per-effect target override. Null inherits the owner's target — the rule's
+    /// <see cref="TriggerRule.Target"/> for rule payloads, the move's targeting for riders.
+    ///
+    /// <para>Added for M2′'s Drain: the damage packet lands on the enemy while the heal rider
+    /// names <see cref="EffectTarget.TriggerSource"/> — without this, every rider of one move
+    /// shares the move's target and lifesteal shapes are unauthorable.</para>
+    /// </summary>
+    public EffectTarget? Target { get; init; }
+
     /// <summary>Resolved magnitude for <paramref name="triggeringEvent"/>.</summary>
     public double Magnitude(Events.GameEvent triggeringEvent)
     {

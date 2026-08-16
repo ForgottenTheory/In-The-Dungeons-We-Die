@@ -46,6 +46,9 @@ public class ContentValidatorTests
         Moves = Load<MoveDefinition>("moves"),
         MoveModifiers = Load<MoveModifierDefinition>("move_modifiers"),
         Actors = Load<ActorDefinition>("actors"),
+        EnemyFamilies = Load<EnemyFamilyDefinition>("enemy_families"),
+        EnemyRoles = Load<CombatRoleDefinition>("enemy_roles"),
+        AiProfiles = Load<AiProfileDefinition>("ai_profiles"),
         Realms = Load<RealmDefinition>("realms"),
         Consumables = Load<ConsumableDefinition>("consumables"),
         Techniques = Load<TechniqueDefinition>("techniques"),
@@ -654,6 +657,86 @@ public class ContentValidatorTests
         AssertHasProblem(content, "modifier_keys", "no max");
     }
 
+    // --- The enemy framework (M2′c) ------------------------------------------
+
+    private static ActorDefinition LayeredActor(
+        string? family = "family.test", string? role = null, string? aiProfile = null,
+        MoveGrantSpec[]? moves = null, AiRuleSpec[]? ai = null) => new()
+        {
+            Id = "actor.layered", Name = "Layered",
+            Family = family, Role = role, AiProfile = aiProfile,
+            Moves = moves ?? new[] { new MoveGrantSpec { Id = "move.strike" } },
+            Ai = ai ?? Array.Empty<AiRuleSpec>(),
+        };
+
+    private static TestContent FrameworkBaseline()
+    {
+        var content = ValidBaseline();
+        content.EnemyFamilies.Add(new EnemyFamilyDefinition { Id = "family.test", Name = "Test" });
+        return content;
+    }
+
+    [Fact]
+    public void Actor_ReferencingUnknownFamily_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Actors.Add(LayeredActor(family: "family.ghost"));
+        AssertHasProblem(content, "actors", "unknown family");
+    }
+
+    [Fact]
+    public void Actor_AuthoringAbsoluteAttributesAndAFamily_IsReported()
+    {
+        var content = FrameworkBaseline();
+        content.Actors.Add(new ActorDefinition
+        {
+            Id = "actor.both", Name = "Both", Family = "family.test",
+            Attributes = Dungeons.Characters.AttributeSet.Uniform(5),
+            Moves = new[] { new MoveGrantSpec { Id = "move.strike" } },
+        });
+        AssertHasProblem(content, "actors", "use attribute_tweaks");
+    }
+
+    [Fact]
+    public void AiRule_MatchingATagNoGrantedMoveCarries_IsReported()
+    {
+        var content = FrameworkBaseline();
+        content.Actors.Add(LayeredActor(ai: new[] { new AiRuleSpec { MoveTag = "mech:stagger", Weight = 1 } }));
+        AssertHasProblem(content, "actors", "none of its moves carry");
+    }
+
+    [Fact]
+    public void AiRule_SettingBothMoveAndMoveTag_IsReported()
+    {
+        var content = FrameworkBaseline();
+        content.Actors.Add(LayeredActor(ai: new[] { new AiRuleSpec { Move = "move.strike", MoveTag = "action:attack", Weight = 1 } }));
+        AssertHasProblem(content, "actors", "exactly one of move/moveTag");
+    }
+
+    [Fact]
+    public void Actor_GrantedAMoveRequiringEquipment_IsReported()
+    {
+        var content = FrameworkBaseline();
+        content.Moves.Add(new MoveDefinition
+        {
+            Id = "move.armed", Name = "Armed Strike",
+            Tags = new[] { "action:attack", "delivery:melee" },
+            Requires = new[] { new Dungeons.Rules.ConditionSpec { Kind = "equippedTag", Text = "sword" } },
+            Packets = new[] { new Packet(DamageType.Slashing, 8) },
+        });
+        content.Species.Add(new SpeciesDefinition { Id = "species.armed", Moves = new[] { new MoveGrantSpec { Id = "move.armed" } } });
+        content.Actors.Add(LayeredActor(moves: new[] { new MoveGrantSpec { Id = "move.armed" } }));
+        AssertHasProblem(content, "actors", "cannot satisfy equippedTag");
+    }
+
+    [Fact]
+    public void AiProfile_AvoidRepeatOutsideZeroToOne_IsReported()
+    {
+        var content = FrameworkBaseline();
+        content.AiProfiles.Add(new AiProfileDefinition { Id = "ai.jittery", Name = "Jittery", AvoidRepeatWeight = 1.5 });
+        AssertHasProblem(content, "ai_profiles", "outside [0, 1]");
+    }
+
     // --- Techniques (M2′ acquisition) ----------------------------------------
 
     /// <summary>A technique that teaches a missing move is a dead item the player can learn
@@ -763,6 +846,9 @@ public class ContentValidatorTests
         public DataStore<Dungeons.Combat.MoveDefinition> Moves => _bundle.Moves;
         public DataStore<Dungeons.Combat.MoveModifierDefinition> MoveModifiers => _bundle.MoveModifiers;
         public DataStore<ActorDefinition> Actors => _bundle.Actors;
+        public DataStore<EnemyFamilyDefinition> EnemyFamilies => _bundle.EnemyFamilies;
+        public DataStore<CombatRoleDefinition> EnemyRoles => _bundle.EnemyRoles;
+        public DataStore<AiProfileDefinition> AiProfiles => _bundle.AiProfiles;
         public DataStore<RealmDefinition> Realms => _bundle.Realms;
         public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
         public DataStore<Dungeons.Combat.TechniqueDefinition> Techniques => _bundle.Techniques;
