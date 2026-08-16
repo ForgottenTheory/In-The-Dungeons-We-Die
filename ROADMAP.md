@@ -30,14 +30,18 @@ Target: prepare → enter → fight *as your build* → extract → **fabricate 
 brought back** → feel the difference next run. Dependency-ordered; each milestone is one
 coherent run.
 
-1. ⬜ **C1 — Crafting P2 traits + P3 essence**. State traits with cap/displacement/supersession;
-   essence + resonance strain + Attune. Prerequisite genetics for everything below.
-2. ⬜ **C2 — Fabrication + the scale reconciliation** *(highest risk)*. Form templates with named
-   slots/apertures/stat maps; materials → equipment instances; **the 0–100 ↔ 0–5 combat
-   rebalance**. Ends at a mandatory playtest checkpoint. **The deferred balance backlog lands
-   here or in a dedicated tuning pass before it**: Fireball one-shots, Bastion damage, the
-   casting-speed decision (GDD §18 #16), profession interval/XP numbers.
-3. ⬜ **E5 — Item modifiers (affixes)**. Genome → eligibility/weight/tier → rolling; innates;
+1. ✅ **C1 — Crafting P2 traits + P3 essence** (`64418bf`): 16-trait library with cap 3 /
+   displacement / supersession; the seven typed essences, resonance capacity/strain, Attune.
+2. ✅ **C2a+C2b — Fabrication + the scale reconciliation** (`bcb0c6e`): form templates
+   (3-slot Longsword, Buckler, Vest), aperture-gated traits with dormancy, derived equipment
+   archetypes persisted, iron-sword parity pinning the 0–100 → combat-unit calibration,
+   per-slot component UI.
+3. 🔄 **C2c — the mandatory playtest checkpoint** *(user-driven, NEXT)*. Play the full loop
+   (mine → smelt → infuse → attune → fabricate → fight); land the whole parked balance backlog
+   in one pass: Fireball one-shots, Bastion damage, the casting-speed decision (GDD §18 #16),
+   profession interval/XP, fabrication calibration constants. Also close the small gap: per-rule
+   failing-content tests for `ValidateForms`.
+4. ⬜ **E5 — Item modifiers (affixes)**. Genome → eligibility/weight/tier → rolling; innates;
    Genome Readout; ailment application chances finally get their source; move-modifier pools get
    their author (incl. chains for `mech:chain` moves). Item Lab.
 4. ⬜ **M6 — Loop closers**. Loot tables on the three goblins per §12.4 ecology (technique items

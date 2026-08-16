@@ -7,12 +7,11 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`. This session's commits, in order: `b5b51ce` (D25 migration, docs), `94d6c51`
-  (M1 combat-tab wiring + D-20 floor), `e636d69` (M2′a techniques/acquisition), `26c5600`
-  (M2′b library + M2′c enemy framework), `686fe13` (P1–P3 professions), then the session-end
-  docs commit (GDD §6/§7/§12/§19, PROJECT_STATE, ROADMAP, SYSTEM_INDEX, DECISIONS D26, this
-  file).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **626 passing**.
+- Branch `main`. This context's commits, in order: `b5b51ce` (D25 migration) → `94d6c51` (M1)
+  → `e636d69` (M2′a) → `26c5600` (M2′b+c) → `686fe13` (P1–P3 professions) → `28884fb` (docs)
+  → `64418bf` (C1 traits+essence) → `bcb0c6e` (C2a+C2b fabrication) → the final docs commit
+  (this file).
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **654 passing**.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD.
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -25,13 +24,45 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 
 ---
 
-## ⭐ START HERE — next is C1 (crafting traits + essence)
+## ⭐ START HERE — next is C2c, the mandatory playtest checkpoint (user-driven)
 
-`ROADMAP.md` is current: **C1 → C2 → E5 → M6 → E6 → E7**. C1 is crafting P2 traits (state
-traits with cap/displacement/supersession) + P3 essence (resonance strain + the Attune
-process). Spec: `docs/emergent-item-system.md`; the shipped P1 engine is
-`core/Crafting/ReactionEngine` and its friends. Plan-first, smallest coherent slice, get the
-user's approval on the plan before building.
+**C1 and C2a+C2b shipped after the docs commit** (see "This context's additions" below).
+`ROADMAP.md` is current: **C2c (checkpoint) → E5 → M6 → E6 → E7**. C2c is the user playing
+the full loop (mine → smelt → infuse → attune → fabricate → fight) and the whole parked
+balance backlog landing in one conversation: Fireball one-shots, Bastion damage, the
+casting-speed decision (GDD §18 #16), profession interval/XP numbers, fabrication calibration
+constants (`FabricationTuning`), the two provisional crafting constants, possibly D-07's key
+swap. Do not retune anything before the user reports play feel. Small debt to close alongside:
+per-rule failing-content tests for `ValidateForms` (shipped content exercises it; broken-store
+tests don't yet).
+
+## This context's additions (commits `64418bf`, `bcb0c6e`; 654 tests)
+
+- **C1a traits** (§10): `TraitDefinition` (+`Category` for apertures) / `TraitResolver` —
+  birth → supersede → cap-3 after the reaction settles; births eat properties sequentially in
+  id order (earlier birth can starve a later condition — pinned); merges keep the stronger
+  magnitude and free a slot; displacement refunds nothing. Traits join the signature as
+  `id:tier` (magnitude bucketed to 5 levels) in the section P1 reserved — trait-less ids are
+  bit-identical to before. `traits_created × 4` charges integrity and can destroy.
+- **C1b essence** (§5/§8.4): seven typed essences (`game/data/essences/`; no arcane essence —
+  arcane amplifies via `EssenceTuning.Expression`), additive transfer at the process's
+  pre-authored `essence_rate` with an anchor-channel bonus, opposition annihilating overlap
+  into strain (works authored one-sided), capacity = resonance × 1.5 feeding effective
+  instability, the Attune process (8th, arcane medium, `state:attuned` joined the vocabulary),
+  38 materials author essence and **22 author resonance** (nothing did before — capacity was
+  zero everywhere). Strain warning teaches "attune first, then infuse"; e2e pinned.
+- **C2a+C2b fabrication** (§16): `FormTemplateDefinition` + `FabricationEngine` — terminal,
+  consumes materials, mints an `ItemInstance` over a **derived `EquipmentDefinition`**
+  registered by signature into the equipment store and **persisted** (`EmergentEquipment` in
+  the save, restored before instances resolve). The 0–100 → combat-unit reconciliation lives
+  only in `stat_map` + `FabricationTuning.CombatUnitScale`; `EquipmentResolver` unchanged —
+  **parity pinned: iron/iron/leather longsword ≈ authored Iron Sword** through the same seam.
+  Longsword is the 3-slot exemplar (edge .60 / core .25 / binding .15): placement reorders
+  which trait dominates and names the item ("Emberveined Traited Longsword" on the edge vs
+  "Verdant Iron Longsword" in the core — pinned). Buckler (tag `shield` → Shield Bash
+  reachable via crafting) and Vest stay single-slot through the same path. Armour forms derive
+  lane resistances from response properties. UI: form picker + per-slot tag-filtered pickers
+  (`EligibleForSlot`); debug grant now includes leather/rawhide/ley crystal.
 
 ## What this session shipped (all committed)
 

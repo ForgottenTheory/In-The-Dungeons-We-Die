@@ -842,7 +842,7 @@ Forge Infusion — Iron Ingot ← Ember Core
 ✦ First discovery: Emberlit Iron ×1
 ```
 
-## 9.9 Planned crafting layers
+## 9.9 Crafting layers — P2 traits and P3 essence **BUILT (C1)**; P4/P6 planned
 
 | Layer | Description | Status |
 |---|---|---|
@@ -913,7 +913,7 @@ from the same forms system with the same genome, affixes, operations and Overrea
 Log is a bad sword and an excellent rod shaft — same library, different stat map, opposite
 verdict, zero tool-specific content.
 
-## 10.3 Planned: form templates + fabrication
+## 10.3 Form templates + fabrication — **BUILT (C2a+C2b)**; consumable forms (P5c) planned
 
 The intended model authors **forms**, never material variants:
 
@@ -1248,7 +1248,12 @@ Decided, argued through, and stable enough to build against.
 
 ## 19.2 Exists in-game — BUILT
 
-Built, tested, and runnable today. 626 passing tests, zero build warnings.
+Built, tested, and runnable today. 654 passing tests, zero build warnings.
+
+| System | What's real |
+|---|---|
+| **Crafting traits + essence (C1)** | 16-trait library (birth/cap/displacement/supersession, `id:tier` identity), seven typed essences with anchors/opposition, resonance capacity → strain → instability, Attune |
+| **Fabrication (C2a+C2b)** | Form templates (3-slot Longsword, Buckler, Vest), aperture-gated trait expression with dormancy, derived equipment archetypes persisted, 0–100 → combat-unit reconciliation pinned by iron-sword parity, per-slot component UI |
 
 | System | What's real |
 |---|---|
@@ -1277,14 +1282,17 @@ Direction and specifics are settled (mostly by the 27 effect-foundation decision
 has not reached them.
 
 - **Item modifiers, genetics, operations, Overreach** (§10.2a) — designed in full; slices
-  E5/E7, after C1/C2. The effect vocabulary they express themselves in is already built
-- **Equipment fabrication** — the form-template/multi-component/aperture model is designed in
-  detail, blocked on the **scale reconciliation** (the C2 combat rebalance). Property→stat
-  mappings are proposed, not approved
+  E5/E7. The effect vocabulary they express themselves in is already built
+- ~~Equipment fabrication~~ ✅ **BUILT (C2a+C2b)** — form templates with named slots, per-slot
+  apertures, dormancy, derived equipment archetypes persisted, and the **scale reconciliation
+  done**: stat maps land material properties on instances in combat units, pinned by an
+  iron-sword parity test. Awaiting the C2c playtest checkpoint for tuning
+- ~~Crafting P2–P3~~ ✅ **BUILT (C1)** — the 16-trait library (cap/displacement/supersession)
+  and the seven-essence layer with resonance capacity/strain and Attune
 - **Profession tools** (§10.2a) — two worn slots, same genome/affix machinery; slice E6, cheap
   once E5 exists
-- **Crafting P2–P6** — traits, essence, signature reactions, fabrication and the codex are
-  specified in detail and deliberately deferred (C1/C2)
+- **Crafting P4 + P5c + P6** — signature reactions, consumable forms, and the codex remain
+  specified and deferred
 - **Realm depth** — location types, affixes, campsite, preparation and Knowledge-unlocks are
   designed and none are built
 - **Hazards** — the tick/telegraph model is designed; nothing places one
