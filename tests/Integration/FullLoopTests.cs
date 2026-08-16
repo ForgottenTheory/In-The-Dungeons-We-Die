@@ -1,3 +1,4 @@
+using Dungeons.Events;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Items;
@@ -66,7 +67,7 @@ public class FullLoopTests
         var abilities = Abilities(
             Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5),
             Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20));
-        var encounter = new CombatEncounter(tick, new CombatCalculator(new FakeRandom(0.99)), abilities, new FakeRandom(0.99), "ability.strike");
+        var encounter = new CombatEncounter(tick, new CombatCalculator(new FakeRandom(0.99)), abilities, new FakeRandom(0.99), new GameEventBus(), "ability.strike");
         encounter.Ended += outcome =>
         {
             if (outcome.Result != CombatResult.Victory)

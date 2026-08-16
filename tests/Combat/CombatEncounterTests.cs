@@ -1,5 +1,6 @@
 using Dungeons.Combat;
 using Dungeons.Content;
+using Dungeons.Events;
 using Dungeons.Simulation;
 using Dungeons.Tests.Professions; // FakeRandom
 using Xunit;
@@ -18,7 +19,7 @@ public class CombatEncounterTests
         var tick = new TickEngine();
         var calc = new CombatCalculator(new FakeRandom(0.99)); // never crit
         var abilities = Abilities(Strike, Slash, Smash);
-        var enc = new CombatEncounter(tick, calc, abilities, new FakeRandom(0.99), "ability.strike");
+        var enc = new CombatEncounter(tick, calc, abilities, new FakeRandom(0.99), new GameEventBus(), "ability.strike");
         return (enc, tick);
     }
 

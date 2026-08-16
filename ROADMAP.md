@@ -32,6 +32,16 @@ Ordered so each step is testable before the next:
 3. ⬜ **Reaction simulation** — implement the universal interaction pipeline behind `CraftingDerivation`/the crafting matcher (`docs/crafting.md §17.3`): bonding/affinity, property transfer, opposing-property resolution, reactions (e.g. Growth+Toxicity→blight trait), thresholds/capacity, catalysts, instability → success/partial/failure/mutation, generate instance. Do NOT hardcode per-combination recipes.
 4. ⬜ **Material → combat/effect rules** — expand `EquipmentResolver` (and a combat-effect hook) so derived properties drive on-hit effects, resistances, status. Currently only Mass/Hardness.
 
+## ✅ Class combinator — COMPLETE (`docs/classes.md`, GDD §3)
+15 Bases · 25 Prefixes · 50 Suffixes (10 fully expressed) · 9 name formats · `BuildResolver` · Character Lab. 18,750 builds, none authored. Built on three new Core mechanisms: the open modifier vocabulary, the game event bus, and declarative trigger rules (DECISIONS D22/D23).
+- ⬜ **Species** was held out of this pass — 3 thin stat packages against a designed roster of 10.
+- ⬜ **Character XP/levels** — growth *weights* exist, but nothing awards levels; the build is hardcoded and debug-cycled.
+
+## 🔜 Next — the Move system
+**The largest gap in the game: no class currently has a class ability.** Bases contribute growth, gauges and channels but no moves, so builds compose without playing differently. A slice plan (M0–M6) is in `HANDOFF.md`, unapproved.
+
+**✅ E0 done** — `CombatEncounter` is on the event bus and `GameRoot` owns the bus + rule engine. Next is E1, the hit pipeline. See `docs/effect-foundation.md` §10.
+
 ## Later (deferred; roughly by dependency)
 - ⬜ **Combat depth**: status effects; class abilities + Mana spells; multi-enemy + targeting; interrupts; suffix combat rule-hooks; positioning.
 - ⬜ **Loot & economy**: loot tables, rarity, currency/vendors.

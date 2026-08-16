@@ -11,7 +11,7 @@ A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 sp
 - `DECISIONS.md` — architectural/gameplay decisions **and why** (+ rejected options).
 - `ROADMAP.md` — remaining work and order.
 - `HANDOFF.md` — where we stopped and exact next steps.
-- `docs/current-state.md` — deep audit (verify against code; may lag by a phase).
+- `docs/effect-foundation.md` — the settled effect/damage/status/move/affix architecture (26 decisions, §12).
 - `docs/itemization.md`, `docs/crafting.md §17` — the item-instance + emergent-crafting model.
 
 ## Architecture rules (hard invariants)

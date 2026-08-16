@@ -1,9 +1,10 @@
 # PROJECT_STATE.md
 
-Snapshot of what actually exists in code. Verify against the repo; `docs/current-state.md` is a deeper audit (written before the equipment system, so trust this file + code where they differ).
+Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 364 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 471 passing cases. Core-only; no Godot/UI tests.
+- **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
 - Build/verify: `dotnet build InTheDungeonsWeDie.slnx` && `dotnet test`.
@@ -16,6 +17,23 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ✅ `ContentValidator` (Core): load-time cross-reference validation of the loaded stores (actors→abilities/loot, actions→profession/materials, crafting→materials/consumables/professions, realm nodes→actors/actions/rewards + symmetric edges, equipment slot↔stat block, **material property ranges + tag-family cardinality**). `GameRoot._Ready` runs it and fails loudly (logs + throws `ContentValidationException`). Character-component refs stay validated by `CharacterComposer`.
 - ✅ **Emergent item system — P0 done** (`docs/emergent-item-system.md §20`): material tags migrated to `family:value` namespace (origin/comp/form/state/rarity/class/part); `PropertyDefinition` registry with roles (structural/reactive/response/sourcing) as data in `game/data/properties/`; `resonance` property added (no values yet); `ResistanceCalculator` derives resistances from `resisted_by` (authored `*_resistance` values are overrides). **No reaction engine / traits / essence / potency / integrity / fabrication yet** — those are P1–P5.
 - ✅ Seeded `IRandomSource`/`SeededRandom`.
+
+## Character identity — the class combinator (COMPLETE, data-driven)
+- ✅ **Base + Prefix + Suffix**, composing into **18,750 builds with none authored** (`docs/classes.md`, GDD §3).
+  - **15 Bases** (`game/data/classes/bases.json`) — growth weights on a fixed 4.0/level budget, optional gauge, default expression channel, engine + weakness. 8 have gauges, 7 deliberately don't.
+  - **25 Prefixes** (`prefixes.json`) — one mechanic each, authored as event hooks. **A Prefix may never name a Base** (validator-enforced); 7 bring a gauge.
+  - **50 Suffixes** (`suffixes.json`) — 10 fully expressed with one expression per **Strike/Guard/Surge** channel + a stated drawback; 40 are roster entries with name/format/fantasy only.
+  - **9 name formats** (`name_formats.json`) — dynamic grammar (`standard`/`citation`/`investigation`/`warning`/`medical`/`liability`/`bureaucratic`/`consequence`/`notice`). **Presentation only**, verified never to affect mechanics.
+- ✅ **`BuildResolver`** — resolves a build into growth, gauges (max 2), attached hooks with provenance, modifiers, and the generated name. `BuildResolver.Diff` powers the Character Lab.
+- ✅ **Character Lab tab** — swap any component, live diff + full readout. *Layout bug fixed; needs re-verification in the editor.*
+- ⬜ **No moves.** Bases contribute growth/gauges/channels but no abilities — see HANDOFF for the Move-system plan.
+- 🟡 **Species** is out of this pass — still 3 thin stat packages against a designed roster of 10.
+
+## Core mechanisms behind it (new, reusable)
+- ✅ **Modifier vocabulary** (`core/Modifiers/`) — 51 data-defined keys replacing `StatId` as the modifier *target* surface. Additive/multiplicative/flag kinds, clamps on the key, contributions carry provenance. `StatId` bridges in, so there is one modifier system.
+- ✅ **Game event bus** (`core/Events/`) — 30 events spanning combat, crafting, loot and extraction. Synchronous and ordered (a determinism requirement); handler-raised events queue rather than re-enter.
+- ✅ **Declarative trigger rules** (`core/Rules/`) — `event + conditions + effect + cooldown + chance`, interpreted generically. Prefixes, Suffix expressions and gauge feeds are all just lists of these. Effects with no registered handler land in `Unhandled`, so content referencing unbuilt systems is **visibly inert rather than silently missing**.
+- ✅ **Combat raises them** (E0). `CombatEncounter` publishes 14 existing event kinds; `GameRoot` owns the bus + `TriggerRuleEngine` and re-attaches the build's hooks on every rebuild. Effects still land in `Unhandled` until E3 — visibly inert, not missing.
 
 ## Character & professions
 - ✅ Attributes (7), resources (HP/Mana/Stamina, no auto-regen), `ResourceCalculator`.

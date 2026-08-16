@@ -32,4 +32,14 @@ public static class CombatTuning
 
     /// <summary>Attack tempo lost after using an item — you can still block/dodge, but not immediately strike.</summary>
     public const int ItemUseRecoveryTicks = 10;
+
+    /// <summary>
+    /// Time-to-impact at or above which an attack is tagged <c>heavy</c> in combat events.
+    /// <para>
+    /// Derived rather than authored, and the line is meaningful: 24 ticks is 1.2s at 20 ticks/s,
+    /// long enough that the attack is something you *see coming and answer*. Overhead Smash sits
+    /// at 48; every other attack in the game is 10–16. Replaced by real move tags in E4.
+    /// </para>
+    /// </summary>
+    public const int HeavyTimeToImpactTicks = 24;
 }

@@ -74,5 +74,25 @@ Depth before breadth: 3 professions, 2 enemies, 1 realm, single-enemy/single-pos
 ### D18 — Content loading via `ContentBundle` + typed ids for the persisted, positional `CharacterBuild`
 All definition stores live in one `ContentBundle`; `ContentLoader.LoadAll` centralizes the folder paths; `ContentValidator.Validate(bundle)` takes the bundle instead of N positional args. Adding a content type is one store + one load line, not a field + path + validator-signature + call-site edit. **Typed ids** were introduced only for `CharacterBuild`'s four ids (`SpeciesId`/`BaseClassId`/`PrefixId`/`SuffixId`) — positional **and** persisted, so a swap is silent save corruption; they serialize as bare strings (converters), so the save format is unchanged. **Rejected:** a full typed-id sweep across every id (`ItemId`/`AbilityId`/…) — real value but too much ceremony for now; revisit if cross-category mixups actually bite. Extracting an Application/use-case layer out of `GameRoot` is deferred (report/formatting split partially done via `ItemFormat`); it pairs with the next expansion.
 
+## Character identity
+
+### D22 — The class combinator: Base + Prefix + Suffix, composed never authored
+The roster from `docs/classes.md` was **replaced** with 15 Bases, 25 Prefixes and 50 Suffixes producing 18,750 builds, **none of them hand-written**. Four rules make that tractable and each is enforced by validation and test:
+1. **Every Base distributes the same growth budget** (4.0/level); only the shape differs. Otherwise Base choice is a menu where some options are strictly larger, not a trade.
+2. **A Prefix may never reference a Base.** Prefixes hook *events*, so a Bastion galvanises by blocking and a Wizard by releasing a hold — emergent, not authored. Breaking this turns 25 mechanics into 375.
+3. **An expressed Suffix has exactly one expression per channel** (Strike/Guard/Surge). A partial one looks usable and turns out to be for someone else's build.
+4. **Formatting never touches mechanics.** A Suffix's `format` is read by `ClassNameFormatter` and nowhere else.
+
+**Channels are keyed to events, not attribute archetypes.** Might/Finesse/Focus was rejected: it distributed badly (six of fifteen Bases landed in Focus) and left hybrid builds ambiguous. Every build strikes, defends and runs a resource, so event channels are universal.
+
+**Why one Base, not three.** A three-Foundation "NBA 2K" model was explored and dropped: it stacks additively into beige soup, and three simultaneous gauges is unreadable. The 2K feel that *was* kept is the **fixed budget with real opportunity cost**, plus attribute-threshold gating as the badge analogue (designed, not built).
+
+**Rejected:** per-combination authoring; bespoke gauges per Base (blocks compositional prefixes); gauges as a hard requirement (seven Bases are deliberately gaugeless — a bar for everyone flattens the distinctions the roster exists to create). **Save impact:** `CharacterBuild` ids are persisted, so retiring the old roster is a save break; taken deliberately while there was one test save.
+
+### D23 — Modifier vocabulary is data; the event bus is the extension surface
+`StatId`'s closed 10-value enum could not name the things a progression game modifies — action intervals, preservation, yield, typed resistance, extraction bonuses. It is replaced *as the modifier target vocabulary* by a data-defined `ModifierKeyDefinition` registry (51 keys); `StatId` survives as the attribute enum and bridges in, so there is **one** modifier system. Clamps live on the key, which makes the minimum-interval rule data rather than a scattered guard. Contributions carry **provenance** so "why is this number what it is?" is answerable.
+
+`ICharacterRule` (attribute bonuses only) could not express a single documented suffix, so behaviour hooks moved to a **typed game event bus** (30 events, `architecture.md` §14's vocabulary) plus declarative `TriggerRule`s. **Why synchronous and ordered:** an async or queued bus would make combat outcomes depend on scheduling, and the simulation must replay from a seed. **Why unhandled effects are recorded rather than dropped:** content routinely references systems that don't exist yet (statuses, summons, repositioning), and it must be **visibly inert rather than silently missing**.
+
 ### D19 — ID naming convention: `type.slug`
 Ids are namespaced by type: `material.*`, `equip.*`, `ability.*`, `actor.*`, `profession.*`, `action.*`, `interaction.*`, `discovery.*`, `realm.*`, `species.*`/`class.*`/`prefix.*`/`suffix.*`, and `consumable.*` (renamed from the inconsistent `item.*`). Realm-location ids (`loc.*`) are realm-scoped, not globally unique. Property ids are bare (`hardness`) — they are keys, not entities.

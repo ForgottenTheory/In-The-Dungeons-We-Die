@@ -7,7 +7,7 @@ Map of systems → key files → how they connect. Paths are relative to repo ro
 core/    InTheDungeonsWeDie.Core.csproj   (net8.0, RootNamespace "Dungeons", NO Godot ref)
 game/    InTheDungeonsWeDie.csproj         (Godot.NET.Sdk/4.7.1, references Core); project.godot here
 tests/   InTheDungeonsWeDie.Core.Tests.csproj (xUnit, references Core only)
-docs/    design docs + docs/current-state.md audit
+docs/    design docs; `effect-foundation.md` is the settled architecture package
 game/data/<type>/*.json   all content
 InTheDungeonsWeDie.slnx   root solution
 ```
@@ -29,10 +29,19 @@ InTheDungeonsWeDie.slnx   root solution
 - `EquipmentDefinition` (Weapon/Armor stats + base properties), `Equipment` (slot→instance container), `EquipmentResolver` → `Combat.AttackProfile`/`ArmorProfile` (the material→combat seam, currently Mass/Hardness only).
 - **Connects:** professions/crafting/combat deposit into `Inventory`; `EquipmentResolver` output is passed by `GameRoot` into `Combatant.FromCharacter`.
 
+## Modifiers / Events / Rules — `core/Modifiers/`, `core/Events/`, `core/Rules/`
+The spine the class combinator (and, later, professions and equipment) is built on.
+- **`ModifierKeyDefinition`** (`game/data/modifier_keys/`, 51 keys) + **`ModifierSet`** + **`ModifierKeys`** — an open, validated vocabulary of modifier *targets*. Kinds: additive / multiplicative / flag. Clamps live on the key, so the minimum-interval rule is data. Every `ModifierContribution` carries its source. `ModifierKeys.From(StatId)` bridges the legacy attribute enum, so there is one modifier system rather than two.
+- **`GameEvent`/`GameEvents`/`GameEventBus`** — 30 events (`architecture.md` §14's vocabulary). Uniform shape (kind + source + target + amount + tags + values) so JSON rules can match on them. **Synchronous and ordered**; events raised inside a handler queue and drain afterwards.
+- **`TriggerRule`/`ConditionSpec`/`EffectSpec`/`RuleVocabulary`** + **`TriggerRuleEngine`** — declarative hooks: 11 condition kinds, 12 effect kinds, cooldowns, seeded chance. `IEffectHandler` is registered by the system owning the behaviour; unhandled effects are recorded, not dropped.
+**Connects:** Prefix rules, Suffix expressions and Base gauge feeds are all `TriggerRule`s. `ContentValidator.ValidateTriggerRule` checks every one at load.
+
 ## Characters — `core/Characters/`
 - `AttributeSet`, `AttributeType`, `ResourcePool`, `ResourceType`, `ResourceCalculator`.
 - `Modifiers/` — `StatId`, `ModifierOperation`, `StatModifier`, `ModifierData`, `ModifierPipeline`.
-- `Composition/` — `CharacterBuild` (4 typed ids: `SpeciesId`/`BaseClassId`/`PrefixId`/`SuffixId` in `ComponentIds.cs`, serialize as bare strings), `CharacterComponentDefinition` (+ Species/Prefix/Suffix/BaseClass), `CharacterComposer` → `CharacterBlueprint`; runtime `Character`.
+- `Composition/` — `CharacterBuild` (4 typed ids in `ComponentIds.cs`, serialize as bare strings), `CharacterComponentDefinition` (+ Species/Prefix/Suffix/BaseClass), `CharacterComposer` → `CharacterBlueprint`; runtime `Character`.
+  - **The class combinator:** `BaseIdentity.cs` (`ExpressionChannel`, `GaugeDefinition`, `GaugeBand`, `GaugeBehaviour`, `AttributeGrowth` — the fixed 4.0/level budget rule); `BuildResolver` → `ResolvedBuild` + `AttachedRule`, with `BuildResolver.Diff` for the Character Lab; `ClassNameFormatter` + `NameFormatDefinition` (9 templated clauses, presentation only).
+  - `BaseClassDefinition` carries growth/gauge/channel/engine/weakness; `PrefixDefinition` carries a mechanic + rules + optional gauge; `SuffixDefinition` carries a fantasy, a format, and channel-selected `SuffixExpression`s. **`SuffixExpression.Channel` is the single coupling point to the composition model** — if channels change, that one field changes.
 - `Rules/` — `ICharacterRule`, `RuleRegistry`, `CharacterSnapshot`, `UnreasonableConfidenceRule`, `InappropriateOptimismRule`. **Connects:** `Character.EffectiveAttributes` = base + active rule bonuses; read by the player `Combatant`.
 
 ## Professions — `core/Professions/`
@@ -60,7 +69,7 @@ The one entry point is **`ReactionEngine : IReactionEngine`** — `Project(Craft
 `SaveData` (v3: build, stash stacks+instances, equipment, next-instance-id, professions, knowledge, discoveries) + `ItemInstanceSave`/`ProfessionSave` DTOs, `SaveSerializer` (System.Text.Json), `SaveMapper` (Capture/Apply between live systems ↔ SaveData). **Connects:** `GameRoot.SaveGame/LoadGame` via `SaveStore` (Godot `user://`).
 
 ## Data content — `game/data/`
-`species/`(3) `classes/`(2) `prefixes/`(3) `suffixes/`(5) `professions/`(3) `profession_actions/`(3) `materials/`(~474 defs across 8 category array files incl. byproducts; `family:value` tags) `properties/`(21 `PropertyDefinition`s) `processes/`(7) `byproducts/`(4) `name_grammar/`(44 words) `crafting_interactions/`(1, legacy shim) `abilities/`(3) `actors/`(2) `consumables/`(1) `equipment/`(4) `realms/`(1). Each folder auto-loads into a `DataStore<T>` in `GameRoot._Ready` (materials via array files, everything else one-object-per-file).
+`species/`(3) `classes/`(15 Bases) `prefixes/`(25) `suffixes/`(50; 10 expressed) `professions/`(3) `profession_actions/`(3) `materials/`(~474 defs across 8 category array files incl. byproducts; `family:value` tags) `properties/`(21 `PropertyDefinition`s) `processes/`(7) `byproducts/`(4) `name_grammar/`(44 words) `crafting_interactions/`(1, legacy shim) `modifier_keys/`(51) `name_formats/`(9) `abilities/`(3) `actors/`(2) `consumables/`(1) `equipment/`(4) `realms/`(1). Each folder auto-loads into a `DataStore<T>` in `GameRoot._Ready` (materials via array files, everything else one-object-per-file).
 
 ## Tests — `tests/`
 Mirror the Core namespaces: `Simulation/`, `Content/` (incl. `ContentValidatorTests` — shipped content passes + a broken-store test per rule), `Characters/`, `Items/` (item model, equipment, equipment content validation), `Professions/`, `Crafting/`, `Combat/`, `Realms/`, `Persistence/`, `Integration/` (`FullLoopTests` — the whole loop headless). Content-validation tests (Content/Characters/Professions/Combat/Realms/Items) load real `game/data` JSON via `TestPaths.DataDir`.

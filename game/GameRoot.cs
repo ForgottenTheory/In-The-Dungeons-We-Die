@@ -8,12 +8,14 @@ using Dungeons.Characters.Rules;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Crafting;
+using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
 using Dungeons.Items;
 using Dungeons.Persistence;
 using Dungeons.Professions;
 using Dungeons.Randomness;
 using Dungeons.Realms;
+using Dungeons.Rules;
 using Dungeons.Simulation;
 using Godot;
 
@@ -77,6 +79,13 @@ public partial class GameRoot : Node
     private CombatEncounter _encounter = null!;
     private bool _everFought;
 
+    /// <summary>
+    /// The one event bus. Combat publishes to it; <see cref="_ruleEngine"/> listens. Synchronous
+    /// and ordered by design (DECISIONS D23) — the simulation must replay from a seed.
+    /// </summary>
+    private readonly GameEventBus _events = new();
+    private TriggerRuleEngine _ruleEngine = null!;
+
     private RealmRun? _run;
     private string? _realmCombatLocationId;
     private readonly Dictionary<string, int> _realmKnowledge = new();
@@ -127,6 +136,12 @@ public partial class GameRoot : Node
         });
         _composer = new CharacterComposer(content.Species, content.Classes, content.Prefixes, content.Suffixes, rules);
         _buildResolver = new BuildResolver(content);
+
+        // The build's Prefix/Suffix/gauge hooks become live here. Until E3 registers effect
+        // handlers nothing they *do* lands, but every rule that fires is recorded — which is
+        // exactly the point of E0: the class system stops being theoretical.
+        _ruleEngine = new TriggerRuleEngine(_events, new SeededRandom(0x21FE5), () => _tick.CurrentTick);
+
         RebuildCharacter();
         EquipStarterLoadout();
 
@@ -165,7 +180,7 @@ public partial class GameRoot : Node
             new SeededRandom(0xC12AF7));
 
         var combatRng = new SeededRandom(0x0C0FFEE);
-        _encounter = new CombatEncounter(_tick, new CombatCalculator(combatRng), _abilities, combatRng, "ability.strike");
+        _encounter = new CombatEncounter(_tick, new CombatCalculator(combatRng), _abilities, combatRng, _events, "ability.strike");
         _encounter.Logged += Emit;
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
@@ -298,6 +313,13 @@ public partial class GameRoot : Node
                 ? $"           {suffix.For(build.Channel)!.Drawback}"
                 : "           (roster entry — no mechanics authored yet)");
         }
+
+        // E0: hooks are live. Until E3 registers effect handlers, firing and landing in
+        // Unhandled is the expected outcome — the point is that it is now *visible*.
+        sb.AppendLine();
+        sb.AppendLine($"Live hooks  {_ruleEngine.Fired.Count} fired  ·  {_ruleEngine.Unhandled.Count} awaiting a handler");
+        foreach (var recent in _ruleEngine.Fired.TakeLast(6))
+            sb.AppendLine($"  fired  {recent.Source,-22} {recent.Trigger.Kind} → {recent.Kind}");
 
         return sb.ToString().TrimEnd();
     }
@@ -1086,9 +1108,38 @@ public partial class GameRoot : Node
     private void RebuildCharacter()
     {
         Character = new Character(_composer.Compose(_build, Baseline));
+        AttachBuildRules();
         Emit($"[Character] Built {Character.DisplayName}.");
         CharacterChanged?.Invoke();
     }
+
+    /// <summary>
+    /// Re-attaches the resolved build's hooks to the rule engine. Called on every rebuild, so
+    /// swapping a component in the Character Lab swaps its live hooks too — detach-all first,
+    /// or the old Prefix keeps firing.
+    /// </summary>
+    private void AttachBuildRules()
+    {
+        // No null guard on purpose: _ruleEngine is constructed before the first RebuildCharacter,
+        // and if that ordering is ever broken a startup NullReference is far better than a build
+        // whose hooks silently never attach.
+        _ruleEngine.DetachAll();
+        var resolved = _buildResolver.Resolve(_build);
+        foreach (var attached in resolved.Rules)
+            _ruleEngine.Attach(attached.Rule, attached.Source);
+    }
+
+    /// <summary>Every hook that fired, newest last — the Character Lab's "is this thing on?" answer.</summary>
+    public IReadOnlyList<string> FiredHooks =>
+        _ruleEngine.Fired.Select(f => $"{f.Source}: {f.Kind} ({f.Trigger.Kind})").ToList();
+
+    /// <summary>
+    /// Hooks that fired into a system that does not exist yet. Content routinely references
+    /// unbuilt systems, and it must be <b>visibly inert rather than silently missing</b>
+    /// (DECISIONS D23) — until E3 registers handlers, most of this list is expected.
+    /// </summary>
+    public IReadOnlyList<string> UnhandledHooks =>
+        _ruleEngine.Unhandled.Select(u => $"{u.Source}: {u.Kind}").ToList();
 
     private void OnActionCompleted(ActionOutcome outcome)
     {
