@@ -1,6 +1,8 @@
 # Character Classes & Identity
 
-> **Status: IMPLEMENTED (data + composition + naming). Movesets are not built yet.**
+> **Status: IMPLEMENTED (data + composition + naming). Movesets are BUILT (E4); the universal
+> move library + acquisition (M2′) is the remaining content pass. Base framing follows D25: a
+> Base is a growth archetype plus a starting kit — never a license.**
 >
 > This document was rewritten when the roster was replaced. The previous roster (Hexslinger,
 > Wayfarer, Pitfighter, Gravetender, Haruspex, Warden, Wretch; the Pyromaniac/Bloodbound prefix
@@ -15,7 +17,7 @@
 Base  +  Prefix  +  Suffix
 ```
 
-- **Base** — what grows and how you fundamentally play. The progression chassis.
+- **Base** — the progression chassis: what grows, plus a starting kit — never a license (D25).
 - **Prefix** — one mechanic that mutates that playstyle.
 - **Suffix** — a bizarre rule you get to abuse, with three expressions so any build can use it.
 
@@ -31,9 +33,15 @@ A Base is distinguished by its **engine** — how resource flows and how its loo
 ticking clock — not by its flavour. Two Bases with the same engine and different themes are the
 same Base.
 
+**An engine is the Base's *starting kit and affinity*, never an exclusive license (D25).** Gauges,
+moves and mechanics are universal definitions any layer may grant later (equipment, Prefix,
+Species, learned specialization); attributes, resources and scoped modifiers do the specializing.
+Move requirements are physical and conditional only — a class-check condition kind may never be
+added.
+
 | Base | Growth | Resource | Ch. | Engine | Weakness |
 |---|---|---|---|---|---|
-| Fighter | STR·DEX / END | Stamina, *no gauge* | S | Moveset comes from the **weapon**; reconfigures by re-equipping | Only as good as their gear |
+| Fighter | STR·DEX / END | Stamina, *no gauge* | S | ⚠ *Stale* — "moveset from the weapon" was universalized in E4; needs a new hook (NEEDS DESIGN, GDD §18 #15) | Only as good as their gear |
 | Juggernaut | STR·CON / END | **Momentum** | S | Builds from damage dealt *and taken*; shortens windups, ignores interrupts | Lulls kill the engine |
 | Operative | DEX·LUK / INT | *on the target* | S | Creates openings, then dumps into the window | Nothing banked between fights |
 | Outlander | DEX·WIS / CON | consumables | S | Finite prepared resources spent at range | Collapses once closed on |
@@ -210,6 +218,8 @@ missing** — until the owning system ships.
 ## 9. Open
 
 - **Respec:** costly but reasonably accessible. Not implemented.
-- **Movesets:** not built. Bases currently contribute growth, gauges and channels but no moves.
+- **Movesets:** BUILT (E4) — movesets compose weapon-first from eight sources, and a Base may
+  grant 0–1 *starting* moves from the universal library (Wizard/Bastion carry the exemplars).
+  What remains is M2′: the library itself and technique-item acquisition.
 - **The remaining 40 suffix mechanics**, once the three-expression model proves out in play.
 - **Unlocking** Prefixes and Suffixes through Realm discoveries, bosses, profession milestones.

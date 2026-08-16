@@ -7,14 +7,51 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`. Recent: E4 (this commit), `ce9d75a` (E3c-3), `9f56828` (E3c + E3c-2),
-  `bfd7cdc` (E3b), `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0).
+- Branch `main`, latest commit **`6eb8dad`** (E4 moves). Before it: `ce9d75a` (E3c-3),
+  `9f56828` (E3c + E3c-2), `bfd7cdc` (E3b), `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0).
 - `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **602 passing**.
-- **Working tree clean** apart from the user's untracked `GDD/`.
+- ⚠ **Uncommitted, docs only** (no code): `docs/GDD.md` (the E0–E4 status-marker update),
+  `ROADMAP.md` (rewritten; M2′ per D25), `DECISIONS.md` (D25 added), this file.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
-  `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
+  `docs/GDD.md` is the project's GDD.
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
   from their Godot 4.7.1 editor and checks UI visually.
+
+---
+
+## ⭐ START HERE — the D25 migration is DONE; next is M1 → M2′
+
+**D25 (recorded in `DECISIONS.md`):** *A Base is a growth archetype plus a starting kit — never
+a license.* Nothing is Base-exclusive: gauges, moves and mechanics are universal definitions any
+layer may grant; attributes/resources/modifiers do the specializing (soft specialization, never
+hard permission). The pure "Base = stats only" form was **explicitly rejected**. Read D25 in
+full before touching Base/move design — it carries the per-engine dispositions and the rejected
+alternatives so they are not relitigated.
+
+**The migration (docs-only, as the audit predicted) is complete:** GDD §3.1/§3.4/§6/§17/§18
+(#15 Fighter redesign, #16 casting-speed scaling)/§19.3a rewritten; `docs/classes.md` reframed
+(engines as starting kits, movesets marked BUILT, Fighter's stale engine flagged);
+`PROJECT_STATE.md`'s Base-moves line now carries the M2′ frame. No code changed — the
+architecture already complied.
+
+**Content, deliberately deferred:** the two E4 exemplar grants (`class.wizard` → fireball,
+`class.bastion` → shield_bash in `bases.json`) **stay until M2′ exists** — they satisfy the
+reachability validator and are legitimate "starting kit" under D25. Migrate them to
+technique-item sources when acquisition lands.
+
+**Next per `ROADMAP.md`:** M1 (editor verification + tuning, user-driven) → M2′ (the universal
+move library + technique-item acquisition v1, goblin AI profiles, the Fighter redesign, the
+casting-speed decision). Everything after M2′ (C1 → C2 → E5 → M6 → E6 → E7) is unchanged by D25.
+
+### Standing constraints from D25 (do not erode)
+- **No class-check condition kind, ever.** The soft gates are attributes, costs and scoped
+  modifiers — they exist and they suffice.
+- **Max two gauges stays a readability cap.** Today it is structural (one Base + one Prefix);
+  when a third grantor type appears (equipment/learned — a tower shield granting Guard is the
+  flagship), enforcement moves to a composition-time rule in `BuildResolver`/validation.
+- **Nothing is removed.** All 8 built gauge engines stay as Base starting kits; Form (Druid) is
+  a Move mechanic when built (E4's `replaces` grants are the machinery); Thralls/openings/ammo/
+  deployables get authored as universal systems with Base as default access.
 
 ## ⚠️ Godot-side work that has never been run
 Three things were written without being executed, because Godot is not on PATH here. All are
@@ -92,8 +129,12 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
    interval" are inexpressible. One change fixes both (D-12).
 
 **Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → ✅ **E3** → ✅ **E4 moves** →
-**C1 traits/essence ← NEXT** → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
-E7 Overreach.
+C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes → E6 tools → E7 Overreach.
+
+> **The current build order is `ROADMAP.md`** (rewritten after E4, amended by D25): an editor
+> verification/tuning pass (M1), then **M2′ — the universal move library + acquisition** (which
+> replaced "Base signature moves"; Bases never own moves), then C1 → C2 → E5 → M6 loop-closers →
+> E6 → E7.
 
 ### ✅ E4 shipped — the Move system, and the GDD's largest gap closes
 

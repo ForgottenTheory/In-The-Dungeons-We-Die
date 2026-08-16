@@ -1,10 +1,12 @@
 # In The Dungeons We Die — Game Design Document
 
-> **Consolidated GDD.** Written against the project as it actually stands (commit `5bdab2e`,
-> 459 passing tests). Where older documents conflict with newer decisions, the newer decision is
-> recorded here and the older one is marked superseded.
+> **Consolidated GDD.** Written against the project as it actually stands (revised after the
+> effect-foundation build E0–E4; 602 passing tests). Where older documents conflict with newer
+> decisions, the newer decision is recorded here and the older one is marked superseded.
 >
-> Anything unfinished or undecided is marked **TBD** or **Needs Design** rather than invented.
+> **Status marks:** **BUILT** (in the game, tested) · **PLANNED** (designed and settled, not yet
+> built) · **NEEDS DESIGN** (little or no design exists). Anything undecided is marked rather
+> than invented. §19 is the full status summary.
 
 ---
 
@@ -96,7 +98,7 @@ Species  +  Base  +  Prefix  +  Suffix
 ```
 
 - **Species** — physiology. *Currently 3 authored, mechanically shallow. Needs Design.*
-- **Base** — the progression chassis: what grows and how you fundamentally play.
+- **Base** — the progression chassis: what grows, plus a starting kit — never a license (D25).
 - **Prefix** — one mechanic that mutates that playstyle.
 - **Suffix** — a rule-breaking modifier, with three expressions so any build can use it.
 
@@ -132,6 +134,17 @@ A Base is distinguished by its **engine** — how resource flows and how its loo
 ticking clock — not by its flavour. Two Bases with the same engine and different themes are the
 same Base.
 
+**An engine is the Base's *starting kit and affinity*, never an exclusive license (D25).** The
+gauge, hooks and starting moves a Base begins with are universal definitions any layer may grant
+later — equipment, Prefix, Species, a learned specialization (flagship: a tower shield granting
+Guard). What keeps the Wizard best at the Held Spell is growth weights, resources and modifiers —
+soft specialization, never hard permission. The interesting question is *"how well can this build
+make Fireball work?"*, never *"is this Base allowed to cast Fireball?"*
+
+> **Standing rule (D25, enforce forever):** move requirements are physical and conditional —
+> equipped tags, costs, statuses. A class-check condition kind may never be added to the rule
+> vocabulary.
+
 | Base | Growth (pri / sec) | Resource | Channel | Engine | Weakness |
 |---|---|---|---|---|---|
 | **Fighter** | STR·DEX / END | Stamina, *no gauge* | Strike | Moveset comes from the **weapon**; reconfigures by re-equipping | Only as good as their gear |
@@ -154,6 +167,10 @@ same Base.
 the distinctions the roster exists to create. A gauge is a meter with generation rules, decay,
 capacity and threshold bands; its generation is expressed as ordinary event hooks, so it needs
 no bespoke machinery.
+
+⚠ **Fighter's engine is stale.** "Moveset comes from the weapon" was universalized for *everyone*
+in E4 — every build's moveset composes weapon-first now. Fighter needs a new identity hook that
+is not a license. **NEEDS DESIGN** (§18 #15), targeted at M2′.
 
 **Gauge behaviour taxonomy** (a design lens for balance, not a hard rule): Build & Spend ·
 Charge & Hold · Sustain & Ramp · Deplete & Recover · Debt & Collect.
@@ -385,9 +402,10 @@ Not every action uses every stage. Telegraph communicates intent ("Goblin Brute:
 SMASH"); windup is the window where an action can be interrupted, dodged, blocked or countered;
 recovery creates the counterattack window.
 
-> **Implementation gap:** telegraph and windup are currently collapsed into a single
-> time-to-impact value, so "interrupt during windup" is not yet expressible. Splitting them is
-> planned and is the riskiest single change in the combat roadmap.
+> **BUILT (E2a).** Telegraph and windup are separate scheduler states; an interrupt records
+> *which phase it cut*, so content can distinguish "stopped them before they swung" from
+> "stopped them mid-swing". Landed with zero existing tests changed. Interrupt-immunity is a
+> move property (`interruptible: false`) and a modifier flag, both live (E4).
 
 ## 5.3 Skill expression
 
@@ -407,8 +425,16 @@ other.** Active play must earn its advantage through better decisions — never 
 
 ## 5.5 Damage & defence
 
-> **Settled by the effect-foundation decisions D-01 – D-07.** Full specification in
-> `docs/damage-and-defense.md`.
+> **Settled by the effect-foundation decisions D-01 – D-07; the core is BUILT (E1–E4).** Full
+> specification in `docs/damage-and-defense.md`.
+>
+> **BUILT:** packets and lanes, the ordered traced pipeline (the Hit Log), diminishing armour
+> (`armour/(armour + packet)`, D-27), per-lane resistance with cap/floor, enemy vulnerability
+> multipliers, timed block/dodge stances, **Perfect Block**, crit, the INCREASED stage reading
+> real modifiers, damage-taken and block-strength modifiers, Barrier-as-status.
+> **PLANNED (arrives with its source, mostly E5 affixes):** parry, evade, lane avoidance,
+> exposure/inversion/penetration, thorns, ailment application chances, the two-number
+> `capped / raw` resistance display.
 
 **A hit is a list of packets**, each carrying exactly one **damage type**
 (*Slashing · Crushing · Piercing · Magic*) and zero-or-one **aspect**
@@ -456,14 +482,20 @@ EffectiveInterval = max(MinimumInterval, BaseInterval × modifiers)
 ```
 
 Hard minimums prevent degenerate zero-time actions — this is now enforced as data on the
-modifier key itself, so no combination of haste sources can bypass it.
+modifier key itself, so no combination of haste sources can bypass it. **BUILT**, with one
+recorded debt: D-20 tightened the interval floor to **0.55** and the shipped registry still says
+0.25 — an unapplied decision awaiting a balance pass, not an open question.
 
 ## 5.7 Auto-combat
 
 Passive Realm runs will eventually need automatic combat. **Auto-combat uses the same rules** —
 automation chooses actions, the domain resolves them normally. There is deliberately no separate
 "fake" combat calculator, so passive and active never become two unrelated balance models.
-**Not built.**
+
+**PLANNED — and closer than it was:** enemies now run weighted AI rules over the shared
+condition vocabulary (E4), and auto-combat is designed as *the player driven by the same profile
+shape*, disadvantaged by reaction latency rather than a damage penalty (D-07). The profile
+machinery exists; pointing it at the player does not.
 
 ## 5.8 Positioning — deferred
 
@@ -472,12 +504,13 @@ melee range, ranged distance, area effects, hazards, protection and targeting. *
 deferred**; the current model is single-position. Deferring is a conscious choice — adding it
 later multiplies the design space of every move and every enemy.
 
-## 5.9 Hazards & statuses — **Designed, not built**
+## 5.9 Statuses — **BUILT (E2–E4)** · Hazards — **PLANNED**
 
 > **Settled by D-08 – D-10.** Full specification in `docs/statuses.md`.
 
 Hazards operate on ticks and telegraph their resolution so players can react (poison clouds,
-fire, falling debris, trap tiles, freezing pulses).
+fire, falling debris, trap tiles, freezing pulses). **Hazards remain PLANNED** — nothing places
+one in a Realm yet.
 
 **Statuses are fully data-driven** — one definition type, no bespoke class per ailment — in four
 categories whose rules differ:
@@ -504,52 +537,61 @@ earn, then earn again more expensively. **Stagger folds in** as buildup toward S
 cannot Stun-lock *and* Freeze-lock. Player-facing text still reads "12% chance to Freeze"; the
 Resolve bar shows the truth.
 
-Several Prefixes and Suffixes already reference statuses: **13 of the 14 authored ids go live
-when statuses ship**; `status.recalled_move` waits for the Move system.
+**All of the above is BUILT**: 28 status definitions (the 14 core plus **all 14**
+previously-dangling authored ids — `status.recalled_move` went live with the Move system),
+DoT ticks that cannot proc anything (proc-safety rule 4), `while_active` modifiers that combat
+actually reads (Chill genuinely slows windups; Corroded genuinely strips armour), Resolve with
+shared buildup, control immunity and per-encounter escalation, and stagger folding into Stun
+buildup exactly as designed. **One PLANNED remainder:** ailment application *chances* have no
+source until E5 affixes grant them, so Bleed/Burn/Poison do not yet fire from ordinary hits —
+the plumbing and the post-mitigation magnitude rule are in and tested.
 
 ---
 
-# 6. Moves & Movesets — **Designed, not built**
+# 6. Moves & Movesets — **BUILT (E4)**; the move library + acquisition (M2′) remaining
 
-> **Settled by D-18.** Full specification in `docs/moves.md`.
->
-> A Move is **tags + timing + costs + requirements + packets + effects**, where effects and
-> requirements reuse the same vocabulary the Prefix/Suffix hook system already uses. An attack
-> and a spell differ only in their data. `MoveKind` exists for dispatch and filtering; behaviour
-> never switches on it.
->
-> **`AttackProfile` and `AbilityDefinition` converge into `MoveDefinition`** — they are the same
-> object under two names, and neither can express packets, aspects, stagger or riders. This
-> **amends DECISIONS D8**, whose intent survives: combat reads a neutral *Move*, never an
-> equipment type.
->
-> **Move modification** is 11 declarative ops (`addPacket`, `convert`, `addAsExtra`,
-> `scaleTiming`, `addChain`, `addEffect`, `addTag`, …) matched by tag or move id — so
-> *"Heavy Strike gains additional Heat damage"* and *"an item grants a Move"* are data, never
-> `if item == ThunderSword`.
->
-> **Combat Moves and Profession Actions share components and an event vocabulary, not a base
-> class** — `ActionTiming`, `ActionCost[]`, `ConditionSpec[]`, and `ActionStarted`/`ActionCompleted`
-> tagged by domain. One trigger vocabulary, two executors.
+> **Settled by D-18; the engine is BUILT.** Full specification in `docs/moves.md`.
 
-A universal **Move** architecture is intended to represent melee attacks, ranged attacks, spells,
-defensive actions, utility, control, movement, reactions, channels, summons, class abilities and
-enemy abilities — without a separate hardcoded system per category, and without one giant class
-of nullable fields.
+A universal **Move** represents melee attacks, ranged attacks, spells, defensive actions,
+utility, reactions, channels, summons, class abilities and enemy abilities — one data shape, no
+hardcoded system per category, no giant class of nullable fields.
 
-Proposed shape (approved in principle, not built): a Move is **timing + costs + targeting +
-requirements + a list of effects**, where effects and requirements reuse the same vocabulary the
-Prefix/Suffix hook system already uses.
+**A Move is tags + timing + costs + requirements + targeting + packets + effect riders**, where
+effects and requirements reuse the same vocabulary the Prefix/Suffix hook system uses. An attack
+and a spell differ only in their data — Heavy Strike, Fireball and Shield Bash ship as exactly
+that demonstration. `MoveKind` exists for dispatch and filtering; behaviour never switches on it.
 
-**Movesets** compose from: Base · Species · Prefix · Suffix · equipped weapon · equipped items ·
-learned abilities · temporary effects · emergent equipment properties. Rules for precedence and
-*replacement* are needed (Druid forms swap a whole moveset; "Of The Wrong Weapon" needs
-substitution). Enemies use the same system — a coherent moveset, not a random draw from every
-attack in the database.
+**What the build delivered:**
 
-**Current state:** three hardcoded abilities exist (Strike, Rusty Slash, Overhead Smash). Bases
-declare no abilities. **No class in the game currently has a class ability.** This is the single
-largest gap between "builds compose" and "builds play differently".
+- **`AttackProfile` and `AbilityDefinition` are deleted**, converged into `MoveDefinition`
+  (amends DECISIONS D8; its intent survives — combat reads a neutral resolved *Move*, never an
+  equipment type). Weapons author the moves they grant; instance mass adjusts them once, split
+  by packet share.
+- **Movesets compose** weapon-first, then Species · Base · Prefix · Suffix, every grant with
+  provenance, `replaces` reported never silent. Species grant Bare Fists, so no one is moveless.
+  Runtime grants (`grantMove`), instant triggers (`triggerMove`, at chain depth+1, nesting
+  refused at load) and duration-limited modification (`modifyMove`) are live effects.
+- **Move modification** is 11 declarative ops matched by tag or move id, applied in a **fixed
+  order** proved source-order-independent — *"Heavy Strike gains additional Heat damage"* and
+  *"an item grants a Move"* are data, never `if item == ThunderSword`. `convert` always states a
+  fraction (D-01); `addTag` is the composition lever.
+- **Enemies use the same system**: a moveset plus weighted AI rules over the shared condition
+  vocabulary — intent chosen by rule, timing resolved by the tick engine. The old uniform
+  random draw is gone; an actor with no profile behaves uniformly, so old content ports clean.
+- **Combat Moves and Profession Actions share components, not a base class** — `ActionTiming`
+  and `ActionCost` (a gauge name is a legal cost) live in the shared `Dungeons.Actions`
+  vocabulary. Professions adopt them in E6.
+- **The Mnemonic loop closes**: `status.recalled_move` stores the executing move's id; Recall
+  replays it instantly through `recallMove`, bounded by its cooldown.
+
+**Remaining — the universal move library + acquisition layer (M2′; NEEDS CONTENT):** 9 moves
+ship (weapon moves, the three spec exemplars, Recall, Bare Fists, two enemy ports). The next
+pass authors a **universal** library — moves are never Base-exclusive (D25) — plus the
+acquisition layer that puts it in reach (technique items → learned list, v1). Bases keep **0–1
+*starting* moves** drawn from that library as part of their kit; Wizard's Fireball and Bastion's
+Shield Bash are the shipped exemplars of exactly that. Enemy AI profiles beyond the uniform
+default ride the same pass. Until then, builds compose and hook differently but mostly still
+swing the same weapon.
 
 ---
 
@@ -814,13 +856,18 @@ and types otherwise-untyped damage.
 ## 10.2 Current equipment — thin
 
 Two slots (Weapon, Armor), four hand-authored items (Rusty Sword, Iron Sword, Tattered Armor,
-Iron Armor). Material properties barely reach combat: only mass → damage/speed and hardness →
-armour.
+Iron Armor). **Since E4 a weapon is its moves**: it authors the moves it grants (the Iron Sword
+grants Iron Slash and Heavy Strike), and re-equipping reconfigures the moveset — the Fighter's
+identity, working today. Material properties still barely reach combat: only mass →
+damage/speed (applied to the move's packets) and hardness → armour.
 
-## 10.2a Modifiers, genetics and the casino — **Designed, not built**
+## 10.2a Modifiers, genetics and the casino — **PLANNED** (designed in full, not built)
 
 > **Settled by D-21 – D-23.** Full specification in `docs/affixes.md` and
-> `docs/profession-tools.md`.
+> `docs/profession-tools.md`. Slices E5 (modifiers/affixes), E6 (tools), E7 (operations +
+> Overreach), after C1/C2 supply traits, essence and fabrication. The effect vocabulary these
+> pools express themselves in — statuses, scoped modifiers, move modification, proc limits — is
+> **BUILT**, which is the whole reason the pools were sequenced last (D-19).
 
 A fabricated item carries a **Genome** — stat-map-weighted property *pressure*, essence,
 expressed and dormant traits, tags, potency, signatures. The genome decides three things about
@@ -966,26 +1013,31 @@ survival** — this is a core intended reward for Realm Knowledge and profession
 
 # 12. Enemies & Encounters
 
-## 12.1 Current state — a prototype
+## 12.1 Current state — the model is BUILT, the content is a prototype
 
-Two enemies (Goblin Raider, Goblin Brute), one ability each, **uniformly random** ability
-selection, one guaranteed loot drop each. No resistances, vulnerabilities, tags, harvestables or
-elite/boss variants.
+Two enemies (Goblin Raider, Goblin Brute), one move each, one guaranteed loot drop each.
+**Since E1/E4 the machinery around them is real:** the Brute carries per-type vulnerabilities
+(soft to Crushing, tough against Slashing — the first live "swap to the weapon that counters
+it"), both carry Resolve, actors declare movesets, and **the uniform random draw is gone** —
+selection runs through weighted AI rules, with an empty profile behaving uniformly. No shipped
+actor authors a profile yet; no tags, harvestables or elite/boss variants.
 
 The Goblin Brute matters disproportionately: its slow telegraphed Overhead Smash is the one thing
 proving the core combat idea — *"I see something dangerous coming. What do I do before it lands?"*
 
-## 12.2 Intended enemy model
+## 12.2 Intended enemy model — the frame is BUILT, the breadth is PLANNED
 
 Data-driven, composed from reusable behaviours rather than a bespoke class per enemy:
 
-identity · type/tags · stats · defences · resistances · vulnerabilities · moveset · **AI profile**
-· behaviour rules · loot table · **harvestable resources** · biome availability · depth
-availability · elite/boss modifiers applied *over* a base enemy.
+identity · type/tags · stats · defences · resistances **(BUILT)** · vulnerabilities **(BUILT)** ·
+moveset **(BUILT)** · **AI profile (BUILT** — weighted rules over the shared condition
+vocabulary**)** · behaviour rules · loot table · **harvestable resources** · biome availability ·
+depth availability · elite/boss modifiers applied *over* a base enemy **(all PLANNED)**.
 
-**AI chooses intent; the tick engine resolves timing.** AI may consider target, health, position,
-cooldowns, threat, player state and Realm modifiers. Unique bosses may break the composable rule
-where necessary.
+**AI chooses intent; the tick engine resolves timing** — built exactly so, and deterministic
+under the seed. AI may consider target, health, cooldowns, statuses and player state today;
+threat, position and Realm modifiers arrive with their systems. Unique bosses may break the
+composable rule where necessary.
 
 ## 12.3 Target roster for the slice
 
@@ -1070,6 +1122,11 @@ Load), a tabbed body, and an always-visible event log. Dark, code-only theme; no
 
 **Tabs:** Character · Char Lab · Equipment · Professions · Crafting · Realm · Combat · Inventory.
 
+> ⚠ **Unverified in the editor:** several Core-complete surfaces have never been rendered —
+> the Character Lab "Live hooks" panel, the Hit Log toggle, the gauge readout, and the E4
+> moveset readout / `CombatUseMove` command. All presentation-only; a single visual pass in
+> Godot covers them.
+
 Two are genuinely designed rather than debug scaffolding:
 
 **The Crafting Bench** — process picker (showing medium, severity, gate and the channel it
@@ -1115,6 +1172,9 @@ These recur across systems and have each been argued for explicitly:
 6. **Fail loudly at load.** Bad content references break at startup, never mid-play.
 7. **Never author a combination.** If a feature needs N × M hand-written entries, the design is
    wrong.
+8. **Move requirements are physical and conditional, never identity checks (D25).** Equipped
+   tags, costs and statuses gate moves; attributes, resources and modifiers do the specializing.
+   A class-check condition kind may never be added to the rule vocabulary.
 
 ---
 
@@ -1136,6 +1196,8 @@ These recur across systems and have each been argued for explicitly:
 | 12 | **Suffix Guard expressions skew defensive** | ✅ **Largely answered — D-06.** The Guard channel now has six distinct events to hook (`HitLanded`, `Blocked`, `Parried`, `HitAvoided`, `DamageMitigated`, `BarrierBroken`) instead of only "a block landed", so the six block-triggered expressions can diversify without widening the channel itself |
 | 13 | **`transferable` property flag is unused** | Structural properties are marked non-transferable, yet processes move them on-channel. Give it a job or drop it |
 | 14 | **Response properties drop on transformation** | Iron's authored heat resistance of 60 becomes a derived ~14 after any craft. Arguably the more honest number, but it's a visible discontinuity |
+| 15 | **Fighter's identity hook** | Its engine — "moveset comes from the weapon" — was universalized for everyone in E4. Fighter needs a new hook that is not a license (D25). **NEEDS DESIGN**, targeted at M2′ |
+| 16 | **Casting-speed attribute scaling** | A low-INT caster today is weak and mana-poor but not *slow* — "slowly and inefficiently" is currently only "weakly and expensively". Decide whether/how cast speed scales with attributes **before M2′ authors many spells** |
 
 ---
 
@@ -1161,9 +1223,9 @@ Decided, argued through, and stable enough to build against.
   architectural reference, active vs passive as a standing rule
 - **Respec**: costly but accessible
 
-## 19.2 Exists in-game
+## 19.2 Exists in-game — BUILT
 
-Built, tested, and runnable today. 459 passing tests, zero build warnings.
+Built, tested, and runnable today. 602 passing tests, zero build warnings.
 
 | System | What's real |
 |---|---|
@@ -1171,43 +1233,60 @@ Built, tested, and runnable today. 459 passing tests, zero build warnings.
 | **Materials** | 474 definitions, 21 typed properties, namespaced tags, load-time validation |
 | **Emergent crafting** | The complete P1 engine: 7 processes, the full algebra, potency, integrity, destruction, byproducts, signature registry, naming, Reaction Log, pre-commit projection |
 | **Crafting bench UI** | Process/substrate/ordered-reagent/catalyst selection with live projection |
-| **Character identity** | 15 Bases, 25 Prefixes, 50 Suffixes (10 fully expressed), 9 name formats, growth budget, gauges, channels — 18,750 resolvable builds |
+| **Character identity** | 15 Bases, 25 Prefixes, 50 Suffixes (10 fully expressed), 9 name formats, growth budget, gauges, channels — 18,750 resolvable builds, **hooks live in combat** |
 | **Character Lab UI** | Component swapping with a live diff |
-| **Modifier system** | 51 data-defined keys with provenance and clamps |
-| **Event bus** | 30 events; declarative trigger rules with conditions, effects, cooldowns and seeded chance |
-| **Combat** | Tick-driven encounter, telegraph → execute → recovery, timed block/dodge, 2 enemies, 3 abilities, consumable use, death |
+| **Modifier system** | 51 data-defined keys, five stacking kinds (incl. diminishing), clamps and `danger` caps as data, **scoped contributions** (local-vs-global, per-profession, per-move-tag) with the wrong-context guard, and a combat read path assembling build + status + gauge-band + timed contributions |
+| **Events & rules** | 31 events; declarative trigger rules — 17 conditions (incl. stateful world reads), 16 effects, one-roll-`effects[]`, target selectors, cooldowns, seeded chance; **full proc safety** (chain ids, depth 2, once-per-chain, ICD, `CanTrigger`, 64-effect fuse) |
+| **Effect handlers** | 11 combat handlers — damage, area, heal, status, resource, modifier, interrupt, and the four move-granting kinds; unhandled kinds visibly recorded |
+| **The hit pipeline** | Packets × lanes, traced Hit Log, diminishing armour, resistances, enemy vulnerability, crit, Perfect Block, modifier-driven INCREASED/block/damage-taken stages |
+| **Statuses** | 28 data-driven definitions across all four categories; DoTs, timed modifiers combat reads, **Resolve** (buildup, shared immunity, escalation), stagger→Stun |
+| **Moves** | `MoveDefinition` for both sides; weapon-granted movesets with provenance; 11-op move modification in fixed order; weighted enemy AI; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; 9 shipped moves |
+| **Combat** | Tick-driven encounter, telegraph → windup → execute → recovery as real states, timed block/dodge, queue-time costs/cooldowns/requirements, consumable use, death |
 | **Professions** | 3 professions, 3 actions, active + passive, XP/levels |
 | **Realm** | Dark Forest — 10 locations, 2 depths, travel, descend, extract, forfeit-on-death |
 | **Persistence** | Single-slot save (v4) covering build, stash, instances, equipment, professions, knowledge, discoveries, emergent archetypes |
 
-## 19.3 Partially designed
+## 19.3 PLANNED — designed, not built
 
-Direction is clear; specifics are not settled or not built.
+Direction and specifics are settled (mostly by the 27 effect-foundation decisions); the build
+has not reached them.
 
-- **Equipment** — the form-template/multi-component/aperture model is designed in detail but
-  unbuilt, and blocked on the scale reconciliation. Property→stat mappings are proposed, not
-  approved
-- **Professions** — 3 of 19 exist. The Melvor layer list is identified but mastery does nothing,
-  offline progress is a formula with no implementation, and no interval/preservation/doubling
-  layer exists
-- **Enemies** — the data model and AI-profile approach are clear; the content is two goblins with
-  random ability selection
-- **Realm depth** — location types, affixes, campsite, preparation and Knowledge-unlocks are all
-  designed and none are built
+- **Item modifiers, genetics, operations, Overreach** (§10.2a) — designed in full; slices
+  E5/E7, after C1/C2. The effect vocabulary they express themselves in is already built
+- **Equipment fabrication** — the form-template/multi-component/aperture model is designed in
+  detail, blocked on the **scale reconciliation** (the C2 combat rebalance). Property→stat
+  mappings are proposed, not approved
+- **Profession tools** (§10.2a) — two worn slots, same genome/affix machinery; slice E6, cheap
+  once E5 exists
 - **Crafting P2–P6** — traits, essence, signature reactions, fabrication and the codex are
-  specified in detail and deliberately deferred
-- **Moves** — a universal architecture has been proposed and its slicing planned; nothing is
-  approved or built. **This is the largest single gap: no class currently has a class ability**
-- **Species** — a roster of ten exists on paper; three are built as thin stat packages
+  specified in detail and deliberately deferred (C1/C2)
+- **Realm depth** — location types, affixes, campsite, preparation and Knowledge-unlocks are
+  designed and none are built
+- **Hazards** — the tick/telegraph model is designed; nothing places one
+- **Auto-combat** — the profile shape it runs on now exists (enemies use it); pointing it at
+  the player does not
+- **Offline progress** — a formula with no implementation
 
-## 19.4 Needs major design work
+## 19.3a NEEDS CONTENT — the engine is ahead of the data
 
-Little or no design exists.
+Built machinery waiting on authored content, not on code.
+
+- **The universal move library + acquisition (M2′)** — 9 moves exist and no way to learn more.
+  Moves are never Base-exclusive (D25): the pass authors a universal library plus technique-item
+  acquisition v1, with Bases keeping 0–1 *starting* moves each (Wizard's Fireball and Bastion's
+  Shield Bash are the shipped exemplars). Still the single highest-leverage content pass in the
+  game: it is what makes 18,750 builds *play* differently rather than compose differently
+- **Enemy AI profiles and roster** — the weighted-rule machinery is live; no shipped actor
+  authors a profile, and the roster is two goblins against a target of 8–10
+- **Move modifiers** — the 11-op system is live and empty; E5's affix pools are its intended
+  author
+- **Remaining 40 suffix mechanics** (~120 expressions) and the Species roster (3 thin of 10)
+
+## 19.4 NEEDS DESIGN — little or no design exists
 
 - **Economy** — no currency, no vendors, no loot tables, no valuation rules, no sinks. Respec
   pricing has no economy to price against
 - **The Hideout** — upgrades, stations, storage, the portal screen
-- **Statuses and hazards** — referenced by existing content, entirely unbuilt
 - **Positioning** — deferred without a decision on whether it's ever coming
 - **Character level and XP** — attribute *growth weights* exist, but nothing awards character XP
   or levels; the build is currently hardcoded and cycled by a debug button
@@ -1232,7 +1311,10 @@ Little or no design exists.
 
 ## Appendix: the effect-foundation package
 
-The design settled by the 26 decisions in `docs/effect-foundation.md` §12:
+The design settled by the 27 decisions in `docs/effect-foundation.md` §12. **Slices E0–E4 are
+BUILT** (events → hit pipeline → lifecycle split + statuses → rule engine + scoped modifiers +
+handlers + stateful conditions → moves); **C1/C2 and E5–E7 remain** (traits/essence,
+fabrication + scale reconciliation, affixes, tools, Overreach).
 
 | Doc | Covers |
 |---|---|

@@ -26,7 +26,7 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
   - **9 name formats** (`name_formats.json`) — dynamic grammar (`standard`/`citation`/`investigation`/`warning`/`medical`/`liability`/`bureaucratic`/`consequence`/`notice`). **Presentation only**, verified never to affect mechanics.
 - ✅ **`BuildResolver`** — resolves a build into growth, gauges (max 2), attached hooks with provenance, modifiers, and the generated name. `BuildResolver.Diff` powers the Character Lab.
 - ✅ **Character Lab tab** — swap any component, live diff + full readout. *Layout bug fixed; needs re-verification in the editor.*
-- ✅ **Moves exist** (E4). One `MoveDefinition` shape for attacks, spells and utilities; movesets compose weapon-first with provenance; `MoveModifier` ops rewrite them; enemies pick via weighted AI rules. 🟡 **Content**: 9 moves shipped (weapon moves, the three spec exemplars, Recall, enemy ports); Wizard and Bastion have signature moves — **the other 13 Bases await a design pass**.
+- ✅ **Moves exist** (E4). One `MoveDefinition` shape for attacks, spells and utilities; movesets compose weapon-first with provenance; `MoveModifier` ops rewrite them; enemies pick via weighted AI rules. 🟡 **Content**: 9 moves shipped (weapon moves, the three spec exemplars, Recall, enemy ports). **Next is M2′ — the universal move library + technique-item acquisition (D25)**; moves are never Base-exclusive, and Bases keep 0–1 *starting* moves from the library (Wizard's Fireball and Bastion's Shield Bash are the shipped exemplars of that).
 - 🟡 **Species** is out of this pass — still 3 thin stat packages against a designed roster of 10.
 
 ## Core mechanisms behind it (new, reusable)
