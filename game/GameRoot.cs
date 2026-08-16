@@ -675,10 +675,15 @@ public partial class GameRoot : Node
     /// <summary>Uses a specific move from the player's moveset (E4).</summary>
     public void CombatUseMove(string moveId) => _encounter.UseMove(moveId);
 
+    /// <summary>The player's resolved moveset — live from the encounter mid-fight, otherwise
+    /// resolved fresh from the current build + equipment. The Combat tab's move buttons.</summary>
+    public IReadOnlyList<ResolvedMove> PlayerMoveset =>
+        _encounter.IsActive ? _encounter.PlayerMoves : ResolvePlayerMoveset();
+
     /// <summary>The player's current moveset, for the Combat tab and the Character Lab —
     /// name, id, costs, and where each move came from.</summary>
     public IReadOnlyList<string> MovesetReadout =>
-        (_encounter.IsActive ? _encounter.PlayerMoves : ResolvePlayerMoveset())
+        PlayerMoveset
         .Select(m =>
         {
             var costs = m.Costs.Count == 0 ? "free" : string.Join(", ", m.Costs);

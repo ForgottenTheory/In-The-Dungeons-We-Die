@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dungeons.Combat;
 using Dungeons.Crafting;
 using Dungeons.Items;
 using Dungeons.Realms;
@@ -39,6 +40,10 @@ public partial class MainMvpUI : Control
     private Label _craftingLabel = null!;
     private Label _craftingStashLabel = null!;
     private Label _combatLabel = null!;
+    private HBoxContainer _moveButtonsRow = null!;
+    private Label _hitLogLabel = null!;
+    private PanelContainer _hitLogCard = null!;
+    private string _moveButtonsKey = string.Empty;
     private Label _realmLabel = null!;
     private VBoxContainer _realmControls = null!;
     private VBoxContainer _equipmentControls = null!;
@@ -756,6 +761,12 @@ public partial class MainMvpUI : Control
             startRow.AddChild(MakeButton(actor.Name, () => _game.StartCombat(actorId), Danger));
         }
 
+        // E4: one button per resolved move. Rebuilt only when the move list itself changes
+        // (fight start, equipment swap, runtime grantMove) — RefreshCombat runs per frame
+        // during a fight, and recreating buttons every frame would eat the click.
+        _moveButtonsRow = Row();
+        root.AddChild(_moveButtonsRow);
+
         var actionRow = Row();
         root.AddChild(actionRow);
         actionRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
@@ -763,6 +774,23 @@ public partial class MainMvpUI : Control
         actionRow.AddChild(MakeButton("Dodge", () => _game.CombatDodge()));
         actionRow.AddChild(MakeButton("Use Salve", () => _game.CombatUseConsumable("consumable.healing_salve"), Positive));
         actionRow.AddChild(MakeButton("Wait", () => _game.CombatWait()));
+
+        var trace = new CheckButton { Text = "Hit trace" };
+        trace.Toggled += on =>
+        {
+            _game.ShowHitLog = on;    // stream per-hit traces into the event log
+            _hitLogCard.Visible = on; // and pin the last hit's full trace here
+            if (on)
+                _hitLogLabel.Text = _game.LastHitLog;
+        };
+        actionRow.AddChild(trace);
+
+        _hitLogLabel = new Label();
+        _hitLogLabel.AddThemeFontOverride("font",
+            new SystemFont { FontNames = new[] { "Consolas", "monospace" } });
+        _hitLogCard = Card(_hitLogLabel);
+        _hitLogCard.Visible = false;
+        root.AddChild(_hitLogCard);
     }
 
     private void BuildInventorySection(VBoxContainer root)
@@ -816,6 +844,47 @@ public partial class MainMvpUI : Control
             row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot), Danger));
     }
 
+    /// <summary>One button per resolved move (E4), keyed by the move-id list so the per-frame
+    /// combat refresh never recreates a button mid-click.</summary>
+    private void RebuildMoveButtons()
+    {
+        var moves = _game.PlayerMoveset;
+        var key = string.Join("|", moves.Select(m => m.Id));
+        if (key == _moveButtonsKey)
+            return;
+
+        _moveButtonsKey = key;
+        foreach (var child in _moveButtonsRow.GetChildren())
+        {
+            _moveButtonsRow.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        _moveButtonsRow.AddChild(new Label { Text = "Moves:" });
+        AddMoveButtons(_moveButtonsRow);
+    }
+
+    private void AddMoveButtons(Container row)
+    {
+        foreach (var move in _game.PlayerMoveset)
+        {
+            var id = move.Id;
+            var button = MakeButton(move.Name, () => _game.CombatUseMove(id), Accent);
+            button.TooltipText = MoveTooltip(move);
+            row.AddChild(button);
+        }
+    }
+
+    private static string MoveTooltip(ResolvedMove move)
+    {
+        var costs = move.Costs.Count == 0 ? "free" : string.Join(", ", move.Costs);
+        var tooltip = $"{move.Id}\nCost: {costs}";
+        if (move.CooldownTicks > 0)
+            tooltip += $"\nCooldown: {move.CooldownTicks} ticks";
+        tooltip += $"\nFrom: {move.Provenance[0]}";
+        return tooltip;
+    }
+
     private void RebuildRealmControls()
     {
         foreach (var child in _realmControls.GetChildren())
@@ -838,6 +907,9 @@ public partial class MainMvpUI : Control
         if (_game.RealmBusy)
         {
             _realmControls.AddChild(new Label { Text = "In combat — act here (telegraphs show in the Combat tab):" });
+            var movesRow = Row();
+            _realmControls.AddChild(movesRow);
+            AddMoveButtons(movesRow);
             var fightRow = Row();
             _realmControls.AddChild(fightRow);
             fightRow.AddChild(MakeButton("Attack", () => _game.CombatAttack(), Accent));
@@ -875,6 +947,7 @@ public partial class MainMvpUI : Control
     {
         _characterLabel.Text = _game.CharacterReport();
         RebuildEquipmentControls(); // equipped slots changed
+        RebuildMoveButtons(); // a build swap can change the moveset (guarded — no-op if unchanged)
 
         // The build can also change from the Character tab (Cycle Suffix), so the Lab follows.
         // Setting OptionButton.Selected does not raise ItemSelected, so this cannot loop.
@@ -891,6 +964,7 @@ public partial class MainMvpUI : Control
         _inventoryLabel.Text = _game.InventoryReport();
         _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed
+        RebuildMoveButtons(); // a weapon swap changes the granted moves (guarded — no-op if unchanged)
         RefreshCrafting(); // herblore level shown in the crafting requirement can change
 
         // What is craftable changed, and so did every projection that depends on it.
@@ -901,7 +975,16 @@ public partial class MainMvpUI : Control
 
     private void RefreshCombat()
     {
-        _combatLabel.Text = _game.CombatReport();
+        var report = _game.CombatReport();
+        var gauges = _game.GaugeReadout;
+        if (gauges.Count > 0)
+            report += "\nGauges:  " + string.Join("   ", gauges);
+        _combatLabel.Text = report;
+
+        RebuildMoveButtons();
+        if (_hitLogCard.Visible)
+            _hitLogLabel.Text = _game.LastHitLog;
+
         if (!_game.InRealm)
             return;
 

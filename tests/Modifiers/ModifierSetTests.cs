@@ -54,10 +54,10 @@ public class ModifierSetTests
     {
         var set = Set()
             .Add(ModifierKeys.IntervalMult, 0.9, "base.juggernaut")
-            .Add(ModifierKeys.IntervalMult, 0.5, "prefix.chrono");
+            .Add(ModifierKeys.IntervalMult, 0.8, "prefix.chrono");
 
         Assert.Equal(1.0, Set().Resolve(ModifierKeys.IntervalMult, ModifierContext.None), 6);
-        Assert.Equal(0.45, set.Resolve(ModifierKeys.IntervalMult, ModifierContext.None), 6);
+        Assert.Equal(0.72, set.Resolve(ModifierKeys.IntervalMult, ModifierContext.None), 6);
     }
 
     /// <summary>Flags are on/off rules — "uninterruptible" is not a number you accumulate.</summary>
@@ -83,7 +83,7 @@ public class ModifierSetTests
             .Add(ModifierKeys.IntervalMult, 0.1, "b")
             .Add(ModifierKeys.IntervalMult, 0.1, "c");
 
-        Assert.Equal(0.25, stacked.Resolve(ModifierKeys.IntervalMult, ModifierContext.None), 6);
+        Assert.Equal(0.55, stacked.Resolve(ModifierKeys.IntervalMult, ModifierContext.None), 6); // D-20's floor
         Assert.Equal(0.9, Set().Add("combat.resist.magic", 5, "x").Resolve("combat.resist.magic", ModifierContext.None), 6);
     }
 

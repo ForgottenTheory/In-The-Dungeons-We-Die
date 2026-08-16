@@ -46,7 +46,7 @@
   { "id": "combat.crit.mult",   "name": "Critical Damage", "kind": "multiplicative", "family": "offence", "min": 1 },
 
   // --- Timing (the tick game) -------------------------------------------------------------
-  { "id": "combat.interval.mult",  "name": "Action Interval", "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
+  { "id": "combat.interval.mult",  "name": "Action Interval", "kind": "multiplicative", "family": "timing", "min": 0.55, "lower_is_better": true },
   { "id": "combat.windup.mult",    "name": "Windup",          "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
   { "id": "combat.recovery.mult",  "name": "Recovery",        "kind": "multiplicative", "family": "timing", "min": 0.25, "lower_is_better": true },
   { "id": "combat.telegraph.mult", "name": "Telegraph",       "kind": "multiplicative", "family": "timing", "min": 0.25 },

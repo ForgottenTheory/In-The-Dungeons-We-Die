@@ -53,15 +53,18 @@ casting-speed decision). Everything after M2′ (C1 → C2 → E5 → M6 → E6 
   a Move mechanic when built (E4's `replaces` grants are the machinery); Thralls/openings/ammo/
   deployables get authored as universal systems with Base as default access.
 
-## ⚠️ Godot-side work that has never been run
-Three things were written without being executed, because Godot is not on PATH here. All are
-presentation-only and low risk, but none is verified:
-- **Character Lab "Live hooks" panel** (E0) — fired/unhandled counts + the last six firings,
-  appended to `BuildReport()`.
-- **The Hit Log** (E1) — `GameRoot.LastHitLog` and a `ShowHitLog` toggle, wired but unrendered.
-  Worth deciding whether the Combat tab shows the last trace permanently or behind the toggle.
-- **Crafting bench / Character Lab layout** (pre-existing) — the user has verified Crafting; the
-  Character Lab had an autowrap bug fixed but not re-checked.
+## ✅ M1 editor pass — verified by the user; balance findings recorded
+The M1 wiring (move buttons + tooltips on the Combat tab and Realm fight row, gauge readout,
+Hit-trace toggle with the pinned monospace card, Live-hooks panel) **was verified in the editor
+by the user — it works**.
+
+**Balance findings from that session, deliberately deferred (the user's call):**
+- **Fireball one-shots.** The 40-damage spell against goblin HP pools is a kill button.
+- **Bastion does almost no damage and its fights are hard** — the "very low damage" weakness
+  currently reads as "no win condition", not as a trade.
+- General damage tuning is pending anyway — fold these into the next balance-touching slice
+  (C2's scale reconciliation is the natural home, or a dedicated tuning mini-pass if it gets
+  painful before then). Do not silently retune; the user wants to drive balance from play.
 
 ## ⚠️ Before running the game
 **Delete `user://save.json`.** `CharacterBuild` ids are persisted and half the roster was
@@ -545,10 +548,14 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
   — because the expensive cost terms are traits and signatures, which are P2/P4).
 - **Integrity is excluded from material identity** (per spec §12.1), so an archetype keeps the
   integrity of its first discovery. Judged self-balancing; filed in D20, not fixed.
-- **Two settled decisions the modifier registry does not implement yet** (found during E3b, left
-  alone because both are balance numbers): **D-20** sets the `combat.interval.mult` floor at
-  **0.55** and the registry has **0.25**; **D-07** retires `combat.dodge.chance` for
-  `combat.avoid.lane` (max 0.25) and `combat.evade.chance` (max 0.15), neither of which exists.
+- **D-20 is applied** (M1): the `combat.interval.mult` floor is **0.55** in the registry; the
+  two tests that pinned 0.25 moved with it. **D-07 remains unapplied**: it retires
+  `combat.dodge.chance` for `combat.avoid.lane` (max 0.25) and `combat.evade.chance` (max 0.15),
+  neither of which exists — the dodge key stays additive because re-shaping a key scheduled to
+  stop existing is balancing a ghost.
+- **Other §4.4 floors the registry does not implement** (flagged during M1, not numbered
+  decisions): `resource.cost.mult` ships `min: 0` where §4.4 says floor 0.40, and
+  `combat.damage_taken.mult` ships `min: 0` where §4.4 says floor 0.50. User's call.
 - **`PropertyDefinition.transferable` is unconsumed.** Give it a job or drop it.
 - **Response properties drop on transformation** — iron's authored heat resistance of 60 becomes
   a derived ~14 after any craft. Arguably the more honest number, but a visible discontinuity.
