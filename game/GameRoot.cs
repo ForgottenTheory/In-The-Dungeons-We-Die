@@ -200,6 +200,7 @@ public partial class GameRoot : Node
             new NameGenerator(_materials, content.Properties, content.NameGrammar),
             new TagDeriver(content.Properties),
             new ByproductResolver(content.Byproducts),
+            new TraitResolver(content.Traits),
             professionLevel: id => _professions.GetProgress(id).Level,
             new SeededRandom(0xC12AF7));
 

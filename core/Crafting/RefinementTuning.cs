@@ -35,7 +35,8 @@ public static class RefinementTuning
     /// <summary>Integrity charged per unit of Δstate × process severity.</summary>
     public const double StateDeltaCost = 12.0;
 
-    /// <summary>Integrity charged per trait created. Always 0 in P1 — traits are P2.</summary>
+    /// <summary>Integrity charged per trait created (§6.2a's <c>traits_created × 4</c>; live
+    /// since C1a). Supersession merges are free — the component traits already paid.</summary>
     public const double TraitCost = 4.0;
 
     /// <summary>Integrity charged per unit of strain released by annihilation (§8.5).</summary>

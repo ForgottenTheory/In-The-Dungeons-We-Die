@@ -26,6 +26,11 @@ public sealed class MaterialDefinition : IItemDefinition
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public Dictionary<string, double> Properties { get; init; } = new();
 
+    /// <summary>The supernatural layer (§5.2), keyed by bare essence name (<c>"fire": 60</c>).
+    /// Deliberately sparse — mundane is the absence of essence, so ~430 of 480 materials
+    /// author nothing here and store no zeros.</summary>
+    public Dictionary<string, double> Essence { get; init; } = new();
+
     /// <summary>
     /// Optional authored override for derived potency (§6.1). Left unset by the whole
     /// authored library — <see cref="MaterialProfileResolver"/> derives it — and exists so a

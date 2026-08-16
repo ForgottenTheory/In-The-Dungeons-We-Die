@@ -48,11 +48,11 @@ public static class MaterialSignature
         builder.Append("|roots=").Append(Roots(profile.Lineage));
         builder.Append("|props=").Append(Properties(profile.Properties));
 
-        // Empty in P1. They are written anyway so that adding traits (P2) and essence (P3)
-        // only changes the signatures of materials that actually carry them — every archetype
+        // Reserved in P1 precisely so filling them (traits in C1a, essence in C1b) only
+        // changes the signatures of materials that actually carry them — every archetype
         // already in a player's save keeps its id and its name.
-        builder.Append("|traits=");
-        builder.Append("|essence=");
+        builder.Append("|traits=").Append(Traits(profile.Traits));
+        builder.Append("|essence=").Append(Essence(profile.Essence));
 
         return builder.ToString();
     }
@@ -77,6 +77,24 @@ public static class MaterialSignature
 
         return string.Join(",", parts);
     }
+
+    /// <summary>Traits as <c>id:tier</c>, sorted — tier is magnitude bucketed to 5 levels
+    /// (§12.1), so "Resilient 62" and "Resilient 64" are the same material while
+    /// "Resilient 62" and "Resilient 85" are not.</summary>
+    private static string Traits(IReadOnlyList<TraitInstance> traits) =>
+        string.Join(",", traits
+            .Select(t => new { t.Id, Tier = Math.Clamp((int)Math.Ceiling(t.Magnitude / 20.0), 1, 5) })
+            .OrderBy(t => t.Id, StringComparer.Ordinal)
+            .Select(t => t.Id + ":" + t.Tier.ToString(CultureInfo.InvariantCulture)));
+
+    /// <summary>Essence bucketed to 5 and sorted (§12.1), zeros omitted — same bargain as
+    /// properties, so trace essence the floor pruned and no essence are the same material.</summary>
+    private static string Essence(IReadOnlyDictionary<string, double> essence) =>
+        string.Join(",", essence
+            .Select(pair => new { pair.Key, Bucket = Bucket(pair.Value, QuantizationTuning.PropertyBucket) })
+            .Where(pair => pair.Bucket > 0.0)
+            .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => pair.Key.ToLowerInvariant() + ":" + Format(pair.Bucket)));
 
     /// <summary>Lineage roots, weight-bucketed to 10% and sorted, per §12.1.</summary>
     private static string Roots(Lineage lineage) =>

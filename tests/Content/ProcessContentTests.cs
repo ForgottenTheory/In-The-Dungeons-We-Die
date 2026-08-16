@@ -24,13 +24,13 @@ public class ProcessContentTests
         {
             "process.grind", "process.steep", "process.distill",
             "process.smelt", "process.quench", "process.alloy", "process.forge_infusion",
+            "process.attune", // the resonance-raising process, live since C1b (P3)
         })
         {
             Assert.True(processes.Contains(id), $"missing starter process '{id}'.");
         }
 
-        Assert.Equal(7, processes.Count);
-        Assert.False(processes.Contains("process.attune"), "Attune raises resonance for essence and is P3.");
+        Assert.Equal(8, processes.Count);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public class ProcessContentTests
         Assert.Contains(TransferMedium.Thermal, media);
         Assert.Contains(TransferMedium.Solvent, media);
         Assert.Contains(TransferMedium.Mechanical, media);
-        Assert.DoesNotContain(TransferMedium.Arcane, media); // arcane arrives with Attune in P3
+        Assert.Contains(TransferMedium.Arcane, media); // Attune, live since C1b (P3)
     }
 
     /// <summary>

@@ -59,6 +59,12 @@ public sealed class EmergentArchetypeSave
 
     /// <summary>One level of parent links only — the full tree is walked through the registry.</summary>
     public List<string> ParentSignatures { get; init; } = new();
+
+    /// <summary>Named traits (C1a), id → magnitude. Absent on pre-C1 saves — loads empty.</summary>
+    public Dictionary<string, double> Traits { get; init; } = new();
+
+    /// <summary>The essence vector (C1b), bare keys. Absent on pre-C1 saves — loads empty.</summary>
+    public Dictionary<string, double> Essence { get; init; } = new();
 }
 
 /// <summary>

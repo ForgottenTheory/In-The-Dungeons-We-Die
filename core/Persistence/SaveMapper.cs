@@ -131,6 +131,8 @@ public static class SaveMapper
                 .Select(r => new LineageRootSave { RootId = r.RootId, Weight = r.Weight })
                 .ToList(),
             ParentSignatures = profile.Lineage.ParentSignatures.ToList(),
+            Traits = profile.Traits.ToDictionary(t => t.Id, t => t.Magnitude),
+            Essence = new Dictionary<string, double>(profile.Essence),
         };
     }
 
@@ -149,7 +151,14 @@ public static class SaveMapper
                 save.Generation,
                 save.ProcessId,
                 save.ParentSignatures),
-            Signature: save.Signature),
+            Signature: save.Signature)
+        {
+            Traits = save.Traits
+                .OrderBy(t => t.Key, StringComparer.Ordinal)
+                .Select(t => new Crafting.TraitInstance(t.Key, t.Value))
+                .ToList(),
+            Essence = new Dictionary<string, double>(save.Essence),
+        },
     };
 
     private static ItemInstanceSave ToSave(ItemInstance instance) => new()

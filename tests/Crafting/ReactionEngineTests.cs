@@ -41,6 +41,7 @@ public class ReactionEngineTests
                 new NameGenerator(Content.Materials, Content.Properties, Content.NameGrammar),
                 new TagDeriver(Content.Properties),
                 new ByproductResolver(Content.Byproducts),
+                new TraitResolver(Content.Traits),
                 _ => professionLevel,
                 new SeededRandom(seed));
         }

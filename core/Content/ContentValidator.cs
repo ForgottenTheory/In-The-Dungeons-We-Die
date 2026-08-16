@@ -74,6 +74,8 @@ public static class ContentValidator
         ValidateMaterialTags(content.Materials, problems);
         ValidateProcesses(content.Processes, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
+        ValidateTraits(content.Traits, knownProperties, problems);
+        ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
         ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
@@ -805,6 +807,90 @@ public static class ContentValidator
                 problems.Add(new(category,
                     $"{owner} vulnerability '{type}' is {multiplier}, outside the allowed " +
                     $"[{CombatTuning.MinVulnerability}, {CombatTuning.MaxVulnerability}] range."));
+        }
+    }
+
+    /// <summary>§10 traits (C1a): every referenced property must exist, merges must resolve
+    /// to known traits, and a merge-only trait (no condition) must actually be reachable as
+    /// some merge's target — otherwise it is authored content nobody can ever see.</summary>
+    private static void ValidateTraits(
+        DataStore<Dungeons.Crafting.TraitDefinition> traits,
+        IReadOnlySet<string> knownProperties,
+        List<ContentProblem> problems)
+    {
+        var mergeTargets = traits.GetAll()
+            .SelectMany(t => t.Merges.Select(m => m.Into))
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var trait in traits.GetAll())
+        {
+            foreach (var property in trait.Condition.Keys
+                         .Concat(trait.Consumes.Keys)
+                         .Concat(trait.MagnitudeOf))
+                if (!knownProperties.Contains(property))
+                    problems.Add(new("traits", $"{trait.Id} references unknown property '{property}'."));
+
+            foreach (var (property, amount) in trait.Consumes)
+                if (amount <= 0)
+                    problems.Add(new("traits", $"{trait.Id} consumes a non-positive amount of '{property}'."));
+
+            if (trait.IsStateBorn && trait.MagnitudeOf.Count == 0)
+                problems.Add(new("traits", $"{trait.Id} is state-born but names no magnitude_of properties."));
+
+            foreach (var merge in trait.Merges)
+            {
+                if (merge.With == trait.Id)
+                    problems.Add(new("traits", $"{trait.Id} merges with itself."));
+                if (!traits.Contains(merge.With))
+                    problems.Add(new("traits", $"{trait.Id} merges with unknown trait '{merge.With}'."));
+                if (!traits.Contains(merge.Into))
+                    problems.Add(new("traits", $"{trait.Id} merges into unknown trait '{merge.Into}'."));
+            }
+
+            if (!trait.IsStateBorn && !mergeTargets.Contains(trait.Id))
+                problems.Add(new("traits",
+                    $"{trait.Id} has no condition and is no merge's target — unreachable content."));
+        }
+    }
+
+    /// <summary>§5 essence (C1b): anchors must be real properties, oppositions must resolve,
+    /// and every material's essence vector must use known keys in [0, 100]. The set is typed
+    /// and closed — a typo'd essence key is a load error, never a silent zero.</summary>
+    private static void ValidateEssences(
+        DataStore<Dungeons.Crafting.EssenceDefinition> essences,
+        DataStore<MaterialDefinition> materials,
+        IReadOnlySet<string> knownProperties,
+        List<ContentProblem> problems)
+    {
+        var keys = essences.GetAll().Select(e => e.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var essence in essences.GetAll())
+        {
+            if (string.IsNullOrEmpty(essence.Anchor) || !knownProperties.Contains(essence.Anchor))
+                problems.Add(new("essences", $"{essence.Id} anchors on unknown property '{essence.Anchor}'."));
+
+            foreach (var opposed in essence.Opposes)
+            {
+                if (!keys.Contains(opposed))
+                    problems.Add(new("essences", $"{essence.Id} opposes unknown essence '{opposed}'."));
+                if (string.Equals(opposed, essence.Key, StringComparison.OrdinalIgnoreCase))
+                    problems.Add(new("essences", $"{essence.Id} opposes itself."));
+            }
+        }
+
+        if (essences.Count == 0)
+            return; // pre-C1b bundles (tests may build partial bundles); nothing to key against
+
+        foreach (var material in materials.GetAll())
+        {
+            foreach (var (key, value) in material.Essence)
+            {
+                if (!keys.Contains(key))
+                    problems.Add(new("essences",
+                        $"{material.Id} authors unknown essence '{key}'. Valid: {string.Join(", ", keys.OrderBy(k => k))}."));
+                if (value is < 0 or > 100)
+                    problems.Add(new("essences", $"{material.Id} essence '{key}' is {value}, outside [0, 100]."));
+            }
         }
     }
 

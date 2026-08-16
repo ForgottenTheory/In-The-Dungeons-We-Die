@@ -36,6 +36,8 @@ public class ContentValidatorTests
         Properties = Load<PropertyDefinition>("properties"),
         Processes = Load<ProcessDefinition>("processes"),
         Byproducts = Load<ByproductDefinition>("byproducts"),
+        Traits = Load<Dungeons.Crafting.TraitDefinition>("traits"),
+        Essences = Load<Dungeons.Crafting.EssenceDefinition>("essences"),
         NameGrammar = Load<NameWordDefinition>("name_grammar"),
         ModifierKeys = Load<Dungeons.Modifiers.ModifierKeyDefinition>("modifier_keys"),
         Statuses = Load<StatusDefinition>("statuses"),
@@ -737,6 +739,68 @@ public class ContentValidatorTests
         AssertHasProblem(content, "ai_profiles", "outside [0, 1]");
     }
 
+    // --- Traits (C1a) ---------------------------------------------------------
+
+    [Fact]
+    public void Trait_ReferencingAnUnknownProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Traits.Add(new Dungeons.Crafting.TraitDefinition
+        {
+            Id = "trait.bad", Name = "Bad",
+            Condition = new() { ["charisma"] = new Dungeons.Crafting.PropertyRange { Min = 50 } },
+            MagnitudeOf = new[] { "charisma" },
+        });
+        AssertHasProblem(content, "traits", "unknown property");
+    }
+
+    [Fact]
+    public void Trait_MergingWithAnUnknownTrait_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Traits.Add(new Dungeons.Crafting.TraitDefinition
+        {
+            Id = "trait.lonely", Name = "Lonely",
+            Condition = new() { ["hardness"] = new Dungeons.Crafting.PropertyRange { Min = 50 } },
+            MagnitudeOf = new[] { "hardness" },
+            Merges = new[] { new Dungeons.Crafting.TraitMerge { With = "trait.ghost", Into = "trait.also_ghost" } },
+        });
+        AssertHasProblem(content, "traits", "unknown trait");
+    }
+
+    /// <summary>A merge-only trait nothing merges into is authored content nobody can ever
+    /// see — the same rule orphan moves follow.</summary>
+    [Fact]
+    public void Trait_MergeOnlyWithNoRoute_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Traits.Add(new Dungeons.Crafting.TraitDefinition { Id = "trait.unreachable", Name = "Unreachable" });
+        AssertHasProblem(content, "traits", "unreachable");
+    }
+
+    // --- Essences (C1b) -------------------------------------------------------
+
+    [Fact]
+    public void Essence_AnchoringOnAnUnknownProperty_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Essences.Add(new Dungeons.Crafting.EssenceDefinition { Id = "essence.vibes", Name = "Vibes", Anchor = "charisma" });
+        AssertHasProblem(content, "essences", "unknown property");
+    }
+
+    [Fact]
+    public void Material_AuthoringAnUnknownEssenceKey_IsReported()
+    {
+        var content = ValidBaseline();
+        content.Essences.Add(new Dungeons.Crafting.EssenceDefinition { Id = "essence.fire", Name = "Fire", Anchor = "heat" });
+        content.Materials.Add(new MaterialDefinition
+        {
+            Id = "material.weird", Name = "Weird", Tags = ValidTags,
+            Essence = new() { ["spice"] = 40 },
+        });
+        AssertHasProblem(content, "essences", "unknown essence 'spice'");
+    }
+
     // --- Techniques (M2′ acquisition) ----------------------------------------
 
     /// <summary>A technique that teaches a missing move is a dead item the player can learn
@@ -839,6 +903,8 @@ public class ContentValidatorTests
         public DataStore<MaterialDefinition> Materials => _bundle.Materials;
         public DataStore<ProcessDefinition> Processes => _bundle.Processes;
         public DataStore<ByproductDefinition> Byproducts => _bundle.Byproducts;
+        public DataStore<Dungeons.Crafting.TraitDefinition> Traits => _bundle.Traits;
+        public DataStore<Dungeons.Crafting.EssenceDefinition> Essences => _bundle.Essences;
         public DataStore<NameWordDefinition> NameGrammar => _bundle.NameGrammar;
         public DataStore<ProfessionDefinition> Professions => _bundle.Professions;
         public DataStore<ProfessionActionDefinition> Actions => _bundle.Actions;

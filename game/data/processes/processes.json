@@ -145,5 +145,26 @@
       "set": ["state:alloy"],
       "clear": ["state:*"]
     }
+  },
+
+  // The resonance-raising process (§7.2, C1b): gentle, arcane-medium, and the answer to a
+  // strained vessel — "attune first, then infuse" is the technique the strain warning teaches.
+  {
+    "id": "process.attune",
+    "name": "Attune",
+    "profession": "profession.alchemy",
+    "severity": 0.35,
+    "medium": "arcane",
+    "role_weights": { "substrate": 0.75, "reagent": 0.22, "catalyst": 0.03 },
+    "channel": [
+      { "property": "resonance", "rate": 0.60 },
+      { "property": "arcane", "rate": 0.35 }
+    ],
+    "essence_rate": 0.30,
+    "requires": { "substrate_tags": [], "profession_level": 10 },
+    "tag_effects": {
+      "set": ["state:attuned"],
+      "clear": ["state:*"]
+    }
   }
 ]

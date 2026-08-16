@@ -56,7 +56,7 @@ public static class TagFamilies
     public static readonly TagFamily Form = new("form", TagCardinality.AtLeastOne);
 
     public static readonly TagFamily State = new("state", TagCardinality.ExactlyOne,
-        new HashSet<string>(StringComparer.Ordinal) { "raw", "refined", "processed", "alloy", "extract", "distillate", "composite", "spent" });
+        new HashSet<string>(StringComparer.Ordinal) { "raw", "refined", "processed", "alloy", "extract", "distillate", "composite", "spent", "attuned" });
 
     public static readonly TagFamily Rarity = new("rarity", TagCardinality.ExactlyOne,
         new HashSet<string>(StringComparer.Ordinal) { "common", "uncommon", "rare", "very_rare", "exceptional" });

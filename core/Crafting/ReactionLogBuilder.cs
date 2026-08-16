@@ -161,6 +161,62 @@ public sealed class ReactionLogBuilder
         return this;
     }
 
+    /// <summary>The §10.4 trait report: births, mergers and displacements are always explicit —
+    /// "which three?" is only a decision if the player can see what each craft did to the set.</summary>
+    public ReactionLogBuilder Traits(TraitResolution resolution, Func<string, string> traitName)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        ArgumentNullException.ThrowIfNull(traitName);
+
+        foreach (var born in resolution.Born)
+            Add(ReactionLogKind.Trait, $"✦ Trait gained: {traitName(born.Id)} ({born.Magnitude:0})", after: born.Magnitude);
+
+        foreach (var (a, b, into) in resolution.Superseded)
+            Add(ReactionLogKind.Trait,
+                $"⚡ Traits superseded: {traitName(a.Id)} + {traitName(b.Id)} → {traitName(into.Id)} ({into.Magnitude:0})",
+                after: into.Magnitude);
+
+        foreach (var displaced in resolution.Displaced)
+            Add(ReactionLogKind.Trait,
+                $"⚠ Trait lost: {traitName(displaced.Id)} ({displaced.Magnitude:0}) — displaced, trait cap {TraitResolver.MaterialCap}/{TraitResolver.MaterialCap}",
+                after: displaced.Magnitude);
+
+        return this;
+    }
+
+    /// <summary>The §8.4 essence report: what moved, what annihilated, and whether the vessel
+    /// is straining under it (§5.3) — "attune first, then infuse" is only learnable technique
+    /// if the log teaches it.</summary>
+    public ReactionLogBuilder Essence(EssenceStepResult step)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+
+        foreach (var (key, before, after) in step.Changes)
+        {
+            var reason = after > before ? "essence transfer" : "opposition annihilated the overlap";
+            Add(ReactionLogKind.Essence, $"essence.{key,-10} {before,3:0} → {after,3:0}  ({reason})",
+                indent: 1, property: key, before: before, after: after);
+        }
+
+        if (step.StrainReleased > 0)
+            Add(ReactionLogKind.Essence,
+                $"Opposition released {step.StrainReleased:0.#} strain — only the asymmetry survives",
+                indent: 1);
+
+        return this;
+    }
+
+    /// <summary>§5.3's warning line: essence past capacity is strain, and strain makes every
+    /// further craft wilder. The fix is a worthier vessel — Attune raises resonance.</summary>
+    public ReactionLogBuilder EssenceStrain(double totalEssence, double capacity, double resonance)
+    {
+        Add(ReactionLogKind.Essence,
+            $"⚠ Strained vessel: essence {totalEssence:0.#} exceeds capacity {capacity:0.#} " +
+            $"(resonance {resonance:0.#}) — instability rises until attuned",
+            indent: 1);
+        return this;
+    }
+
     /// <summary>Destruction is never total loss (§6.2c), so the log has to name the consolation
     /// prize in the same breath as the bad news.</summary>
     public ReactionLogBuilder Destroyed(string materialName, string? byproductName, int byproductQuantity)

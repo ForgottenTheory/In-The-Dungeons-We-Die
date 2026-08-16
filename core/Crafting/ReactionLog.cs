@@ -21,6 +21,12 @@ public enum ReactionLogKind
     /// <summary>The potency inputs and the resulting potency.</summary>
     Potency,
 
+    /// <summary>A trait born, displaced, or superseded (§10; C1a).</summary>
+    Trait,
+
+    /// <summary>Essence moving, annihilating, or straining the vessel (§5, §8.4; C1b).</summary>
+    Essence,
+
     /// <summary>The material was destroyed, and what was recovered.</summary>
     Destruction,
 

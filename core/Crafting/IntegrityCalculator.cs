@@ -71,7 +71,7 @@ public static class IntegrityCalculator
     /// </summary>
     /// <param name="baseInstability">The material's authored/derived <c>instability</c>.</param>
     /// <param name="integrity">Remaining transformation budget.</param>
-    /// <param name="essenceStrain">Essence beyond resonance capacity (§5.3). Always 0 in P1.</param>
+    /// <param name="essenceStrain">Essence beyond resonance capacity (§5.3; live since C1b).</param>
     public static double EffectiveInstability(double baseInstability, int integrity, double essenceStrain = 0.0)
     {
         var spent = RefinementTuning.MaxIntegrity - Math.Clamp(integrity, RefinementTuning.MinIntegrity, RefinementTuning.MaxIntegrity);

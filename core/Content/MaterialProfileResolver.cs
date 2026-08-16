@@ -63,7 +63,10 @@ public sealed class MaterialProfileResolver
             Integrity: definition.Integrity ?? DeriveIntegrity(definition.Tags),
             Lineage: Lineage.ForBase(definition.Id),
             // An authored material is its own archetype, so its signature is simply its id.
-            Signature: definition.Id);
+            Signature: definition.Id)
+        {
+            Essence = new Dictionary<string, double>(definition.Essence),
+        };
     }
 
     /// <summary>

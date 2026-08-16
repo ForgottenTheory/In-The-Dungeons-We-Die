@@ -58,6 +58,15 @@ public sealed record MaterialProfile(
     /// disagree (§6.4 lists it as a meta field; §14 stores it on the lineage).</summary>
     public int Generation => Lineage.Generation;
 
+    /// <summary>Named traits this material carries (§10; C1a). Emergent only — authored
+    /// materials always start empty, and the cap is <see cref="Crafting.TraitResolver.MaterialCap"/>.</summary>
+    public IReadOnlyList<Crafting.TraitInstance> Traits { get; init; } = Array.Empty<Crafting.TraitInstance>();
+
+    /// <summary>The essence vector (§5.2; C1b), bare keys, absent = zero. Authored on rare
+    /// materials, transferred by crafting, never converging to zero on its own.</summary>
+    public IReadOnlyDictionary<string, double> Essence { get; init; } =
+        new Dictionary<string, double>();
+
     /// <summary>An integrity-0 material does not exist — it was destroyed (§6.2c).</summary>
     public bool IsDestroyed => Integrity <= 0;
 }

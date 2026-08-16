@@ -36,6 +36,7 @@ public sealed class ReactionEngine : IReactionEngine
     private readonly NameGenerator _names;
     private readonly TagDeriver _tags;
     private readonly ByproductResolver _byproducts;
+    private readonly TraitResolver _traitResolver;
     private readonly Func<string, int> _professionLevel;
     private readonly IRandomSource _random;
 
@@ -47,6 +48,7 @@ public sealed class ReactionEngine : IReactionEngine
         NameGenerator names,
         TagDeriver tags,
         ByproductResolver byproducts,
+        TraitResolver traits,
         Func<string, int> professionLevel,
         IRandomSource random)
     {
@@ -57,6 +59,7 @@ public sealed class ReactionEngine : IReactionEngine
         _names = names ?? throw new ArgumentNullException(nameof(names));
         _tags = tags ?? throw new ArgumentNullException(nameof(tags));
         _byproducts = byproducts ?? throw new ArgumentNullException(nameof(byproducts));
+        _traitResolver = traits ?? throw new ArgumentNullException(nameof(traits));
         _professionLevel = professionLevel ?? throw new ArgumentNullException(nameof(professionLevel));
         _random = random ?? throw new ArgumentNullException(nameof(random));
     }
@@ -122,6 +125,7 @@ public sealed class ReactionEngine : IReactionEngine
             Name = name,
             Tags = run.Tags,
             Properties = new Dictionary<string, double>(run.Profile.Properties.AsDictionary()),
+            Essence = new Dictionary<string, double>(run.Profile.Essence),
             Profile = run.Profile,
         });
 
@@ -218,6 +222,8 @@ public sealed class ReactionEngine : IReactionEngine
         var log = new ReactionLogBuilder(_content.Properties);
 
         var state = gate.SubstrateProfile.Properties;
+        var essence = (IReadOnlyDictionary<string, double>)new Dictionary<string, double>(
+            gate.SubstrateProfile.Essence, StringComparer.OrdinalIgnoreCase);
         var integrity = gate.SubstrateProfile.Integrity;
         var totalCost = 0.0;
         var destroyed = false;
@@ -228,8 +234,11 @@ public sealed class ReactionEngine : IReactionEngine
         {
             // Quality is recomputed each step: as integrity falls the material grows less
             // predictable, so the same crafter has less control over step three than step one.
+            // Strained essence (§5.3) feeds the same instability — an overloaded vessel is a
+            // wilder vessel, which is the whole "attune first, then infuse" lesson.
             var effectiveInstability = IntegrityCalculator.EffectiveInstability(
-                state.Get(ItemProperties.Instability), integrity);
+                state.Get(ItemProperties.Instability), integrity,
+                EssenceTuning.Strain(essence, state.Get(ItemProperties.Resonance)));
 
             qualityNorm = CraftQuality.Norm(
                 process.IsUngated ? 0 : _professionLevel(process.Profession),
@@ -243,14 +252,23 @@ public sealed class ReactionEngine : IReactionEngine
                 PotencyCalculator.QualityMultiplier(qualityNorm),
                 CatalystFactor(gate.Catalyst));
 
-            var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, qualityNorm);
+            // Essence rides beside the property algebra (§8.4): additive transfer at the
+            // process's essence_rate, opposition annihilating the overlap into strain.
+            var essenceStep = EssenceAlgebra.Apply(
+                essence, _profiles.Resolve(reagent).Essence, process, step.Coefficients, _content.Essences);
+
+            var cost = IntegrityCalculator.Cost(
+                step.StateDelta, process.Severity,
+                step.StrainReleased + essenceStep.StrainReleased, qualityNorm);
             var after = IntegrityCalculator.Apply(integrity, cost);
 
             log.Step(new ReactionStepContext(
                 process, gate.Substrate.Name, reagent.Name,
                 state, reagent.BaseProperties, step, integrity, after, cost));
+            log.Essence(essenceStep);
 
             state = step.Properties;
+            essence = essenceStep.Essence;
             totalCost += cost;
             integrity = after;
 
@@ -261,9 +279,46 @@ public sealed class ReactionEngine : IReactionEngine
             }
         }
 
+        // §5.3 — the standing warning on the result, not just a step artifact.
+        var finalStrain = EssenceTuning.Strain(essence, state.Get(ItemProperties.Resonance));
+        if (!destroyed && finalStrain > 0)
+            log.EssenceStrain(
+                essence.Values.Sum(),
+                EssenceTuning.Capacity(state.Get(ItemProperties.Resonance)),
+                state.Get(ItemProperties.Resonance));
+
         if (applyVariance)
             state = VariancePerturbation.Apply(state, process, variance, _random);
 
+        // The §10 trait pass runs once the state settles (variance included, so a lucky or
+        // unlucky roll can cross a threshold): birth → supersede → cap. Births eat properties
+        // and charge integrity (§6.2a traits_created × 4) — which can itself destroy the
+        // material: the best traits live in high-variance states, and reaching for them is
+        // a genuine gamble. Skipped when the reagent loop already destroyed it.
+        var traitPass = destroyed
+            ? new TraitResolution(gate.SubstrateProfile.Traits, state,
+                Array.Empty<TraitInstance>(),
+                Array.Empty<(TraitInstance, TraitInstance, TraitInstance)>(),
+                Array.Empty<TraitInstance>())
+            : _traitResolver.Apply(state, gate.SubstrateProfile.Traits);
+
+        if (!destroyed)
+        {
+            state = traitPass.Properties;
+            log.Traits(traitPass, _traitResolver.TraitName);
+
+            if (traitPass.TraitsCreated > 0)
+            {
+                var traitCost = traitPass.TraitsCreated * RefinementTuning.TraitCost;
+                integrity = IntegrityCalculator.Apply(integrity, traitCost);
+                totalCost += traitCost;
+                if (integrity <= 0)
+                    destroyed = true;
+            }
+        }
+
+        // Tags derive from the post-trait state: a trait's consumption can drop a property
+        // back through a grants_tags threshold, and the tag should tell the truth.
         var tags = _tags.Derive(gate.Substrate.Tags, process, state);
 
         var reagentPotencies = gate.Reagents.Select(r => _profiles.Resolve(r).Potency).ToList();
@@ -281,7 +336,11 @@ public sealed class ReactionEngine : IReactionEngine
         var profile = new MaterialProfile(
             state, potency, integrity,
             MergeLineage(gate, process),
-            Signature: string.Empty);
+            Signature: string.Empty)
+        {
+            Traits = traitPass.Traits,
+            Essence = essence,
+        };
 
         var signature = MaterialSignature.Compute(profile, tags);
 

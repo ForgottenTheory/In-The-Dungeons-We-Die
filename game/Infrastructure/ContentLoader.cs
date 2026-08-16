@@ -28,6 +28,8 @@ public static class ContentLoader
         Properties = LoadDefinitions<PropertyDefinition>($"{dataRoot}/properties"),
         Processes = LoadDefinitions<ProcessDefinition>($"{dataRoot}/processes"),
         Byproducts = LoadDefinitions<ByproductDefinition>($"{dataRoot}/byproducts"),
+        Traits = LoadDefinitions<TraitDefinition>($"{dataRoot}/traits"),
+        Essences = LoadDefinitions<EssenceDefinition>($"{dataRoot}/essences"),
         NameGrammar = LoadDefinitions<NameWordDefinition>($"{dataRoot}/name_grammar"),
         ModifierKeys = LoadDefinitions<Dungeons.Modifiers.ModifierKeyDefinition>($"{dataRoot}/modifier_keys"),
         NameFormats = LoadDefinitions<NameFormatDefinition>($"{dataRoot}/name_formats"),

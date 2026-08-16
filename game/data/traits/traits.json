@@ -1,0 +1,141 @@
+[
+  // State traits (C1a, docs/emergent-item-system.md §10). Authored as rules, never onto
+  // items — which material has which trait is always emergent. Anyone reaching the state
+  // region gets the trait, every time: these are the traits players learn to aim at.
+  // Every trait carries a drawback or an opportunity cost (§10.3) — usually the consumes
+  // bill. Magnitude = min of magnitude_of, read before consumes. Cap 3, weakest displaced.
+  // Merge-born traits (no condition) are reachable only through supersession — the reason
+  // to go deep.
+
+  // ---- Structural ---------------------------------------------------------------------
+  {
+    "id": "trait.resilient", "name": "Resilient",
+    "condition": { "hardness": { "min": 70 }, "flexibility": { "min": 60 } },
+    "magnitude_of": ["hardness", "flexibility"],
+    "consumes": { "hardness": 5, "flexibility": 5 },
+    "description": "Bends where it must, holds where it counts.",
+    "drawback": "The balancing act costs a little of both virtues.",
+    "merges": [ { "with": "trait.unyielding", "into": "trait.adamant" } ]
+  },
+  {
+    "id": "trait.unyielding", "name": "Unyielding",
+    "condition": { "hardness": { "min": 85 } },
+    "magnitude_of": ["hardness"],
+    "consumes": { "flexibility": 10 },
+    "description": "It does not give. Anywhere. Ever.",
+    "drawback": "Whatever suppleness it had is gone."
+  },
+  {
+    "id": "trait.porous", "name": "Porous",
+    "condition": { "solubility": { "min": 70 }, "hardness": { "max": 40 } },
+    "magnitude_of": ["solubility"],
+    "consumes": { "hardness": 3 },
+    "description": "Full of tiny mouths, all of them thirsty.",
+    "drawback": "Softer for it — and it drinks whatever touches it, wanted or not."
+  },
+  {
+    "id": "trait.keen", "name": "Keen",
+    "condition": { "hardness": { "min": 65 }, "mass": { "max": 35 } },
+    "magnitude_of": ["hardness"],
+    "consumes": { "hardness": 4 },
+    "description": "Light enough to sing, hard enough to bite.",
+    "drawback": "The fine edge is dearly bought and easily spent."
+  },
+
+  // ---- Elemental ----------------------------------------------------------------------
+  {
+    "id": "trait.emberveined", "name": "Emberveined",
+    "condition": { "heat": { "min": 60 }, "conductivity": { "min": 40 } },
+    "magnitude_of": ["heat"],
+    "consumes": { "flexibility": 8 },
+    "description": "Thin bright seams that never quite cool.",
+    "drawback": "The fire anneals it brittle.",
+    "merges": [ { "with": "trait.stormlaced", "into": "trait.tempestforged" } ]
+  },
+  {
+    "id": "trait.frostbound", "name": "Frostbound",
+    "condition": { "cold": { "min": 60 }, "insulation": { "min": 40 } },
+    "magnitude_of": ["cold"],
+    "consumes": { "heat": 6, "flexibility": 4 },
+    "description": "Cold that has settled in to stay.",
+    "drawback": "Stiff with frost, and hostile to any warmth worked into it.",
+    "merges": [ { "with": "trait.conductive", "into": "trait.galvanic_rime" } ]
+  },
+  {
+    "id": "trait.stormlaced", "name": "Stormlaced",
+    "condition": { "charge": { "min": 65 }, "arcane": { "min": 30 } },
+    "magnitude_of": ["charge"],
+    "consumes": { "charge": 8 },
+    "description": "It hums when the weather turns.",
+    "drawback": "Spends its own charge to keep the lacework alive."
+  },
+  {
+    "id": "trait.conductive", "name": "Conductive",
+    "condition": { "charge": { "min": 50 }, "conductivity": { "min": 60 } },
+    "magnitude_of": ["conductivity"],
+    "consumes": { "insulation": 8 },
+    "description": "Everything that arrives, leaves — fast.",
+    "drawback": "It shelters nothing, including its bearer."
+  },
+  {
+    "id": "trait.volatile", "name": "Volatile",
+    "condition": { "instability": { "min": 60 }, "heat": { "min": 40 } },
+    "magnitude_of": ["instability"],
+    "consumes": { "solubility": 5 },
+    "description": "It is not waiting for permission.",
+    "drawback": "Every further craft is a negotiation with it."
+  },
+
+  // ---- Living -------------------------------------------------------------------------
+  {
+    "id": "trait.verdant", "name": "Verdant",
+    "condition": { "growth": { "min": 60 } },
+    "magnitude_of": ["growth"],
+    "consumes": { "decay": 5, "growth": 5 },
+    "description": "It remembers being alive, fondly.",
+    "drawback": "Life spent sustaining itself is life not spent on you.",
+    "merges": [ { "with": "trait.blighted", "into": "trait.cycled" } ]
+  },
+  {
+    "id": "trait.blighted", "name": "Blighted",
+    "condition": { "decay": { "min": 60 } },
+    "magnitude_of": ["decay"],
+    "consumes": { "growth": 5 },
+    "description": "It remembers dying, and took notes.",
+    "drawback": "Everything it touches ages a little."
+  },
+  {
+    "id": "trait.venomous", "name": "Venomous",
+    "condition": { "toxicity": { "min": 55 }, "solubility": { "min": 40 } },
+    "magnitude_of": ["toxicity"],
+    "consumes": { "growth": 6 },
+    "description": "Patient, soluble, and unkind.",
+    "drawback": "Nothing wholesome grows in it afterwards."
+  },
+
+  // ---- Merge-born (supersession targets — §10.4's reason to go deep) --------------------
+  {
+    "id": "trait.adamant", "name": "Adamant",
+    "description": "It bends exactly once — around whatever tried to break it.",
+    "drawback": "Carries both parents' bills, already paid.",
+    "condition": {}, "magnitude_of": [], "consumes": {}
+  },
+  {
+    "id": "trait.tempestforged", "name": "Tempestforged",
+    "description": "Fire and lightning, reconciled at last, and angrier for it.",
+    "drawback": "A storm does not have a handle.",
+    "condition": {}, "magnitude_of": [], "consumes": {}
+  },
+  {
+    "id": "trait.galvanic_rime", "name": "Galvanic Rime",
+    "description": "Ice that bites with a spark — cold storage for a live current.",
+    "drawback": "Warm hands and bare metal are both mistakes.",
+    "condition": {}, "magnitude_of": [], "consumes": {}
+  },
+  {
+    "id": "trait.cycled", "name": "Cycled",
+    "description": "Growth and rot agreed to take turns. The wheel turns in your favour, mostly.",
+    "drawback": "Mostly.",
+    "condition": {}, "magnitude_of": [], "consumes": {}
+  }
+]
