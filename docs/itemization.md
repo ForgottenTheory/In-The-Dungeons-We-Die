@@ -1,8 +1,15 @@
 # Itemization — Items, Properties, Instances, Equipment
 
+> ⚠ **PARTLY SUPERSEDED.** Still accurate: §1's two-tier definition/instance model, §2's property
+> model, §3's `EquipmentResolver` seam, §4 inventory, §5 gear loss.
+> **Reversed:** §1's rule that any material whose properties diverge becomes a per-unit instance —
+> materials **stack** and `ItemInstance` is equipment-only (DECISIONS **D20**).
+> **Extended by** `docs/affixes.md` (genome, affixes, crafting operations, Overreach) and
+> `docs/damage-and-defense.md` (what equipment properties actually drive).
+>
 > Status legend: **[impl]** implemented in code · **[arch]** architecture/seam exists, behavior deferred · **[planned]** design only.
 >
-> This document supersedes the earlier stray content in this file. It defines the item data model that supports emergent, recursive, property-based crafting (see `docs/crafting.md`).
+> This document defines the item data model that supports emergent, recursive, property-based crafting (see `docs/emergent-item-system.md`).
 
 ---
 

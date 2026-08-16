@@ -1,6 +1,12 @@
 # Vertical Slice Expansion — Implementation Plan
 
-> **Status: PROPOSED — awaiting approval. No implementation started.**
+> ⚠ **LARGELY SUPERSEDED — kept for its audit and its rationale, not its plan.**
+> Its **P2** (modifier vocabulary + effect bus + trigger rules) **shipped** — see DECISIONS D23.
+> Its **P3–P10** are replaced by the slice plan in `docs/effect-foundation.md` §10 (E0–E7 + C1/C2),
+> settled by the decisions in §12 of that document.
+> §1's audit and §2's documentation-vs-implementation disagreements remain useful history.
+>
+> **Original status: PROPOSED — awaiting approval. No implementation started.**
 >
 > Goal: widen the existing vertical slice until it resembles the intended game rather than a
 > technical demonstration, and until the loop in §22 of the brief can actually be played.
