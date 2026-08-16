@@ -43,6 +43,7 @@ public static class ModifierKeys
 
     public const string Armor = "combat.armor";
     public const string DamageTakenMult = "combat.damage_taken.mult";
+    public const string BlockMult = "combat.block.mult";
     public const string DodgeChance = "combat.dodge.chance";
 
     public const string InterruptImmune = "combat.interrupt.immune";

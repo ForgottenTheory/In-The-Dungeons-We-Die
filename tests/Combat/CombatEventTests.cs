@@ -268,8 +268,9 @@ public class CombatEventTests
         // attack charges 1.2 × 5 = 6.
         Assert.Equal(6.0, charged[0].Magnitude, 3);
 
-        // …and it lands in Unhandled, because `grantResource` has no handler until E3.
-        // Visibly inert rather than silently missing (DECISIONS D23).
+        // This engine registers no handlers, so the effect lands in Unhandled — visibly inert
+        // rather than silently missing (DECISIONS D23). Combat's own engine handles it from E3c;
+        // `EffectHandlerTests` pins the Charge that actually accumulates.
         Assert.Contains(engine.Unhandled, u => u.Kind == "grantResource");
     }
 

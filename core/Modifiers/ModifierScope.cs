@@ -98,20 +98,28 @@ public sealed class ModifierContext
 {
     /// <summary>No situation at all. Valid for global keys; throws for anything
     /// <see cref="ModifierKeyDefinition.ScopedBy"/> names.</summary>
-    public static readonly ModifierContext None = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+    public static readonly ModifierContext None = new(new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase));
 
-    private readonly Dictionary<string, string> _dimensions;
+    private readonly Dictionary<string, HashSet<string>> _dimensions;
 
-    private ModifierContext(Dictionary<string, string> dimensions) => _dimensions = dimensions;
+    private ModifierContext(Dictionary<string, HashSet<string>> dimensions) => _dimensions = dimensions;
 
     /// <summary>A context supplying a single dimension.</summary>
-    public static ModifierContext For(string dimension, string value) => None.With(dimension, value);
+    public static ModifierContext For(string dimension, params string[] values) => None.With(dimension, values);
 
-    /// <summary>This context plus one dimension. Immutable — returns a new context.</summary>
-    public ModifierContext With(string dimension, string value)
+    /// <summary>
+    /// This context plus one dimension. Immutable — returns a new context.
+    ///
+    /// <para><b>A dimension takes several values.</b> A contribution is scoped to exactly one
+    /// (<see cref="ModifierScope"/>), but the <i>situation</i> routinely satisfies more than one:
+    /// a single swing is <c>melee</c> and <c>attack</c> and <c>light</c> at once, and
+    /// "+8 damage to Melee moves" has to match it. Equality here would have silently dropped
+    /// every move-tag modifier on any move carrying more than one tag.</para>
+    /// </summary>
+    public ModifierContext With(string dimension, params string[] values)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dimension);
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        ArgumentNullException.ThrowIfNull(values);
 
         if (!ScopeDimensions.IsKnown(dimension))
         {
@@ -120,9 +128,13 @@ public sealed class ModifierContext
                 nameof(dimension));
         }
 
-        var copy = new Dictionary<string, string>(_dimensions, StringComparer.OrdinalIgnoreCase)
+        var supplied = values.Where(v => !string.IsNullOrWhiteSpace(v)).Select(ScopeDimensions.Normalise).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (supplied.Count == 0)
+            throw new ArgumentException($"No value supplied for dimension '{dimension}'.", nameof(values));
+
+        var copy = new Dictionary<string, HashSet<string>>(_dimensions, StringComparer.OrdinalIgnoreCase)
         {
-            [ScopeDimensions.Normalise(dimension)] = ScopeDimensions.Normalise(value),
+            [ScopeDimensions.Normalise(dimension)] = supplied,
         };
 
         return new ModifierContext(copy);
@@ -130,9 +142,11 @@ public sealed class ModifierContext
 
     public bool Has(string dimension) => _dimensions.ContainsKey(dimension);
 
-    /// <summary>The value supplied for <paramref name="dimension"/>, or null.</summary>
-    public string? Value(string dimension) =>
-        _dimensions.TryGetValue(dimension, out var value) ? value : null;
+    /// <summary>Everything supplied for <paramref name="dimension"/>. Empty when absent.</summary>
+    public IReadOnlySet<string> Values(string dimension) =>
+        _dimensions.TryGetValue(dimension, out var values) ? values : EmptyValues;
+
+    private static readonly IReadOnlySet<string> EmptyValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Whether a contribution with this scope applies here. An unscoped contribution
@@ -140,13 +154,14 @@ public sealed class ModifierContext
     /// </summary>
     public bool Matches(ModifierScope? scope) =>
         scope is null
-        || (_dimensions.TryGetValue(scope.Dimension, out var value)
-            && string.Equals(value, scope.Value, StringComparison.OrdinalIgnoreCase));
+        || (_dimensions.TryGetValue(scope.Dimension, out var values) && values.Contains(scope.Value));
 
-    public IReadOnlyDictionary<string, string> Dimensions => _dimensions;
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> Dimensions =>
+        _dimensions.ToDictionary(d => d.Key, d => (IReadOnlySet<string>)d.Value, StringComparer.OrdinalIgnoreCase);
 
     public override string ToString() =>
         _dimensions.Count == 0
             ? "(no scope)"
-            : string.Join(" ", _dimensions.OrderBy(d => d.Key, StringComparer.Ordinal).Select(d => $"{d.Key}:{d.Value}"));
+            : string.Join(" ", _dimensions.OrderBy(d => d.Key, StringComparer.Ordinal)
+                .Select(d => $"{d.Key}:{string.Join("|", d.Value.OrderBy(v => v, StringComparer.Ordinal))}"));
 }

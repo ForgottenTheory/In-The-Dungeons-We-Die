@@ -69,6 +69,7 @@ public static class HitStages
     public const string Negate = "Negate";
     public const string Crit = "Crit";
     public const string Scaling = "Scaling";
+    public const string Increased = "Increased";
     public const string Armour = "Armour";
     public const string Resistance = "Resistance";
     public const string Vulnerability = "Vulnerability";

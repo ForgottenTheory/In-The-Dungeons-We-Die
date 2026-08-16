@@ -87,6 +87,13 @@ public partial class GameRoot : Node
     private TriggerRuleEngine _ruleEngine = null!;
     private StatusController _statuses = null!;
 
+    /// <summary>
+    /// The build's live gauges. One long-lived controller reconfigured on every rebuild, so the
+    /// encounter can hold a stable reference while the Character Lab swaps components.
+    /// </summary>
+    private readonly GaugeController _gauges = new(Array.Empty<GaugeDefinition>());
+    private CombatantModifiers _modifiers = null!;
+
     private RealmRun? _run;
     private string? _realmCombatLocationId;
     private readonly Dictionary<string, int> _realmKnowledge = new();
@@ -182,8 +189,23 @@ public partial class GameRoot : Node
 
         var combatRng = new SeededRandom(0x0C0FFEE);
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
+
+        // E3c-2: the modifier read path. Build statics, status `while_active`, gauge bands and
+        // timed grants all assemble here, and combat reads them. Every one of those four was
+        // authored and inert before this.
+        _modifiers = new CombatantModifiers(
+            content.ModifierKeys,
+            isOwner: c => c.Team == CombatTeam.Player,
+            buildModifiers: () => _buildResolver.Resolve(_build).Modifiers.Contributions,
+            _statuses, _gauges);
+
         _encounter = new CombatEncounter(
-            _tick, new CombatCalculator(combatRng), _abilities, combatRng, _events, "ability.strike", _statuses);
+            _tick, new CombatCalculator(combatRng, _modifiers), _abilities, combatRng, _events, "ability.strike",
+            _statuses, _gauges, _modifiers);
+
+        // E3c: effects stop landing in `Unhandled`. Six kinds are combat's; the rest belong to
+        // systems that do not exist yet and stay visibly inert.
+        _ruleEngine.RegisterCombatHandlers(_encounter, combatRng);
         _encounter.Logged += Emit;
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
@@ -1131,7 +1153,16 @@ public partial class GameRoot : Node
         var resolved = _buildResolver.Resolve(_build);
         foreach (var attached in resolved.Rules)
             _ruleEngine.Attach(attached.Rule, attached.Source);
+
+        // The gauge set is part of the build, so it swaps with it — otherwise a retired Prefix's
+        // meter would keep filling from feeds that no longer exist.
+        _gauges.Reconfigure(resolved.Gauges, _tick.CurrentTick);
     }
+
+    /// <summary>Every live gauge and its current fill — the Character Lab's "is the meter moving?"
+    /// answer, and the readout that makes Charge visible while a fight is running.</summary>
+    public IReadOnlyList<string> GaugeReadout =>
+        _gauges.Pools.Select(p => $"{p.Name} {p.Current:0.#}/{p.Max:0.#} ({p.Fraction:P0})").ToList();
 
     /// <summary>Every hook that fired, newest last — the Character Lab's "is this thing on?" answer.</summary>
     public IReadOnlyList<string> FiredHooks =>

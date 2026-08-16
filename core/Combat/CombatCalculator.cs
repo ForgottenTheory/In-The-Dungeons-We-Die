@@ -15,7 +15,8 @@ public sealed class CombatCalculator
 {
     private readonly HitPipeline _pipeline;
 
-    public CombatCalculator(IRandomSource rng) => _pipeline = new HitPipeline(rng);
+    public CombatCalculator(IRandomSource rng, CombatantModifiers? modifiers = null) =>
+        _pipeline = new HitPipeline(rng, modifiers);
 
     /// <summary>Resolves a single-packet attack. Prefer <see cref="Resolve(Hit, long)"/>.</summary>
     public HitResult Resolve(

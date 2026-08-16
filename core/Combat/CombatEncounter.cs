@@ -1,7 +1,9 @@
 using System.Linq;
 using Dungeons.Content;
 using Dungeons.Events;
+using Dungeons.Modifiers;
 using Dungeons.Randomness;
+using Dungeons.Rules;
 using Dungeons.Simulation;
 
 namespace Dungeons.Combat;
@@ -122,7 +124,9 @@ public sealed class CombatEncounter
         IRandomSource rng,
         IGameEventBus bus,
         string playerFallbackAbilityId,
-        StatusController? statuses = null)
+        StatusController? statuses = null,
+        Characters.GaugeController? gauges = null,
+        CombatantModifiers? modifiers = null)
     {
         _tick = tick ?? throw new ArgumentNullException(nameof(tick));
         _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
@@ -136,10 +140,25 @@ public sealed class CombatEncounter
         Statuses = statuses;
         if (Statuses is not null)
             Statuses.Ticked += OnStatusTick;
+
+        Gauges = gauges;
+        Modifiers = modifiers;
     }
 
     /// <summary>Statuses on every combatant, and the Resolve pool gating controls (E2).</summary>
     public StatusController? Statuses { get; }
+
+    /// <summary>
+    /// The player build's gauges (E3c). Optional for the same reason <see cref="Statuses"/> is —
+    /// combat-calculation tests need not construct one, and every path null-checks.
+    /// </summary>
+    public Characters.GaugeController? Gauges { get; }
+
+    /// <summary>
+    /// The assembled modifier read path (E3c-2) — build statics, status <c>while_active</c>,
+    /// gauge bands and timed <c>grantModifier</c> grants. Optional like the others.
+    /// </summary>
+    public CombatantModifiers? Modifiers { get; }
 
     /// <summary>The player's basic attack: the equipped-weapon profile, or the fallback ability if unarmed.</summary>
     private AttackProfile PlayerAttackProfile =>
@@ -202,6 +221,11 @@ public sealed class CombatEncounter
         _eventCounts.Clear();
         IsActive = true;
         _player.ReadyTick = _tick.CurrentTick;
+
+        // Gauges are per-encounter: Charge earned against the last pack does not carry into the
+        // next fight, or the meter stops being something you build inside a fight.
+        Gauges?.Reset(_tick.CurrentTick);
+        Modifiers?.Timed.Clear();
 
         Log($"Combat started: {_player.Name} vs {string.Join(", ", _enemies.Select(e => e.Name))}.");
         Publish(GameEvents.EncounterStarted, source: SelfId, amount: _enemies.Count);
@@ -365,7 +389,13 @@ public sealed class CombatEncounter
             return;
         }
 
-        var windup = Math.Max(1, action.Timing.WindupTicks);
+        // `combat.windup.mult` finally applies here. It is what Chill *is* — the status is
+        // literally `{ key: combat.windup.mult, value: 1.25 }` — and until the read path existed
+        // the whole slow half of the status roster was authored, validated and inert.
+        var windup = Math.Max(1, (int)Math.Round(
+            action.Timing.WindupTicks * ModifierOn(action.Actor, ModifierKeys.WindupMult),
+            MidpointRounding.AwayFromZero));
+
         action.Phase = ActionPhase.Windup;
         action.PhaseEndsTick = _tick.CurrentTick + windup;
         action.Scheduled = _tick.Schedule(windup, () => Execute(action));
@@ -391,26 +421,8 @@ public sealed class CombatEncounter
             var result = _calculator.Resolve(attacker, target, action.DamageType, action.BaseDamage, _tick.CurrentTick);
             ApplyResult(attacker, target, action.Name, result, action.Tags);
 
-            if (!target.IsAlive)
-            {
-                Publish(GameEvents.Killed, source: Id(attacker), target: Id(target));
-                Publish(GameEvents.Defeated, source: Id(target), target: Id(attacker));
-
-                if (target.Team == CombatTeam.Player)
-                {
-                    EndCombat(CombatResult.Defeat);
-                    return;
-                }
-
-                _defeatedEnemies.Add(target);
-                Log($"{target.Name} is defeated!");
-                CancelActionsOf(target);
-                if (_enemies.All(e => !e.IsAlive))
-                {
-                    EndCombat(CombatResult.Victory);
-                    return;
-                }
-            }
+            if (!target.IsAlive && HandleDefeat(attacker, target))
+                return;
         }
 
         // Enemies self-schedule their next decision; the player's tempo is their ReadyTick.
@@ -422,6 +434,161 @@ public sealed class CombatEncounter
     }
 
     /// <summary>
+    /// Books a defeat: raises the pair of events, and ends the encounter when that was the last
+    /// enemy or the player.
+    /// </summary>
+    /// <returns>True if the encounter ended, so the caller stops.</returns>
+    private bool HandleDefeat(Combatant attacker, Combatant target, EffectContext? context = null)
+    {
+        Publish(GameEvents.Killed, source: Id(attacker), target: Id(target), context: context);
+        Publish(GameEvents.Defeated, source: Id(target), target: Id(attacker), context: context);
+
+        if (target.Team == CombatTeam.Player)
+        {
+            EndCombat(CombatResult.Defeat);
+            return true;
+        }
+
+        _defeatedEnemies.Add(target);
+        Log($"{target.Name} is defeated!");
+        CancelActionsOf(target);
+
+        if (_enemies.All(e => !e.IsAlive))
+        {
+            EndCombat(CombatResult.Victory);
+            return true;
+        }
+
+        return false;
+    }
+
+    // --- Effect entry points (E3c) ------------------------------------------
+    //
+    // What the registered effect handlers call. Each takes the EffectContext and hands it to
+    // Publish, which is the only reason the depth budget, the once-per-chain rule and the fuse
+    // mean anything at runtime.
+
+    /// <summary>
+    /// Damage dealt by an effect rather than by a swing.
+    ///
+    /// <para>It deliberately does <b>not</b> run the hit pipeline: "deal 12" is a flat number, not
+    /// an attack, so it takes no armour, no crit and no avoidance. Running it through the pipeline
+    /// would make a proc dodgeable, which is not what any of the authored content means. It
+    /// <i>can</i> trigger — the depth budget is what bounds it, not a blanket ban.</para>
+    /// </summary>
+    /// <returns>Damage actually applied.</returns>
+    public int DealEffectDamage(
+        Combatant source, Combatant target, double amount, string label, EffectContext? context = null)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+
+        var applied = (int)Math.Round(Math.Max(0, amount), MidpointRounding.AwayFromZero);
+        if (!IsActive || applied <= 0 || !target.IsAlive)
+            return 0;
+
+        target.Health.Reduce(applied);
+
+        var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "effect" };
+        Publish(GameEvents.DamageDealt, Id(source), Id(target), applied, tags, context);
+        Publish(GameEvents.DamageTaken, Id(target), Id(source), applied, tags, context);
+
+        Log($"{label} hits {target.Name} for {applied}. [{target.Name} {target.Health.Current}/{target.Health.Max}]");
+
+        if (!target.IsAlive)
+            HandleDefeat(source, target, context);
+
+        StateChanged?.Invoke();
+        return applied;
+    }
+
+    /// <summary>Healing from an effect. Capped by the pool, and reports what actually landed.</summary>
+    public int HealTarget(Combatant target, double amount, string label, EffectContext? context = null)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        var requested = (int)Math.Round(Math.Max(0, amount), MidpointRounding.AwayFromZero);
+        if (!IsActive || requested <= 0 || !target.IsAlive)
+            return 0;
+
+        var before = target.Health.Current;
+        target.Health.Restore(requested);
+        var healed = target.Health.Current - before;
+        if (healed <= 0)
+            return 0;
+
+        Publish(GameEvents.Healed, Id(target), Id(target), healed, context: context);
+        Log($"{label} restores {healed} health to {target.Name}.");
+        StateChanged?.Invoke();
+        return healed;
+    }
+
+    /// <summary>
+    /// Fills a named gauge, or a combatant pool when the name is one.
+    ///
+    /// <para>Every authored <c>grantResource</c> names a gauge, which is why gauges had to exist
+    /// before this handler could do anything. Pools are handled too because the vocabulary does
+    /// not stop content naming Stamina, and silently dropping it would be the failure mode the
+    /// whole <c>Unhandled</c> list exists to prevent.</para>
+    /// </summary>
+    /// <returns>How much was actually added.</returns>
+    public double GrantResource(Combatant target, string resource, double amount, EffectContext? context = null)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (!IsActive || amount <= 0 || string.IsNullOrWhiteSpace(resource))
+            return 0;
+
+        double granted;
+
+        if (Gauges?.Has(resource) == true)
+        {
+            granted = Gauges.Add(resource, amount, _tick.CurrentTick);
+        }
+        else
+        {
+            var pool = PoolNamed(target, resource);
+            if (pool is null)
+                return 0;
+
+            var before = pool.Current;
+            pool.Restore((int)Math.Round(amount, MidpointRounding.AwayFromZero));
+            granted = pool.Current - before;
+        }
+
+        if (granted <= 0)
+            return 0;
+
+        Publish(GameEvents.ResourceGenerated, Id(target), Id(target), granted,
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { resource.ToLowerInvariant() }, context);
+
+        StateChanged?.Invoke();
+        return granted;
+    }
+
+    private static Characters.ResourcePool? PoolNamed(Combatant combatant, string name) => name.ToLowerInvariant() switch
+    {
+        "health" => combatant.Health,
+        "stamina" => combatant.Stamina,
+        "mana" => combatant.Mana,
+        _ => null,
+    };
+
+    /// <summary>
+    /// A timing modifier for <paramref name="combatant"/>, or 1 when there is no read path.
+    ///
+    /// <para>Timing keys are unscoped, so the context is genuinely <see cref="ModifierContext.None"/>
+    /// rather than a placeholder — a windup belongs to the actor, not to a lane or a move tag.
+    /// </para>
+    /// </summary>
+    private double ModifierOn(Combatant combatant, string key) =>
+        Modifiers?.Resolve(combatant, key, ModifierContext.None) ?? 1.0;
+
+    /// <summary>The combatant an event id refers to — <see cref="SelfId"/> or an enemy's name.</summary>
+    public Combatant? Find(string? id) =>
+        string.IsNullOrEmpty(id) ? null : Combatants.FirstOrDefault(c => string.Equals(Id(c), id, StringComparison.Ordinal));
+
+    /// <summary>
     /// Cuts an action short. Returns false if the combatant has nothing committed.
     ///
     /// <para>This is the capability the telegraph/windup split exists to enable — Stun, Psionic's
@@ -429,7 +596,7 @@ public sealed class CombatEncounter
     /// <see cref="GameEvents.ActionInterrupted"/> lets content distinguish "stopped them before
     /// they swung" from "stopped them mid-swing".</para>
     /// </summary>
-    public bool Interrupt(Combatant actor, string reason = "interrupted")
+    public bool Interrupt(Combatant actor, string reason = "interrupted", EffectContext? context = null)
     {
         if (!IsActive || !_inFlight.TryGetValue(actor, out var action))
             return false;
@@ -444,7 +611,7 @@ public sealed class CombatEncounter
         };
 
         Log($"{actor.Name}'s {action.Name} is {reason}!");
-        Publish(GameEvents.ActionInterrupted, source: Id(actor), target: Id(action.Target), tags: tags);
+        Publish(GameEvents.ActionInterrupted, source: Id(actor), target: Id(action.Target), tags: tags, context: context);
 
         // The interrupted actor still pays recovery — being stopped is not free tempo.
         if (actor.Team == CombatTeam.Enemy && actor.IsAlive)
@@ -491,6 +658,14 @@ public sealed class CombatEncounter
     private void ApplyResult(
         Combatant attacker, Combatant target, string attackName, HitResult result, HashSet<string> tags)
     {
+        // Copy before touching it. The caller hands in the ActionInFlight's own tag set, which
+        // was already given to ActionQueued/ActionTelegraphed — and a GameEvent holds the
+        // reference rather than a snapshot. Adding `blocked` to the original therefore rewrote
+        // the tags of events published before the block existed, so anything that *records*
+        // events (the Hit Log, the Lab's recent-firings panel, any replay) read a history that
+        // never happened. Live matching never saw it, because the bus dispatches synchronously.
+        tags = new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase);
+
         var source = Id(attacker);
         var victim = Id(target);
 
@@ -585,14 +760,19 @@ public sealed class CombatEncounter
     /// </summary>
     private void ScheduleStatusTick()
     {
-        if (Statuses is null)
+        if (Statuses is null && Gauges is null)
             return;
 
         _statusPending = _tick.Schedule(CombatTuning.StatusTickIntervalTicks, () =>
         {
             if (!IsActive)
                 return;
-            Statuses.Advance(Combatants.Where(c => c.IsAlive).ToList());
+            Statuses?.Advance(Combatants.Where(c => c.IsAlive).ToList());
+
+            // Gauges ride the same sweep for the same reason statuses do — decay resolving on one
+            // deterministic clock beats every meter racing its own timer.
+            Gauges?.Advance(_tick.CurrentTick);
+            Modifiers?.Timed.Advance(_tick.CurrentTick);
             ScheduleStatusTick();
         });
     }
@@ -608,8 +788,18 @@ public sealed class CombatEncounter
     // docs/effect-foundation.md §3.1 (HitLanded, HitAvoided, DamageMitigated, …) arrive with
     // the packet pipeline in E1, together with the semantics that make them distinct.
 
+    /// <param name="context">
+    /// Set when this event is being raised <i>by an effect</i> rather than by a real action.
+    /// Carrying it is what keeps the causal chain intact: drop it once and the chain restarts at
+    /// depth 0, and the entire proc budget becomes decorative (docs/effect-foundation.md §6.1).
+    /// </param>
+    /// <param name="canTrigger">
+    /// False bars the event from matching any rule at all. Retaliation and ailment ticks use it —
+    /// between them, most of the recursion the design has to survive (§6.2).
+    /// </param>
     private void Publish(string kind, string? source = null, string? target = null,
-        double amount = 0.0, IReadOnlySet<string>? tags = null)
+        double amount = 0.0, IReadOnlySet<string>? tags = null,
+        EffectContext? context = null, bool canTrigger = true)
     {
         _eventCounts.TryGetValue(kind, out var seen);
         _eventCounts[kind] = seen + 1;
@@ -618,8 +808,12 @@ public sealed class CombatEncounter
         {
             ["self_health_fraction"] = Fraction(_player.Health),
             ["self_stamina_fraction"] = Fraction(_player.Stamina),
+            ["gauge_fraction"] = Gauges?.HighestFraction ?? 0.0,
             ["encounter_index"] = seen + 1,
-        }));
+        },
+        ChainId: context?.ChainId,
+        Depth: context?.Depth ?? 0,
+        CanTrigger: canTrigger));
     }
 
     private static double Fraction(Characters.ResourcePool pool) =>
@@ -725,12 +919,14 @@ public sealed class CombatEncounter
     /// Applies a status through the controller, publishing whatever the attempt produced. The
     /// controller decides whether a control actually lands; combat only reports it.
     /// </summary>
-    public ControlOutcome ApplyStatus(Combatant target, string statusId, string sourceId, double magnitude = 0)
+    public ControlOutcome ApplyStatus(
+        Combatant target, string statusId, string sourceId, double magnitude = 0,
+        int durationOverride = 0, EffectContext? context = null)
     {
         if (Statuses is null)
             return ControlOutcome.Ungated;
 
-        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude);
+        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude, durationOverride, context);
 
         if (outcome == ControlOutcome.Applied)
             Log($"{target.Name} is affected by {Statuses.Find(target, statusId)?.Definition.Name ?? statusId}.");
@@ -766,7 +962,12 @@ public sealed class CombatEncounter
         Log($"{target.Name} suffers {amount} from {instance.Definition.Name}. " +
             $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
 
-        Publish(GameEvents.DamageTaken, source: Id(target), target: instance.SourceId, amount: amount, tags: tags);
+        // canTrigger: false is proc-safety rule 4 (docs/effect-foundation.md §6.2). It only
+        // started mattering once E3c registered handlers: before that a Poison tick fed nothing,
+        // and after it a twenty-second DoT would otherwise proc every rule in the build twice a
+        // second, for free, from one application.
+        Publish(GameEvents.DamageTaken, source: Id(target), target: instance.SourceId, amount: amount,
+            tags: tags, canTrigger: false);
 
         if (!target.IsAlive)
         {

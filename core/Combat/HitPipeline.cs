@@ -1,3 +1,4 @@
+using Dungeons.Modifiers;
 using Dungeons.Randomness;
 
 namespace Dungeons.Combat;
@@ -53,8 +54,36 @@ public sealed class HitResult
 public sealed class HitPipeline
 {
     private readonly IRandomSource _rng;
+    private readonly CombatantModifiers? _modifiers;
 
-    public HitPipeline(IRandomSource rng) => _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+    /// <param name="modifiers">
+    /// The modifier read path (E3c-2). Optional so calculation tests need not assemble one; when
+    /// absent every stage falls back to its tuning constant, which is exactly the E1 behaviour.
+    /// </param>
+    public HitPipeline(IRandomSource rng, CombatantModifiers? modifiers = null)
+    {
+        _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+        _modifiers = modifiers;
+    }
+
+    /// <summary>
+    /// The situation a hit's modifiers resolve in.
+    ///
+    /// <para>Every tag the hit carries is supplied as a <c>move_tag</c>, because one swing is
+    /// <c>melee</c> and <c>attack</c> and <c>light</c> at the same time and a modifier scoped to
+    /// any of them applies. This is the first real <see cref="ModifierContext"/> in the game —
+    /// built from the hit, never defaulted to make a call compile.</para>
+    /// </summary>
+    private static ModifierContext ContextFor(Hit hit) =>
+        hit.Tags.Count == 0
+            ? ModifierContext.None
+            : ModifierContext.For(ScopeDimensions.MoveTag, hit.Tags.ToArray());
+
+    private static ModifierContext ContextFor(Hit hit, Packet packet) =>
+        packet.Lane is { } lane ? ContextFor(hit).With(ScopeDimensions.Lane, lane) : ContextFor(hit);
+
+    private double Resolve(Combatant? combatant, string key, ModifierContext context, double baseValue) =>
+        combatant is null || _modifiers is null ? baseValue : _modifiers.Resolve(combatant, key, context, baseValue);
 
     public HitResult Resolve(Hit hit, long currentTick)
     {
@@ -93,25 +122,43 @@ public sealed class HitPipeline
         // let it multiply every other multiplier as well, and crit builds would scale
         // quadratically with everything else — the difference between crit being *a* build and
         // *the* build.
-        var crit = RollCrit(attacker, log);
-        if (crit)
-            packets = Scale(packets, CombatTuning.CritMultiplier, log, HitStages.Crit,
-                $"×{CombatTuning.CritMultiplier}");
+        var context = ContextFor(hit);
 
-        // increased → more/less → conversion → added-as-extra all sit here.
-        // No contributors until E3.
+        var crit = RollCrit(attacker, context, log);
+        if (crit)
+        {
+            var critMultiplier = Resolve(attacker, ModifierKeys.CritMult, context, CombatTuning.CritMultiplier);
+            packets = Scale(packets, critMultiplier, log, HitStages.Crit, $"×{critMultiplier:0.##}");
+        }
+
+        // INCREASED — the first stage with a real source. `more`/`less`, conversion and
+        // added-as-extra still sit here with none.
+        var increased = Resolve(attacker, ModifierKeys.DamageMult, context, 1.0);
+        if (Math.Abs(increased - 1.0) > 0.0001)
+            packets = Scale(packets, increased, log, HitStages.Increased, $"×{increased:0.###}");
 
         // ── PER-PACKET MITIGATION ────────────────────────────────────────────
 
         var beforeMitigation = packets.Sum(p => p.Amount);
-        packets = packets.Select(p => Mitigate(p, target, log)).ToList();
+        packets = packets.Select(p => Mitigate(hit, p, target, log)).ToList();
 
         // ── WHOLE-HIT MITIGATION ─────────────────────────────────────────────
 
         var blocked = target.IsBlocking(currentTick);
         if (blocked)
-            packets = Scale(packets, CombatTuning.BlockDamageMultiplier, log, HitStages.Block,
-                $"×{CombatTuning.BlockDamageMultiplier} (guard held)");
+        {
+            // Block *strength* scales how much of the hit the guard eats, not the damage that
+            // gets through — so "+30% block strength" reads as mitigating 30% more rather than
+            // taking 30% more damage, which is what the sign would say if it multiplied directly.
+            var strength = Resolve(target, ModifierKeys.BlockMult, context, 1.0);
+            var throughput = Math.Max(0, 1.0 - ((1.0 - CombatTuning.BlockDamageMultiplier) * strength));
+            packets = Scale(packets, throughput, log, HitStages.Block,
+                $"×{throughput:0.##} (guard held{(Math.Abs(strength - 1.0) > 0.0001 ? $", strength ×{strength:0.##}" : string.Empty)})");
+        }
+
+        var taken = Resolve(target, ModifierKeys.DamageTakenMult, context, 1.0);
+        if (Math.Abs(taken - 1.0) > 0.0001)
+            packets = Scale(packets, taken, log, HitStages.DamageTaken, $"×{taken:0.###}");
 
         // The floor applies to the hit TOTAL, not per packet — otherwise a three-packet hit
         // would floor three times and out-damage a single packet of the same size against a
@@ -159,9 +206,13 @@ public sealed class HitPipeline
         };
     }
 
-    private bool RollCrit(Combatant attacker, HitLog log)
+    private bool RollCrit(Combatant attacker, ModifierContext context, HitLog log)
     {
-        var chance = Math.Min(CombatTuning.MaxCritChance, attacker.Attributes.Luck * CombatTuning.CritChancePerLuck);
+        // The tuning cap bounds what *Luck alone* can buy; modifiers add on top and answer to the
+        // key's own clamp instead. Capping the total here would make every crit-chance affix past
+        // 50% worth exactly zero without saying so.
+        var innate = Math.Min(CombatTuning.MaxCritChance, attacker.Attributes.Luck * CombatTuning.CritChancePerLuck);
+        var chance = Resolve(attacker, ModifierKeys.CritChance, context, innate);
         var crit = _rng.NextDouble() < chance;
         if (!crit && chance > 0)
             log.Add(HitStages.Crit, $"no ({chance:P0} chance)");
@@ -202,14 +253,16 @@ public sealed class HitPipeline
         return scaled;
     }
 
-    private static Packet Mitigate(Packet packet, Combatant target, HitLog log)
+    private Packet Mitigate(Hit hit, Packet packet, Combatant target, HitLog log)
     {
         var amount = packet.Amount;
 
         // ARMOUR — physical-typed packets only, whatever their aspect.
         if (packet.ArmourApplies)
         {
-            var armour = target.Armour;
+            // Resolved rather than read straight off the profile, which is what finally lets
+            // Corroded strip armour and a granted `combat.armor` add to it.
+            var armour = Resolve(target, ModifierKeys.Armor, ContextFor(hit, packet), target.Armour);
             if (armour > 0 && amount > 0)
             {
                 var reduction = armour / (armour + (CombatTuning.ArmourK * amount));

@@ -87,31 +87,40 @@ public sealed class StatusController
     /// Applies a status. Controls route through Resolve and may not land; everything else
     /// applies directly (docs/statuses.md §5).
     /// </summary>
-    public ControlOutcome Apply(Combatant target, string statusId, string sourceId, double magnitude = 0, int durationOverride = 0)
+    /// <param name="context">
+    /// The causal chain this application belongs to, when a rule caused it. Threaded onto
+    /// <c>StatusApplied</c>/<c>ControlResisted</c> so a status applied by a proc does not restart
+    /// the chain at depth 0 — which would make the whole proc budget decorative
+    /// (docs/effect-foundation.md §6.1).
+    /// </param>
+    public ControlOutcome Apply(
+        Combatant target, string statusId, string sourceId, double magnitude = 0, int durationOverride = 0,
+        Rules.EffectContext? context = null)
     {
         if (!_definitions.TryGetById(statusId, out var definition))
             return ControlOutcome.Ungated;
 
         if (definition.IsControl)
-            return ApplyControl(target, definition, sourceId, magnitude, durationOverride);
+            return ApplyControl(target, definition, sourceId, magnitude, durationOverride, context);
 
-        Land(target, definition, sourceId, magnitude, durationOverride);
+        Land(target, definition, sourceId, magnitude, durationOverride, context);
         return ControlOutcome.Applied;
     }
 
     private ControlOutcome ApplyControl(
-        Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride)
+        Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
+        Rules.EffectContext? context)
     {
         // A gate is not a resistance — an unchilled target accumulates no Freeze at all.
         if (definition.RequiresStatus is { } gate && !Has(target, gate))
         {
-            RaiseResisted(target, definition, sourceId, "ungated");
+            RaiseResisted(target, definition, sourceId, "ungated", context);
             return ControlOutcome.Ungated;
         }
 
         if (IsControlImmune(target))
         {
-            RaiseResisted(target, definition, sourceId, "immune");
+            RaiseResisted(target, definition, sourceId, "immune", context);
             return ControlOutcome.Immune;
         }
 
@@ -129,7 +138,7 @@ public sealed class StatusController
             // the escalation are shared — which is what stops a build rotating Stun → Fear →
             // Freeze to keep something permanently disabled.
             pools[definition.Id] = total;
-            RaiseResisted(target, definition, sourceId, "buildup");
+            RaiseResisted(target, definition, sourceId, "buildup", context);
             return ControlOutcome.Resisted;
         }
 
@@ -137,11 +146,13 @@ public sealed class StatusController
         _immuneUntil[target] = _currentTick() + CombatTuning.ControlImmunityTicks;
         _resolveBonus[target] = _resolveBonus.GetValueOrDefault(target) + CombatTuning.ResolveEscalation;
 
-        Land(target, definition, sourceId, magnitude, durationOverride);
+        Land(target, definition, sourceId, magnitude, durationOverride, context);
         return ControlOutcome.Applied;
     }
 
-    private void Land(Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride)
+    private void Land(
+        Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
+        Rules.EffectContext? context)
     {
         var now = _currentTick();
         var duration = durationOverride > 0 ? durationOverride : definition.DurationTicks;
@@ -184,14 +195,18 @@ public sealed class StatusController
 
         _bus.Publish(new GameEvent(
             GameEvents.StatusApplied, sourceId, target.Name, magnitude,
-            Tags(definition), Values(definition)));
+            Tags(definition), Values(definition),
+            ChainId: context?.ChainId, Depth: context?.Depth ?? 0));
     }
 
-    private void RaiseResisted(Combatant target, StatusDefinition definition, string sourceId, string why) =>
+    private void RaiseResisted(
+        Combatant target, StatusDefinition definition, string sourceId, string why,
+        Rules.EffectContext? context = null) =>
         _bus.Publish(new GameEvent(
             GameEvents.ControlResisted, sourceId, target.Name, 0,
             new HashSet<string>(Tags(definition), StringComparer.OrdinalIgnoreCase) { why },
-            Values(definition)));
+            Values(definition),
+            ChainId: context?.ChainId, Depth: context?.Depth ?? 0));
 
     private static IReadOnlySet<string> Tags(StatusDefinition definition)
     {
@@ -302,6 +317,12 @@ public sealed class StatusController
     /// <summary>
     /// Total contribution of every active status toward a modifier key — how Chill slows a
     /// target and Corroded strips its armour, without either needing code.
+    ///
+    /// <para><b>This is the status-only subtotal, for display.</b> Combat resolves through
+    /// <see cref="CombatantModifiers"/>, which folds these together with build modifiers, gauge
+    /// bands and timed grants and applies the key's stacking rule and clamps. Answering "what is
+    /// Chill doing to me?" is a different question from "what is my windup?", which is why both
+    /// survive — but nothing authoritative may read this one.</para>
     /// </summary>
     public double ModifierTotal(Combatant combatant, string key, bool multiplicative = false)
     {

@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 554 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 580 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
@@ -31,10 +31,13 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 
 ## Core mechanisms behind it (new, reusable)
 - ✅ **Modifier vocabulary** (`core/Modifiers/`) — 51 data-defined keys replacing `StatId` as the modifier *target* surface. Five kinds (additive / multiplicative / flag / **diminishing** / **highest_only**), clamps on the key, contributions carry provenance. `StatId` bridges in, so there is one modifier system.
-- ✅ **Scoped contributions** (E3b, D-12) — a contribution may carry one `ModifierScope` over eight closed dimensions, and `Resolve` takes a `ModifierContext` that is never defaulted. A key declaring `scoped_by` **throws** if resolved without that dimension, rather than returning a plausible wrong number. **No production caller yet** — E3c's handlers are the first.
+- ✅ **Scoped contributions** (E3b, D-12) — a contribution may carry one `ModifierScope` over eight closed dimensions, and `Resolve` takes a `ModifierContext` that is never defaulted. A key declaring `scoped_by` **throws** if resolved without that dimension, rather than returning a plausible wrong number. A **context supplies a set per dimension** (a swing is `melee` and `attack` and `light` at once), so matching is membership, not equality.
 - ✅ **Game event bus** (`core/Events/`) — 30 events spanning combat, crafting, loot and extraction. Synchronous and ordered (a determinism requirement); handler-raised events queue rather than re-enter.
 - ✅ **Declarative trigger rules** (`core/Rules/`) — `event + conditions + effect + cooldown + chance`, interpreted generically. Prefixes, Suffix expressions and gauge feeds are all just lists of these. Effects with no registered handler land in `Unhandled`, so content referencing unbuilt systems is **visibly inert rather than silently missing**.
-- ✅ **Combat raises them** (E0). `CombatEncounter` publishes 14 existing event kinds; `GameRoot` owns the bus + `TriggerRuleEngine` and re-attaches the build's hooks on every rebuild. Effects still land in `Unhandled` until E3 — visibly inert, not missing.
+- ✅ **Combat raises them** (E0). `CombatEncounter` publishes 14 existing event kinds; `GameRoot` owns the bus + `TriggerRuleEngine` and re-attaches the build's hooks on every rebuild.
+- ✅ **Effects execute** (E3c / E3c-2). Seven combat handlers — `damage`, `areaDamage`, `heal`, `applyStatus`, `grantResource`, `grantModifier`, `interrupt` — plus `EffectTargetResolver` for E3a's target selectors. `EffectContext` propagates through combat and statuses, so the proc budget bounds real chains. `spawnEntity`, `grantItem`, `reposition` and `revealInfo` still land in `Unhandled` — visibly inert, not missing.
+- ✅ **Gauges are live** (E3c). `GaugePool`/`GaugeController` — per-encounter reset, decay with a grace window, reconfigured on a build swap. Every authored `grantResource` names a gauge, so this is what made that effect kind mean anything.
+- ✅ **Modifiers are read** (E3c-2). `CombatantModifiers` assembles build statics + status `while_active` + gauge bands + timed `grantModifier` grants into one `ModifierSet` per combatant; `TimedModifiers` expires the grants. The hit pipeline resolves damage/crit/armour/block/damage-taken and the scheduler resolves windup — **which is what makes Chill slow anything**. Before this, all four contributors were authored and inert because nothing in combat ever read a modifier.
 
 ## Character & professions
 - ✅ Attributes (7), resources (HP/Mana/Stamina, no auto-regen), `ResourceCalculator`.

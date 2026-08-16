@@ -7,14 +7,17 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`, latest commit **`2bf9902`** (E3a). Before it: `99cdceb` (E1 + E2),
-  `90faf27` (E0), `f55349c` (the effect-foundation design package).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **554 passing**.
-- ⚠ **Uncommitted: E3b is complete and green in the working tree.** Files:
-  `core/Modifiers/ModifierScope.cs` (new) · `core/Modifiers/ModifierKeyDefinition.cs` ·
-  `core/Modifiers/ModifierSet.cs` · `core/Content/ContentValidator.cs` ·
-  `game/data/modifier_keys/modifier_keys.json` · `tests/Modifiers/ModifierSetTests.cs` ·
-  `tests/Content/ContentValidatorTests.cs` · doc updates. Commit it before starting E3c.
+- Branch `main`, latest commit **`bfd7cdc`** (E3b). Before it: `2bf9902` (E3a),
+  `99cdceb` (E1 + E2), `90faf27` (E0), `f55349c` (the effect-foundation design package).
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **580 passing**.
+- ⚠ **Uncommitted: E3c *and* E3c-2 are complete and green in the working tree.** New files:
+  `core/Characters/GaugeController.cs` · `core/Combat/EffectTargetResolver.cs` ·
+  `core/Combat/CombatEffectHandlers.cs` · `core/Combat/CombatantModifiers.cs` ·
+  `tests/Rules/EffectHandlerTests.cs` · `tests/Combat/ModifierReadPathTests.cs`.
+  Modified: `core/Combat/CombatEncounter.cs` · `CombatCalculator.cs` · `HitPipeline.cs` ·
+  `HitLog.cs` · `StatusController.cs` · `core/Modifiers/ModifierScope.cs` ·
+  `ModifierKeys.cs` · `game/GameRoot.cs` · `tests/Combat/CombatEventTests.cs` · doc updates.
+  **Two slices in the tree at once — commit before starting anything else.**
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -95,15 +98,110 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a and b done, c next) →
-E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
-E7 Overreach.
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → 🔄 **E3** (a, b, c, c-2 done; c-3
+remains) → E4 moves → C1 traits/essence → C2 fabrication + scale reconciliation → E5 affixes →
+E6 tools → E7 Overreach.
 
-### 🔄 E3 — E3a committed, E3b done and **uncommitted**; E3c is next
+### 🔄 E3 — a/b committed; c and c-2 done and **uncommitted**
 
-> ⚠ **Uncommitted work in the tree: E3b.** Complete and green. **Commit it before starting
-> E3c**, or the two slices tangle the way E1/E2 did (they had to share a commit because they
-> interleaved in four files). File list is under "Repo / build state" above.
+> ⚠ **Two slices in the tree at once.** Both complete and green. File list is under
+> "Repo / build state" above. E1/E2 had to share a commit because they interleaved in four
+> files; these two interleave in `CombatEncounter.cs` and `CombatEffectHandlers.cs`, so they
+> will too unless split by hand.
+
+### ✅ E3c shipped — effects finally do things
+
+`dotnet test` → **569 passing** (was 554), build 0 warnings. **Uncommitted.**
+
+Everything before this fired into nothing: E0 raised events, E1–E2 gave them damage and
+statuses, E3a gave rules targets and a proc budget, and every effect a shipped Prefix or Suffix
+declared was recorded and thrown away.
+
+- **Six handlers** — `damage`, `areaDamage`, `heal`, `applyStatus`, `grantResource`, `interrupt`.
+  Registered by `CombatEffects.RegisterCombatHandlers`. That is 49 of the 80 authored effect
+  instances; the rest belong to systems that do not exist and stay visibly in `Unhandled`.
+- **`EffectTargetResolver`** turns E3a's selectors into combatants and filters the dead, so an
+  effect firing on the killing blow does not land on a corpse.
+- **The gauge runtime** (`GaugePool` / `GaugeController`). **This was the surprise:** all fifteen
+  authored `grantResource` effects name a *gauge* — Charge, Momentum, Threat, Debt — and no
+  runtime gauge state existed anywhere. The whole gauge layer was authored, validated and inert.
+  Gauges reset per encounter, ride the status sweep for decay, and reconfigure on a build swap.
+- **`gauge_fraction` is now produced.** Nothing ever set it, so all **7 authored `gaugeAtLeast`
+  conditions were silently always-false**. See the known limitation below.
+- **Context propagation** through `CombatEncounter.Publish` *and* `StatusController.Apply`, which
+  is what makes E3a's budget real: a proc's proc is depth 2 and stops there.
+- **Ailment ticks now publish `canTrigger: false`** (proc-safety rule 4). Inert before this
+  slice, load-bearing after it — a 20-second Poison would otherwise proc every rule in the build
+  dozens of times from one application.
+
+**A pre-existing bug found by rendering a fight and reading the trace** — the third time this
+method has paid. `ApplyResult` called `tags.Add("blocked")` on the **`ActionInFlight`'s own tag
+set**, and a `GameEvent` holds the reference rather than a snapshot. Events published *before*
+the block — `ActionQueued`, `ActionTelegraphed` — retroactively acquired a `blocked` tag. Live
+rule matching never saw it (the bus dispatches synchronously, so dispatch had already happened),
+but everything that *records* events read a history that never happened: the Hit Log, the Lab's
+recent-firings panel, any future replay. Fixed by copying the set; pinned by a test.
+
+**Known limitations, deliberate:**
+- **`gaugeAtLeast` names no gauge** and a build can run two (Base + Prefix). It reads the highest
+  fill, which is right for every shipped single-gauge build and ambiguous for a two-gauge one.
+  The fix is a gauge name on the condition, which belongs with E3c-3.
+- **`areaDamage` ignores the target selector** and hits every living enemy, because positioning
+  does not exist. That is exactly right for both of Exploding Kneecaps' expressions today; the
+  selector starts doing work here when positions arrive.
+- **`EffectTarget.Self` resolves to the player**, because every attached rule comes from the
+  player's build. Same debt `CombatEncounter.SelfId` already carries.
+- **Gauge `bands` are computed but unconsumed** (`GaugePool.ActiveBands`). They contribute
+  modifiers, and nothing reads modifiers during combat yet — that is E3c-2's job.
+- **Ordering artifact, not a bug:** a retaliation's damage events land between `Blocked` and the
+  triggering hit's own `DamageDealt`, because the bus dispatches synchronously from inside
+  `ApplyResult`. Worth knowing when reading a trace.
+
+### ✅ E3c-2 shipped — the modifier read path
+
+`dotnet test` → **580 passing** (was 569), build 0 warnings. **Uncommitted.**
+
+Scoped as "`grantModifier`", and the investigation found something bigger: **nothing in combat
+ever read a modifier at all.** Four systems were producing contributions into a void —
+`ResolvedBuild.Modifiers` had no consumer, `StatusController.ModifierTotal` was called only by
+its own tests, gauge `bands` were declared and ignored, and `grantModifier` was `Unhandled`. One
+missing seam, four inert systems.
+
+- **`CombatantModifiers`** assembles all four into one `ModifierSet` per combatant, per query
+  (not cached — a stale cache mid-proc-chain costs more than the assembly does).
+- **`TimedModifiers`** holds `grantModifier`'s grants and expires them on the sweep. Deliberately
+  *not* modelled as anonymous statuses: a status is named, visible and cleansable, and "+20%
+  damage for 40 ticks" from a proc is none of those.
+- **The pipeline reads them.** A new INCREASED stage (`combat.damage.mult`), plus `crit.chance`,
+  `crit.mult`, `armor`, `block.mult` and `damage_taken.mult`. The scheduler reads
+  `windup.mult` — **which is what Chill is**, authored in E2 and without effect until now.
+- **Build modifiers are the owner's**, not everyone's in the fight.
+
+**Two judgement calls worth knowing:**
+- **Block strength scales what the guard *eats*, not what gets through**: `1 − (1 − 0.4) × s`.
+  Multiplying throughput directly would make "+30% block strength" *increase* damage taken.
+- **The crit tuning cap bounds Luck alone**, with modifiers adding on top and answering to the
+  key's clamp. Capping the total would make every crit-chance affix past 50% worth exactly zero
+  without ever saying so.
+
+**A correction to E3b, found here:** `ModifierContext` supplied **one value per dimension**, but
+one swing is `melee` *and* `attack` *and* `light`, and a `move_tag`-scoped modifier must match
+any of them. Equality would have silently dropped every move-tag modifier on every move. The
+context now holds a **set** per dimension and `Matches` is membership. A contribution still
+carries at most one scope — that part of D-12 is unchanged.
+
+**Left alone deliberately:** `StatusController.ModifierTotal` survives as a *status-only*
+subtotal for display ("what is Chill doing to me?" is a different question from "what is my
+windup?"). Nothing authoritative may read it. **Collapse it if it stays unused.**
+
+### E3c-3 — the stateful conditions  ← **START HERE**
+
+`targetHasStatus`, `selfHasStatus`, `resourceAbove`/`Below`, `equippedTag`, `hitHasLane`,
+`actionHasTag`, plus a gauge name on `gaugeAtLeast`. **No shipped content uses any of them** —
+they are for future content, which is why they came last. The cost is architectural:
+`TriggerRuleEngine.Evaluate` is a **static pure function of the event** with four call sites, and
+these conditions need world state. Decide whether that becomes an injected context object or the
+engine stops exposing a static evaluator.
 
 ### ✅ E3b shipped — scoped modifier contributions (D-12)
 
@@ -167,35 +265,23 @@ shipped data does not yet implement, and both are balance numbers that want the 
 
 **Two properties worth not breaking:**
 - **Handlers must propagate `invocation.Context`** onto any event they raise. If one forgets, the
-  chain restarts at depth 0 and the entire budget becomes decorative. E3c's handlers are the
-  first real test of this.
+  chain restarts at depth 0 and the entire budget becomes decorative. E3c's handlers exercised
+  this for real and it holds — `AProcsProcInheritsTheChainAndStopsAtTheDepthBudget` is the test
+  that would catch a regression, and it asserts inheritance *within* one chain rather than
+  counting chains (several origin chains per fight is normal — every `MoveExecuted` starts one).
 - **`OncePerChain` defaults to true.** Content opts *into* risk; it never opts out of safety by
   omission.
 
-### E3c — the effect handlers  ← **START HERE**
-
-Register handlers so effects stop landing in `Unhandled`: `damage`, `applyStatus`,
-`grantResource`, `heal`, `areaDamage`, `interrupt` at minimum, plus the new condition kinds
-(`targetHasStatus`, `selfHasStatus`, `resourceAbove`/`Below`, `equippedTag`, `hitHasLane`,
-`actionHasTag`). **This is where Galvanic's Charge finally accumulates.**
-
-⚠ **Every handler must propagate `invocation.Context`** onto any event it raises. Forget it once
-and the chain restarts at depth 0, making the whole proc budget decorative. This is the first
-slice where that discipline is actually exercised.
-
-⚠ **E3c is also the first code that resolves modifiers, so it is where `ModifierContext` gets
-built for real.** `ModifierSet.Resolve` has had **no production caller** through E3b — a handler
-that reaches for `combat.damage.flat` must supply a `move_tag`, and one that reaches for anything
-`profession.*` must supply a `profession`, or it throws. That throw is the feature. Build the
-context from the event/hit being handled; do not reach for `ModifierContext.None` to make a call
-compile.
-
 ### A method note worth repeating
 
-The two best bugs of E1/E2 were found by **rendering a worked example and reading the numbers**,
-not by a test: attribute scaling applied per packet (so splitting a hit was free damage), and the
-crit ordering contradicting its own spec. Before calling E3 done, wire a real fight with statuses
-and scoped modifiers on and *read the Hit Log*. Cheap, and it has paid twice.
+**Three of the best bugs in this whole stretch were found by rendering a worked example and
+reading the numbers, not by a test.** E1/E2 gave two: attribute scaling applied per packet (so
+splitting a hit was free damage), and crit ordering contradicting its own spec. E3c gave the
+third: a `GameEvent`'s tag set being mutated after publication, rewriting the history of events
+that had already fired. None of the three would have been caught by the tests that existed.
+
+Do it again for E3c-2: wire a fight with a `grantModifier` build, print the modifier trace with
+each contribution's scope, and read it. Cheap, and it has now paid three times.
 
 ### ✅ E2 shipped — lifecycle split, then statuses
 
@@ -359,7 +445,7 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
 ---
 
 ## Guardrails
-- Keep `dotnet test` green (**554** now) and the build at **0 warnings**, in tested increments.
+- Keep `dotnet test` green (**580** now) and the build at **0 warnings**, in tested increments.
 - Core stays Godot-free. Nothing authoritative in `GameRoot` or the UI.
 - Content is data; code owns structure and closed vocabularies (D16). Adding a content type is
   one store on `ContentBundle` plus one line in `ContentLoader.LoadAll`.
