@@ -1,0 +1,32 @@
+[
+  // Herblore's ladder (P2). Gather Sageleaf lives in gather_sageleaf.json.
+  {
+    "id": "action.gather_nettle",
+    "professionId": "profession.herblore",
+    "name": "Gather Nettle",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 10,
+    "outputs": [ { "itemId": "material.nettle", "quantity": 1 } ]
+  },
+  {
+    "id": "action.dig_marsh_root",
+    "professionId": "profession.herblore",
+    "name": "Dig Marsh Root",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 130,
+    "experience": 14,
+    "outputs": [ { "itemId": "material.marsh_root", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.gnarl_root", "chance": 0.1, "quantity": 1 } ]
+  },
+  {
+    "id": "action.harvest_comfrey",
+    "professionId": "profession.herblore",
+    "name": "Harvest Comfrey",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 140,
+    "experience": 20,
+    "outputs": [ { "itemId": "material.comfrey", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.aloe", "chance": 0.15, "quantity": 1 } ]
+  }
+]

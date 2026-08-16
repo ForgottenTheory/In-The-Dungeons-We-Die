@@ -1,0 +1,41 @@
+[
+  // Cooking (P3): meals are materials for now — `growth` is what will make them healing
+  // consumables later. Every input is another profession's output (GDD §7.2).
+  {
+    "id": "action.roast_boar",
+    "professionId": "profession.cooking",
+    "name": "Roast Boar",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 120,
+    "experience": 12,
+    "inputs": [ { "itemId": "material.boar_meat", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.roast_boar", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cook_fish_stew",
+    "professionId": "profession.cooking",
+    "name": "Cook Fish Stew",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 16,
+    "inputs": [
+      { "itemId": "material.fish_meat", "quantity": 2 },
+      { "itemId": "material.marsh_root", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.fish_stew", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cook_foragers_pot",
+    "professionId": "profession.cooking",
+    "name": "Cook a Forager's Pot",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 18,
+    "inputs": [
+      { "itemId": "material.nettle", "quantity": 1 },
+      { "itemId": "material.sageleaf", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.foragers_pot", "quantity": 1 } ]
+  }
+]

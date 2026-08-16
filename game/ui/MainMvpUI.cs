@@ -739,7 +739,9 @@ public partial class MainMvpUI : Control
     private void BuildRealmSection(VBoxContainer root)
     {
         root.AddChild(SectionTitle("Realm"));
-        _realmLabel = new Label();
+        // Same height floor as the Combat card: the report re-renders per frame during a realm
+        // fight, and the fight buttons live directly below it.
+        _realmLabel = new Label { CustomMinimumSize = new Vector2(0, 150) };
         root.AddChild(Card(_realmLabel));
 
         _realmControls = new VBoxContainer();
@@ -750,7 +752,11 @@ public partial class MainMvpUI : Control
     private void BuildCombatSection(VBoxContainer root)
     {
         root.AddChild(SectionTitle("Combat"));
-        _combatLabel = new Label();
+        // Reserve height for the tallest routine report (combatants + ready line + intents +
+        // gauges). The label re-renders every frame mid-fight, and without a floor its line
+        // count resizes the card — shoving the move buttons around exactly when the player is
+        // trying to click one.
+        _combatLabel = new Label { CustomMinimumSize = new Vector2(0, 150) };
         root.AddChild(Card(_combatLabel));
 
         var startRow = Row();

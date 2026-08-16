@@ -1,0 +1,40 @@
+[
+  // Alchemy (P3): the ingredient shelf for the reaction engine. Fish oil arrives from
+  // Fishing, tallow from the fauna chain — cross-feeding on purpose (GDD §7.2).
+  {
+    "id": "action.grind_herb_powder",
+    "professionId": "profession.alchemy",
+    "name": "Grind Herb Powder",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 11,
+    "inputs": [ { "itemId": "material.nettle", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.herb_powder", "quantity": 1 } ]
+  },
+  {
+    "id": "action.brew_weak_tincture",
+    "professionId": "profession.alchemy",
+    "name": "Brew a Weak Tincture",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 16,
+    "inputs": [
+      { "itemId": "material.sageleaf", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.weak_tincture", "quantity": 1 } ]
+  },
+  {
+    "id": "action.refine_oil",
+    "professionId": "profession.alchemy",
+    "name": "Refine Oil",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 18,
+    "inputs": [
+      { "itemId": "material.fish_oil", "quantity": 1 },
+      { "itemId": "material.tallow", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.refined_oil", "quantity": 1 } ]
+  }
+]

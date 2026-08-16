@@ -25,7 +25,7 @@
     "material": "material.dross",
     "forms": [
       "hide", "fur", "bone", "chitin", "horn", "tooth", "claw",
-      "meat", "organ", "gland", "egg", "blood", "slime"
+      "meat", "organ", "gland", "egg", "blood", "slime", "meal"
     ]
   },
 
@@ -33,7 +33,7 @@
     "id": "byproduct.residue",
     "name": "Residue",
     "material": "material.residue",
-    "forms": ["liquid", "oil", "tar", "sludge", "gas", "mote", "soil"],
+    "forms": ["liquid", "oil", "tar", "sludge", "gas", "mote", "soil", "tincture"],
     "fallback": true
   }
 ]

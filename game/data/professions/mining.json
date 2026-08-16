@@ -1,0 +1,6 @@
+{
+  "id": "profession.mining",
+  "name": "Mining",
+  "category": "Gathering",
+  "primaryAttributes": ["Strength", "Endurance"]
+}

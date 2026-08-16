@@ -1,0 +1,6 @@
+{
+  "id": "profession.beast_lore",
+  "name": "Beast Lore",
+  "category": "Utility",
+  "primaryAttributes": ["Wisdom", "Dexterity"]
+}

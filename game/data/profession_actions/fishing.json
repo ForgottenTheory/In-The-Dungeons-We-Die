@@ -1,0 +1,33 @@
+[
+  // Fishing (P3). Fish oil cross-feeds Alchemy; scales feed future fabrication.
+  {
+    "id": "action.fish_river",
+    "professionId": "profession.fishing",
+    "name": "Fish the River",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 110,
+    "experience": 11,
+    "outputs": [ { "itemId": "material.fish_meat", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.fish_scale", "chance": 0.2, "quantity": 1 } ]
+  },
+  {
+    "id": "action.net_oily_shoal",
+    "professionId": "profession.fishing",
+    "name": "Net the Oily Shoal",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 140,
+    "experience": 17,
+    "outputs": [ { "itemId": "material.fish_meat", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.fish_oil", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.hunt_eels",
+    "professionId": "profession.fishing",
+    "name": "Hunt Eels",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 160,
+    "experience": 24,
+    "outputs": [ { "itemId": "material.eel_skin", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.shock_eel_gland", "chance": 0.15, "quantity": 1 } ]
+  }
+]

@@ -1,0 +1,34 @@
+[
+  // Smithing's ladder (P2). Smelt Iron lives in smelt_iron.json. Charcoal cross-feeds from
+  // Forestry — interconnection is the point (GDD §7.2).
+  {
+    "id": "action.smelt_copper",
+    "professionId": "profession.smithing",
+    "name": "Smelt Copper Ingot",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 120,
+    "experience": 14,
+    "inputs": [ { "itemId": "material.copper_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.copper_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.render_charcoal",
+    "professionId": "profession.smithing",
+    "name": "Render Charcoal",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 100,
+    "experience": 12,
+    "inputs": [ { "itemId": "material.pine_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.charcoal", "quantity": 2 } ]
+  },
+  {
+    "id": "action.smelt_tin",
+    "professionId": "profession.smithing",
+    "name": "Smelt Tin Ingot",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 130,
+    "experience": 18,
+    "inputs": [ { "itemId": "material.tin_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.tin_ingot", "quantity": 1 } ]
+  }
+]

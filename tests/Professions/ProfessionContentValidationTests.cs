@@ -47,6 +47,11 @@ public class ProfessionContentValidationTests
         var inventory = new Inventory();
         var system = new ProfessionSystem(actions, inventory, new SeededRandom(1));
 
+        // The P2/P3 ladders are level-gated by design; this test checks execution mechanics,
+        // not gating, so every profession is raised past its highest gate first.
+        foreach (var professionId in actions.GetAll().Select(a => a.ProfessionId).Distinct())
+            system.GetProgress(professionId).AddXp(1_000_000);
+
         foreach (var action in actions.GetAll())
         {
             // Supply any required inputs, then execute.

@@ -1,0 +1,6 @@
+{
+  "id": "profession.alchemy",
+  "name": "Alchemy",
+  "category": "Crafting",
+  "primaryAttributes": ["Intelligence", "Wisdom"]
+}

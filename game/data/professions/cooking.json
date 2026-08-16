@@ -1,0 +1,6 @@
+{
+  "id": "profession.cooking",
+  "name": "Cooking",
+  "category": "Crafting",
+  "primaryAttributes": ["Wisdom", "Constitution"]
+}

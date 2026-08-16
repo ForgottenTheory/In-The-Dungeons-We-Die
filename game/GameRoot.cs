@@ -233,9 +233,6 @@ public partial class GameRoot : Node
         _encounter.Ended += OnCombatEnded;
         _encounter.HitResolved += OnHitResolved;
 
-        // Seed some ore so Smithing is demonstrable (Mining is deferred).
-        _stash.Add("material.iron_ore", 10);
-
         GD.Print($"[GameRoot] Ready. {_materials.Count} materials, {_professionDefs.Count} professions, {_actionDefs.Count} actions, {_interactions.Count} interactions.");
     }
 

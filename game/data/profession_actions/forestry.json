@@ -1,0 +1,33 @@
+[
+  // Forestry's ladder (P2). Chop Oak lives in chop_oak.json since the vertical slice.
+  {
+    "id": "action.chop_pine",
+    "professionId": "profession.forestry",
+    "name": "Chop Pine",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 110,
+    "experience": 13,
+    "outputs": [ { "itemId": "material.pine_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.refined_resin", "chance": 0.1, "quantity": 1 } ]
+  },
+  {
+    "id": "action.saw_oak_planks",
+    "professionId": "profession.forestry",
+    "name": "Saw Oak Planks",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 90,
+    "experience": 15,
+    "inputs": [ { "itemId": "material.oak_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.oak_plank", "quantity": 2 } ]
+  },
+  {
+    "id": "action.chop_maple",
+    "professionId": "profession.forestry",
+    "name": "Chop Maple",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 130,
+    "experience": 20,
+    "outputs": [ { "itemId": "material.maple_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.oak_bark", "chance": 0.15, "quantity": 1 } ]
+  }
+]

@@ -1,0 +1,41 @@
+[
+  // Mining (P1) — the ore source that retires GameRoot's startup iron-ore seed.
+  {
+    "id": "action.mine_copper",
+    "professionId": "profession.mining",
+    "name": "Mine Copper",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 10,
+    "outputs": [ { "itemId": "material.copper_ore", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.flint", "chance": 0.15, "quantity": 1 } ]
+  },
+  {
+    "id": "action.mine_iron",
+    "professionId": "profession.mining",
+    "name": "Mine Iron",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 130,
+    "experience": 14,
+    "outputs": [ { "itemId": "material.iron_ore", "quantity": 1 } ]
+  },
+  {
+    "id": "action.quarry_granite",
+    "professionId": "profession.mining",
+    "name": "Quarry Granite",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 16,
+    "outputs": [ { "itemId": "material.granite", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.flint", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.mine_tin",
+    "professionId": "profession.mining",
+    "name": "Mine Tin",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 120,
+    "experience": 18,
+    "outputs": [ { "itemId": "material.tin_ore", "quantity": 1 } ]
+  }
+]

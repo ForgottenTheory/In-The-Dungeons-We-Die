@@ -1,0 +1,6 @@
+{
+  "id": "profession.fishing",
+  "name": "Fishing",
+  "category": "Gathering",
+  "primaryAttributes": ["Dexterity", "Wisdom"]
+}
