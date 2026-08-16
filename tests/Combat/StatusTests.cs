@@ -35,7 +35,7 @@ public class StatusTests
             new Dungeons.Characters.ResourcePool(Dungeons.Characters.ResourceType.Health, 100),
             new Dungeons.Characters.ResourcePool(Dungeons.Characters.ResourceType.Stamina, 100),
             new Dungeons.Characters.ResourcePool(Dungeons.Characters.ResourceType.Mana, 0),
-            Array.Empty<string>(), () => Attrs()) { Resolve = resolve };
+            Array.Empty<ResolvedMove>(), () => Attrs()) { Resolve = resolve };
 
     // --- The roster ---------------------------------------------------------
 
@@ -62,8 +62,9 @@ public class StatusTests
     [Fact]
     public void EveryStatusIdAuthoredInShippedContentNowResolves()
     {
-        // The point of the slice. Thirteen of fourteen dangling ids go live; the exception is
-        // dated rather than mysterious.
+        // E2's thirteen, plus the fourteenth: `status.recalled_move` needed MoveDefinition to
+        // exist (it stores a move), so E4 is where the last dangling id went live and the
+        // validator's allowlist died.
         var statuses = Statuses();
 
         foreach (var id in new[]
@@ -72,12 +73,11 @@ public class StatusTests
                      "status.illuminated", "status.phased", "status.rooted_growth",
                      "status.latched", "status.spreading", "status.dissonance",
                      "status.fault", "status.filed_intent", "status.liability",
-                     "status.liability_credit",
+                     "status.liability_credit", "status.recalled_move",
                  })
             Assert.True(statuses.Contains(id), $"{id} is referenced by shipped content and must exist");
 
-        // Stores a Move to replay — MoveDefinition is E4. Mnemonic stays inert until then.
-        Assert.False(statuses.Contains("status.recalled_move"));
+        Assert.True(statuses.GetById("status.recalled_move").StoresMove);
     }
 
     [Fact]

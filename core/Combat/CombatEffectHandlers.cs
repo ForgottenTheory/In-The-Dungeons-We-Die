@@ -104,12 +104,84 @@ public sealed class ApplyStatusEffectHandler : CombatEffectHandler
         if (string.IsNullOrWhiteSpace(statusId))
             return;
 
+        // A move-storing status (Mnemonic) remembers which move's execution applied it. The
+        // trigger event carries `move:<id>` since E4, so the answer is already in hand.
+        var storedMove = invocation.Trigger.Tags?
+            .FirstOrDefault(t => t.StartsWith("move:", StringComparison.OrdinalIgnoreCase))?["move:".Length..];
+
         foreach (var target in Targets.Resolve(invocation))
         {
             Encounter.ApplyStatus(
                 target, statusId, invocation.Source, invocation.Magnitude,
-                invocation.Effect.DurationTicks, invocation.Context);
+                invocation.Effect.DurationTicks, invocation.Context, storedMove);
         }
+    }
+}
+
+/// <summary>Adds a move to the player's usable set while the duration lasts (docs/moves.md §3.4).</summary>
+public sealed class GrantMoveEffectHandler : CombatEffectHandler
+{
+    public GrantMoveEffectHandler(CombatEncounter encounter, EffectTargetResolver targets)
+        : base(encounter, targets) { }
+
+    public override string Kind => RuleVocabulary.GrantMove;
+
+    public override void Execute(EffectInvocation invocation)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        Encounter.GrantMove(
+            Encounter.Player, invocation.Effect.Text, invocation.Source,
+            invocation.Effect.DurationTicks, invocation.Context);
+    }
+}
+
+/// <summary>
+/// Executes a move immediately at the chain's next depth, ignoring cost and cooldown — the most
+/// dangerous effect in the vocabulary, which is why the validator refuses a triggerMove whose
+/// target can itself triggerMove.
+/// </summary>
+public sealed class TriggerMoveEffectHandler : CombatEffectHandler
+{
+    public TriggerMoveEffectHandler(CombatEncounter encounter, EffectTargetResolver targets)
+        : base(encounter, targets) { }
+
+    public override string Kind => RuleVocabulary.TriggerMove;
+
+    public override void Execute(EffectInvocation invocation)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        Encounter.TriggerMove(Encounter.Player, invocation.Effect.Text, invocation.Context);
+    }
+}
+
+/// <summary>Attaches a move modifier for a duration — "spending Stamina empowers the next attack".</summary>
+public sealed class ModifyMoveEffectHandler : CombatEffectHandler
+{
+    public ModifyMoveEffectHandler(CombatEncounter encounter, EffectTargetResolver targets)
+        : base(encounter, targets) { }
+
+    public override string Kind => RuleVocabulary.ModifyMove;
+
+    public override void Execute(EffectInvocation invocation)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        Encounter.AttachMoveModifier(
+            Encounter.Player, invocation.Effect.Text, invocation.Source, invocation.Effect.DurationTicks);
+    }
+}
+
+/// <summary>Replays the stored move and consumes the recall — the Mnemonic capstone.</summary>
+public sealed class RecallMoveEffectHandler : CombatEffectHandler
+{
+    public RecallMoveEffectHandler(CombatEncounter encounter, EffectTargetResolver targets)
+        : base(encounter, targets) { }
+
+    public override string Kind => RuleVocabulary.RecallMove;
+
+    public override void Execute(EffectInvocation invocation)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        Encounter.RecallMove(Encounter.Player, invocation.Context);
     }
 }
 
@@ -189,16 +261,21 @@ public sealed class InterruptEffectHandler : CombatEffectHandler
 public static class CombatEffects
 {
     /// <summary>
-    /// The seven kinds combat owns. The rest of <see cref="RuleVocabulary.Effects"/> belongs to
+    /// The eleven kinds combat owns. The rest of <see cref="RuleVocabulary.Effects"/> belongs to
     /// systems that do not exist yet — <c>spawnEntity</c>, <c>grantItem</c>, <c>reposition</c>,
     /// <c>revealInfo</c> — and stays in <c>Unhandled</c>, which is the point of that list.
+    ///
+    /// <para>Also hands the encounter its <see cref="IEffectSink"/>, so move riders run through
+    /// the same handlers and the same chain accounting as everything else (E4).</para>
     /// </summary>
     public static TriggerRuleEngine RegisterCombatHandlers(
         this TriggerRuleEngine engine, CombatEncounter encounter, IRandomSource random)
     {
         ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(encounter);
 
         var targets = new EffectTargetResolver(encounter, random);
+        encounter.EffectSink = engine;
 
         return engine
             .Register(new DamageEffectHandler(encounter, targets))
@@ -207,6 +284,10 @@ public static class CombatEffects
             .Register(new ApplyStatusEffectHandler(encounter, targets))
             .Register(new GrantResourceEffectHandler(encounter, targets))
             .Register(new GrantModifierEffectHandler(encounter, targets))
-            .Register(new InterruptEffectHandler(encounter, targets));
+            .Register(new InterruptEffectHandler(encounter, targets))
+            .Register(new GrantMoveEffectHandler(encounter, targets))
+            .Register(new TriggerMoveEffectHandler(encounter, targets))
+            .Register(new ModifyMoveEffectHandler(encounter, targets))
+            .Register(new RecallMoveEffectHandler(encounter, targets));
     }
 }

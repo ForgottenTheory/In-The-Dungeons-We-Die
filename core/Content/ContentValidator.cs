@@ -50,11 +50,10 @@ public static class ContentValidator
             "Advanced", "Basic", "Improved", "Enhanced", "Supreme", "Ultimate",
         };
 
-    /// <summary>Ability ids referenced by classes/species but intentionally not yet implemented
-    /// (docs/emergent-item-system.md / DECISIONS.md D12). Validation tolerates these; anything
-    /// else missing from the ability store is a real typo and fails.</summary>
-    public static readonly IReadOnlySet<string> KnownUnimplementedAbilities =
-        new HashSet<string>(StringComparer.Ordinal) { "ability.guard", "ability.hex_bolt" };
+    // E4 deleted both stale allowlists this class used to carry: `KnownUnimplementedAbilities`
+    // (its two ids existed nowhere once the Bases stopped declaring abilityIds) and
+    // `KnownUnimplementedStatuses` (`status.recalled_move` is authorable now that moves exist).
+    // A reference that does not resolve is a real typo again, everywhere.
 
     /// <summary>
     /// Returns every problem found in the bundle (empty when the content is well-formed).
@@ -80,13 +79,14 @@ public static class ContentValidator
         ValidateBases(content.Classes, content.ModifierKeys, problems);
         ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
         ValidateSuffixes(content.Suffixes, content.ModifierKeys, problems);
-        ValidateActors(content.Actors, content.Abilities, content.Materials, problems);
+        ValidateActors(content.Actors, content.Moves, content.Materials, problems);
+        ValidateMoves(content, problems);
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
-        ValidateEquipment(content.Equipment, knownProperties, problems);
+        ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
         ValidateStatuses(content, problems);
-        ValidateCharacterAbilities(content, problems);
+        ValidateComponentMoves(content, problems);
 
         return problems;
     }
@@ -646,15 +646,33 @@ public static class ContentValidator
 
     private static void ValidateActors(
         DataStore<ActorDefinition> actors,
-        DataStore<AbilityDefinition> abilities,
+        DataStore<Dungeons.Combat.MoveDefinition> moves,
         DataStore<MaterialDefinition> materials,
         List<ContentProblem> problems)
     {
         foreach (var actor in actors.GetAll())
         {
-            foreach (var abilityId in actor.AbilityIds)
-                if (!abilities.Contains(abilityId))
-                    problems.Add(new("actors", $"{actor.Id} references unknown ability '{abilityId}'."));
+            foreach (var grant in actor.Moves)
+                if (!moves.Contains(grant.Id))
+                    problems.Add(new("actors", $"{actor.Id} grants unknown move '{grant.Id}'."));
+
+            if (actor.Moves.Count == 0)
+                problems.Add(new("actors", $"{actor.Id} has no moves — it would stand there doing nothing."));
+
+            // The AI profile chooses among the actor's own moves, with the shared condition
+            // vocabulary. A rule naming a move the actor doesn't have is dead weight forever.
+            foreach (var rule in actor.Ai)
+            {
+                if (actor.Moves.All(m => !string.Equals(m.Id, rule.Move, StringComparison.Ordinal)))
+                    problems.Add(new("actors", $"{actor.Id} AI selects '{rule.Move}', which the actor does not have."));
+
+                if (rule.Weight <= 0)
+                    problems.Add(new("actors", $"{actor.Id} AI rule for '{rule.Move}' has non-positive weight."));
+
+                foreach (var condition in rule.When)
+                    if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
+                        problems.Add(new("actors", $"{actor.Id} AI uses unknown condition '{condition.Kind}'."));
+            }
 
             if (!string.IsNullOrEmpty(actor.LootItemId) && !materials.Contains(actor.LootItemId))
                 problems.Add(new("actors", $"{actor.Id} drops unknown material '{actor.LootItemId}'."));
@@ -828,8 +846,6 @@ public static class ContentValidator
                         continue;
                     if (string.IsNullOrEmpty(effect.Text) || statuses.Contains(effect.Text))
                         continue;
-                    if (KnownUnimplementedStatuses.Contains(effect.Text))
-                        continue;
 
                     problems.Add(new("statuses", $"{owner} applies unknown status '{effect.Text}'."));
                 }
@@ -847,16 +863,10 @@ public static class ContentValidator
             CheckRules(suffix.Expressions.Select(e => e.Rule), suffix.Id);
     }
 
-    /// <summary>
-    /// Statuses that cannot be authored yet because the system they depend on does not exist.
-    /// <b>Dated, not open-ended</b> — <c>status.recalled_move</c> stores a Move to replay, so it
-    /// unblocks in E4 with <c>MoveDefinition</c>. Delete this entry then.
-    /// </summary>
-    private static readonly IReadOnlySet<string> KnownUnimplementedStatuses =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "status.recalled_move" };
-
     private static void ValidateEquipment(
         DataStore<EquipmentDefinition> equipment,
+        DataStore<Dungeons.Combat.MoveDefinition> moves,
+        DataStore<Dungeons.Combat.MoveModifierDefinition> moveModifiers,
         IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
@@ -864,13 +874,23 @@ public static class ContentValidator
         {
             switch (def.Slot)
             {
-                case EquipmentSlot.Weapon when def.Weapon is null:
-                    problems.Add(new("equipment", $"{def.Id} is a Weapon but has no weapon stats block."));
+                // Weapon-granted moves are mandatory, not optional — the Fighter's identity is
+                // "moveset comes from the weapon" (docs/moves.md §5.1).
+                case EquipmentSlot.Weapon when def.Moves.Count == 0:
+                    problems.Add(new("equipment", $"{def.Id} is a Weapon but grants no moves."));
                     break;
                 case EquipmentSlot.Armor when def.Armor is null:
                     problems.Add(new("equipment", $"{def.Id} is Armor but has no armor stats block."));
                     break;
             }
+
+            foreach (var grant in def.Moves)
+                if (!moves.Contains(grant.Id))
+                    problems.Add(new("equipment", $"{def.Id} grants unknown move '{grant.Id}'."));
+
+            foreach (var modifierId in def.MoveModifierIds)
+                if (!moveModifiers.Contains(modifierId))
+                    problems.Add(new("equipment", $"{def.Id} grants unknown move modifier '{modifierId}'."));
 
             foreach (var property in def.Properties.Keys)
                 if (!knownProperties.Contains(property))
@@ -885,23 +905,214 @@ public static class ContentValidator
         }
     }
 
-    /// <summary>
-    /// Validates that ability ids referenced by character components (species/class/prefix/suffix)
-    /// exist, tolerating the <see cref="KnownUnimplementedAbilities"/> placeholders.
-    /// </summary>
-    private static void ValidateCharacterAbilities(ContentBundle content, List<ContentProblem> problems)
+    /// <summary>Move and modifier grants on character components must resolve — no allowlist.</summary>
+    private static void ValidateComponentMoves(ContentBundle content, List<ContentProblem> problems)
     {
         void Check(IEnumerable<CharacterComponentDefinition> components, string kind)
         {
             foreach (var component in components)
-                foreach (var abilityId in component.AbilityIds)
-                    if (!content.Abilities.Contains(abilityId) && !KnownUnimplementedAbilities.Contains(abilityId))
-                        problems.Add(new(kind, $"{component.Id} references unknown ability '{abilityId}'."));
+            {
+                foreach (var grant in component.Moves)
+                    if (!content.Moves.Contains(grant.Id))
+                        problems.Add(new(kind, $"{component.Id} grants unknown move '{grant.Id}'."));
+
+                foreach (var modifierId in component.MoveModifierIds)
+                    if (!content.MoveModifiers.Contains(modifierId))
+                        problems.Add(new(kind, $"{component.Id} grants unknown move modifier '{modifierId}'."));
+            }
         }
 
         Check(content.Species.GetAll(), "species");
         Check(content.Classes.GetAll(), "classes");
         Check(content.Prefixes.GetAll(), "prefixes");
         Check(content.Suffixes.GetAll(), "suffixes");
+    }
+
+    /// <summary>
+    /// The move rules from docs/moves.md §6 — everything a typo could hide behind, plus the two
+    /// structural ones: no triggerMove may target a move that can itself triggerMove, and every
+    /// move must be reachable from some source (orphan content is content nobody can ever see).
+    /// </summary>
+    private static void ValidateMoves(ContentBundle content, List<ContentProblem> problems)
+    {
+        var moves = content.Moves;
+
+        // Every gauge name in shipped classes/prefixes, so a cost can name one.
+        var gaugeNames = content.Classes.GetAll().Select(c => c.Gauge?.Name)
+            .Concat(content.Prefixes.GetAll().Select(p => p.Gauge?.Name))
+            .Where(n => !string.IsNullOrEmpty(n))
+            .Select(n => n!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var pools = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "health", "stamina", "mana" };
+
+        foreach (var move in moves.GetAll())
+        {
+            foreach (var tag in move.Tags)
+                if (!Dungeons.Combat.MoveTags.IsValidOnMove(tag, out var why))
+                    problems.Add(new("moves", $"{move.Id}: {why}"));
+
+            if (!move.Tags.Any(t => t.StartsWith("action:", StringComparison.OrdinalIgnoreCase)))
+                problems.Add(new("moves", $"{move.Id} carries no action: tag — CanAct gating and every action-scoped hook would miss it."));
+
+            foreach (var condition in move.Requires)
+                if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
+                    problems.Add(new("moves", $"{move.Id} requires unknown condition '{condition.Kind}'."));
+
+            foreach (var cost in move.Costs)
+            {
+                if (!pools.Contains(cost.Resource) && !gaugeNames.Contains(cost.Resource))
+                    problems.Add(new("moves", $"{move.Id} costs unknown resource '{cost.Resource}' (not a pool, not an authored gauge)."));
+                if (cost.Amount <= 0)
+                    problems.Add(new("moves", $"{move.Id} has a non-positive cost for '{cost.Resource}'."));
+            }
+
+            foreach (var packet in move.Packets)
+            {
+                if (packet.Aspect is { } aspect && !Dungeons.Combat.DamageAspects.All.Contains(aspect))
+                    problems.Add(new("moves", $"{move.Id} packet has unknown aspect '{aspect}'."));
+                if (packet.Amount <= 0)
+                    problems.Add(new("moves", $"{move.Id} has a non-positive packet."));
+            }
+
+            foreach (var effect in move.Effects)
+            {
+                if (!Dungeons.Rules.RuleVocabulary.Effects.Contains(effect.Kind))
+                    problems.Add(new("moves", $"{move.Id} rider uses unknown effect '{effect.Kind}'."));
+
+                if (string.Equals(effect.Kind, Dungeons.Rules.RuleVocabulary.ApplyStatus, StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrEmpty(effect.Text) && !content.Statuses.Contains(effect.Text))
+                    problems.Add(new("moves", $"{move.Id} applies unknown status '{effect.Text}'."));
+
+                if (effect.Chance is < 0 or > 1)
+                    problems.Add(new("moves", $"{move.Id} rider chance {effect.Chance:0.##} is outside 0–1."));
+
+                if (string.Equals(effect.Kind, Dungeons.Rules.RuleVocabulary.TriggerMove, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!moves.TryGetById(effect.Text, out var target))
+                    {
+                        problems.Add(new("moves", $"{move.Id} triggers unknown move '{effect.Text}'."));
+                    }
+                    else if (target.Effects.Any(e =>
+                        string.Equals(e.Kind, Dungeons.Rules.RuleVocabulary.TriggerMove, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(e.Kind, Dungeons.Rules.RuleVocabulary.RecallMove, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // The one recursion the proc budget cannot bound on its own, refused
+                        // statically: a chain of triggerMoves is authored, not emergent.
+                        problems.Add(new("moves", $"{move.Id} triggers '{target.Id}', which can itself trigger a move."));
+                    }
+                }
+            }
+        }
+
+        // --- Modifiers ------------------------------------------------------------------------
+
+        foreach (var modifier in content.MoveModifiers.GetAll())
+        {
+            if (moves.GetAll().All(m => !modifier.Match.Matches(m)))
+                problems.Add(new("move_modifiers", $"{modifier.Id} matches no move in the game — dead content."));
+
+            var convertedPerLane = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var op in modifier.Ops)
+            {
+                if (!Dungeons.Combat.MoveOps.All.Contains(op.Op))
+                {
+                    problems.Add(new("move_modifiers", $"{modifier.Id} uses unknown op '{op.Op}'."));
+                    continue;
+                }
+
+                switch (op.Op.ToLowerInvariant())
+                {
+                    case "convert":
+                    case "addasextra":
+                        if (op.From is null || op.To is null || !Dungeons.Combat.DamageLanes.All.Contains(op.From)
+                            || (!Dungeons.Combat.DamageLanes.All.Contains(op.To) && !Dungeons.Combat.DamageAspects.All.Contains(op.To)))
+                            problems.Add(new("move_modifiers", $"{modifier.Id} {op.Op} needs valid from/to lanes."));
+                        if (op.Fraction is <= 0 or > 1)
+                            problems.Add(new("move_modifiers", $"{modifier.Id} {op.Op} fraction must be in (0, 1] — there is no bare addAspect, and over-conversion is how a strike gets relabelled (D-01)."));
+                        if (string.Equals(op.Op, "convert", StringComparison.OrdinalIgnoreCase) && op.From is not null)
+                            convertedPerLane[op.From] = convertedPerLane.GetValueOrDefault(op.From) + op.Fraction;
+                        break;
+
+                    case "scaletiming" when !Dungeons.Combat.MoveOps.TimingFields.Contains(op.Field):
+                        problems.Add(new("move_modifiers", $"{modifier.Id} scaleTiming field '{op.Field}' is not telegraph/windup/recovery."));
+                        break;
+
+                    case "setflag" when !Dungeons.Combat.MoveOps.Flags.Contains(op.Field):
+                        problems.Add(new("move_modifiers", $"{modifier.Id} setFlag '{op.Field}' is not a known flag."));
+                        break;
+
+                    case "addpacket" when op.Packet is null:
+                        problems.Add(new("move_modifiers", $"{modifier.Id} addPacket carries no packet."));
+                        break;
+
+                    case "addeffect" when op.Effect is null || !Dungeons.Rules.RuleVocabulary.Effects.Contains(op.Effect.Kind):
+                        problems.Add(new("move_modifiers", $"{modifier.Id} addEffect carries no valid effect."));
+                        break;
+
+                    case "addtag" when !Dungeons.Combat.MoveTags.IsValidOnMove(op.Tag, out var why):
+                        problems.Add(new("move_modifiers", $"{modifier.Id} addTag: {why}"));
+                        break;
+                }
+            }
+
+            foreach (var (lane, total) in convertedPerLane)
+                if (total > 1.0001)
+                    problems.Add(new("move_modifiers", $"{modifier.Id} converts {total:P0} of the {lane} lane — over 100%."));
+        }
+
+        // --- Reachability ---------------------------------------------------------------------
+        //
+        // Every move must be granted by SOMETHING — a component, a weapon, an actor, or an
+        // effect. An orphan is content nobody can ever see, which reads as shipped and isn't.
+
+        var reachable = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var component in content.Species.GetAll().Cast<CharacterComponentDefinition>()
+                     .Concat(content.Classes.GetAll())
+                     .Concat(content.Prefixes.GetAll())
+                     .Concat(content.Suffixes.GetAll()))
+            foreach (var grant in component.Moves)
+                reachable.Add(grant.Id);
+
+        foreach (var equip in content.Equipment.GetAll())
+            foreach (var grant in equip.Moves)
+                reachable.Add(grant.Id);
+
+        foreach (var actor in content.Actors.GetAll())
+            foreach (var grant in actor.Moves)
+                reachable.Add(grant.Id);
+
+        void CollectFromEffects(IEnumerable<Dungeons.Rules.EffectSpec> effects)
+        {
+            foreach (var effect in effects)
+                if ((string.Equals(effect.Kind, Dungeons.Rules.RuleVocabulary.GrantMove, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(effect.Kind, Dungeons.Rules.RuleVocabulary.TriggerMove, StringComparison.OrdinalIgnoreCase))
+                    && !string.IsNullOrEmpty(effect.Text))
+                    reachable.Add(effect.Text);
+        }
+
+        foreach (var move in moves.GetAll())
+            CollectFromEffects(move.Effects);
+        foreach (var status in content.Statuses.GetAll())
+        {
+            CollectFromEffects(status.OnApply);
+            CollectFromEffects(status.PerTick);
+            CollectFromEffects(status.OnExpire);
+        }
+        foreach (var prefix in content.Prefixes.GetAll())
+        {
+            foreach (var rule in prefix.Rules)
+                CollectFromEffects(rule.Payload);
+            foreach (var feed in prefix.Gauge?.Feeds ?? Enumerable.Empty<Dungeons.Rules.TriggerRule>())
+                CollectFromEffects(feed.Payload);
+        }
+        foreach (var suffix in content.Suffixes.GetAll())
+            foreach (var expression in suffix.Expressions)
+                CollectFromEffects(expression.Rule.Payload);
+
+        foreach (var move in moves.GetAll())
+            if (!reachable.Contains(move.Id))
+                problems.Add(new("moves", $"{move.Id} is granted by nothing — orphan content."));
     }
 }

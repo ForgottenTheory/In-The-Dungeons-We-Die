@@ -23,8 +23,8 @@ namespace Dungeons.Tests.Rules;
 /// </summary>
 public class EffectHandlerTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
 
     private sealed record Harness(
         CombatEncounter Encounter,
@@ -47,7 +47,7 @@ public class EffectHandlerTests
 
         var rng = new FakeRandom(roll);
         var encounter = new CombatEncounter(
-            tick, new CombatCalculator(rng), Abilities(Strike, Slash), rng, bus, "ability.strike",
+            tick, new HitPipeline(rng), Moves(Strike, Slash), rng, bus,
             statuses, gaugeController);
 
         var engine = new TriggerRuleEngine(bus, new SeededRandom(1), () => tick.CurrentTick)
@@ -69,7 +69,7 @@ public class EffectHandlerTests
     private static void StartFight(Harness h, int playerHp = 100, int enemyHp = 50) =>
         h.Encounter.Start(
             Player(hp: playerHp, attrs: Attrs(con: 5), stamina: 50),
-            new[] { Enemy("Raider", enemyHp, Attrs(str: 6), "ability.goblin_slash") });
+            new[] { Enemy("Raider", enemyHp, Attrs(str: 6), Slash) });
 
     // --- The payoff the slice exists for --------------------------------------------------
 
@@ -306,8 +306,8 @@ public class EffectHandlerTests
             Player(hp: 100, attrs: Attrs(con: 5), stamina: 50),
             new[]
             {
-                Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash"),
-                Enemy("Skirmisher", 50, Attrs(str: 6), "ability.goblin_slash"),
+                Enemy("Raider", 50, Attrs(str: 6), Slash),
+                Enemy("Skirmisher", 50, Attrs(str: 6), Slash),
             });
 
         var before = h.Encounter.Enemies.Select(e => e.Health.Current).ToList();

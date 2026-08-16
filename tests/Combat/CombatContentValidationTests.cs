@@ -6,8 +6,8 @@ using Xunit;
 namespace Dungeons.Tests.Combat;
 
 /// <summary>
-/// Validates the shipped combat content: actors reference real abilities and loot
-/// materials, abilities have sane timing, and the JSON (AttributeSet, nested timing,
+/// Validates the shipped combat content: actors grant real moves and loot materials, moves have
+/// sane timing and namespaced tags, and the JSON (AttributeSet, nested timing, packets,
 /// resources) deserializes as expected.
 /// </summary>
 public class CombatContentValidationTests
@@ -18,20 +18,19 @@ public class CombatContentValidationTests
     }
 
     [Fact]
-    public void ActorsReferenceKnownAbilitiesAndLoot()
+    public void ActorsReferenceKnownMovesAndLoot()
     {
         var actors = Load<ActorDefinition>("actors");
-        var abilities = Load<AbilityDefinition>("abilities");
+        var moves = Load<MoveDefinition>("moves");
         var materials = Load<MaterialDefinition>("materials");
 
         Assert.True(actors.Count >= 2); // Goblin Raider + Brute
-        Assert.True(abilities.Contains("ability.strike")); // player basic attack
 
         foreach (var actor in actors.GetAll())
         {
-            Assert.NotEmpty(actor.AbilityIds);
-            foreach (var abilityId in actor.AbilityIds)
-                Assert.True(abilities.Contains(abilityId), $"{actor.Id} references unknown ability {abilityId}");
+            Assert.NotEmpty(actor.Moves);
+            foreach (var grant in actor.Moves)
+                Assert.True(moves.Contains(grant.Id), $"{actor.Id} grants unknown move {grant.Id}");
             if (!string.IsNullOrEmpty(actor.LootItemId))
                 Assert.True(materials.Contains(actor.LootItemId!), $"{actor.Id} drops unknown material {actor.LootItemId}");
             Assert.True(actor.Resources.Health > 0);
@@ -39,26 +38,35 @@ public class CombatContentValidationTests
     }
 
     [Fact]
-    public void AbilitiesHaveForwardTimingAndParseNestedFields()
+    public void MovesHaveForwardTimingAndParseNestedFields()
     {
-        var abilities = Load<AbilityDefinition>("abilities");
-        foreach (var ability in abilities.GetAll())
+        var moves = Load<MoveDefinition>("moves");
+        Assert.True(moves.Count >= 8);
+
+        foreach (var move in moves.GetAll())
         {
-            Assert.True(ability.Timing.TimeToImpactTicks >= 1, $"{ability.Id} has no time-to-impact");
-            Assert.True(ability.Timing.RecoveryTicks >= 0);
-            Assert.True(ability.BaseValue > 0);
+            Assert.True(move.Timing.TimeToImpactTicks >= 1, $"{move.Id} has no time-to-impact");
+            Assert.True(move.Timing.RecoveryTicks >= 0);
+            Assert.NotEmpty(move.Tags);
         }
+
+        // The packet shape deserializes: Fireball is Magic with a heat aspect.
+        var fireball = moves.GetById("move.fireball");
+        var packet = Assert.Single(fireball.Packets);
+        Assert.Equal(DamageType.Magic, packet.Type);
+        Assert.Equal("heat", packet.Aspect);
+        Assert.Equal(0.2, Assert.Single(fireball.Effects).Chance, 3);
     }
 
     [Fact]
     public void GoblinBrute_HasLongTelegraph_ForReadability()
     {
         var actors = Load<ActorDefinition>("actors");
-        var abilities = Load<AbilityDefinition>("abilities");
+        var moves = Load<MoveDefinition>("moves");
 
         var brute = actors.GetById("actor.goblin_brute");
         Assert.Equal(12, brute.Attributes.Strength); // AttributeSet deserialized
-        var smash = abilities.GetById(brute.AbilityIds[0]);
+        var smash = moves.GetById(brute.Moves[0].Id);
         // The Brute's whole point: a big readable wind-up.
         Assert.True(smash.Timing.TimeToImpactTicks >= 40);
     }

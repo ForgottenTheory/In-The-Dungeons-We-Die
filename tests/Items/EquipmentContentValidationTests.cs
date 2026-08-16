@@ -7,8 +7,9 @@ using Xunit;
 namespace Dungeons.Tests.Items;
 
 /// <summary>
-/// Validates the shipped equipment JSON: it deserializes (slot enum, nested
-/// weapon/armor blocks, property maps) and resolves into sane combat profiles.
+/// Validates the shipped equipment JSON: it deserializes (slot enum, move grants, armor block,
+/// property maps) and resolves into sane combat shapes — moves for weapons, profiles for armour
+/// (E4, D-18).
 /// </summary>
 public class EquipmentContentValidationTests
 {
@@ -20,19 +21,13 @@ public class EquipmentContentValidationTests
         return store;
     }
 
-    private static readonly AttackProfile Unarmed = new()
-    {
-        Name = "Fists",
-        DamageType = DamageType.Crushing,
-        BaseDamage = 2,
-        StaminaCost = 3,
-        Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 6, RecoveryTicks = 12 },
-    };
+    private static DataStore<MoveDefinition> LoadMoves() => TestPaths.LoadStore<MoveDefinition>("moves");
 
     [Fact]
     public void EveryPieceIsWellFormedAndResolves()
     {
         var equipment = LoadEquipment();
+        var moves = LoadMoves();
         Assert.True(equipment.Count >= 2);
         Assert.True(equipment.Contains("equip.rusty_sword")); // starter weapon
         Assert.True(equipment.Contains("equip.tattered_armor")); // starter armor
@@ -41,11 +36,17 @@ public class EquipmentContentValidationTests
         {
             if (def.Slot == EquipmentSlot.Weapon)
             {
-                Assert.NotNull(def.Weapon);
+                Assert.NotEmpty(def.Moves);   // weapon-granted moves are mandatory (docs/moves.md §5.1)
                 Assert.Equal(ItemType.Weapon, def.ItemType);
-                var attack = EquipmentResolver.ResolveWeapon(def, instance: null, Unarmed);
-                Assert.True(attack.BaseDamage > 0);
-                Assert.True(attack.Timing.TimeToImpactTicks >= 1);
+
+                var resolved = EquipmentResolver.ResolveWeaponMoves(def, instance: null, moves);
+                Assert.Equal(def.Moves.Count, resolved.Count);
+
+                foreach (var move in resolved.Where(m => m.Packets.Count > 0))
+                {
+                    Assert.True(move.Packets.Sum(p => p.Amount) > 0);
+                    Assert.True(move.Timing.TimeToImpactTicks >= 1);
+                }
             }
             else
             {
@@ -61,10 +62,14 @@ public class EquipmentContentValidationTests
     public void IronSword_IsHeavierAndHitsHarderThanRusty()
     {
         var equipment = LoadEquipment();
-        var rusty = EquipmentResolver.ResolveWeapon(equipment.GetById("equip.rusty_sword"), null, Unarmed);
-        var iron = EquipmentResolver.ResolveWeapon(equipment.GetById("equip.iron_sword"), null, Unarmed);
+        var moves = LoadMoves();
 
-        Assert.True(iron.BaseDamage > rusty.BaseDamage);            // stronger
-        Assert.True(iron.Timing.WindupTicks >= rusty.Timing.WindupTicks); // and no faster (more mass)
+        var rusty = EquipmentResolver.ResolveWeaponMoves(equipment.GetById("equip.rusty_sword"), null, moves)
+            .First(m => m.Packets.Count > 0);
+        var iron = EquipmentResolver.ResolveWeaponMoves(equipment.GetById("equip.iron_sword"), null, moves)
+            .First(m => m.Packets.Count > 0);
+
+        Assert.True(iron.Packets.Sum(p => p.Amount) > rusty.Packets.Sum(p => p.Amount)); // stronger
+        Assert.True(iron.Timing.WindupTicks >= rusty.Timing.WindupTicks);                // and no faster (more mass)
     }
 }

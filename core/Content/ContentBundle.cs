@@ -26,7 +26,8 @@ public sealed class ContentBundle
     public DataStore<ProfessionDefinition> Professions { get; init; } = new();
     public DataStore<ProfessionActionDefinition> Actions { get; init; } = new();
     public DataStore<CraftingInteractionDefinition> Interactions { get; init; } = new();
-    public DataStore<AbilityDefinition> Abilities { get; init; } = new();
+    public DataStore<MoveDefinition> Moves { get; init; } = new();
+    public DataStore<MoveModifierDefinition> MoveModifiers { get; init; } = new();
     public DataStore<ActorDefinition> Actors { get; init; } = new();
     public DataStore<RealmDefinition> Realms { get; init; } = new();
     public DataStore<ConsumableDefinition> Consumables { get; init; } = new();

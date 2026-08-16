@@ -8,16 +8,6 @@ public enum EquipmentSlot
     Armor,
 }
 
-/// <summary>Weapon base stats (before instance-property derivation). Uses the same nested
-/// <see cref="AbilityTiming"/> shape as abilities so timing is authored one way everywhere.</summary>
-public sealed class WeaponStats
-{
-    public double BaseDamage { get; init; } = 1;
-    public DamageType DamageType { get; init; } = DamageType.Slashing;
-    public AbilityTiming Timing { get; init; } = new() { TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15 };
-    public int StaminaCost { get; init; } = 5;
-}
-
 /// <summary>Armor base stats (before instance-property derivation).</summary>
 public sealed class ArmorStats
 {
@@ -37,7 +27,19 @@ public sealed class EquipmentDefinition : IItemDefinition
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public EquipmentSlot Slot { get; init; } = EquipmentSlot.Weapon;
 
-    public WeaponStats? Weapon { get; init; }
+    /// <summary>
+    /// The moves this item grants while worn (E4, docs/moves.md §5.1). <b>Weapon-granted moves
+    /// are mandatory, not optional</b> — the Fighter's entire identity is "moveset comes from
+    /// the weapon; reconfigures by re-equipping". This replaces the old <c>WeaponStats</c>
+    /// block: a weapon's numbers now live on its moves, adjusted per instance by
+    /// <c>EquipmentResolver</c>.
+    /// </summary>
+    public IReadOnlyList<MoveGrantSpec> Moves { get; init; } = Array.Empty<MoveGrantSpec>();
+
+    /// <summary>Move modifiers granted while worn, by id.</summary>
+    [System.Text.Json.Serialization.JsonPropertyName("move_modifiers")]
+    public IReadOnlyList<string> MoveModifierIds { get; init; } = Array.Empty<string>();
+
     public ArmorStats? Armor { get; init; }
 
     /// <summary>Intrinsic material-style properties, as a name→value map.</summary>

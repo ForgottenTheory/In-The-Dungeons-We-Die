@@ -138,6 +138,14 @@ public sealed class StatusDefinition : IDefinition
     [JsonPropertyName("requires_status")]
     public string? RequiresStatus { get; init; }
 
+    /// <summary>
+    /// This status remembers the move whose execution applied it (E4). The Mnemonic's
+    /// <c>status.recalled_move</c> is the one shipped user — the reason the status was
+    /// unauthorable until <c>MoveDefinition</c> existed.
+    /// </summary>
+    [JsonPropertyName("stores_move")]
+    public bool StoresMove { get; init; }
+
     public string Group => string.IsNullOrEmpty(CleanseGroup)
         ? Category.ToString().ToLowerInvariant()
         : CleanseGroup;
@@ -156,6 +164,10 @@ public sealed class StatusInstance
     public int Stacks { get; set; } = 1;
     public long ExpiresTick { get; set; }
     public long NextTickAt { get; set; }
+
+    /// <summary>The move this status remembers, when its definition <c>stores_move</c>. What
+    /// <c>recallMove</c> replays.</summary>
+    public string? StoredMoveId { get; set; }
 
     public string Id => Definition.Id;
 

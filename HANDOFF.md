@@ -7,13 +7,10 @@ planned, and the unresolved questions. Read it before `PROJECT_STATE.md` / `SYST
 `DECISIONS.md` / `ROADMAP.md`.
 
 ## Repo / build state
-- Branch `main`, latest commit **`9f56828`** (E3c + E3c-2). Before it: `bfd7cdc` (E3b),
-  `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0), `f55349c` (the design package).
-- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **592 passing**.
-- ⚠ **Uncommitted: E3c-3 is complete and green in the working tree.** New:
-  `core/Rules/ConditionWorld.cs` · `core/Combat/CombatConditionWorld.cs` ·
-  `tests/Rules/StatefulConditionTests.cs`. Modified: `core/Rules/TriggerRule.cs` ·
-  `TriggerRuleEngine.cs` · `core/Combat/CombatEncounter.cs` · `game/GameRoot.cs` · docs.
+- Branch `main`. Recent: E4 (this commit), `ce9d75a` (E3c-3), `9f56828` (E3c + E3c-2),
+  `bfd7cdc` (E3b), `2bf9902` (E3a), `99cdceb` (E1 + E2), `90faf27` (E0).
+- `dotnet build InTheDungeonsWeDie.slnx` clean (**0 warnings**); `dotnet test` → **602 passing**.
+- **Working tree clean** apart from the user's untracked `GDD/`.
 - **`GDD/` (untracked) is the user's personal folder. Not project context — leave it alone.**
   `docs/GDD.md` is the project's GDD and *is* committed (as of `f55349c`).
 - Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
@@ -94,23 +91,76 @@ been deleted from this file — statuses and the damage pipeline come first. Rea
 3. `ModifierContribution` has no **scope**, so "+10 damage with swords" and "−12% Fishing
    interval" are inexpressible. One change fixes both (D-12).
 
-**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → ✅ **E3** (a, b, c, c-2, c-3 all
-shipped) → **E4 moves ← NEXT** → C1 traits/essence → C2 fabrication + scale reconciliation →
-E5 affixes → E6 tools → E7 Overreach.
+**Settled order (D-19):** ✅ **E0** → ✅ **E1** → ✅ **E2** → ✅ **E3** → ✅ **E4 moves** →
+**C1 traits/essence ← NEXT** → C2 fabrication + scale reconciliation → E5 affixes → E6 tools →
+E7 Overreach.
+
+### ✅ E4 shipped — the Move system, and the GDD's largest gap closes
+
+`dotnet test` → **602 passing** (was 592), build 0 warnings, clean rebuild verified.
+
+**One shape, everything an action is.** `MoveDefinition` = timing + costs + requires + packets +
+`EffectSpec` riders. Attack vs Spell is a difference of data, not of engine — Heavy Strike,
+Fireball and Shield Bash ship as the §2.2 exemplars, one JSON file apart. 9 moves shipped.
+
+- **The shared Action vocabulary** (`core/Actions/`): `ActionTiming` (was `AbilityTiming`) and
+  `ActionCost` (pools *and* gauges — a gauge name is a legal cost). Professions adopt in E6.
+- **`MovesetBuilder` → `ResolvedMove`**, with provenance on every grant and modifier.
+  Composition: **weapon first** (so `Attack()` is the weapon's swing — the Fighter's identity),
+  then Species → Base → Prefix → Suffix. Species grant `move.unarmed`, so nobody is ever
+  moveless. Replacement (`replaces`) reported, never silent.
+- **`MoveModifier`**: match (id and/or tags) + **11 ops in a fixed application order** —
+  `scaleDamage` before `convert`, so increases apply to the lane the damage started in.
+  Source-order independence is proved by test, not assumed. `addTag` is the composition lever;
+  a tag added this pass matches modifiers on the *next* rebuild (cached-resolution bargain,
+  pinned by test as a decision).
+- **The D-18 deletion, complete:** `AttackProfile`, `AbilityDefinition`, `CombatCalculator`,
+  `Hit.ToPackets`, `WeaponStats`, the `abilities/` folder, and both stale validator allowlists
+  are **gone**. Weapons author `moves: [...]`; `EquipmentResolver.ResolveWeaponMoves` applies
+  instance mass to packets **once, split by share** (the E1 attribute-scaling rule).
+- **Enemies run the same system** (§5.2): `ActorDefinition.Moves` + weighted `Ai` rules over the
+  shared `ConditionSpec` vocabulary. Empty profile = uniform — exactly what `_rng.NextInt` did,
+  so unprofiled actors behave as before. AI determinism under the seed is pinned.
+- **Move riders go through the same handler registry** as rule effects, via `IEffectSink`
+  (the rule engine wearing a second hat). A rider starts its own chain at depth 0;
+  **`triggerMove` executes at depth+1** and a triggerMove whose target can itself trigger is
+  refused at load. `EffectSpec.Chance` added for riders ("Burn @ 20%").
+- **The Mnemonic closes end-to-end** — the fourteenth dangling status id. `status.recalled_move`
+  is authored (`stores_move: true`), the store rule captures the executing move's id off the
+  event's `move:` tag, and the granted `move.recall` replays it through `recallMove`. The replay
+  re-stores itself — bounded by Recall's 150-tick cooldown, deliberately.
+- **Tags:** moves author namespaced tags only (validated against §5's closed vocabulary);
+  combat derives the **bare aliases** (`attack`, `melee`, `heavy`, type names) at event time, so
+  all 23 pre-vocabulary `hasTag` hooks keep working. `heavy` stays derived, never authored.
+  Events also carry `move:<id>` and per-packet `lane:` tags.
+- **Validator (§6):** move tags/costs/requires/riders, modifier ops with per-op shape checks,
+  convert totals ≤100%, dead modifiers, orphan moves (everything must be granted by something),
+  weapon-grants-no-moves, AI rules select the actor's own moves.
+
+**The trace-read pass caught two real engine bugs — five slices, five catches:**
+1. **A recalled/triggered move resolved the raw store definition**, silently dropping the
+   caster's modifiers (the replayed slash lost its stormbrand charge packet). `TriggerMove` now
+   prefers the caster's own resolved version and falls back to the store.
+2. **Triggered moves did not advance chain depth.** §3.4 says depth+1; now they do, so a
+   triggered move's riders sit at the ceiling and nothing procs off them.
+
+**Deliberate scope notes:**
+- **Base moveset authoring is a content pass, not an engine gap.** Wizard has Fireball and
+  Bastion has Shield Bash as the pattern exemplars; the other 13 Bases await a design pass.
+- **`modifyMove` applies at execution time** (not cached) — "the next attack is empowered"
+  cannot be pre-baked. Runtime `grantMove` grants skip build modifiers; documented in code.
+- **`Targeting` declared, range deferred** (U-2) — unused authored numbers rot.
+- **No `abstract class Action`** — professions share `ActionTiming`/`ActionCost`/conditions/
+  events in E6, never a base class.
 
 ### ✅ E3 is complete — the effect foundation is built
 
-E3c and E3c-2 share commit `9f56828`, for the reason E1/E2 shared one: they interleaved in
-`CombatEncounter.cs` and `CombatEffectHandlers.cs`. E3c-3 is uncommitted.
+E3c and E3c-2 share commit `9f56828`; E3c-3 is `ce9d75a`.
 
 **What E3 adds up to:** the class combinator is no longer theoretical. A Prefix's hook fires
 against a real fight, its effect executes, its gauge fills, the modifiers it grants change the
 numbers, and a condition can gate on the state of the world. Every one of those was authored
 content firing into nothing when the package started.
-
-**E4 is next: `MoveDefinition`.** It deletes the D-18 `AttackProfile` bridge and its known
-throwaway tests, and it is what `status.recalled_move` has been waiting for — delete
-`ContentValidator.KnownUnimplementedStatuses` when it lands.
 
 ### ✅ E3c shipped — effects finally do things
 
@@ -199,7 +249,7 @@ windup?"). Nothing authoritative may read it. **Collapse it if it stays unused.*
 
 ### ✅ E3c-3 shipped — the stateful conditions
 
-`dotnet test` → **592 passing** (was 580), build 0 warnings. **Uncommitted.**
+`dotnet test` → **592 passing** (was 580), build 0 warnings. Committed in `ce9d75a`.
 
 Every condition through E3c was a pure function of the `GameEvent`, which is why the evaluator
 could be static. "Only while the target is Chilled" is not answerable from an event, and writing
@@ -476,7 +526,7 @@ Not bugs — deliberate, recorded, and worth not rediscovering.
 ---
 
 ## Guardrails
-- Keep `dotnet test` green (**592** now) and the build at **0 warnings**, in tested increments.
+- Keep `dotnet test` green (**602** now) and the build at **0 warnings**, in tested increments.
 - Core stays Godot-free. Nothing authoritative in `GameRoot` or the UI.
 - Content is data; code owns structure and closed vocabularies (D16). Adding a content type is
   one store on `ContentBundle` plus one line in `ContentLoader.LoadAll`.

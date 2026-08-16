@@ -30,6 +30,24 @@ public interface IEffectHandler
 }
 
 /// <summary>
+/// A place effects can be sent from outside the rule engine (E4).
+///
+/// <para>Move riders need this: a move's own <c>applyStatus</c> is not a rule firing on an
+/// event, but it must run through the same registered handlers and the same proc accounting —
+/// otherwise Fireball's Burn would be a second, parallel status path. <see cref="NewChain"/>
+/// exists because chain ids are sequential and the engine owns the counter; a rider starting
+/// its own chain with a made-up id would collide or break replay.</para>
+/// </summary>
+public interface IEffectSink
+{
+    /// <summary>A fresh causal chain, for an effect that is itself an origin (a move's rider).</summary>
+    EffectContext NewChain(string origin);
+
+    /// <summary>Dispatches to the registered handler; unhandled kinds are recorded, not dropped.</summary>
+    void Execute(EffectInvocation invocation);
+}
+
+/// <summary>
 /// Evaluates declarative <see cref="TriggerRule"/>s against the event bus.
 ///
 /// <para>This is the whole reason Prefixes and Suffixes can be data. A rule names an event, a
@@ -39,7 +57,7 @@ public interface IEffectHandler
 /// <para>Deterministic given a seed: the only randomness is <see cref="TriggerRule.Chance"/>,
 /// rolled through the injected source, and rules are evaluated in registration order.</para>
 /// </summary>
-public sealed class TriggerRuleEngine : IDisposable
+public sealed class TriggerRuleEngine : IDisposable, IEffectSink
 {
     private readonly IGameEventBus _bus;
     private readonly IRandomSource _random;
@@ -206,6 +224,16 @@ public sealed class TriggerRuleEngine : IDisposable
     /// seed, and a GUID here would break that quietly.
     /// </summary>
     private string NextChainId() => "chain." + (++_chainCounter);
+
+    /// <inheritdoc />
+    public EffectContext NewChain(string origin) => EffectContext.Origin(NextChainId(), origin);
+
+    /// <inheritdoc />
+    void IEffectSink.Execute(EffectInvocation invocation)
+    {
+        ArgumentNullException.ThrowIfNull(invocation);
+        Dispatch(invocation);
+    }
 
     private void Dispatch(EffectInvocation invocation)
     {

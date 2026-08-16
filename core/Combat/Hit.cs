@@ -71,6 +71,7 @@ public static class DamageLanes
 /// not describe "30% of your slashing converted to heat" without lying about one half of the
 /// hit.</para>
 /// </summary>
+[method: System.Text.Json.Serialization.JsonConstructor]
 public sealed record Packet(DamageType Type, string? Aspect, double Amount)
 {
     public Packet(DamageType type, double amount) : this(type, null, amount) { }
@@ -124,10 +125,4 @@ public sealed class Hit
     public DamageType PrimaryType =>
         Packets.Count == 0 ? DamageType.Slashing : Packets.MaxBy(p => p.Amount)!.Type;
 
-    /// <summary>
-    /// The E1→E3 bridge (D-18). An <see cref="AttackProfile"/> is a degenerate Move carrying one
-    /// aspectless packet. Deleted when <c>MoveDefinition</c> lands in E4.
-    /// </summary>
-    public static IReadOnlyList<Packet> ToPackets(DamageType type, double amount) =>
-        new[] { new Packet(type, amount) };
 }

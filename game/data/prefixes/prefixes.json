@@ -332,13 +332,21 @@
 
   {
     "id": "prefix.mnemonic", "name": "The Mnemonic",
-    "mechanic": "Recall — stores your recent moves; replay a stored one instantly, with no windup.",
+    "mechanic": "Recall — stores your most recent move; replay it instantly with the Recall move.",
     "tags": ["memory", "tempo"],
+    "moves": ["move.recall"],
     "rules": [
+      // Stores YOUR moves on YOU. The move id rides the event's `move:` tag, and the
+      // stores_move status remembers it (E4). Recall itself is excluded — remembering the act
+      // of remembering would let one press loop forever.
       { "id": "store", "event": "MoveExecuted",
+        "when": [ { "kind": "sourceIsSelf", "text": "self" },
+                  { "kind": "hasTag", "text": "move:move.recall", "negate": true } ],
+        "target": "self",
         "effect": { "kind": "applyStatus", "text": "status.recalled_move", "duration_ticks": 300 } },
       { "id": "replay", "event": "MoveExecuted",
-        "when": [ { "kind": "hasTag", "text": "recall" } ],
+        "when": [ { "kind": "hasTag", "text": "move:move.recall" } ],
+        "target": "self",
         "effect": { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.25, "duration_ticks": 10 },
         "cooldown_ticks": 150 }
     ]

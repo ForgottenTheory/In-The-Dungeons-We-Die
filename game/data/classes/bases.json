@@ -88,6 +88,7 @@
     "engine": "Charge one big spell and HOLD it, releasing on the right tick. The skill is the wait.",
     "weakness": "Committed and interruptible; a wasted hold is a wasted fight.",
     "primaryResource": "Mana", "default_channel": "strike",
+    "moves": ["move.fireball"],
     "tags": ["arcane", "burst", "committed"],
     "growth": { "Intelligence": 1.5, "Wisdom": 1.2, "Dexterity": 0.8 },
     "gauge": {
@@ -135,6 +136,7 @@
     "engine": "Rechargeable block pool spent absorbing and intercepting; precise blocks refund it.",
     "weakness": "Very low damage; must hold ground.",
     "primaryResource": "Stamina", "default_channel": "guard",
+    "moves": ["move.shield_bash"],
     "tags": ["martial", "defensive", "heavy_armor"],
     "growth": { "Constitution": 1.5, "Endurance": 1.2, "Strength": 0.8 },
     "gauge": {

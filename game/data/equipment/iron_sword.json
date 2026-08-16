@@ -3,6 +3,6 @@
   "name": "Iron Sword",
   "slot": "Weapon",
   "tags": ["weapon", "sword", "metal"],
-  "weapon": { "baseDamage": 10, "damageType": "Slashing", "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15 }, "staminaCost": 6 },
+  "moves": ["move.iron_slash", "move.heavy_strike"],
   "properties": { "mass": 3, "hardness": 4 }
 }

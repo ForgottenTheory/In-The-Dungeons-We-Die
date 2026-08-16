@@ -25,8 +25,8 @@ namespace Dungeons.Tests.Combat;
 /// </summary>
 public class ModifierReadPathTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 10, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 10, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
 
     private sealed record Harness(
         CombatEncounter Encounter,
@@ -58,8 +58,8 @@ public class ModifierReadPathTests
 
         var rng = new FakeRandom(roll);
         var encounter = new CombatEncounter(
-            tick, new CombatCalculator(rng, modifiers), Abilities(Strike, Slash), rng, bus,
-            "ability.strike", statuses, gaugeController, modifiers);
+            tick, new HitPipeline(rng, modifiers), Moves(Strike, Slash), rng, bus,
+            statuses, gaugeController, modifiers);
 
         var engine = new TriggerRuleEngine(bus, new SeededRandom(1), () => tick.CurrentTick)
             .RegisterCombatHandlers(encounter, rng);
@@ -70,7 +70,7 @@ public class ModifierReadPathTests
     private static void StartFight(Harness h) =>
         h.Encounter.Start(
             Player(hp: 200, attrs: Attrs(con: 5), stamina: 50),
-            new[] { Enemy("Raider", 200, Attrs(str: 6), "ability.goblin_slash") });
+            new[] { Enemy("Raider", 200, Attrs(str: 6), Slash) });
 
     // --- The contributors that were inert ----------------------------------------------------
 
@@ -105,7 +105,7 @@ public class ModifierReadPathTests
     public void CorrodedStripsArmourThroughTheReadPath()
     {
         var h = Build();
-        var armoured = Enemy("Raider", 200, Attrs(str: 6), "ability.goblin_slash",
+        var armoured = Enemy("Raider", 200, Attrs(str: 6), Slash,
             armor: new ArmorProfile { Armor = 12, Resistances = new Dictionary<string, double>() });
 
         h.Encounter.Start(Player(hp: 200, attrs: Attrs(con: 5), stamina: 50), new[] { armoured });

@@ -58,11 +58,11 @@ public class CharacterComposerTests
     }
 
     [Fact]
-    public void AggregatesTagsAbilitiesAndBuildsDisplayName()
+    public void AggregatesTagsMovesAndBuildsDisplayName()
     {
         var composer = FullComposer(
             species: new SpeciesDefinition { Id = "species.s", Name = "Undead", Tags = new[] { "undead" } },
-            baseClass: new BaseClassDefinition { Id = "class.c", Name = "Bastion", Tags = new[] { "defensive" }, AbilityIds = new[] { "ability.guard" } },
+            baseClass: new BaseClassDefinition { Id = "class.c", Name = "Bastion", Tags = new[] { "defensive" }, Moves = new[] { new Dungeons.Combat.MoveGrantSpec { Id = "move.shield_bash" } } },
             prefix: new PrefixDefinition { Id = "prefix.p", Name = "Pyromaniac", Tags = new[] { "fire" } },
             suffix: new SuffixDefinition { Id = "suffix.s", Name = "Of The Exploding Kneecaps" });
 
@@ -71,7 +71,7 @@ public class CharacterComposerTests
         Assert.Equal("Undead Pyromaniac Bastion Of The Exploding Kneecaps", blueprint.DisplayName);
         Assert.Contains("undead", blueprint.Tags);
         Assert.Contains("fire", blueprint.Tags);
-        Assert.Contains("ability.guard", blueprint.AbilityIds);
+        Assert.Contains(blueprint.MoveGrants, g => g.Spec.Id == "move.shield_bash" && g.Source == "Bastion");
     }
 
     [Fact]

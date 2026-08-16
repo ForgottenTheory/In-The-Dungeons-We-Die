@@ -1,26 +1,42 @@
+using Dungeons.Actions;
 using Dungeons.Combat;
+using Dungeons.Content;
 using Dungeons.Items;
 using Xunit;
 
 namespace Dungeons.Tests.Items;
 
+/// <summary>
+/// The equipment seam after E4: a weapon resolves into <b>moves</b>, not an attack profile
+/// (D-18; D8's intent preserved — combat reads a neutral shape, never an equipment type).
+/// Mass still buys damage and costs speed; it now lands on the move's packets the way
+/// attribute scaling lands on a hit — once, split by share.
+/// </summary>
 public class EquipmentTests
 {
-    private static readonly AttackProfile Unarmed = new()
+    private static MoveDefinition Slash() => new()
     {
-        Name = "Fists",
-        DamageType = DamageType.Crushing,
-        BaseDamage = 2,
-        StaminaCost = 3,
-        Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 6, RecoveryTicks = 12 },
+        Id = "move.iron_slash",
+        Name = "Iron Slash",
+        Tags = new[] { "action:attack", "delivery:melee", "form:sword" },
+        Timing = new ActionTiming { TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15 },
+        Costs = new[] { new ActionCost { Resource = "stamina", Amount = 5 } },
+        Packets = new[] { new Packet(DamageType.Slashing, 10) },
     };
+
+    private static DataStore<MoveDefinition> Moves()
+    {
+        var store = new DataStore<MoveDefinition>();
+        store.Add(Slash());
+        return store;
+    }
 
     private static EquipmentDefinition IronSword() => new()
     {
         Id = "equip.iron_sword",
         Name = "Iron Sword",
         Slot = EquipmentSlot.Weapon,
-        Weapon = new WeaponStats { BaseDamage = 10, DamageType = DamageType.Slashing, Timing = new AbilityTiming { TelegraphTicks = 2, WindupTicks = 8, RecoveryTicks = 15 }, StaminaCost = 5 },
+        Moves = new[] { new MoveGrantSpec { Id = "move.iron_slash" } },
     };
 
     private static EquipmentDefinition IronArmor() => new()
@@ -34,7 +50,7 @@ public class EquipmentTests
     [Fact]
     public void EquipmentContainer_EquipReturnsDisplaced()
     {
-        var equip = new Equipment();
+        var equip = new Dungeons.Items.Equipment();
         var a = new ItemInstance { InstanceId = 1, BaseDefinitionId = "equip.iron_sword", ItemType = ItemType.Weapon };
         var b = new ItemInstance { InstanceId = 2, BaseDefinitionId = "equip.iron_sword", ItemType = ItemType.Weapon };
 
@@ -46,17 +62,18 @@ public class EquipmentTests
     }
 
     [Fact]
-    public void ResolveWeapon_UsesBaseStats_WhenNoInstanceProperties()
+    public void ResolveWeaponMoves_UsesTheAuthoredMove_WhenNoInstanceProperties()
     {
-        var profile = EquipmentResolver.ResolveWeapon(IronSword(), instance: null, Unarmed);
-        Assert.Equal(10, profile.BaseDamage);
-        Assert.Equal(DamageType.Slashing, profile.DamageType);
-        Assert.Equal(8, profile.Timing.WindupTicks);
-        Assert.Equal("Iron Sword", profile.Name);
+        var moves = EquipmentResolver.ResolveWeaponMoves(IronSword(), instance: null, Moves());
+
+        var slash = Assert.Single(moves);
+        Assert.Equal(10, slash.Packets.Sum(p => p.Amount), 3);
+        Assert.Equal(DamageType.Slashing, slash.Packets[0].Type);
+        Assert.Equal(8, slash.Timing.WindupTicks);
     }
 
     [Fact]
-    public void ResolveWeapon_DerivesFromInstanceMass()
+    public void ResolveWeaponMoves_DerivesFromInstanceMass()
     {
         var heavy = new ItemInstance
         {
@@ -67,17 +84,39 @@ public class EquipmentTests
             Properties = new PropertySet(new Dictionary<string, double> { [ItemProperties.Mass] = 3 }),
         };
 
-        var profile = EquipmentResolver.ResolveWeapon(IronSword(), heavy, Unarmed);
-        Assert.Equal(13, profile.BaseDamage);          // 10 + mass 3 * 1.0
-        Assert.Equal(8 + 6, profile.Timing.WindupTicks); // 8 + mass 3 * 2 → slower
-        Assert.Equal("Dense Iron Sword", profile.Name);
+        var slash = Assert.Single(EquipmentResolver.ResolveWeaponMoves(IronSword(), heavy, Moves()));
+
+        Assert.Equal(13, slash.Packets.Sum(p => p.Amount), 3);   // 10 + mass 3 × 1.0
+        Assert.Equal(8 + 6, slash.Timing.WindupTicks);           // 8 + mass 3 × 2 → slower
     }
 
+    /// <summary>Mass lands once per move, split by packet share — a two-packet move must not
+    /// collect the bonus twice, the same rule attribute scaling follows in the pipeline.</summary>
     [Fact]
-    public void ResolveWeapon_FallsBackToUnarmed_WhenDefinitionHasNoWeaponBlock()
+    public void ResolveWeaponMoves_SplitsMassBySharAcrossPackets()
     {
-        var profile = EquipmentResolver.ResolveWeapon(IronArmor(), instance: null, Unarmed);
-        Assert.Same(Unarmed, profile);
+        var store = new DataStore<MoveDefinition>();
+        store.Add(new MoveDefinition
+        {
+            Id = "move.flame_slash",
+            Name = "Flame Slash",
+            Tags = new[] { "action:attack", "delivery:melee" },
+            Packets = new[] { new Packet(DamageType.Slashing, 8), new Packet(DamageType.Slashing, "heat", 2) },
+        });
+
+        var sword = new EquipmentDefinition
+        {
+            Id = "equip.flame_sword",
+            Slot = EquipmentSlot.Weapon,
+            Moves = new[] { new MoveGrantSpec { Id = "move.flame_slash" } },
+            Properties = new Dictionary<string, double> { [ItemProperties.Mass] = 5 },
+        };
+
+        var move = Assert.Single(EquipmentResolver.ResolveWeaponMoves(sword, instance: null, store));
+
+        Assert.Equal(15, move.Packets.Sum(p => p.Amount), 3);       // 10 + mass 5, once
+        Assert.Equal(12, move.Packets[0].Amount, 3);                 // 8 + 5 × 0.8
+        Assert.Equal(3, move.Packets[1].Amount, 3);                  // 2 + 5 × 0.2
     }
 
     [Fact]

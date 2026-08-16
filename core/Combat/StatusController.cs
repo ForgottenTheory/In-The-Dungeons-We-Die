@@ -93,9 +93,13 @@ public sealed class StatusController
     /// the chain at depth 0 — which would make the whole proc budget decorative
     /// (docs/effect-foundation.md §6.1).
     /// </param>
+    /// <param name="storedMoveId">
+    /// The move to remember, for definitions with <c>stores_move</c> (E4). Combat supplies the
+    /// executing move's id; everything else leaves it null.
+    /// </param>
     public ControlOutcome Apply(
         Combatant target, string statusId, string sourceId, double magnitude = 0, int durationOverride = 0,
-        Rules.EffectContext? context = null)
+        Rules.EffectContext? context = null, string? storedMoveId = null)
     {
         if (!_definitions.TryGetById(statusId, out var definition))
             return ControlOutcome.Ungated;
@@ -103,7 +107,7 @@ public sealed class StatusController
         if (definition.IsControl)
             return ApplyControl(target, definition, sourceId, magnitude, durationOverride, context);
 
-        Land(target, definition, sourceId, magnitude, durationOverride, context);
+        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId);
         return ControlOutcome.Applied;
     }
 
@@ -146,18 +150,22 @@ public sealed class StatusController
         _immuneUntil[target] = _currentTick() + CombatTuning.ControlImmunityTicks;
         _resolveBonus[target] = _resolveBonus.GetValueOrDefault(target) + CombatTuning.ResolveEscalation;
 
-        Land(target, definition, sourceId, magnitude, durationOverride, context);
+        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId: null);
         return ControlOutcome.Applied;
     }
 
     private void Land(
         Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
-        Rules.EffectContext? context)
+        Rules.EffectContext? context, string? storedMoveId)
     {
         var now = _currentTick();
         var duration = durationOverride > 0 ? durationOverride : definition.DurationTicks;
         var list = _active.TryGetValue(target, out var existing) ? existing : _active[target] = new List<StatusInstance>();
         var current = list.FirstOrDefault(s => s.Id == definition.Id);
+
+        // A refreshed store remembers the NEW move — "your most recent move", not your first.
+        if (definition.StoresMove && current is not null && storedMoveId is not null)
+            current.StoredMoveId = storedMoveId;
 
         switch (definition.StackPolicy)
         {
@@ -189,6 +197,7 @@ public sealed class StatusController
                     Magnitude = magnitude,
                     ExpiresTick = now + duration,
                     NextTickAt = definition.TickInterval > 0 ? now + definition.TickInterval : long.MaxValue,
+                    StoredMoveId = definition.StoresMove ? storedMoveId : null,
                 });
                 break;
         }

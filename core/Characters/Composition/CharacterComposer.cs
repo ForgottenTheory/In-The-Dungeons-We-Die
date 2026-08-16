@@ -52,12 +52,16 @@ public sealed class CharacterComposer
         var maxStamina = ModifierPipeline.ResolveInt(StatId.MaxStamina, ResourceCalculator.MaxStamina(attributes), modifiers);
 
         var tags = new HashSet<string>(StringComparer.Ordinal);
-        var abilities = new List<string>();
+        var moveGrants = new List<Dungeons.Combat.MoveGrant>();
+        var modifierGrants = new List<(string ModifierId, string Source)>();
         var ruleIds = new List<string>();
         foreach (var component in components)
         {
             tags.UnionWith(component.Tags);
-            abilities.AddRange(component.AbilityIds);
+            foreach (var move in component.Moves)
+                moveGrants.Add(new Dungeons.Combat.MoveGrant(move, component.Name));
+            foreach (var modifierId in component.MoveModifierIds)
+                modifierGrants.Add((modifierId, component.Name));
             ruleIds.AddRange(component.RuleIds);
         }
 
@@ -76,7 +80,8 @@ public sealed class CharacterComposer
             MaxStamina = maxStamina,
             PrimaryResource = baseClass.PrimaryResource,
             Tags = tags,
-            AbilityIds = abilities,
+            MoveGrants = moveGrants,
+            MoveModifierGrants = modifierGrants,
             Rules = rules,
         };
     }

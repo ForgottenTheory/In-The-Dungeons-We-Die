@@ -1,0 +1,5 @@
+[
+  // Move modifiers (docs/moves.md §3): match + ops, granted by components, equipment, statuses
+  // or (from E5) affixes. None shipped yet — the mechanism landed in E4; the affix system is
+  // what will populate this folder. The stormbrand example from the spec lives in the tests.
+]

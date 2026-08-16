@@ -89,6 +89,9 @@ public static class CombatTuning
     /// <summary>How often the status sweep runs. One shared sweep keeps ordering deterministic.</summary>
     public const int StatusTickIntervalTicks = 5;
 
+    /// <summary>Damage retained per chain jump (`addChain`, E4). Jump 1 hits at 50%, jump 2 at 25%.</summary>
+    public const double ChainFalloff = 0.5;
+
     /// <summary>Attack tempo lost after using an item — you can still block/dodge, but not immediately strike.</summary>
     public const int ItemUseRecoveryTicks = 10;
 

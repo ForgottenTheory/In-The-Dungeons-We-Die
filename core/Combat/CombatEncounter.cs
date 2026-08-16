@@ -33,21 +33,25 @@ public enum ActionPhase
 /// <summary>
 /// One action between commitment and execution, for either side.
 ///
-/// <para>Player and enemy share this because the phases are the same for both; the divergence
-/// is only in who chooses the action. E4's <c>MoveDefinition</c> collapses that difference too.</para>
+/// <para>Player and enemy share this because the phases are the same for both — and since E4
+/// the payload is the same too: both sides execute a <see cref="ResolvedMove"/>, and the only
+/// divergence left is who chose it.</para>
 /// </summary>
 public sealed class ActionInFlight
 {
     public required Combatant Actor { get; init; }
     public required Combatant Target { get; init; }
-    public required string Name { get; init; }
-    public required DamageType DamageType { get; init; }
-    public required double BaseDamage { get; init; }
-    public required AbilityTiming Timing { get; init; }
+    public required ResolvedMove Move { get; init; }
+
+    /// <summary>Event tags: the move's own plus the bare legacy aliases (see
+    /// <c>CombatEncounter.MoveEventTags</c>).</summary>
     public required HashSet<string> Tags { get; init; }
 
-    /// <summary>Null for the player, whose action comes from the equipped weapon.</summary>
-    public AbilityDefinition? Ability { get; init; }
+    /// <summary>The chain this action belongs to, when a proc triggered it. Null for real actions.</summary>
+    public Dungeons.Rules.EffectContext? Context { get; init; }
+
+    public string Name => Move.Name;
+    public Dungeons.Actions.ActionTiming Timing => Move.Timing;
 
     public ActionPhase Phase { get; internal set; } = ActionPhase.Telegraph;
 
@@ -61,7 +65,7 @@ public sealed class ActionInFlight
 public sealed class EnemyIntent
 {
     public required Combatant Attacker { get; init; }
-    public required AbilityDefinition Ability { get; init; }
+    public required ResolvedMove Move { get; init; }
     public required long ExecuteTick { get; init; }
 
     /// <summary>Telegraph is "something is coming"; Windup is "and it is too late to stop it gently".</summary>
@@ -97,11 +101,21 @@ public sealed class CombatEncounter
     public const string SelfId = "self";
 
     private readonly TickEngine _tick;
-    private readonly CombatCalculator _calculator;
-    private readonly DataStore<AbilityDefinition> _abilities;
+    private readonly HitPipeline _pipeline;
+    private readonly DataStore<MoveDefinition> _moves;
+    private readonly DataStore<MoveModifierDefinition>? _moveModifiers;
     private readonly IRandomSource _rng;
     private readonly IGameEventBus _bus;
-    private readonly string _playerFallbackAbilityId;
+
+    /// <summary>Per-combatant, per-move cooldown bookkeeping.</summary>
+    private readonly Dictionary<(Combatant, string), long> _cooldowns = new();
+
+    /// <summary>Moves granted mid-encounter by `grantMove`, with expiry (0 = encounter).</summary>
+    private readonly List<(Combatant Owner, ResolvedMove Move, long ExpiresTick)> _grantedMoves = new();
+
+    /// <summary>Modifiers attached by `modifyMove`, applied at execution time — "the next
+    /// attack is empowered" cannot be pre-baked into a cached moveset.</summary>
+    private readonly List<(Combatant Owner, MoveModifierDefinition Definition, string Source, long ExpiresTick)> _timedMoveModifiers = new();
 
     /// <summary>Every action currently between commitment and impact, both sides.</summary>
     private readonly Dictionary<Combatant, ActionInFlight> _inFlight = new();
@@ -119,21 +133,21 @@ public sealed class CombatEncounter
 
     public CombatEncounter(
         TickEngine tick,
-        CombatCalculator calculator,
-        DataStore<AbilityDefinition> abilities,
+        HitPipeline pipeline,
+        DataStore<MoveDefinition> moves,
         IRandomSource rng,
         IGameEventBus bus,
-        string playerFallbackAbilityId,
         StatusController? statuses = null,
         Characters.GaugeController? gauges = null,
-        CombatantModifiers? modifiers = null)
+        CombatantModifiers? modifiers = null,
+        DataStore<MoveModifierDefinition>? moveModifiers = null)
     {
         _tick = tick ?? throw new ArgumentNullException(nameof(tick));
-        _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
-        _abilities = abilities ?? throw new ArgumentNullException(nameof(abilities));
+        _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+        _moves = moves ?? throw new ArgumentNullException(nameof(moves));
         _rng = rng ?? throw new ArgumentNullException(nameof(rng));
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
-        _playerFallbackAbilityId = playerFallbackAbilityId;
+        _moveModifiers = moveModifiers;
 
         // Optional so combat-calculation tests need not construct a status store. Every path
         // that reads it null-checks; nothing silently degrades.
@@ -160,18 +174,22 @@ public sealed class CombatEncounter
     /// </summary>
     public CombatantModifiers? Modifiers { get; }
 
-    /// <summary>The player's basic attack: the equipped-weapon profile, or the fallback ability if unarmed.</summary>
-    private AttackProfile PlayerAttackProfile =>
-        _player.Attack ?? ToProfile(_abilities.GetById(_playerFallbackAbilityId));
+    /// <summary>
+    /// Where move riders go (E4) — the rule engine, wearing its <see cref="IEffectSink"/> hat.
+    /// Set by <c>RegisterCombatHandlers</c>. Null leaves riders inert, which calculation tests
+    /// rely on and running games must not.
+    /// </summary>
+    public IEffectSink? EffectSink { get; set; }
 
-    private static AttackProfile ToProfile(AbilityDefinition ability) => new()
-    {
-        Name = ability.Name,
-        DamageType = ability.DamageType,
-        BaseDamage = ability.BaseValue,
-        StaminaCost = ability.StaminaCost,
-        Timing = ability.Timing,
-    };
+    /// <summary>World state for move <c>Requires</c> and AI conditions (E3c-3's vocabulary).</summary>
+    public IConditionWorld? ConditionWorld { get; set; }
+
+    /// <summary>The player's usable moves right now: the built moveset plus anything granted
+    /// mid-encounter that has not expired.</summary>
+    public IReadOnlyList<ResolvedMove> PlayerMoves =>
+        _player.Moveset
+            .Concat(_grantedMoves.Where(g => g.Owner == _player).Select(g => g.Move))
+            .ToList();
 
     public event Action<string>? Logged;
     public event Action? StateChanged;
@@ -193,11 +211,11 @@ public sealed class CombatEncounter
     public IReadOnlyList<Combatant> Enemies => _enemies;
     public IReadOnlyList<Combatant> Combatants => _enemies.Prepend(_player).ToList();
     public IReadOnlyList<EnemyIntent> Intents => _inFlight.Values
-        .Where(a => a.Actor.Team == CombatTeam.Enemy && a.Ability is not null)
+        .Where(a => a.Actor.Team == CombatTeam.Enemy)
         .Select(a => new EnemyIntent
         {
             Attacker = a.Actor,
-            Ability = a.Ability!,
+            Move = a.Move,
             ExecuteTick = a.Phase == ActionPhase.Windup
                 ? a.PhaseEndsTick
                 : a.PhaseEndsTick + Math.Max(1, a.Timing.WindupTicks),
@@ -226,6 +244,9 @@ public sealed class CombatEncounter
         // next fight, or the meter stops being something you build inside a fight.
         Gauges?.Reset(_tick.CurrentTick);
         Modifiers?.Timed.Clear();
+        _cooldowns.Clear();
+        _grantedMoves.Clear();
+        _timedMoveModifiers.Clear();
 
         Log($"Combat started: {_player.Name} vs {string.Join(", ", _enemies.Select(e => e.Name))}.");
         Publish(GameEvents.EncounterStarted, source: SelfId, amount: _enemies.Count);
@@ -239,47 +260,170 @@ public sealed class CombatEncounter
 
     // --- Player commands ----------------------------------------------------
 
+    /// <summary>The default attack: the first `action:attack` move in the moveset — which is the
+    /// weapon's, because weapon moves are granted first (the Fighter's whole identity).</summary>
     public bool Attack()
+    {
+        var move = PlayerMoves.FirstOrDefault(m => string.Equals(m.ActionKind, "attack", StringComparison.OrdinalIgnoreCase));
+        if (move is null)
+        {
+            Log("You have no attack.");
+            return false;
+        }
+
+        return UseMove(move.Id);
+    }
+
+    /// <summary>Uses a move from the player's moveset by id.</summary>
+    public bool UseMove(string moveId)
     {
         if (!IsActive)
             return false;
+
+        var move = PlayerMoves.FirstOrDefault(m => string.Equals(m.Id, moveId, StringComparison.Ordinal));
+        if (move is null)
+        {
+            Log("You don't know that move.");
+            return false;
+        }
+
         if (!_player.IsReady(_tick.CurrentTick))
         {
             Log("You are still recovering.");
             return false;
         }
 
-        var attack = PlayerAttackProfile;
-        if (_player.Stamina.Current < attack.StaminaCost)
+        if (!CanUse(_player, move, out var reason))
         {
-            Log("Not enough stamina to attack.");
+            Log(reason);
             return false;
         }
 
-        var target = FirstAliveEnemy();
+        var target = move.Targeting == Targeting.Self ? _player : FirstAliveEnemy();
         if (target is null)
             return false;
 
-        _player.Stamina.Reduce(attack.StaminaCost);
-        var executeIn = Math.Max(1, attack.Timing.TimeToImpactTicks);
-        _player.ReadyTick = _tick.CurrentTick + executeIn + attack.Timing.RecoveryTicks;
-        Log($"You ready {attack.Name}.");
+        PayCosts(_player, move);
+        StartCooldown(_player, move);
 
-        Publish(GameEvents.ResourceSpent, source: SelfId, amount: attack.StaminaCost,
-            tags: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "stamina", "attack" });
+        var executeIn = Math.Max(1, move.Timing.TimeToImpactTicks);
+        _player.ReadyTick = _tick.CurrentTick + executeIn + move.Timing.RecoveryTicks;
+        Log($"You ready {move.Name}.");
 
         Commit(new ActionInFlight
         {
             Actor = _player,
             Target = target,
-            Name = attack.Name,
-            DamageType = attack.DamageType,
-            BaseDamage = attack.BaseDamage,
-            Timing = attack.Timing,
-            Tags = AttackTags(attack.DamageType, attack.Timing),
+            Move = move,
+            Tags = MoveEventTags(move),
         });
 
         return true;
+    }
+
+    // --- Queue validation (docs/moves.md §2.3: the Queue phase) --------------
+
+    /// <summary>Everything that gates a move at queue time, with a player-readable reason.</summary>
+    private bool CanUse(Combatant actor, ResolvedMove move, out string reason)
+    {
+        if (!CanAct(actor, move.ActionKind))
+        {
+            reason = $"{actor.Name} cannot use {move.Name} right now.";
+            return false;
+        }
+
+        if (_cooldowns.TryGetValue((actor, move.Id), out var readyAt) && _tick.CurrentTick < readyAt)
+        {
+            reason = $"{move.Name} is not ready.";
+            return false;
+        }
+
+        foreach (var requirement in move.Requires)
+        {
+            if (!TriggerRuleEngine.Evaluate(requirement, RequirementEvent(actor), ConditionWorld))
+            {
+                reason = $"{move.Name}: requirement not met.";
+                return false;
+            }
+        }
+
+        foreach (var cost in move.Costs)
+        {
+            if (!CanAfford(actor, cost))
+            {
+                reason = $"Not enough {cost.Resource} for {move.Name}.";
+                return false;
+            }
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>The event a move requirement is evaluated against. `self_*` fractions are the
+    /// <b>acting</b> combatant's — an enemy checking its own health reads its own bar.</summary>
+    private GameEvent RequirementEvent(Combatant actor) => new(
+        "MoveRequirement",
+        Source: Id(actor),
+        Target: Id(actor.Team == CombatTeam.Enemy ? _player : FirstAliveEnemy() ?? _player),
+        Values: new Dictionary<string, double>(StringComparer.Ordinal)
+        {
+            ["self_health_fraction"] = Fraction(actor.Health),
+            ["self_stamina_fraction"] = Fraction(actor.Stamina),
+            ["gauge_fraction"] = Gauges?.HighestFraction ?? 0.0,
+        },
+        CanTrigger: false);
+
+    private bool CanAfford(Combatant actor, Dungeons.Actions.ActionCost cost)
+    {
+        if (Gauges is not null && actor == _player && Gauges.Has(cost.Resource))
+            return Gauges.Current(cost.Resource) >= cost.Amount;
+
+        var pool = PoolNamed(actor, cost.Resource);
+        if (pool is null)
+            return false;
+
+        // A health cost may wound but never self-kill — Vitalist-style casting costs blood,
+        // not suicide.
+        return pool.Type == Characters.ResourceType.Health
+            ? pool.Current > cost.Amount
+            : pool.Current >= cost.Amount;
+    }
+
+    private void PayCosts(Combatant actor, ResolvedMove move)
+    {
+        foreach (var cost in move.Costs)
+        {
+            var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                cost.Resource.ToLowerInvariant(), move.ActionKind,
+            };
+
+            if (Gauges is not null && actor == _player && Gauges.Has(cost.Resource))
+            {
+                var pool = Gauges.Find(cost.Resource)!;
+                pool.Spend(cost.Amount);
+
+                // Tagged `gauge` so gauge feeds can exclude their own spends — without this,
+                // spending Charge would raise the ResourceSpent that refills Charge.
+                tags.Add("gauge");
+                Publish(GameEvents.ResourceSpent, source: Id(actor), amount: cost.Amount, tags: tags);
+                continue;
+            }
+
+            var resource = PoolNamed(actor, cost.Resource);
+            if (resource is null)
+                continue;
+
+            resource.Reduce((int)Math.Round(cost.Amount, MidpointRounding.AwayFromZero));
+            Publish(GameEvents.ResourceSpent, source: Id(actor), amount: cost.Amount, tags: tags);
+        }
+    }
+
+    private void StartCooldown(Combatant actor, ResolvedMove move)
+    {
+        if (move.CooldownTicks > 0)
+            _cooldowns[(actor, move.Id)] = _tick.CurrentTick + move.CooldownTicks;
     }
 
     public void Block() => EnterStance("raise your guard", CombatTuning.BlockStaminaCost, isBlock: true);
@@ -316,7 +460,7 @@ public sealed class CombatEncounter
 
     private void BeginEnemyDecision(Combatant enemy)
     {
-        if (!IsActive || !enemy.IsAlive || enemy.AbilityIds.Count == 0)
+        if (!IsActive || !enemy.IsAlive || enemy.Moveset.Count == 0)
             return;
 
         _recovery.Remove(enemy);
@@ -330,22 +474,73 @@ public sealed class CombatEncounter
             return;
         }
 
-        var abilityId = enemy.AbilityIds[_rng.NextInt(0, enemy.AbilityIds.Count)];
-        var ability = _abilities.GetById(abilityId);
+        var move = ChooseMove(enemy);
+        if (move is null)
+        {
+            // Everything is gated or unaffordable. Hesitate and re-check rather than dropping
+            // out of the loop — the same bargain the CanAct path strikes.
+            _recovery[enemy] = _tick.Schedule(CombatTuning.StatusTickIntervalTicks, () => BeginEnemyDecision(enemy));
+            return;
+        }
+
+        PayCosts(enemy, move);
+        StartCooldown(enemy, move);
 
         Commit(new ActionInFlight
         {
             Actor = enemy,
-            Target = _player,
-            Name = ability.Name,
-            DamageType = ability.DamageType,
-            BaseDamage = ability.BaseValue,
-            Timing = ability.Timing,
-            Tags = AttackTags(ability.DamageType, ability.Timing),
-            Ability = ability,
+            Target = move.Targeting == Targeting.Self ? enemy : _player,
+            Move = move,
+            Tags = MoveEventTags(move),
         });
 
-        Log($"{enemy.Name} begins {ability.Name}!");
+        Log($"{enemy.Name} begins {move.Name}!");
+    }
+
+    /// <summary>
+    /// Weighted move selection over the AI profile (docs/moves.md §5.2). AI chooses intent; the
+    /// tick engine resolves timing. An empty profile is uniform over the moveset — exactly what
+    /// the old <c>_rng.NextInt</c> line did, which this replaces.
+    /// </summary>
+    private ResolvedMove? ChooseMove(Combatant enemy)
+    {
+        var rules = enemy.Ai.Count > 0
+            ? enemy.Ai
+            : enemy.Moveset.Select(m => new AiRuleSpec { Move = m.Id, Weight = 1.0 }).ToList();
+
+        var decision = RequirementEvent(enemy);
+        var candidates = new List<(ResolvedMove Move, double Weight)>();
+
+        foreach (var rule in rules)
+        {
+            var move = enemy.Moveset.FirstOrDefault(m => string.Equals(m.Id, rule.Move, StringComparison.Ordinal));
+            if (move is null || rule.Weight <= 0)
+                continue;
+
+            if (!rule.When.All(condition => TriggerRuleEngine.Evaluate(condition, decision, ConditionWorld)))
+                continue;
+
+            if (!CanUse(enemy, move, out _))
+                continue;
+
+            candidates.Add((move, rule.Weight));
+        }
+
+        if (candidates.Count == 0)
+            return null;
+
+        // Deterministic weighted pick under the seed — same state, same roll, same choice.
+        var total = candidates.Sum(c => c.Weight);
+        var roll = _rng.NextDouble() * total;
+
+        foreach (var (move, weight) in candidates)
+        {
+            roll -= weight;
+            if (roll < 0)
+                return move;
+        }
+
+        return candidates[^1].Move;
     }
 
     // --- The action lifecycle -----------------------------------------------
@@ -411,19 +606,18 @@ public sealed class CombatEncounter
         _inFlight.Remove(action.Actor);
 
         var attacker = action.Actor;
-        var target = attacker.Team == CombatTeam.Enemy ? _player : FirstAliveEnemy();
+        var target = action.Move.Targeting == Targeting.Self
+            ? attacker
+            : attacker.Team == CombatTeam.Enemy ? _player : FirstAliveEnemy();
 
         if (!attacker.IsAlive || target is null)
             return;
 
         if (target.IsAlive)
-        {
-            var result = _calculator.Resolve(attacker, target, action.DamageType, action.BaseDamage, _tick.CurrentTick);
-            ApplyResult(attacker, target, action.Name, result, action.Tags);
+            ResolveMove(attacker, target, action.Move, action.Tags, action.Context);
 
-            if (!target.IsAlive && HandleDefeat(attacker, target))
-                return;
-        }
+        if (!IsActive)
+            return;
 
         // Enemies self-schedule their next decision; the player's tempo is their ReadyTick.
         if (attacker.Team == CombatTeam.Enemy && attacker.IsAlive)
@@ -431,6 +625,221 @@ public sealed class CombatEncounter
             var recovery = Math.Max(1, action.Timing.RecoveryTicks);
             _recovery[attacker] = _tick.Schedule(recovery, () => BeginEnemyDecision(attacker));
         }
+    }
+
+    /// <summary>
+    /// The Execution phase: packets through the pipeline, stagger against Resolve, riders
+    /// through the effect sink, chains to further targets. One path for a queued action, a
+    /// triggered move and a recalled one — the difference is only the context they carry.
+    /// </summary>
+    private void ResolveMove(
+        Combatant attacker, Combatant target, ResolvedMove move, HashSet<string> tags, EffectContext? context)
+    {
+        // `modifyMove` grants apply here rather than at build, because "the next attack is
+        // empowered" is a statement about execution time.
+        move = WithTimedModifiers(attacker, move);
+
+        HitResult? result = null;
+
+        if (move.Packets.Count > 0)
+        {
+            result = _pipeline.Resolve(new Hit
+            {
+                Source = attacker,
+                Target = target,
+                Name = move.Name,
+                Packets = move.Packets,
+                Tags = tags,
+                StaggerPower = move.StaggerPower,
+            }, _tick.CurrentTick);
+
+            ApplyResult(attacker, target, move.Name, result, tags, context);
+
+            if (!target.IsAlive && HandleDefeat(attacker, target, context))
+                return;
+
+            // Stagger is control buildup toward Stun, resolved against the target's Resolve pool
+            // (D-08). It rides the hit, so an avoided hit staggers nothing.
+            if (move.StaggerPower > 0 && !result.Avoided && target.IsAlive)
+                ApplyStatus(target, StunStatusId, Id(attacker), move.StaggerPower, context: context);
+
+            // Chains: each jump hits the next living enemy at falloff. No positioning yet, so
+            // "next" is roster order — the same simplification area damage makes.
+            if (move.ChainTargets > 0 && !result.Avoided)
+                ResolveChains(attacker, target, move, tags, context);
+        }
+
+        ExecuteRiders(attacker, target, move, result, tags, context);
+    }
+
+    private const string StunStatusId = "status.stun";
+
+    private void ResolveChains(
+        Combatant attacker, Combatant primary, ResolvedMove move, HashSet<string> tags, EffectContext? context)
+    {
+        var chained = _enemies.Where(e => e.IsAlive && e != primary).Take(move.ChainTargets).ToList();
+        var falloff = CombatTuning.ChainFalloff;
+
+        foreach (var (enemy, index) in chained.Select((e, i) => (e, i)))
+        {
+            var factor = Math.Pow(falloff, index + 1);
+            var chainTags = new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase) { "mech:chain" };
+
+            var result = _pipeline.Resolve(new Hit
+            {
+                Source = attacker,
+                Target = enemy,
+                Name = $"{move.Name} (chain)",
+                Packets = move.Packets.Select(p => p.WithAmount(p.Amount * factor)).ToList(),
+                Tags = chainTags,
+            }, _tick.CurrentTick);
+
+            ApplyResult(attacker, enemy, move.Name, result, chainTags, context);
+
+            if (!enemy.IsAlive && HandleDefeat(attacker, enemy, context))
+                return;
+        }
+    }
+
+    /// <summary>
+    /// A move's riders, through the same registered handlers every rule effect uses. Each rider
+    /// rolls its own chance; magnitude may scale off the landed amount (`scales_with: "amount"`).
+    /// </summary>
+    private void ExecuteRiders(
+        Combatant attacker, Combatant target, ResolvedMove move, HitResult? result,
+        HashSet<string> tags, EffectContext? context)
+    {
+        if (move.Effects.Count == 0 || EffectSink is null)
+            return;
+
+        var trigger = new GameEvent(
+            GameEvents.MoveExecuted, Id(attacker), Id(target), result?.Amount ?? 0, tags,
+            ChainId: context?.ChainId, Depth: context?.Depth ?? 0);
+
+        foreach (var effect in move.Effects)
+        {
+            if (effect.Chance < 1.0 && _rng.NextDouble() >= effect.Chance)
+                continue;
+
+            // A rider is the move's own payload, so it starts a chain (depth 0) unless the move
+            // itself was triggered by a proc — then it stays on that chain at that depth, which
+            // is what keeps triggerMove's budget honest.
+            var riderContext = context ?? EffectSink.NewChain(Id(attacker));
+
+            EffectSink.Execute(new EffectInvocation(effect, effect.Magnitude(trigger), trigger, move.Id)
+            {
+                Target = move.Targeting == Targeting.Self ? EffectTarget.Self
+                    : move.Targeting == Targeting.AllEnemies ? EffectTarget.AllEnemies
+                    : EffectTarget.TriggerTarget,
+                Context = riderContext,
+            });
+        }
+    }
+
+    /// <summary>Applies any active `modifyMove` grants matching this move, at execution time.</summary>
+    private ResolvedMove WithTimedModifiers(Combatant actor, ResolvedMove move)
+    {
+        var matching = _timedMoveModifiers
+            .Where(m => m.Owner == actor && m.Definition.Match.Matches(move.Source))
+            .ToList();
+
+        if (matching.Count == 0)
+            return move;
+
+        var ops = matching.SelectMany(m => m.Definition.Ops).ToList();
+        var provenance = move.Provenance.Concat(matching.Select(m => $"{m.Source} ({m.Definition.Id}, timed)")).ToList();
+
+        return MovesetBuilder.Apply(move.Snapshot(), ops, provenance);
+    }
+
+    // --- The move-granting effects (docs/moves.md §3.4) ----------------------
+
+    /// <summary>
+    /// Executes a move immediately — no telegraph, no windup, no cost, no cooldown — at the
+    /// chain's next depth. What `triggerMove` and `recallMove` resolve through.
+    /// </summary>
+    public bool TriggerMove(Combatant caster, string moveId, EffectContext context)
+    {
+        ArgumentNullException.ThrowIfNull(caster);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (!IsActive)
+            return false;
+
+        // The caster's OWN resolved version first — a recalled Iron Slash is YOUR Iron Slash,
+        // stormbrand conversion and all, not the store's unmodified one. The raw definition is
+        // the fallback for moves the caster never had. (Found by reading a trace: the replayed
+        // slash had quietly lost its charge packet.)
+        var move = caster.Moveset
+            .Concat(_grantedMoves.Where(g => g.Owner == caster).Select(g => g.Move))
+            .FirstOrDefault(m => string.Equals(m.Id, moveId, StringComparison.Ordinal));
+
+        if (move is null)
+        {
+            if (!_moves.TryGetById(moveId, out var definition))
+                return false;
+            move = MovesetBuilder.Apply(definition, Array.Empty<MoveOpSpec>(), new[] { $"triggered ({context.ImmediateSource})" });
+        }
+
+        var target = move.Targeting == Targeting.Self
+            ? caster
+            : caster.Team == CombatTeam.Enemy ? _player : FirstAliveEnemy();
+
+        if (target is null || !target.IsAlive)
+            return false;
+
+        Log($"{caster.Name}'s {move.Name} triggers!");
+
+        // "…at depth+1" (docs/moves.md §3.4): the triggered move's events sit one generation
+        // deeper than the effect that triggered it, so its riders' procs hit the ceiling.
+        ResolveMove(caster, target, move, MoveEventTags(move), context.Next(Id(caster)));
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>Replays the caster's stored move (Mnemonic), consuming the recall status.</summary>
+    public bool RecallMove(Combatant caster, EffectContext context)
+    {
+        ArgumentNullException.ThrowIfNull(caster);
+
+        var stored = Statuses?.Find(caster, RecalledMoveStatusId);
+        if (stored?.StoredMoveId is not { } moveId || string.IsNullOrEmpty(moveId))
+            return false;
+
+        Statuses!.Remove(caster, RecalledMoveStatusId);
+        return TriggerMove(caster, moveId, context);
+    }
+
+    public const string RecalledMoveStatusId = "status.recalled_move";
+
+    /// <summary>Adds a move to a combatant's usable set for a duration (0 = the encounter).</summary>
+    public bool GrantMove(Combatant owner, string moveId, string source, int durationTicks, EffectContext? context = null)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+
+        if (!IsActive || !_moves.TryGetById(moveId, out var definition))
+            return false;
+
+        var move = MovesetBuilder.Apply(definition, Array.Empty<MoveOpSpec>(), new[] { $"{source} (granted)" });
+        var expires = durationTicks > 0 ? _tick.CurrentTick + durationTicks : long.MaxValue;
+        _grantedMoves.Add((owner, move, expires));
+
+        Log($"{owner.Name} gains {move.Name}.");
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>Attaches a move modifier to a combatant's future executions for a duration.</summary>
+    public bool AttachMoveModifier(Combatant owner, string modifierId, string source, int durationTicks)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+
+        if (!IsActive || _moveModifiers is null || !_moveModifiers.TryGetById(modifierId, out var definition))
+            return false;
+
+        var expires = durationTicks > 0 ? _tick.CurrentTick + durationTicks : long.MaxValue;
+        _timedMoveModifiers.Add((owner, definition, source, expires));
+        return true;
     }
 
     /// <summary>
@@ -601,6 +1010,16 @@ public sealed class CombatEncounter
         if (!IsActive || !_inFlight.TryGetValue(actor, out var action))
             return false;
 
+        // An interrupt-immune move shrugs it off (E4) — "the Juggernaut ignores interrupts" is a
+        // move property, not a global rule (docs/moves.md §2.3). The modifier flag reads the
+        // same answer, so `setFlag uninterruptible` and an authored `interruptible: false` agree.
+        if (!action.Move.Interruptible
+            || (Modifiers is not null && Modifiers.For(actor).IsSet(ModifierKeys.InterruptImmune, ModifierContext.None)))
+        {
+            Log($"{actor.Name}'s {action.Name} cannot be stopped!");
+            return false;
+        }
+
         _inFlight.Remove(actor);
         if (action.Scheduled is not null)
             _tick.Cancel(action.Scheduled.Id);
@@ -656,7 +1075,8 @@ public sealed class CombatEncounter
     }
 
     private void ApplyResult(
-        Combatant attacker, Combatant target, string attackName, HitResult result, HashSet<string> tags)
+        Combatant attacker, Combatant target, string attackName, HitResult result, HashSet<string> tags,
+        EffectContext? context = null)
     {
         // Copy before touching it. The caller hands in the ActionInFlight's own tag set, which
         // was already given to ActionQueued/ActionTelegraphed — and a GameEvent holds the
@@ -680,8 +1100,8 @@ public sealed class CombatEncounter
 
         // The attack happened regardless of how it landed — this is what MoveExecuted means, and
         // it is the single most-referenced event in shipped content (18 hooks).
-        Publish(GameEvents.MoveExecuted, source, victim, result.Amount, tags);
-        Publish(GameEvents.ActionResolved, source, victim, result.Amount, tags);
+        Publish(GameEvents.MoveExecuted, source, victim, result.Amount, tags, context);
+        Publish(GameEvents.ActionResolved, source, victim, result.Amount, tags, context);
 
         // `Blocked` is raised from the *defender's* perspective (source is who blocked) and for
         // BOTH block outcomes (D-06 §6.2). Hooking on-block affixes to a landed hit instead would
@@ -691,7 +1111,7 @@ public sealed class CombatEncounter
             tags.Add("blocked");
             if (result.PerfectBlock)
                 tags.Add("perfect");
-            Publish(GameEvents.Blocked, source: victim, target: source, amount: result.Amount, tags: tags);
+            Publish(GameEvents.Blocked, source: victim, target: source, amount: result.Amount, tags: tags, context: context);
         }
 
         if (result.Avoided)
@@ -702,7 +1122,7 @@ public sealed class CombatEncounter
             // Dodged is the only avoidance event in E0's vocabulary; E1 does not widen it.
             // HitAvoided arrives in E3 with the rest of §3.1.
             if (result.Dodged)
-                Publish(GameEvents.Dodged, source: victim, target: source, tags: tags);
+                Publish(GameEvents.Dodged, source: victim, target: source, tags: tags, context: context);
 
             StateChanged?.Invoke();
             return;
@@ -713,8 +1133,8 @@ public sealed class CombatEncounter
 
         target.Health.Reduce(result.Amount);
 
-        Publish(GameEvents.DamageDealt, source, victim, result.Amount, tags);
-        Publish(GameEvents.DamageTaken, source: victim, target: source, amount: result.Amount, tags: tags);
+        Publish(GameEvents.DamageDealt, source, victim, result.Amount, tags, context);
+        Publish(GameEvents.DamageTaken, source: victim, target: source, amount: result.Amount, tags: tags, context: context);
 
         var suffix = (result.Crit ? " (crit!)" : string.Empty) + (result.Blocked ? " (blocked)" : string.Empty);
         Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{suffix}. " +
@@ -779,6 +1199,8 @@ public sealed class CombatEncounter
             // deterministic clock beats every meter racing its own timer.
             Gauges?.Advance(_tick.CurrentTick);
             Modifiers?.Timed.Advance(_tick.CurrentTick);
+            _grantedMoves.RemoveAll(g => g.ExpiresTick <= _tick.CurrentTick);
+            _timedMoveModifiers.RemoveAll(m => m.ExpiresTick <= _tick.CurrentTick);
             ScheduleStatusTick();
         });
     }
@@ -836,14 +1258,39 @@ public sealed class CombatEncounter
     /// <para><b>Known simplification:</b> everything is `melee` because everything currently is.
     /// Real delivery tags arrive with moves in E4.</para>
     /// </summary>
-    private static HashSet<string> AttackTags(DamageType type, AbilityTiming timing) =>
-        new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>
+    /// The tags a move's events carry: the move's own namespaced tags, its id, and the <b>bare
+    /// legacy aliases</b>.
+    ///
+    /// <para>The aliases are load-bearing: 23 shipped `hasTag` conditions match bare tags —
+    /// `heavy`, `melee`, `defensive`, damage-type names — authored before the namespaced
+    /// vocabulary existed. Dropping them would kill every one of those hooks silently, which is
+    /// the exact failure mode this project keeps refusing to accept. `heavy` stays derived from
+    /// time-to-impact (never authored), and `move:&lt;id&gt;` lets a condition target one
+    /// specific move.</para>
+    /// </summary>
+    private static HashSet<string> MoveEventTags(ResolvedMove move)
+    {
+        var tags = new HashSet<string>(move.Tags, StringComparer.OrdinalIgnoreCase)
         {
-            "attack",
-            "melee",
-            type.ToString().ToLowerInvariant(),
-            timing.TimeToImpactTicks >= CombatTuning.HeavyTimeToImpactTicks ? "heavy" : "light",
+            "move:" + move.Id,
+            move.Timing.TimeToImpactTicks >= CombatTuning.HeavyTimeToImpactTicks ? "heavy" : "light",
         };
+
+        // Bare aliases for every namespaced value: `action:attack` also reads as `attack`.
+        foreach (var tag in move.Tags)
+        {
+            var colon = tag.IndexOf(':');
+            if (colon > 0 && colon < tag.Length - 1)
+                tags.Add(tag[(colon + 1)..]);
+        }
+
+        // Damage-type names, lowercased — `slashing`, `crushing` — from the packets.
+        foreach (var packet in move.Packets)
+            tags.Add(packet.Type.ToString().ToLowerInvariant());
+
+        return tags;
+    }
 
     // --- Statuses -----------------------------------------------------------
 
@@ -927,12 +1374,12 @@ public sealed class CombatEncounter
     /// </summary>
     public ControlOutcome ApplyStatus(
         Combatant target, string statusId, string sourceId, double magnitude = 0,
-        int durationOverride = 0, EffectContext? context = null)
+        int durationOverride = 0, EffectContext? context = null, string? storedMoveId = null)
     {
         if (Statuses is null)
             return ControlOutcome.Ungated;
 
-        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude, durationOverride, context);
+        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude, durationOverride, context, storedMoveId);
 
         if (outcome == ControlOutcome.Applied)
             Log($"{target.Name} is affected by {Statuses.Find(target, statusId)?.Definition.Name ?? statusId}.");

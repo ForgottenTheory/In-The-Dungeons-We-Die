@@ -24,9 +24,9 @@ namespace Dungeons.Tests.Combat;
 /// </summary>
 public class CombatEventTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
-    private static readonly AbilityDefinition Smash = Ability("ability.goblin_smash", DamageType.Crushing, 18, 20, 20, 35);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Smash = Move("move.goblin_smash", DamageType.Crushing, 18, 20, 20, 35);
 
     private sealed record Recorder(List<GameEvent> Events)
     {
@@ -44,8 +44,8 @@ public class CombatEventTests
         bus.Subscribe(recorded.Add);
 
         var enc = new CombatEncounter(
-            tick, new CombatCalculator(new FakeRandom(roll)), Abilities(Strike, Slash, Smash),
-            new FakeRandom(roll), bus, "ability.strike");
+            tick, new HitPipeline(new FakeRandom(roll)), Moves(Strike, Slash, Smash),
+            new FakeRandom(roll), bus);
 
         return (enc, tick, bus, new Recorder(recorded));
     }
@@ -56,7 +56,7 @@ public class CombatEventTests
     public void StartingAnEncounter_RaisesEncounterStarted()
     {
         var (enc, _, _, log) = Build();
-        enc.Start(Player(hp: 100, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(Player(hp: 100, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         var started = log.First(GameEvents.EncounterStarted);
         Assert.Equal(CombatEncounter.SelfId, started.Source);
@@ -68,7 +68,7 @@ public class CombatEventTests
     {
         var (enc, tick, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(16); // telegraph 8 + windup 8
 
@@ -95,7 +95,7 @@ public class CombatEventTests
     {
         var (enc, tick, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
         tick.Advance(16);
 
         // `selfHealthBelow` / `selfHealthAbove` and `firstInEncounter` are shipped condition
@@ -113,7 +113,7 @@ public class CombatEventTests
     public void EncounterIndex_CountsPerKind_SoFirstInEncounterWorks()
     {
         var (enc, tick, _, log) = Build();
-        enc.Start(Player(hp: 500, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(Player(hp: 500, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(16);      // first hit
         tick.Advance(36);      // recovery 20 + telegraph/windup 16 → second hit
@@ -130,7 +130,7 @@ public class CombatEventTests
     public void OverheadSmash_IsTaggedHeavy_AndASlashIsNot()
     {
         var (enc, tick, _, log) = Build();
-        enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Brute", 60, Attrs(str: 12), "ability.goblin_smash") });
+        enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Brute", 60, Attrs(str: 12), Smash) });
         tick.Advance(40); // telegraph 20 + windup 20
 
         var smash = log.First(GameEvents.DamageDealt);
@@ -139,7 +139,7 @@ public class CombatEventTests
         Assert.True(smash.HasTag("attack"));
 
         var (enc2, tick2, _, log2) = Build();
-        enc2.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc2.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
         tick2.Advance(16);
 
         var slash = log2.First(GameEvents.DamageDealt);
@@ -152,7 +152,7 @@ public class CombatEventTests
     public void ACriticalHit_IsTaggedCritical()
     {
         var (enc, tick, _, log) = Build(roll: 0.0); // FakeRandom(0) → always crit
-        enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6, luck: 40), "ability.goblin_slash") });
+        enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { Enemy("Raider", 50, Attrs(str: 6, luck: 40), Slash) });
         tick.Advance(16);
 
         Assert.True(log.First(GameEvents.DamageDealt).HasTag("critical"));
@@ -165,7 +165,7 @@ public class CombatEventTests
     {
         var (enc, tick, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(8);
         enc.Block();       // 16-tick stance covers the impact at 16
@@ -188,7 +188,7 @@ public class CombatEventTests
     {
         var (enc, tick, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(10);
         enc.Dodge();       // 10-tick stance covers the impact at 16
@@ -204,7 +204,7 @@ public class CombatEventTests
     {
         var (enc, _, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         enc.Attack();
         var attackSpend = log.OfKind(GameEvents.ResourceSpent).First();
@@ -222,7 +222,7 @@ public class CombatEventTests
     {
         var (enc, tick, _, log) = Build();
         var player = Player(hp: 100, attrs: Attrs(str: 40, con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 1, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 1, Attrs(str: 6), Slash) });
 
         enc.Attack();
         tick.Advance(10);
@@ -258,7 +258,7 @@ public class CombatEventTests
             engine.Attach(rule, galvanic.Id);
 
         var player = Player(hp: 100, attrs: Attrs(con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
         enc.Attack();
 
         var charged = engine.Fired.Where(f => f.Trigger.Kind == GameEvents.ResourceSpent).ToList();
@@ -286,7 +286,7 @@ public class CombatEventTests
         engine.Attach(guard.Rule, kneecaps.Id);
 
         var player = Player(hp: 100, attrs: Attrs(con: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(8);
         enc.Block();

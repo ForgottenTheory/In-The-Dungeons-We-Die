@@ -55,7 +55,8 @@ public partial class GameRoot : Node
     private DataStore<ProfessionActionDefinition> _actionDefs = new();
 
     private DataStore<CraftingInteractionDefinition> _interactions = new();
-    private DataStore<AbilityDefinition> _abilities = new();
+    private DataStore<MoveDefinition> _moves = new();
+    private DataStore<MoveModifierDefinition> _moveModifierStore = new();
     private DataStore<ActorDefinition> _actors = new();
     private DataStore<RealmDefinition> _realms = new();
     private DataStore<ConsumableDefinition> _consumables = new();
@@ -132,7 +133,8 @@ public partial class GameRoot : Node
         _professionDefs = content.Professions;
         _actionDefs = content.Actions;
         _interactions = content.Interactions;
-        _abilities = content.Abilities;
+        _moves = content.Moves;
+        _moveModifierStore = content.MoveModifiers;
         _actors = content.Actors;
         _realms = content.Realms;
         _consumables = content.Consumables;
@@ -205,16 +207,18 @@ public partial class GameRoot : Node
             _statuses, _gauges);
 
         _encounter = new CombatEncounter(
-            _tick, new CombatCalculator(combatRng, _modifiers), _abilities, combatRng, _events, "ability.strike",
-            _statuses, _gauges, _modifiers);
+            _tick, new HitPipeline(combatRng, _modifiers), _moves, combatRng, _events,
+            _statuses, _gauges, _modifiers, _moveModifierStore);
 
-        // E3c: effects stop landing in `Unhandled`. Seven kinds are combat's; the rest belong to
-        // systems that do not exist yet and stay visibly inert.
+        // E3c: effects stop landing in `Unhandled`. Eleven kinds are combat's (E4 added the
+        // move-granting four); the rest belong to systems that do not exist yet and stay
+        // visibly inert. This also hands the encounter its effect sink for move riders.
         _ruleEngine.RegisterCombatHandlers(_encounter, combatRng);
 
         // E3c-3: the stateful conditions get something to ask. Equipped tags come from the worn
         // items' definitions, so `equippedTag` reads what the player is actually wearing.
         _conditionWorld = new CombatConditionWorld(_encounter, EquippedTags);
+        _encounter.ConditionWorld = _conditionWorld;
         _encounter.Logged += Emit;
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
@@ -660,13 +664,27 @@ public partial class GameRoot : Node
         _passiveRunner.Stop(); // one activity at a time
         _everFought = true;
         var actor = _actors.GetById(actorId);
-        var player = Combatant.FromCharacter(Character, ResolvePlayerWeapon(), ResolvePlayerArmor());
-        _encounter.Start(player, new[] { Combatant.FromActor(actor) });
+        var player = Combatant.FromCharacter(Character, ResolvePlayerMoveset(), ResolvePlayerArmor());
+        _encounter.Start(player, new[] { Combatant.FromActor(actor, ResolveActorMoveset(actor)) });
         SetRunning(true); // telegraphs advance in real time
         CombatChanged?.Invoke();
     }
 
     public void CombatAttack() => _encounter.Attack();
+
+    /// <summary>Uses a specific move from the player's moveset (E4).</summary>
+    public void CombatUseMove(string moveId) => _encounter.UseMove(moveId);
+
+    /// <summary>The player's current moveset, for the Combat tab and the Character Lab —
+    /// name, id, costs, and where each move came from.</summary>
+    public IReadOnlyList<string> MovesetReadout =>
+        (_encounter.IsActive ? _encounter.PlayerMoves : ResolvePlayerMoveset())
+        .Select(m =>
+        {
+            var costs = m.Costs.Count == 0 ? "free" : string.Join(", ", m.Costs);
+            return $"{m.Name} [{m.Id}] — {costs} — from {m.Provenance[0]}";
+        })
+        .ToList();
     public void CombatBlock() => _encounter.Block();
     public void CombatDodge() => _encounter.Dodge();
     public void CombatWait() => _encounter.Wait();
@@ -711,7 +729,8 @@ public partial class GameRoot : Node
             foreach (var intent in _encounter.Intents)
             {
                 var seconds = Math.Max(0, intent.ExecuteTick - now) / (double)TicksPerSecond;
-                sb.AppendLine($"⚠ {intent.Attacker.Name}: {intent.Ability.Name} — impact in {seconds:0.0}s ({intent.Ability.DamageType})");
+                var type = intent.Move.Packets.Count > 0 ? intent.Move.Packets[0].Type.ToString() : intent.Move.Kind.ToString();
+                sb.AppendLine($"⚠ {intent.Attacker.Name}: {intent.Move.Name} — impact in {seconds:0.0}s ({type})");
             }
         }
         else
@@ -812,8 +831,15 @@ public partial class GameRoot : Node
 
     public string EquippedWeaponSummary()
     {
-        var attack = ResolvePlayerWeapon();
-        return $"{attack.BaseDamage:0.#} {attack.DamageType}, impact {attack.Timing.TimeToImpactTicks}t";
+        // The weapon IS its moves now (E4). Summarise the default attack — the first one.
+        var moveset = ResolvePlayerMoveset();
+        var attack = moveset.FirstOrDefault(m => string.Equals(m.ActionKind, "attack", StringComparison.OrdinalIgnoreCase));
+        if (attack is null)
+            return "no attack";
+
+        var damage = attack.Packets.Sum(p => p.Amount);
+        var type = attack.Packets.Count > 0 ? attack.Packets[0].Type.ToString() : "—";
+        return $"{attack.Name}: {damage:0.#} {type}, impact {attack.Timing.TimeToImpactTicks}t";
     }
 
     public string EquippedArmorSummary()
@@ -854,12 +880,74 @@ public partial class GameRoot : Node
         Provenance = new[] { def.Id },
     };
 
-    private AttackProfile ResolvePlayerWeapon()
+    /// <summary>
+    /// The player's moveset, composed fresh from every source (E4, docs/moves.md §5.1):
+    /// <b>weapon first</b> — so the default attack is the weapon's, which is the Fighter's whole
+    /// identity — then the build's components (species' bare fists included). Modifiers from
+    /// components and worn equipment apply across the lot.
+    /// </summary>
+    private IReadOnlyList<ResolvedMove> ResolvePlayerMoveset()
     {
-        var instance = _playerEquipment.InSlot(EquipmentSlot.Weapon);
-        if (instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var def))
-            return EquipmentResolver.ResolveWeapon(def, instance, AttackProfile.Unarmed);
-        return AttackProfile.Unarmed;
+        if (Character is null)
+            return Array.Empty<ResolvedMove>();
+
+        var grants = new List<MoveGrant>();
+        var modifierGrants = new List<MoveModifierGrant>();
+
+        var weapon = _playerEquipment.InSlot(EquipmentSlot.Weapon);
+        if (weapon is not null && _equipment.TryGetById(weapon.BaseDefinitionId, out var weaponDef))
+        {
+            // The resolver hands back per-instance definitions (mass applied), so the builder
+            // must not re-resolve the ids from the shared store.
+            foreach (var move in EquipmentResolver.ResolveWeaponMoves(weaponDef, weapon, _moves))
+                grants.Add(new MoveGrant(new MoveGrantSpec { Id = move.Id }, weapon.DisplayName));
+        }
+
+        grants.AddRange(Character.Blueprint.MoveGrants);
+
+        foreach (var (modifierId, source) in Character.Blueprint.MoveModifierGrants)
+            if (_moveModifierStore.TryGetById(modifierId, out var definition))
+                modifierGrants.Add(new MoveModifierGrant(definition, source));
+
+        foreach (var item in _playerEquipment.Slots.Values)
+            if (_equipment.TryGetById(item.BaseDefinitionId, out var def))
+                foreach (var modifierId in def.MoveModifierIds)
+                    if (_moveModifierStore.TryGetById(modifierId, out var definition))
+                        modifierGrants.Add(new MoveModifierGrant(definition, item.DisplayName));
+
+        // Weapon-adjusted definitions override the store's for the weapon's own ids.
+        var weaponAdjusted = new DataStore<MoveDefinition>();
+        var adjustedIds = new HashSet<string>(StringComparer.Ordinal);
+        if (weapon is not null && _equipment.TryGetById(weapon.BaseDefinitionId, out var wd))
+        {
+            foreach (var move in EquipmentResolver.ResolveWeaponMoves(wd, weapon, _moves))
+            {
+                weaponAdjusted.Add(move);
+                adjustedIds.Add(move.Id);
+            }
+        }
+        foreach (var move in _moves.GetAll().Where(m => !adjustedIds.Contains(m.Id)))
+            weaponAdjusted.Add(move);
+
+        var conflicts = new MovesetBuilder(weaponAdjusted).Build(grants, modifierGrants, out var moveset);
+        foreach (var conflict in conflicts)
+            Emit($"[Moveset] {conflict}");
+
+        return moveset;
+    }
+
+    /// <summary>An enemy's moveset — the same builder players use, no modifiers yet.</summary>
+    private IReadOnlyList<ResolvedMove> ResolveActorMoveset(ActorDefinition actor)
+    {
+        var conflicts = new MovesetBuilder(_moves).Build(
+            actor.Moves.Select(m => new MoveGrant(m, actor.Name)),
+            Array.Empty<MoveModifierGrant>(),
+            out var moveset);
+
+        foreach (var conflict in conflicts)
+            Emit($"[Moveset] {actor.Id}: {conflict}");
+
+        return moveset;
     }
 
     private ArmorProfile ResolvePlayerArmor()

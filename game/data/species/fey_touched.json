@@ -1,5 +1,6 @@
 {
   "id": "species.fey_touched",
+  "moves": ["move.unarmed"],
   "name": "Fey-Touched",
   "tags": ["fey", "magical"],
   "modifiers": [

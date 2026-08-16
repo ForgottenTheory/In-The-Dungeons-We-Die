@@ -58,7 +58,7 @@ public class HitPipelineTests
     [Fact]
     public void TheStageOrderIsFixed()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 10, luck: 100), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 10, luck: 100), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 10), armor: new ArmorProfile
         {
             Armor = 5,
@@ -86,7 +86,7 @@ public class HitPipelineTests
     [Fact]
     public void CritMultipliesBaseAndFlat_ButNotMitigation()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 10, luck: 100), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 10, luck: 100), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0));
 
         var normal = Pipeline(roll: 0.99).Resolve(Attack(attacker, target, new Packet(DamageType.Slashing, 10)), 0);
@@ -104,7 +104,7 @@ public class HitPipelineTests
     public void EachPacketIsReducedByExactlyOneResistanceLane()
     {
         // The D-01 rule: hybrid damage is never taxed twice.
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
         {
             Armor = 0,
@@ -131,7 +131,7 @@ public class HitPipelineTests
         // Found by rendering a worked example: applying the STR bonus per packet meant adding a
         // 1-damage heat rider handed you a whole second bonus, and splitting a hit was free
         // damage. The bonus is split by share instead.
-        var attacker = Enemy("A", 50, Attrs(str: 10), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 10), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0));
 
         var single = Pipeline().Resolve(Attack(attacker, target, new Packet(DamageType.Slashing, 100)), 0);
@@ -148,7 +148,7 @@ public class HitPipelineTests
     public void FlatAddedAspectDamageIncreasesTheTotal_RatherThanRelabellingIt()
     {
         // The clarification behind D-01: "Adds 20 Heat damage" takes an 80-damage sword to 100.
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0));
 
         var plain = Pipeline().Resolve(Attack(attacker, target, new Packet(DamageType.Slashing, 80)), 0);
@@ -164,7 +164,7 @@ public class HitPipelineTests
     [Fact]
     public void ArcaneDamageIgnoresEvenAMaximalResistance()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 0, intel: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0, intel: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
         {
             Armor = 0,
@@ -183,7 +183,7 @@ public class HitPipelineTests
     [Fact]
     public void ResistanceIsCappedAndFloored()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
 
         var overcapped = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
         {
@@ -206,7 +206,7 @@ public class HitPipelineTests
     [Fact]
     public void ADodgeEndsResolutionBeforeAnyPacketIsComputed()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 10), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 10), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 10));
         target.DodgeUntilTick = 100;
 
@@ -224,7 +224,7 @@ public class HitPipelineTests
     [Fact]
     public void PerfectBlockAvoids_WhileAnOrdinaryBlockMitigates()
     {
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
 
         var precise = Player(attrs: Attrs(con: 0));
         precise.BlockStartTick = 10;
@@ -253,7 +253,7 @@ public class HitPipelineTests
     public void MitigatedTracksWhatWasPrevented()
     {
         // The basis for "return X% of damage mitigated" in the retaliation family.
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
         {
             Armor = 0,
@@ -271,7 +271,7 @@ public class HitPipelineTests
     {
         // Otherwise a three-packet hit would floor three times and out-damage a one-packet hit
         // of the same size against a heavily armoured target.
-        var attacker = Enemy("A", 50, Attrs(str: 0), "ability.strike");
+        var attacker = Enemy("A", 50, Attrs(str: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
         {
             Armor = 0,
@@ -292,7 +292,7 @@ public class HitPipelineTests
     [Fact]
     public void TheHitLogExplainsEveryNumberItChanged()
     {
-        var attacker = Enemy("Goblin Brute", 60, Attrs(str: 12), "ability.goblin_smash");
+        var attacker = Enemy("Goblin Brute", 60, Attrs(str: 12), Move("move.goblin_smash", DamageType.Crushing, 18, 20, 20, 35));
         var target = Player(attrs: Attrs(con: 10), armor: new ArmorProfile
         {
             Armor = 5,

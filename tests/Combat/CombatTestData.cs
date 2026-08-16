@@ -1,3 +1,4 @@
+using Dungeons.Actions;
 using Dungeons.Characters;
 using Dungeons.Combat;
 using Dungeons.Content;
@@ -17,48 +18,65 @@ internal static class CombatTestData
         Luck = luck,
     };
 
-    public static Combatant Player(int hp = 100, AttributeSet? attrs = null, int stamina = 100, AttackProfile? attack = null, ArmorProfile? armor = null) => new(
+    /// <summary>A single-packet attack move — the E4 shape of what tests used to author as an
+    /// ability. Same numbers in, same numbers out.</summary>
+    public static MoveDefinition Move(
+        string id, DamageType type, double baseValue, int telegraph, int windup, int recovery,
+        int stamina = 0, double stagger = 0) => new()
+        {
+            Id = id,
+            Name = id,
+            Kind = MoveKind.Attack,
+            Tags = new[] { "action:attack", "delivery:melee" },
+            Timing = new ActionTiming { TelegraphTicks = telegraph, WindupTicks = windup, RecoveryTicks = recovery },
+            Costs = stamina > 0
+                ? new[] { new ActionCost { Resource = "stamina", Amount = stamina } }
+                : Array.Empty<ActionCost>(),
+            Packets = new[] { new Packet(type, baseValue) },
+            StaggerPower = stagger,
+        };
+
+    /// <summary>Resolves a definition with no modifiers — what most tests want in a moveset.</summary>
+    public static ResolvedMove Resolved(MoveDefinition move) =>
+        MovesetBuilder.Apply(move, Array.Empty<MoveOpSpec>(), new[] { "test" });
+
+    public static IReadOnlyList<ResolvedMove> Set(params MoveDefinition[] moves) =>
+        moves.Select(Resolved).ToList();
+
+    public static Combatant Player(
+        int hp = 100, AttributeSet? attrs = null, int stamina = 100,
+        IReadOnlyList<ResolvedMove>? moveset = null, ArmorProfile? armor = null) => new(
         "Hero", CombatTeam.Player,
         new ResourcePool(ResourceType.Health, hp),
         new ResourcePool(ResourceType.Stamina, stamina),
         new ResourcePool(ResourceType.Mana, 0),
-        new[] { "ability.strike" },
+        moveset ?? Set(Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5)),
         () => attrs ?? Attrs(),
         lootItemId: null,
-        attack: attack,
         armorProfile: armor);
 
     public static Combatant Enemy(
-        string name, int hp, AttributeSet attrs, string abilityId,
+        string name, int hp, AttributeSet attrs, MoveDefinition move,
         string? loot = "material.goblin_scrap",
         ArmorProfile? armor = null,
-        IReadOnlyDictionary<string, double>? vulnerable = null) => new(
+        IReadOnlyDictionary<string, double>? vulnerable = null,
+        IReadOnlyList<AiRuleSpec>? ai = null) => new(
         name, CombatTeam.Enemy,
         new ResourcePool(ResourceType.Health, hp),
         new ResourcePool(ResourceType.Stamina, 100),
         new ResourcePool(ResourceType.Mana, 0),
-        new[] { abilityId },
+        Set(move),
         () => attrs,
         loot,
-        attack: null,
         armorProfile: armor,
-        vulnerability: vulnerable);
+        vulnerability: vulnerable,
+        ai: ai);
 
-    public static AbilityDefinition Ability(string id, DamageType type, double baseValue, int telegraph, int windup, int recovery, int stamina = 0) => new()
+    public static DataStore<MoveDefinition> Moves(params MoveDefinition[] moves)
     {
-        Id = id,
-        Name = id,
-        DamageType = type,
-        BaseValue = baseValue,
-        StaminaCost = stamina,
-        Timing = new AbilityTiming { TelegraphTicks = telegraph, WindupTicks = windup, RecoveryTicks = recovery },
-    };
-
-    public static DataStore<AbilityDefinition> Abilities(params AbilityDefinition[] abilities)
-    {
-        var store = new DataStore<AbilityDefinition>();
-        foreach (var ability in abilities)
-            store.Add(ability);
+        var store = new DataStore<MoveDefinition>();
+        foreach (var move in moves)
+            store.Add(move);
         return store;
     }
 }

@@ -24,24 +24,24 @@ public sealed class Combatant
         ResourcePool health,
         ResourcePool stamina,
         ResourcePool mana,
-        IReadOnlyList<string> abilityIds,
+        IReadOnlyList<ResolvedMove> moveset,
         Func<AttributeSet> attributes,
         string? lootItemId = null,
-        AttackProfile? attack = null,
         ArmorProfile? armorProfile = null,
-        IReadOnlyDictionary<string, double>? vulnerability = null)
+        IReadOnlyDictionary<string, double>? vulnerability = null,
+        IReadOnlyList<AiRuleSpec>? ai = null)
     {
         Name = name;
         Team = team;
         Health = health;
         Stamina = stamina;
         Mana = mana;
-        AbilityIds = abilityIds;
+        Moveset = moveset;
         _attributes = attributes;
         LootItemId = lootItemId;
-        Attack = attack;
         ArmorProfile = armorProfile ?? ArmorProfile.None;
         Vulnerability = vulnerability ?? EmptyVulnerability;
+        Ai = ai ?? Array.Empty<AiRuleSpec>();
     }
 
     private static readonly IReadOnlyDictionary<string, double> EmptyVulnerability =
@@ -52,11 +52,18 @@ public sealed class Combatant
     public ResourcePool Health { get; }
     public ResourcePool Stamina { get; }
     public ResourcePool Mana { get; }
-    public IReadOnlyList<string> AbilityIds { get; }
-    public string? LootItemId { get; }
 
-    /// <summary>The equipped-weapon attack this combatant uses for its basic strike (player). Null falls back to the encounter default.</summary>
-    public AttackProfile? Attack { get; }
+    /// <summary>
+    /// Everything this combatant can do, fully resolved (E4). Settable because the moveset is a
+    /// function of things that change mid-session — equipment, build, granted moves — and the
+    /// encounter holds one combatant reference across those changes.
+    /// </summary>
+    public IReadOnlyList<ResolvedMove> Moveset { get; set; }
+
+    /// <summary>Weighted move selection for enemies and (later) auto-combat. Empty = uniform.</summary>
+    public IReadOnlyList<AiRuleSpec> Ai { get; }
+
+    public string? LootItemId { get; }
 
     /// <summary>Equipped-armor mitigation applied when this combatant is hit.</summary>
     public ArmorProfile ArmorProfile { get; }
@@ -131,19 +138,19 @@ public sealed class Combatant
             ? Math.Clamp(v, CombatTuning.MinVulnerability, CombatTuning.MaxVulnerability)
             : 1.0;
 
-    public static Combatant FromCharacter(Character character, AttackProfile? attack = null, ArmorProfile? armorProfile = null) => new(
+    public static Combatant FromCharacter(
+        Character character, IReadOnlyList<ResolvedMove> moveset, ArmorProfile? armorProfile = null) => new(
         character.DisplayName,
         CombatTeam.Player,
         character.Health,
         character.Stamina,
         character.Mana,
-        character.Blueprint.AbilityIds,
+        moveset,
         () => character.EffectiveAttributes,
         lootItemId: null,
-        attack: attack,
         armorProfile: armorProfile);
 
-    public static Combatant FromActor(ActorDefinition actor)
+    public static Combatant FromActor(ActorDefinition actor, IReadOnlyList<ResolvedMove> moveset)
     {
         var attributes = actor.Attributes;
         return new Combatant(
@@ -152,14 +159,14 @@ public sealed class Combatant
             new ResourcePool(ResourceType.Health, actor.Resources.Health),
             new ResourcePool(ResourceType.Stamina, actor.Resources.Stamina),
             new ResourcePool(ResourceType.Mana, actor.Resources.Mana),
-            actor.AbilityIds,
+            moveset,
             () => attributes,
             actor.LootItemId,
-            attack: null,
             armorProfile: actor.Resistances.Count == 0
                 ? null
                 : new ArmorProfile { Armor = 0, Resistances = actor.Resistances },
-            vulnerability: actor.Vulnerable)
+            vulnerability: actor.Vulnerable,
+            ai: actor.Ai)
         {
             Resolve = actor.Resolve,
         };

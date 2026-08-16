@@ -10,16 +10,16 @@ namespace Dungeons.Tests.Combat;
 
 public class CombatEncounterTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
-    private static readonly AbilityDefinition Smash = Ability("ability.goblin_smash", DamageType.Crushing, 18, 20, 20, 35);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Smash = Move("move.goblin_smash", DamageType.Crushing, 18, 20, 20, 35);
 
     private static (CombatEncounter enc, TickEngine tick) Build()
     {
         var tick = new TickEngine();
-        var calc = new CombatCalculator(new FakeRandom(0.99)); // never crit
-        var abilities = Abilities(Strike, Slash, Smash);
-        var enc = new CombatEncounter(tick, calc, abilities, new FakeRandom(0.99), new GameEventBus(), "ability.strike");
+        var calc = new HitPipeline(new FakeRandom(0.99)); // never crit
+        var abilities = Moves(Strike, Slash, Smash);
+        var enc = new CombatEncounter(tick, calc, abilities, new FakeRandom(0.99), new GameEventBus());
         return (enc, tick);
     }
 
@@ -28,7 +28,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        var enemy = Enemy("Goblin Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Goblin Raider", 50, Attrs(str: 6), Slash);
         enc.Start(player, new[] { enemy });
 
         Assert.Single(enc.Intents);
@@ -46,7 +46,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         tick.Advance(15);
         enc.Dodge();     // dodge window covers the tick-16 impact
@@ -60,7 +60,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         // Guard raised at tick 5, impact at 16 — outside the 4-tick Perfect Block window, so
         // this is ordinary mitigation.
@@ -77,7 +77,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         // Guard raised at tick 15, impact at 16 — one tick, well inside the window. Blocking at
         // the last possible moment is precise blocking, and D-06 makes that avoidance rather
@@ -97,7 +97,7 @@ public class CombatEncounterTests
         enc.Ended += o => outcome = o;
 
         var player = Player(attrs: Attrs(str: 20));
-        var enemy = Enemy("Weakling", 5, Attrs(con: 4), "ability.goblin_slash");
+        var enemy = Enemy("Weakling", 5, Attrs(con: 4), Slash);
         enc.Start(player, new[] { enemy });
 
         Assert.True(enc.Attack());
@@ -118,7 +118,7 @@ public class CombatEncounterTests
         enc.Ended += o => outcome = o;
 
         var player = Player(hp: 5, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Brute", 200, Attrs(str: 10), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Brute", 200, Attrs(str: 10), Slash) });
 
         tick.Advance(16); // enemy hits for ~10 > 5 hp
 
@@ -132,7 +132,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, stamina: 100, attrs: Attrs(str: 5));
-        enc.Start(player, new[] { Enemy("Brute", 200, Attrs(str: 5), "ability.goblin_smash") });
+        enc.Start(player, new[] { Enemy("Brute", 200, Attrs(str: 5), Smash) });
 
         Assert.True(enc.PlayerReady);
         Assert.True(enc.Attack());
@@ -147,19 +147,14 @@ public class CombatEncounterTests
     }
 
     [Fact]
-    public void PlayerAttack_UsesEquippedWeaponProfile_NotFallbackAbility()
+    public void PlayerAttack_UsesTheFirstAttackMoveInTheMoveset()
     {
+        // The weapon's move comes first in the moveset, so Attack() is the weapon's swing —
+        // the E4 shape of "uses the equipped weapon, not the fallback".
         var (enc, tick) = Build();
-        var ironSword = new AttackProfile
-        {
-            Name = "Iron Sword",
-            DamageType = DamageType.Slashing,
-            BaseDamage = 20, // far above the fallback strike's 8
-            StaminaCost = 5,
-            Timing = new AbilityTiming { TelegraphTicks = 1, WindupTicks = 4, RecoveryTicks = 10 },
-        };
-        var player = Player(hp: 100, attrs: Attrs(str: 5), attack: ironSword);
-        var enemy = Enemy("Dummy", 100, Attrs(con: 2), "ability.goblin_slash");
+        var ironSlash = Move("move.iron_slash", DamageType.Slashing, 20, 1, 4, 10, stamina: 5);
+        var player = Player(hp: 100, attrs: Attrs(str: 5), moveset: Set(ironSlash));
+        var enemy = Enemy("Dummy", 100, Attrs(con: 2), Slash);
         enc.Start(player, new[] { enemy });
 
         Assert.True(enc.Attack());
@@ -174,7 +169,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs());
-        enc.Start(player, new[] { Enemy("Brute", 500, Attrs(str: 1), "ability.goblin_smash") }); // slow, won't interfere
+        enc.Start(player, new[] { Enemy("Brute", 500, Attrs(str: 1), Smash) }); // slow, won't interfere
 
         player.Health.Reduce(60); // 40/100
         Assert.True(enc.PlayerReady);
@@ -195,7 +190,7 @@ public class CombatEncounterTests
     {
         var (enc, tick) = Build();
         var player = Player(hp: 100, attrs: Attrs(con: 5));
-        enc.Start(player, new[] { Enemy("Raider", 500, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 500, Attrs(str: 6), Slash) });
 
         tick.Advance(60); // hits at tick 16 and tick 52 (recovery 20 → decide at 36 → impact 52)
 

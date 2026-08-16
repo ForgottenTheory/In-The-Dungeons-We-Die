@@ -64,10 +64,9 @@ public class FullLoopTests
 
         // 2) Travel to the camp and fight.
         Assert.True(run.TravelTo("camp"));
-        var abilities = Abilities(
-            Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5),
-            Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20));
-        var encounter = new CombatEncounter(tick, new CombatCalculator(new FakeRandom(0.99)), abilities, new FakeRandom(0.99), new GameEventBus(), "ability.strike");
+        var slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+        var encounter = new CombatEncounter(
+            tick, new HitPipeline(new FakeRandom(0.99)), Moves(slash), new FakeRandom(0.99), new GameEventBus());
         encounter.Ended += outcome =>
         {
             if (outcome.Result != CombatResult.Victory)
@@ -77,7 +76,7 @@ public class FullLoopTests
         };
 
         var player = Player(hp: 60, attrs: Attrs(str: 20));
-        var goblin = Enemy("Goblin", 12, Attrs(con: 2), "ability.goblin_slash", loot: "material.goblin_scrap");
+        var goblin = Enemy("Goblin", 12, Attrs(con: 2), slash, loot: "material.goblin_scrap");
         encounter.Start(player, new[] { goblin });
 
         // Take a hit's worth of damage, then heal with a crafted salve from the run bag.

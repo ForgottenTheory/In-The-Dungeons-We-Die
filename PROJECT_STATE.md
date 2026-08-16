@@ -3,7 +3,7 @@
 Snapshot of what actually exists in code. Verify against the repo. (`docs/current-state.md` was deleted — it predated the equipment system; this file supersedes it.)
 
 - **Solution**: `InTheDungeonsWeDie.slnx` → `core/` (Core, net8.0), `game/` (Godot 4.7.1 .NET), `tests/` (xUnit, Core only).
-- **Tests**: 592 passing cases. Core-only; no Godot/UI tests.
+- **Tests**: 602 passing cases. Core-only; no Godot/UI tests.
 - **`docs/GDD.md` is the best single overview** of the whole game and supersedes scattered design notes.
 - **Cleanup/audit pass done** (pre-expansion): `ContentBundle` + `ContentLoader.LoadAll` centralize loading; `ContentValidator.Validate(bundle)` (property names sourced from the JSON registry, not a code list; validates character-component abilities, equipment property keys, realm consumable rewards); id convention fixed (`consumable.*`); weapon timing unified onto the nested `AbilityTiming`; leaked gameplay moved to Core (`AttackProfile.Unarmed`, `RealmTuning`, `ProfessionTuning.TimingPerformance`); `ItemFormat` extracted; `CharacterBuild` uses typed ids. See DECISIONS D16–D19. (Application-layer extraction from `GameRoot` deferred.)
 - **Milestones 1–9 (MVP vertical slice): COMPLETE.** Equipment/item-instance system: phases 1–3 + save persistence complete; UI + content-validation remain.
@@ -26,7 +26,7 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
   - **9 name formats** (`name_formats.json`) — dynamic grammar (`standard`/`citation`/`investigation`/`warning`/`medical`/`liability`/`bureaucratic`/`consequence`/`notice`). **Presentation only**, verified never to affect mechanics.
 - ✅ **`BuildResolver`** — resolves a build into growth, gauges (max 2), attached hooks with provenance, modifiers, and the generated name. `BuildResolver.Diff` powers the Character Lab.
 - ✅ **Character Lab tab** — swap any component, live diff + full readout. *Layout bug fixed; needs re-verification in the editor.*
-- ⬜ **No moves.** Bases contribute growth/gauges/channels but no abilities — see HANDOFF for the Move-system plan.
+- ✅ **Moves exist** (E4). One `MoveDefinition` shape for attacks, spells and utilities; movesets compose weapon-first with provenance; `MoveModifier` ops rewrite them; enemies pick via weighted AI rules. 🟡 **Content**: 9 moves shipped (weapon moves, the three spec exemplars, Recall, enemy ports); Wizard and Bastion have signature moves — **the other 13 Bases await a design pass**.
 - 🟡 **Species** is out of this pass — still 3 thin stat packages against a designed roster of 10.
 
 ## Core mechanisms behind it (new, reusable)
@@ -35,7 +35,8 @@ Status legend: ✅ functional · 🟡 partial/prototype · 🧱 scaffolded (arch
 - ✅ **Game event bus** (`core/Events/`) — 30 events spanning combat, crafting, loot and extraction. Synchronous and ordered (a determinism requirement); handler-raised events queue rather than re-enter.
 - ✅ **Declarative trigger rules** (`core/Rules/`) — `event + conditions + effect + cooldown + chance`, interpreted generically. Prefixes, Suffix expressions and gauge feeds are all just lists of these. Effects with no registered handler land in `Unhandled`, so content referencing unbuilt systems is **visibly inert rather than silently missing**.
 - ✅ **Combat raises them** (E0). `CombatEncounter` publishes 14 existing event kinds; `GameRoot` owns the bus + `TriggerRuleEngine` and re-attaches the build's hooks on every rebuild.
-- ✅ **Effects execute** (E3c / E3c-2). Seven combat handlers — `damage`, `areaDamage`, `heal`, `applyStatus`, `grantResource`, `grantModifier`, `interrupt` — plus `EffectTargetResolver` for E3a's target selectors. `EffectContext` propagates through combat and statuses, so the proc budget bounds real chains. `spawnEntity`, `grantItem`, `reposition` and `revealInfo` still land in `Unhandled` — visibly inert, not missing.
+- ✅ **Effects execute** (E3c / E3c-2 / E4). Eleven combat handlers — `damage`, `areaDamage`, `heal`, `applyStatus`, `grantResource`, `grantModifier`, `interrupt`, `grantMove`, `triggerMove`, `modifyMove`, `recallMove` — plus `EffectTargetResolver` for E3a's target selectors. `EffectContext` propagates through combat and statuses, so the proc budget bounds real chains; move riders route through the same registry via `IEffectSink`, and `triggerMove` executes at depth+1. `spawnEntity`, `grantItem`, `reposition` and `revealInfo` still land in `Unhandled` — visibly inert, not missing.
+- ✅ **Combat runs on Moves** (E4). `AttackProfile`/`AbilityDefinition`/`CombatCalculator` deleted (D-18 complete, D8's intent preserved); weapons grant moves, `EquipmentResolver` applies instance mass per-share; costs/cooldowns/requires gate at queue time; stagger is buildup against Resolve; the Mnemonic's recall loop works end to end.
 - ✅ **Gauges are live** (E3c). `GaugePool`/`GaugeController` — per-encounter reset, decay with a grace window, reconfigured on a build swap. Every authored `grantResource` names a gauge, so this is what made that effect kind mean anything.
 - ✅ **Modifiers are read** (E3c-2). `CombatantModifiers` assembles build statics + status `while_active` + gauge bands + timed `grantModifier` grants into one `ModifierSet` per combatant; `TimedModifiers` expires the grants. The hit pipeline resolves damage/crit/armour/block/damage-taken and the scheduler resolves windup — **which is what makes Chill slow anything**. Before this, all four contributors were authored and inert because nothing in combat ever read a modifier.
 

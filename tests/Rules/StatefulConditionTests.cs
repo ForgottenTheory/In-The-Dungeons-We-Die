@@ -26,8 +26,8 @@ namespace Dungeons.Tests.Rules;
 /// </summary>
 public class StatefulConditionTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 10, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 10, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
 
     private sealed record Harness(
         CombatEncounter Encounter, TickEngine Tick, TriggerRuleEngine Engine,
@@ -49,7 +49,7 @@ public class StatefulConditionTests
 
         var rng = new FakeRandom(0.99);
         var encounter = new CombatEncounter(
-            tick, new CombatCalculator(rng), Abilities(Strike, Slash), rng, bus, "ability.strike",
+            tick, new HitPipeline(rng), Moves(Strike, Slash), rng, bus,
             statuses, gaugeController);
 
         IConditionWorld? world = withWorld
@@ -77,7 +77,7 @@ public class StatefulConditionTests
     private static void StartFight(Harness h, int playerHp = 200, int stamina = 50) =>
         h.Encounter.Start(
             Player(hp: playerHp, attrs: Attrs(con: 5), stamina: stamina),
-            new[] { Enemy("Raider", 200, Attrs(str: 6), "ability.goblin_slash") });
+            new[] { Enemy("Raider", 200, Attrs(str: 6), Slash) });
 
     private static bool Fired(Harness h, string source) =>
         h.Engine.Fired.Any(f => f.Source == source);

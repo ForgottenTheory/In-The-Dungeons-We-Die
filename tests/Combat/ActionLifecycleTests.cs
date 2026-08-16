@@ -17,9 +17,9 @@ namespace Dungeons.Tests.Combat;
 /// </summary>
 public class ActionLifecycleTests
 {
-    private static readonly AbilityDefinition Strike = Ability("ability.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
-    private static readonly AbilityDefinition Slash = Ability("ability.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
-    private static readonly AbilityDefinition Instant = Ability("ability.instant", DamageType.Piercing, 5, 0, 4, 10);
+    private static readonly MoveDefinition Strike = Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5);
+    private static readonly MoveDefinition Slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
+    private static readonly MoveDefinition Instant = Move("move.instant", DamageType.Piercing, 5, 0, 4, 10);
 
     private static (CombatEncounter enc, TickEngine tick, List<GameEvent> log) Build()
     {
@@ -29,8 +29,8 @@ public class ActionLifecycleTests
         bus.Subscribe(log.Add);
 
         var enc = new CombatEncounter(
-            tick, new CombatCalculator(new FakeRandom(0.99)), Abilities(Strike, Slash, Instant),
-            new FakeRandom(0.99), bus, "ability.strike");
+            tick, new HitPipeline(new FakeRandom(0.99)), Moves(Strike, Slash, Instant),
+            new FakeRandom(0.99), bus);
 
         return (enc, tick, log);
     }
@@ -42,7 +42,7 @@ public class ActionLifecycleTests
     {
         var (enc, tick, _) = Build();
         var player = Player(hp: 200, attrs: Attrs(con: 5));
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(player, new[] { enemy });
 
         // Rusty Slash: telegraph 8, windup 8.
@@ -67,7 +67,7 @@ public class ActionLifecycleTests
         // every telegraph-reading habit silently shifts.
         var (enc, tick, _) = Build();
         var player = Player(hp: 200, attrs: Attrs(con: 5));
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(player, new[] { enemy });
 
         Assert.Equal(16, enc.Intents[0].ExecuteTick); // telegraph 8 + windup 8, exactly as before
@@ -83,7 +83,7 @@ public class ActionLifecycleTests
     {
         // The UI renders a countdown off this. It must not jump when the phase flips.
         var (enc, tick, _) = Build();
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { enemy });
 
         var duringTelegraph = enc.Intents[0].ExecuteTick;
@@ -98,7 +98,7 @@ public class ActionLifecycleTests
     {
         // Ambushes and instant moves. Correspondingly harder to answer, which is the point.
         var (enc, _, _) = Build();
-        var enemy = Enemy("Cutpurse", 50, Attrs(str: 6), "ability.instant");
+        var enemy = Enemy("Cutpurse", 50, Attrs(str: 6), Instant);
         enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { enemy });
 
         Assert.Equal(ActionPhase.Windup, enc.ActionOf(enemy)!.Phase);
@@ -111,7 +111,7 @@ public class ActionLifecycleTests
         // sides the same Move lifecycle.
         var (enc, tick, _) = Build();
         var player = Player(hp: 100, attrs: Attrs(str: 5), stamina: 50);
-        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash") });
+        enc.Start(player, new[] { Enemy("Raider", 50, Attrs(str: 6), Slash) });
 
         enc.Attack(); // Strike: telegraph 2, windup 8
         Assert.Equal(ActionPhase.Telegraph, enc.ActionOf(player)!.Phase);
@@ -127,7 +127,7 @@ public class ActionLifecycleTests
     {
         var (enc, tick, log) = Build();
         var player = Player(hp: 200, attrs: Attrs(con: 5));
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(player, new[] { enemy });
 
         tick.Advance(10); // into windup
@@ -150,7 +150,7 @@ public class ActionLifecycleTests
         // So content can distinguish "stopped them before they swung" (a read) from "stopped
         // them mid-swing" (a punish) — the whole reason the phases are separate.
         var (enc, tick, log) = Build();
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { enemy });
 
         tick.Advance(3); // still telegraphing
@@ -165,7 +165,7 @@ public class ActionLifecycleTests
     public void InterruptingSomeoneWhoIsNotActingDoesNothing()
     {
         var (enc, tick, _) = Build();
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(Player(hp: 200, attrs: Attrs(con: 5)), new[] { enemy });
 
         enc.Interrupt(enemy);
@@ -180,7 +180,7 @@ public class ActionLifecycleTests
         // Being stopped is not free tempo for the victim — otherwise interrupt-locking would be
         // strictly better than killing.
         var (enc, tick, _) = Build();
-        var enemy = Enemy("Raider", 50, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 50, Attrs(str: 6), Slash);
         enc.Start(Player(hp: 500, attrs: Attrs(con: 5)), new[] { enemy });
 
         tick.Advance(10);
@@ -196,7 +196,7 @@ public class ActionLifecycleTests
     {
         var (enc, tick, _) = Build();
         var player = Player(hp: 200, attrs: Attrs(str: 40), stamina: 50);
-        var enemy = Enemy("Raider", 1, Attrs(str: 6), "ability.goblin_slash");
+        var enemy = Enemy("Raider", 1, Attrs(str: 6), Slash);
         enc.Start(player, new[] { enemy });
 
         enc.Attack();

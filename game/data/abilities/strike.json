@@ -1,8 +1,0 @@
-{
-  "id": "ability.strike",
-  "name": "Strike",
-  "damageType": "Slashing",
-  "baseValue": 8,
-  "staminaCost": 5,
-  "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15 }
-}

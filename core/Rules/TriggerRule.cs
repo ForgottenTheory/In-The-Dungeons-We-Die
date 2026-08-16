@@ -50,6 +50,16 @@ public sealed class EffectSpec
     [JsonPropertyName("duration_ticks")]
     public int DurationTicks { get; init; }
 
+    /// <summary>
+    /// Per-effect probability, 0–1. Defaults to certain.
+    ///
+    /// <para>Added for move riders (E4): Fireball's "applyStatus burn <b>@ 20%</b>" is a chance
+    /// on the effect, because a move has no rule wrapping it. On a rule's payload this is an
+    /// additional gate <i>after</i> the rule's own single roll — authored content never sets it
+    /// there, and E3a's one-roll-N-effects semantics are unchanged when it is left at 1.</para>
+    /// </summary>
+    public double Chance { get; init; } = 1.0;
+
     /// <summary>Resolved magnitude for <paramref name="triggeringEvent"/>.</summary>
     public double Magnitude(Events.GameEvent triggeringEvent)
     {
@@ -216,10 +226,31 @@ public static class RuleVocabulary
     public const string Reposition = "reposition";
     public const string Interrupt = "interrupt";
 
+    // --- E4: the move-granting effects (docs/moves.md §3.4) -----------------------------------
+
+    /// <summary>Adds a move to the moveset while the granting source lasts. Text = move id.</summary>
+    public const string GrantMove = "grantMove";
+
+    /// <summary>
+    /// Executes a move immediately, ignoring cost and cooldown, at depth+1. <b>The most
+    /// dangerous effect in the vocabulary</b>: once-per-chain is forced, and the validator
+    /// refuses a triggerMove whose target move can itself triggerMove.
+    /// </summary>
+    public const string TriggerMove = "triggerMove";
+
+    /// <summary>Attaches a move modifier for a duration. Text = modifier id — "spending Stamina
+    /// empowers the next attack".</summary>
+    public const string ModifyMove = "modifyMove";
+
+    /// <summary>Replays the move stored in the caster's <c>status.recalled_move</c>, consuming
+    /// it — the Mnemonic capstone. Same proc rules as <see cref="TriggerMove"/>.</summary>
+    public const string RecallMove = "recallMove";
+
     public static readonly IReadOnlySet<string> Effects = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         Damage, AreaDamage, Heal, ApplyStatus, GrantModifier, GrantResource, DrainResource,
         SpawnEntity, GrantItem, RevealInfo, Reposition, Interrupt,
+        GrantMove, TriggerMove, ModifyMove, RecallMove,
     };
 
     /// <summary>Effects whose <see cref="EffectSpec.Text"/> must be a registered modifier key.</summary>

@@ -23,6 +23,12 @@ public sealed class CharacterBlueprint
     public required ResourceType PrimaryResource { get; init; }
 
     public required IReadOnlySet<string> Tags { get; init; }
-    public required IReadOnlyList<string> AbilityIds { get; init; }
+
+    /// <summary>Move grants from every component, each with its provenance (E4).</summary>
+    public required IReadOnlyList<Dungeons.Combat.MoveGrant> MoveGrants { get; init; }
+
+    /// <summary>Move-modifier ids from every component, with provenance.</summary>
+    public required IReadOnlyList<(string ModifierId, string Source)> MoveModifierGrants { get; init; }
+
     public required IReadOnlyList<ICharacterRule> Rules { get; init; }
 }

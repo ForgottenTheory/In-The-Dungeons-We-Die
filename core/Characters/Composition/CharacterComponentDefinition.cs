@@ -16,7 +16,18 @@ public abstract class CharacterComponentDefinition : IDefinition
     public string Name { get; init; } = string.Empty;
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public IReadOnlyList<ModifierData> Modifiers { get; init; } = Array.Empty<ModifierData>();
-    public IReadOnlyList<string> AbilityIds { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Moves this component grants (E4). Replaces the old <c>abilityIds</c>, which every
+    /// shipped component declared empty — the GDD's "largest single gap".
+    /// </summary>
+    public IReadOnlyList<Dungeons.Combat.MoveGrantSpec> Moves { get; init; } =
+        Array.Empty<Dungeons.Combat.MoveGrantSpec>();
+
+    /// <summary>Move modifiers this component grants, by id (docs/moves.md §3).</summary>
+    [JsonPropertyName("move_modifiers")]
+    public IReadOnlyList<string> MoveModifierIds { get; init; } = Array.Empty<string>();
+
     public IReadOnlyList<string> RuleIds { get; init; } = Array.Empty<string>();
 }
 

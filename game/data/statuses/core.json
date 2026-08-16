@@ -122,6 +122,16 @@
     "control_buildup": 30,
     "description": "Silenced. No spells."
   },
+  {
+    // The Mnemonic's memory (E4). The last of the fourteen dangling authored ids — it needed
+    // MoveDefinition to exist, because what it stores IS a move. `recallMove` replays and
+    // consumes it.
+    "id": "status.recalled_move", "name": "Recalled Move", "category": "state",
+    "tags": ["mech:trigger"],
+    "duration_ticks": 300, "stack_policy": "refreshDuration", "max_stacks": 1,
+    "stores_move": true,
+    "description": "A move held in memory, ready to be done again."
+  },
 
   // ============================ STATES ============================
 

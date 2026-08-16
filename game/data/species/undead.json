@@ -1,5 +1,6 @@
 {
   "id": "species.undead",
+  "moves": ["move.unarmed"],
   "name": "Undead",
   "tags": ["undead", "immune:poison"],
   "modifiers": [

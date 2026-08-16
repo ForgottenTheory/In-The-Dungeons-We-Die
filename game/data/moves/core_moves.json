@@ -1,0 +1,104 @@
+[
+  // The move library (E4, docs/moves.md). One data shape; Attack vs Spell is a difference of
+  // data, not of engine. Tags are namespaced and closed; combat derives the bare aliases
+  // (`attack`, `melee`, `heavy`) at event time so pre-vocabulary hooks keep working.
+
+  // --- The fallback -----------------------------------------------------------------------
+  {
+    "id": "move.unarmed", "name": "Bare Fists",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 12 },
+    "costs": [ { "resource": "stamina", "amount": 3 } ],
+    "packets": [ { "type": "Crushing", "amount": 3 } ],
+    "description": "The weapon you always have."
+  },
+
+  // --- Weapon moves (granted by the weapon — the Fighter's whole identity) ------------------
+  {
+    "id": "move.rusty_slash", "name": "Rusty Slash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15 },
+    "costs": [ { "resource": "stamina", "amount": 5 } ],
+    "packets": [ { "type": "Slashing", "amount": 5 } ],
+    "description": "It still cuts. Mostly."
+  },
+  {
+    "id": "move.iron_slash", "name": "Iron Slash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 15 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "packets": [ { "type": "Slashing", "amount": 10 } ],
+    "description": "A proper edge, swung properly."
+  },
+
+  // --- The three exemplars from docs/moves.md §2.2 ------------------------------------------
+  {
+    "id": "move.heavy_strike", "name": "Heavy Strike",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "form:sword"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 18 },
+    "costs": [ { "resource": "stamina", "amount": 12 } ],
+    "requires": [ { "kind": "equippedTag", "text": "sword" } ],
+    "packets": [ { "type": "Crushing", "amount": 24 } ],
+    "stagger_power": 28,
+    "description": "Commit everything to one arc."
+  },
+  {
+    "id": "move.fireball", "name": "Fireball",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 30 } ],
+    "stagger_power": 4,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.2 }
+    ],
+    "description": "The classic, for a reason."
+  },
+  {
+    "id": "move.shield_bash", "name": "Shield Bash",
+    "kind": "Attack",
+    "tags": ["action:attack", "action:defensive", "delivery:melee", "form:shield", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 14 },
+    "costs": [ { "resource": "stamina", "amount": 8 } ],
+    "requires": [ { "kind": "equippedTag", "text": "shield" } ],
+    "packets": [ { "type": "Crushing", "amount": 10 } ],
+    "stagger_power": 45,
+    "description": "The damage is incidental. The stagger is the point."
+  },
+
+  // --- The Mnemonic capstone (E4 unlocks status.recalled_move) ------------------------------
+  {
+    "id": "move.recall", "name": "Recall",
+    "kind": "Utility",
+    "tags": ["action:utility", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 0, "windupTicks": 1, "recoveryTicks": 6 },
+    "cooldown_ticks": 150,
+    "requires": [ { "kind": "selfHasStatus", "text": "status.recalled_move" } ],
+    "effects": [ { "kind": "recallMove" } ],
+    "description": "Do the remembered thing again, instantly."
+  },
+
+  // --- Enemy moves --------------------------------------------------------------------------
+  {
+    "id": "move.goblin_slash", "name": "Rusty Slash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 8, "recoveryTicks": 20 },
+    "packets": [ { "type": "Slashing", "amount": 6 } ],
+    "description": "Enthusiastic, unhygienic."
+  },
+  {
+    "id": "move.goblin_smash", "name": "Overhead Smash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 24, "windupTicks": 24, "recoveryTicks": 40 },
+    "packets": [ { "type": "Crushing", "amount": 20 } ],
+    "description": "Slow enough to see coming. Heavy enough to matter."
+  }
+]

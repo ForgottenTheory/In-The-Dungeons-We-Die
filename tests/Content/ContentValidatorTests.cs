@@ -43,7 +43,8 @@ public class ContentValidatorTests
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),
         Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),
-        Abilities = Load<AbilityDefinition>("abilities"),
+        Moves = Load<MoveDefinition>("moves"),
+        MoveModifiers = Load<MoveModifierDefinition>("move_modifiers"),
         Actors = Load<ActorDefinition>("actors"),
         Realms = Load<RealmDefinition>("realms"),
         Consumables = Load<ConsumableDefinition>("consumables"),
@@ -166,25 +167,26 @@ public class ContentValidatorTests
         {
             Id = "equip.bad",
             Slot = EquipmentSlot.Weapon,
-            Weapon = new WeaponStats(),
+            Moves = new[] { new MoveGrantSpec { Id = "move.strike" } },
             Properties = new Dictionary<string, double> { ["sparkliness"] = 3 },
         });
         AssertHasProblem(content, "equipment", "sparkliness");
     }
 
     [Fact]
-    public void CharacterComponent_WithUnknownAbility_IsFlagged()
+    public void CharacterComponent_WithUnknownMove_IsFlagged()
     {
         var content = ValidBaseline();
-        content.Species.Add(new SpeciesDefinition { Id = "species.bad", AbilityIds = new[] { "ability.ghost" } });
-        AssertHasProblem(content, "species", "ability.ghost");
+        content.Species.Add(new SpeciesDefinition { Id = "species.bad", Moves = new[] { new MoveGrantSpec { Id = "move.ghost" } } });
+        AssertHasProblem(content, "species", "move.ghost");
     }
 
+    /// <summary>The E4 rule: there is no allowlist any more — a granted move either exists or fails.</summary>
     [Fact]
-    public void CharacterComponent_WithKnownUnimplementedAbility_IsTolerated()
+    public void CharacterComponent_WithKnownMove_IsAccepted()
     {
         var content = ValidBaseline();
-        content.Species.Add(new SpeciesDefinition { Id = "species.ok", AbilityIds = new[] { "ability.guard" } });
+        content.Species.Add(new SpeciesDefinition { Id = "species.ok", Moves = new[] { new MoveGrantSpec { Id = "move.strike" } } });
         Assert.Empty(content.Validate());
     }
 
@@ -250,11 +252,11 @@ public class ContentValidatorTests
     }
 
     [Fact]
-    public void Actor_WithUnknownAbility_IsFlagged()
+    public void Actor_WithUnknownMove_IsFlagged()
     {
         var content = ValidBaseline();
-        content.Actors.Add(new ActorDefinition { Id = "actor.bad", AbilityIds = new[] { "ability.ghost" } });
-        AssertHasProblem(content, "actors", "ability.ghost");
+        content.Actors.Add(new ActorDefinition { Id = "actor.bad", Moves = new[] { new MoveGrantSpec { Id = "move.ghost" } } });
+        AssertHasProblem(content, "actors", "move.ghost");
     }
 
     [Fact]
@@ -264,7 +266,7 @@ public class ContentValidatorTests
         content.Actors.Add(new ActorDefinition
         {
             Id = "actor.bad",
-            AbilityIds = new[] { "ability.strike" },
+            Moves = new[] { new MoveGrantSpec { Id = "move.strike" } },
             LootItemId = "material.ghost",
         });
         AssertHasProblem(content, "actors", "material.ghost");
@@ -422,10 +424,10 @@ public class ContentValidatorTests
     }
 
     [Fact]
-    public void Equipment_WeaponWithoutWeaponBlock_IsFlagged()
+    public void Equipment_WeaponGrantingNoMoves_IsFlagged()
     {
         var content = ValidBaseline();
-        content.Equipment.Add(new EquipmentDefinition { Id = "equip.bad", Slot = EquipmentSlot.Weapon, Weapon = null });
+        content.Equipment.Add(new EquipmentDefinition { Id = "equip.bad", Slot = EquipmentSlot.Weapon });
         AssertHasProblem(content, "equipment", "equip.bad");
     }
 
@@ -694,7 +696,8 @@ public class ContentValidatorTests
         var content = new TestContent();
         content.Materials.Add(new MaterialDefinition { Id = "material.oak", Tags = ValidTags });
         content.Professions.Add(new ProfessionDefinition { Id = "prof.forestry" });
-        content.Abilities.Add(new AbilityDefinition { Id = "ability.strike" });
+        content.Moves.Add(new MoveDefinition { Id = "move.strike", Name = "Strike", Tags = new[] { "action:attack", "delivery:melee" }, Packets = new[] { new Packet(DamageType.Slashing, 8) } });
+        content.Species.Add(new SpeciesDefinition { Id = "species.baseline", Moves = new[] { new MoveGrantSpec { Id = "move.strike" } } });
         return content;
     }
 
@@ -711,7 +714,8 @@ public class ContentValidatorTests
         public DataStore<ProfessionDefinition> Professions => _bundle.Professions;
         public DataStore<ProfessionActionDefinition> Actions => _bundle.Actions;
         public DataStore<CraftingInteractionDefinition> Interactions => _bundle.Interactions;
-        public DataStore<AbilityDefinition> Abilities => _bundle.Abilities;
+        public DataStore<Dungeons.Combat.MoveDefinition> Moves => _bundle.Moves;
+        public DataStore<Dungeons.Combat.MoveModifierDefinition> MoveModifiers => _bundle.MoveModifiers;
         public DataStore<ActorDefinition> Actors => _bundle.Actors;
         public DataStore<RealmDefinition> Realms => _bundle.Realms;
         public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
