@@ -201,7 +201,7 @@ offline progress · the other 11 professions.
 
 # 6. Materials — the ingredient set ✅ BUILT
 
-**~474 material definitions** on a **0–100 property scale**.
+**480 material definitions** on a **0–100 property scale**.
 
 - Authored biome-by-biome as a *design lens* — there is deliberately **no biome field**.
 - **Mundane-majority** (oak, iron, salt, spring water), so the rare things stand out by their
@@ -268,7 +268,7 @@ intermediate and predict the next step.
 | Quench | Smithing 5 | thermal | 0.35 | cold, hardness, flexibility |
 | Alloy | Smithing 10 | thermal | 0.45 | hardness, mass, conductivity, flexibility, affinity |
 | Forge Infusion | Smithing 15 | thermal | 0.55 | heat, charge, hardness, affinity |
-| Attune | Herblore | arcane | — | raises resonance for the essence layer |
+| Attune | Alchemy 10 | arcane | 0.35 | resonance, arcane — the vessel for essence |
 
 **Media** explain *why* an ingredient suits a process: solvent releases by `solubility`, thermal
 by `instability`, mechanical by inverse `hardness`, arcane by `resonance`. This is why Ember Sap
@@ -472,7 +472,7 @@ gamble blind*.
  + Exotic / Signature / Anomalous     📐 (E7 / P4)
 ```
 
-**43 representative modifiers ship**, across offence, character, defence, resource, ailment,
+**44 representative modifiers ship**, across offence, character, defence, resource, ailment,
 retaliation, avoidance, penetration, trigger, status-depth and move-modification families.
 Every fabricated item rolls its modifiers **from the very first craft** — there is no
 "modifiers unlock later" switch. Pacing is emergent: weak early genomes roll 0–1 minor
@@ -794,10 +794,10 @@ at startup, never mid-play.
 
 | Authored as data | Count |
 |---|---|
-| Materials | ~474 |
+| Materials | 480 |
 | Properties (with glyph + gloss) | 21 |
 | Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 3 |
-| Modifiers (affixes) | 43 |
+| Modifiers (affixes) | 44 |
 | Moves / Move modifiers / Techniques | 27 / 1 / 19 |
 | Statuses | 28 |
 | Modifier keys | 51 |
@@ -863,7 +863,7 @@ Each of these has been argued for explicitly and each recurs across systems.
 Tick simulation · materials + properties + tags · the full reaction engine (algebra, potency,
 integrity, destruction, byproducts, signatures, naming, Reaction Log, projection) · traits ·
 essence · fabrication with forms/apertures/dormancy and the scale reconciliation · the semantic
-presentation layer · the Genome + 43 modifiers with live grants · the class combinator (18,750
+presentation layer · the Genome + 44 modifiers with live grants · the class combinator (18,750
 builds) · the modifier vocabulary with scoped contributions · the event bus + trigger rules +
 proc safety · 11 effect handlers · the hit pipeline · 28 statuses with Resolve · the Move system
 and 27 moves · techniques · the enemy composition framework and 3 enemies · thorns/parry/evade/
@@ -912,6 +912,7 @@ and boss variants · auto-combat · offline progress · character XP and levels.
 | How the code is laid out, and where to change things | `docs/code-map.md` |
 | The experience arc, stage by stage | `docs/how-it-plays.md` |
 | The presentation rule and its enforcement | `docs/presentation-architecture.md` |
+| The whole crafting stack, in one place | `docs/crafting-overview.md` |
 | The crafting engine's mathematics | `docs/emergent-item-system.md` |
 | Damage, defence, lanes, thorns | `docs/damage-and-defense.md` |
 | Statuses and Resolve | `docs/statuses.md` |

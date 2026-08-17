@@ -6,8 +6,9 @@
 > **What it documents.** The repository *as it actually is*. Not an ideal architecture, not a
 > plan. If this document and the code disagree, the code is right and this document is a bug.
 >
-> **Companion documents.** `docs/game-overview.md` is the same territory from the player's side.
-> `DECISIONS.md` says *why*. This says *where*.
+> **Companion documents.** `docs/game-overview.md` is the same territory from the player's side;
+> `docs/crafting-overview.md` takes the crafting stack in one piece. `DECISIONS.md` says *why*.
+> This says *where*.
 >
 > Last synced with the repo: **2026-08-16** — build clean (0 warnings), 765 tests passing.
 

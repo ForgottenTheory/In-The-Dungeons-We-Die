@@ -8,6 +8,7 @@ A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 sp
 ## Read these first (handoff docs, kept current)
 - `docs/game-overview.md` — the top-down map of the game: every system, how they connect, and how far each one got. **Start here.**
 - `docs/code-map.md` — the developer's technical map: layers, entry points, every subsystem, and **"Where do I change X?"**. Includes the do-not-rename persistent-identifier list.
+- `docs/crafting-overview.md` — the whole crafting stack (materials → bench → traits → essence → fabrication → genome/modifiers) in one place, with real content counts and every tuning constant located.
 - `PROJECT_STATE.md` — what's implemented / partial / scaffolded / planned.
 - `SYSTEM_INDEX.md` — systems, key files, how they connect.
 - `DECISIONS.md` — architectural/gameplay decisions **and why** (+ rejected options).
