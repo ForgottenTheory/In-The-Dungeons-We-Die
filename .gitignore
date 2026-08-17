@@ -15,3 +15,5 @@ obj/
 # OS specific
 .DS_Store
 Thumbs.db
+# Personal design folder — not project context (see HANDOFF.md)
+GDD/
