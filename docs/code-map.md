@@ -58,6 +58,7 @@ project file does not let it. That is deliberately stronger than a folder conven
 | `core/Crafting/` | `Dungeons.Crafting` | Reaction engine, traits, essence, fabrication, genome |
 | `core/Equipment/` | **`Dungeons.Items`** ⚠ | Equipment container, definitions, the combat seam |
 | `core/Events/` | `Dungeons.Events` | The game event bus |
+| `core/Hideout/` | `Dungeons.Hideout` | Station definitions — the Hideout's routing table |
 | `core/Inventory/` | **`Dungeons.Items`** ⚠ | The inventory container |
 | `core/Items/` | `Dungeons.Items` | Item instances, property sets, stacks |
 | `core/Modifiers/` | `Dungeons.Modifiers` | The modifier key vocabulary, scopes, resolution |
@@ -121,7 +122,7 @@ Everything else in `GameRoot` is one of three things — and nothing else belong
 ### 2.2 `game/ui/MainMvpUI.cs` + `.tscn` — the one screen
 
 The main scene. Builds every control **in code** with a code-only dark theme (no assets):
-a persistent header, a `TabContainer` (Character · Char Lab · Equipment · Professions · Crafting ·
+a persistent header, a `TabContainer` (Character · Char Lab · Equipment · **Hideout** ·
 Realm · Combat · Inventory), and an always-visible event-log panel.
 
 Its shape is uniform and worth knowing:
@@ -134,6 +135,31 @@ Its shape is uniform and worth knowing:
 > The name `MainMvpUI` is historical — the MVP shipped long ago. Renaming it means renaming the
 > C# file, the `.uid`, and the script reference inside `MainMvpUI.tscn`, which cannot be verified
 > without running the Godot editor. Recorded as a deferred rename, not an oversight.
+
+**The Hideout tab is not one section — it is a host.** A monolithic Crafting tab used to put all
+eight crafting actions and every blueprint on one screen regardless of where any of it belonged;
+it is gone, and so is the Professions tab, whose ladder now lives at the station that trains it.
+What replaced them is one fixed **activity strip** (the passive bar, the active-timing sweep and
+the Discover → Pursue card — global, so they must be co-located with the button that raises them)
+over a **station index ⟷ one station page**.
+
+The station page is composed from the station's own definition, which is why twenty destinations
+cost one class:
+
+| File | Owns |
+|---|---|
+| `ui/ConsoleTheme.cs` | The palette and the `Row`/`Card`/`MakeButton`/`SectionTitle` vocabulary. Imported with `using static`, so call sites read unchanged |
+| `ui/StationPanel.cs` | Composes one station's page from what its definition routes to |
+| `ui/ProfessionLadderPanel.cs` | One profession's level-gated ladder, with Passive/Active |
+| `ui/CraftingBenchPanel.cs` | The reagent chain + projection, scoped to this station's crafting actions |
+| `ui/EquipmentAssemblyPanel.cs` | Blueprint slots + preview + "Latest work", scoped to this station's blueprints |
+| `ui/FarmingPlotsPanel.cs` · `TrainingCoursePanel.cs` · `AssayBenchPanel.cs` | The three professions that are a system rather than a list. Drawn because of **which profession the station hosts**, never a flag |
+| `ui/CraftingInteractionsPanel.cs` | The legacy fixed-interaction list (the Healing Salve). Dies with P5c |
+
+A panel takes `GameRoot` plus the slice it renders, and exposes one `Refresh()`. Station pages are
+built on first visit and kept, so walking away from a half-assembled reagent chain does not
+discard it; only the open page is refreshed on an inventory change, and every page refreshes when
+it is opened.
 
 ### 2.3 `tests/` — the headless entry point
 
@@ -1055,7 +1081,61 @@ action. A new profession is one entry plus its action file — and it must cross
 
 ---
 
-## 10.15 Realms and extraction
+## 10.15 Hideout stations
+
+**PURPOSE** — Give every profession, crafting action and blueprint a *place*, so the player
+reaches them the way the fiction describes: **choose a station, then use what it is for.**
+
+**IMPORTANT FILES** — `core/Hideout/StationDefinition.cs` · `ContentValidator.ValidateStations`
+· `GameRoot.StationsIn` / `CraftingActionsAt` / `BlueprintsAt` / `InteractionsAt` ·
+`game/ui/StationPanel.cs` and the panels listed in §2.2.
+
+**DATA** — `game/data/stations/stations.json` (20 — one per profession).
+
+**RUNTIME FLOW**
+```
+StationDefinition  { professions[], crafting_actions[], blueprints[] }
+        │
+        │  GameRoot resolves ids → definitions (routing only; no rules, no gates)
+        ▼
+StationPanel  ── ProfessionLadderPanel  per hosted profession
+              ├─ FarmingPlots / TrainingCourse / AssayBench   ← keyed on WHICH profession
+              ├─ CraftingInteractionsPanel                    ← interactions gated on a hosted profession
+              ├─ CraftingBenchPanel        (only if crafting_actions is non-empty)
+              └─ EquipmentAssemblyPanel    (only if blueprints is non-empty)
+```
+
+**A station owns no rules.** Hosting is *where you stand*, never *whether you may* — a hosted
+crafting action keeps whatever gate it always had, and the picker line says so. An action may
+have several homes (Grind is ungated: a mortar at the Apothecary, a mill at the Workbench).
+
+> ⚠ **Temporary (2026-08-17):** `process.distill` and `process.attune` are **ungated for
+> playtesting**. The split gave each its own station (Alchemy Lab, Runic Altar) while their gates
+> still named Herblore 12 and Alchemy 10, so neither station could be exercised without levelling
+> someone else's profession. The designed gates are unchanged in the docs; the override is marked
+> in `processes.json` and named in `CraftingActionContentTests.OnlyGrindIsUngated`, which goes red
+> the moment the exception list stops matching the content.
+
+**DEPENDENCIES** — Content only (it references professions, crafting actions and blueprints by id).
+
+**OUTPUT** — Nothing. It is a routing table read by the client.
+
+**EXTENSION POINTS** — A new station is one JSON entry. The validator enforces reachability in
+both directions, which is the whole value of the type:
+
+- **every profession is hosted by exactly one station** — no orphan, no ladder drawn twice;
+- **every station hosts at least one profession** — no unreachable furniture;
+- **every crafting action and every blueprint is offered somewhere** — the same "orphan content"
+  standard the move vocabulary is held to.
+
+So a new profession, process or blueprint cannot ship without a place to use it — the suite goes
+red, deliberately.
+
+**ENTRY POINT** — `StationDefinition`, then `StationPanel`'s constructor.
+
+---
+
+## 10.16 Realms and extraction
 
 **PURPOSE** — The spatial run: travel, depth, clearing, and the extract-or-lose rule.
 
@@ -1088,7 +1168,7 @@ validated). A new **location type** needs an enum value plus a case in `GameRoot
 
 ---
 
-## 10.16 The presentation layer (`Dungeons.Presentation`)
+## 10.17 The presentation layer (`Dungeons.Presentation`)
 
 **PURPOSE** — The **only** path from simulation state to player-facing text (D30, CLAUDE.md rule
 7). One-way, deterministic, unit-tested.
@@ -1136,7 +1216,7 @@ Never let the UI compose meaning out of raw values.
 
 ---
 
-## 10.17 Persistence
+## 10.18 Persistence
 
 **PURPOSE** — Save and restore progression. **Ids and runtime values only — never definitions.**
 
@@ -1195,7 +1275,9 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add a profession action** | One entry in `game/data/profession_actions/<profession>.json`: profession, level gate, interval, inputs, outputs, bonus outputs (`ItemChance`), XP. Optional: `successChance` (Hunting/Thieving only), `realmKnowledgeGain` (Cartography only) |
 | **Add an active opportunity** | A nested entry in an action's `opportunities[]`: unique id, `prompt` (the offer text *is* the decision), `discoveryChance`, `extraIntervalTicks`, `riskWeight`, payoff. It must out-pay its own action — a test checks |
 | **Add a training obstacle** | One entry in `game/data/training_obstacles/`: `slot` (one of the five), level, interval, XP, and `bonuses` keyed by `CourseBonusKeys`. An unknown key fails validation |
-| **Add a profession** | One entry in `professions/` (id, name, category, primary attributes, a one-line description) plus its action file. It must both consume another profession's output and produce something something else wants — `ProfessionEcosystemTests` fails a dead end |
+| **Add a profession** | One entry in `professions/` (id, name, category, primary attributes, a one-line description) plus its action file **plus a station in `stations/` that hosts it** — a profession with no station fails validation. It must both consume another profession's output and produce something something else wants — `ProfessionEcosystemTests` fails a dead end |
+| **Add a Hideout station** | One entry in `game/data/stations/stations.json`: id `station.*`, name, description, `professions` (≥1, and no profession may appear twice across the file), optional `crafting_actions` and `blueprints`. Routing only — it cannot change a gate |
+| **Move where a crafting action or blueprint is offered** | Edit the station's `crafting_actions` / `blueprints` list. Listing one in two stations is legal and sometimes right (Grind is ungated) |
 | **Add a Base / Prefix / Suffix** | One entry in `classes/`, `prefixes/`, `suffixes/`. Bases must spend exactly the 4.0 growth budget. **A Prefix may never name a Base.** An expressed Suffix needs one expression per channel |
 | **Add a technique item** | One entry in `techniques/` naming the move it teaches |
 | **Add a realm or location** | One entry in `realms/`. Edges must be symmetric and content refs must resolve — both validated |
@@ -1222,6 +1304,7 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add a validation rule** | A `ValidateX` in `ContentValidator`, called from `Validate`, plus a broken-content test |
 | **Persist new state** | A `*Save` DTO property → `SaveMapper.Capture`/`Apply` → bump `SaveData.CurrentSchemaVersion` → document the forward-compatible default |
 | **Add a UI surface** | `MainMvpUI`: a `BuildXSection` for construction, a `RefreshX`/`RebuildX` for updates, and a `GameRoot` query for the content. Colour and layout only |
+| **Add something to a Hideout station** | A `partial class XPanel : VBoxContainer` in `game/ui/` taking `GameRoot` + the slice it renders and exposing one `Refresh()`, then compose it in `StationPanel`'s constructor. Use `using static ConsoleTheme` for the palette — do not restate colours |
 | **Add a command the UI can call** | A method on `GameRoot` that forwards into Core and raises the right change event. If it contains a game rule, it is in the wrong place |
 
 ---

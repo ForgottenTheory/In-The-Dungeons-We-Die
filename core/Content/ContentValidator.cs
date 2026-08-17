@@ -87,6 +87,7 @@ public static class ContentValidator
         ValidateMoves(content, problems);
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, problems);
         ValidateTrainingObstacles(content.TrainingObstacles, problems);
+        ValidateStations(content, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
         ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
@@ -1153,6 +1154,72 @@ public static class ContentValidator
                     problems.Add(new("training_obstacles", $"{obstacle.Id} bonus '{bonus.Key}' is {bonus.Value}; must be positive."));
             }
         }
+    }
+
+    /// <summary>
+    /// Hideout stations are pure routing, so every rule here is about reachability: each
+    /// reference resolves, and — the load-bearing one — <b>every profession is hosted by
+    /// exactly one station</b>. Without it a new profession could ship with no way to reach
+    /// it, or with its ladder drawn on two screens that then drift apart.
+    /// </summary>
+    private static void ValidateStations(ContentBundle content, List<ContentProblem> problems)
+    {
+        var stationHostingProfession = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var station in content.Stations.GetAll())
+        {
+            void Problem(string message) => problems.Add(new("stations", $"{station.Id}: {message}"));
+
+            if (station.Professions.Count == 0)
+                Problem("hosts no profession; a station with nothing to train is unreachable furniture.");
+
+            foreach (var professionId in station.Professions)
+            {
+                if (!content.Professions.Contains(professionId))
+                {
+                    Problem($"hosts unknown profession '{professionId}'.");
+                    continue;
+                }
+
+                if (stationHostingProfession.TryGetValue(professionId, out var alreadyHosting))
+                    Problem($"also hosts '{professionId}', which already belongs to {alreadyHosting}.");
+                else
+                    stationHostingProfession[professionId] = station.Id;
+            }
+
+            foreach (var craftingActionId in station.CraftingActions)
+                if (!content.CraftingActions.Contains(craftingActionId))
+                    Problem($"offers unknown crafting action '{craftingActionId}'.");
+
+            foreach (var blueprintId in station.Blueprints)
+                if (!content.Forms.Contains(blueprintId))
+                    Problem($"assembles unknown blueprint '{blueprintId}'.");
+        }
+
+        // The reverse-reachability rules below are only meaningful once stations exist at all —
+        // an empty store is a bundle assembled for some other test, not content that forgot
+        // twenty stations.
+        if (content.Stations.Count == 0)
+            return;
+
+        foreach (var profession in content.Professions.GetAll())
+            if (!stationHostingProfession.ContainsKey(profession.Id))
+                problems.Add(new("stations",
+                    $"{profession.Id} has no station; there would be no way to reach it from the Hideout."));
+
+        // Same standard the move vocabulary is held to: content nobody can reach is a mistake,
+        // not a feature waiting for a screen.
+        var offeredCraftingActions = content.Stations.GetAll().SelectMany(s => s.CraftingActions).ToHashSet(StringComparer.Ordinal);
+        foreach (var craftingAction in content.CraftingActions.GetAll())
+            if (!offeredCraftingActions.Contains(craftingAction.Id))
+                problems.Add(new("stations",
+                    $"{craftingAction.Id} is offered at no station — the player could never run it."));
+
+        var assembledBlueprints = content.Stations.GetAll().SelectMany(s => s.Blueprints).ToHashSet(StringComparer.Ordinal);
+        foreach (var blueprint in content.Forms.GetAll())
+            if (!assembledBlueprints.Contains(blueprint.Id))
+                problems.Add(new("stations",
+                    $"{blueprint.Id} is assembled at no station — the player could never make one."));
     }
 
     private static void ValidateInteractions(

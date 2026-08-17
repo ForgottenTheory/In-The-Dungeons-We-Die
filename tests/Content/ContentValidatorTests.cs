@@ -45,6 +45,8 @@ public class ContentValidatorTests
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),
         TrainingObstacles = Load<TrainingObstacleDefinition>("training_obstacles"),
+        Stations = Load<Dungeons.Hideout.StationDefinition>("stations"),
+        Forms = Load<EquipmentBlueprintDefinition>("forms"),
         Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),
         Moves = Load<MoveDefinition>("moves"),
         MoveModifiers = Load<MoveModifierDefinition>("move_modifiers"),
@@ -871,6 +873,128 @@ public class ContentValidatorTests
             TagEffects = tagEffects ?? new CraftingActionTagEffects(),
         };
 
+    // --- Hideout stations ----------------------------------------------------
+    //
+    // A station is routing, so every rule is about reachability. The two that matter are the
+    // pair: a profession with no station cannot be trained, and a profession with two stations
+    // gets its ladder drawn twice — both are silent until a player goes looking.
+
+    [Fact]
+    public void Station_RoutingToRealContent_IsAccepted()
+    {
+        var content = ValidBaseline();
+        content.CraftingActions.Add(Process());
+        content.Forms.Add(new EquipmentBlueprintDefinition
+        {
+            Id = "form.plank",
+            Name = "Plank",
+            Slots = new() { ["body"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
+        });
+        content.Stations.Add(Station(
+            craftingActions: new[] { "process.test" },
+            blueprints: new[] { "form.plank" }));
+
+        Assert.Empty(content.Validate());
+    }
+
+    [Fact]
+    public void Station_HostingUnknownProfession_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Stations.Add(Station(professions: new[] { "prof.forestry", "prof.nonesuch" }));
+
+        AssertHasProblem(content, "stations", "unknown profession 'prof.nonesuch'");
+    }
+
+    [Fact]
+    public void Station_OfferingUnknownCraftingAction_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Stations.Add(Station(craftingActions: new[] { "process.nonesuch" }));
+
+        AssertHasProblem(content, "stations", "unknown crafting action 'process.nonesuch'");
+    }
+
+    [Fact]
+    public void Station_AssemblingUnknownBlueprint_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Stations.Add(Station(blueprints: new[] { "form.nonesuch" }));
+
+        AssertHasProblem(content, "stations", "unknown blueprint 'form.nonesuch'");
+    }
+
+    [Fact]
+    public void Station_HostingNoProfession_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Stations.Add(Station());
+        content.Stations.Add(Station(id: "station.empty", professions: Array.Empty<string>()));
+
+        AssertHasProblem(content, "stations", "hosts no profession");
+    }
+
+    [Fact]
+    public void Profession_ReachableFromNoStation_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Professions.Add(new ProfessionDefinition { Id = "prof.orphan" });
+        content.Stations.Add(Station());
+
+        AssertHasProblem(content, "stations", "prof.orphan has no station");
+    }
+
+    [Fact]
+    public void CraftingAction_OfferedAtNoStation_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.CraftingActions.Add(Process());
+        content.Stations.Add(Station());
+
+        AssertHasProblem(content, "stations", "process.test is offered at no station");
+    }
+
+    [Fact]
+    public void Blueprint_AssembledAtNoStation_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Forms.Add(new EquipmentBlueprintDefinition
+        {
+            Id = "form.plank",
+            Name = "Plank",
+            Slots = new() { ["body"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
+        });
+        content.Stations.Add(Station());
+
+        AssertHasProblem(content, "stations", "form.plank is assembled at no station");
+    }
+
+    [Fact]
+    public void Profession_HostedByTwoStations_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Stations.Add(Station());
+        content.Stations.Add(Station(id: "station.second"));
+
+        AssertHasProblem(content, "stations", "already belongs to station.test");
+    }
+
+    /// <summary>A well-formed station; each argument left unset keeps its valid default, so a
+    /// test breaks exactly one rule.</summary>
+    private static Dungeons.Hideout.StationDefinition Station(
+        string id = "station.test",
+        IReadOnlyList<string>? professions = null,
+        IReadOnlyList<string>? craftingActions = null,
+        IReadOnlyList<string>? blueprints = null) => new()
+        {
+            Id = id,
+            Name = "Test Station",
+            Description = "Where the test happens.",
+            Professions = professions ?? new[] { "prof.forestry" },
+            CraftingActions = craftingActions ?? Array.Empty<string>(),
+            Blueprints = blueprints ?? Array.Empty<string>(),
+        };
+
     // --- Helpers -------------------------------------------------------------
 
     private static DataStore<T> Load<T>(string subfolder) where T : IDefinition
@@ -920,6 +1044,8 @@ public class ContentValidatorTests
         public DataStore<ConsumableDefinition> Consumables => _bundle.Consumables;
         public DataStore<Dungeons.Combat.TechniqueDefinition> Techniques => _bundle.Techniques;
         public DataStore<EquipmentDefinition> Equipment => _bundle.Equipment;
+        public DataStore<EquipmentBlueprintDefinition> Forms => _bundle.Forms;
+        public DataStore<Dungeons.Hideout.StationDefinition> Stations => _bundle.Stations;
         public DataStore<Dungeons.Characters.Composition.SpeciesDefinition> Species => _bundle.Species;
         public DataStore<Dungeons.Modifiers.ModifierKeyDefinition> ModifierKeys => _bundle.ModifierKeys;
 

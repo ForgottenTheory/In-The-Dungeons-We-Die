@@ -7,8 +7,8 @@
 > docs (`docs/GDD.md` and the per-system docs). Nothing here overrides them. Not an
 > implementation document either — for code, see `docs/code-map.md`.
 >
-> Last synced with the repo: **2026-08-16** (847 tests, 0 build warnings), after the
-> 20-profession expansion pass.
+> Last synced with the repo: **2026-08-17** (854 tests, 0 build warnings), after the
+> Hideout station split.
 
 ## Status marks used throughout
 
@@ -287,12 +287,15 @@ intermediate and predict the next step.
 |---|---|---|---|---|
 | Grind | *ungated* | mechanical | 0.30 | solubility, mass, hardness |
 | Steep | Herblore 1 | solvent | 0.20 | heat, toxicity, growth, cold, decay |
-| Distill | Herblore 12 | solvent | 0.50 | toxicity, arcane, decay, corrosion, solubility |
+| Distill | Herblore 12 ⚠ | solvent | 0.50 | toxicity, arcane, decay, corrosion, solubility |
 | Smelt | Smithing 1 | thermal | 0.60 | hardness, mass, conductivity, heat |
 | Quench | Smithing 5 | thermal | 0.35 | cold, hardness, flexibility |
 | Alloy | Smithing 10 | thermal | 0.45 | hardness, mass, conductivity, flexibility, affinity |
 | Forge Infusion | Smithing 15 | thermal | 0.55 | heat, charge, hardness, affinity |
-| Attune | Alchemy 10 | arcane | 0.35 | resonance, arcane — the vessel for essence |
+| Attune | Alchemy 10 ⚠ | arcane | 0.35 | resonance, arcane — the vessel for essence |
+
+> ⚠ These two are the **designed** gates. Both are ungated in the shipped content right now, for
+> playtesting — see §14.
 
 **Media** explain *why* an ingredient suits a process: solvent releases by `solubility`, thermal
 by `instability`, mechanical by inverse `hardness`, arcane by `resonance`. This is why Ember Sap
@@ -773,13 +776,37 @@ end-of-life is Fracture back into components. Even the exception terminates at t
 
 ---
 
-# 14. Base systems — the Hideout 📐 NEEDS DESIGN
+# 14. Base systems — the Hideout 🟡 PARTIAL
 
-The persistent home. Currently **implicit** — it is where crafting and profession training
-happen, with no dedicated screen or systems of its own.
+The persistent home, and now a real place rather than an implication. **Twenty stations, one per
+profession** — the Forge, the Apothecary, the Alchemy Lab, the Runic Altar, the Workbench, the
+Kitchen, the Tannery, the Loom, the Fletcher's Bench, the Assay Table, and one apiece for the
+gathering and utility professions (Mineshaft, Timber Yard, Fishing Dock, Garden Plots, Hunting
+Lodge, Bone Table, Salvage Yard, Thieves' Nook, Training Course, Cartographer's Desk).
 
-Intended, all undesigned: Hideout upgrades · crafting stations · Farming as a Hideout-based
-renewable resource profession · storage management · the portal/preparation screen.
+```
+Hideout  →  choose a station  →  train it / transform at its bench / assemble at it
+```
+
+A station is **routing, not rules**. It says which profession ladders are trained there, which
+crafting actions its bench offers, and which blueprints it can assemble — and every one of those
+still resolves through the system that always owned it, under the same gate. Hosting decides
+*where you stand*, never *whether you may*, and an ungated action can have two homes (Grind: a
+mortar at the Apothecary, a mill at the Workbench).
+
+> ⚠ **Temporary:** Distill and Attune are **ungated for playtesting** (2026-08-17) so the Alchemy
+> Lab and the Runic Altar can be exercised — their designed gates (Herblore 12, Alchemy 10, listed
+> in §7) named a profession neither station trains. Marked in the content and named in the test.
+
+Two rules are enforced at load: **every profession is hosted by exactly one station**, and every
+station hosts at least one profession — so a new profession cannot ship unreachable, and no
+ladder is ever drawn on two screens that then drift apart.
+
+Farming's plots, Agility's course and Assay's reading table appear at their stations because of
+*which profession is hosted*, not because of a flag.
+
+Still undesigned: Hideout upgrades · station upgrades or unlock costs · storage management · the
+portal/preparation screen.
 
 ---
 
@@ -828,6 +855,7 @@ at startup, never mid-play.
 | Bases / Prefixes / Suffixes / Species / Name formats | 15 / 25 / 50 / 3 / 9 |
 | Professions / Profession actions / Opportunities | 20 / 194 / 32 |
 | Training obstacles (the Agility course) | 12 |
+| Hideout stations | 20 |
 | Enemy families / roles / AI profiles / actors | 1 / 3 / 3 / 3 |
 | Realms / Equipment / Consumables | 1 / 4 / 1 |
 
@@ -836,9 +864,10 @@ instances.* Damage types, item types, roles and tag families are code. Materials
 modifiers, enemies and realms are data.
 
 **Existing developer surfaces** ✅: one code-built debug console with tabs (Character · Char Lab ·
-Equipment · Professions · Crafting · Realm · Combat · Inventory), an always-visible event log, the
+Equipment · Hideout · Realm · Combat · Inventory), an always-visible event log, the
 **Character Lab** (component swapping with a live diff), the **Crafting Bench** (ordered reagent
-chain + live pre-commit projection + Advanced toggle), the Hit Log toggle, and debug grants.
+chain + live pre-commit projection + Advanced toggle) at the stations that offer it, the Hit Log
+toggle, and debug grants.
 
 📐 **Planned labs** — treated as real deliverables, because the combination count makes balancing
 impossible without them: Item Lab · Crafting Lab (property-override sandbox, A→B vs B→A
@@ -852,9 +881,11 @@ Move Viewer.
 One code-built developer console. Dark, code-only theme. **No art, audio, animation or telegraph
 visuals.** The path from one debug page to real screens is unplanned.
 
-Two surfaces are genuinely designed rather than debug scaffolding: the **Crafting Bench** (the
+Three surfaces are genuinely designed rather than debug scaffolding: the **Crafting Bench** (the
 reagent chain is deliberately literal — "Step 1: Ember Sap, Step 2: Stormglass" — because order
-*is* the mechanic and it has to be visible) and the **Character Lab**.
+*is* the mechanic and it has to be visible), the **Character Lab**, and the **Hideout** — station
+index → station page, with the passive bar, timing sweep and Discover → Pursue card pinned above
+both because only one activity can be in flight at a time.
 
 ---
 
@@ -892,14 +923,16 @@ presentation layer · the Genome + 44 modifiers with live grants · the class co
 builds) · the modifier vocabulary with scoped contributions · the event bus + trigger rules +
 proc safety · 11 effect handlers · the hit pipeline · 28 statuses with Resolve · the Move system
 and 27 moves · techniques · the enemy composition framework and 3 enemies · thorns/parry/evade/
-barrier · tick combat · 8 professions / 26 actions · the Dark Forest · extraction and death ·
-save/load (schema v6).
+barrier · tick combat · 20 professions / 194 actions / 32 opportunities · Farming plots and the
+Agility course · offline progress · the Hideout's 20 stations · the Dark Forest · extraction and
+death · save/load (schema v7).
 
 ## 🟡 PARTIAL — real but a load-bearing piece is missing
 
 Species (3 thin of 10) · Mastery (tracked, nothing reads it) · Realm Knowledge (counts, unlocks
 nothing) · loot (one guaranteed drop, no tables) · enemy roster (3 of 8–10) · Suffixes (10 of 50
-expressed) · UI (debug console only).
+expressed) · the Hideout (stations exist; upgrades, unlocks and storage do not) · UI (debug
+console only).
 
 ## 📐 DESIGNED — decided and specified, not built
 

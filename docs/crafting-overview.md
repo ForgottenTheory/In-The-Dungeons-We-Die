@@ -150,13 +150,21 @@ Read from `game/data/processes/processes.json`.
 | **Grind** | *ungated* | — | mechanical | 0.30 | 0.10 | solubility .45 · mass .35 · hardness .30 |
 | **Steep** | Herblore 1 | — | solvent | 0.20 | 0.20 | heat .55 · toxicity .55 · growth .55 · cold .50 · decay .45 |
 | **Quench** | Smithing 5 | `form:metal` | thermal | 0.35 | 0.25 | cold · hardness · flexibility |
-| **Attune** | Alchemy 10 | — | arcane | 0.35 | 0.30 | resonance .60 · arcane .35 |
+| **Attune** | *ungated* ⚠ | — | arcane | 0.35 | 0.30 | resonance .60 · arcane .35 |
 | **Alloy** | Smithing 10 | `form:metal` | thermal | 0.45 | 0.20 | hardness · mass · conductivity · flexibility · affinity |
-| **Distill** | Herblore 12 | — | solvent | 0.50 | 0.55 | toxicity · arcane · decay · corrosion · solubility |
+| **Distill** | *ungated* ⚠ | — | solvent | 0.50 | 0.55 | toxicity · arcane · decay · corrosion · solubility |
 | **Forge Infusion** | Smithing 15 | `form:metal` | thermal | 0.55 | 0.45 | heat · charge · hardness · affinity |
 | **Smelt** | Smithing 1 | `form:ore` | thermal | 0.60 | 0.15 | hardness · mass · conductivity · heat |
 
 *(Listed gentlest-first, which is also the order the bench's picker uses.)*
+
+> ⚠ **Temporary (2026-08-17).** Distill and Attune are ungated **for playtesting only**. Their
+> designed gates are **Herblore 12** and **Alchemy 10**; the Hideout split gave each its own
+> station (Alchemy Lab, Runic Altar) and those gates named a profession neither station trains,
+> so the stations could not be exercised. The override is marked at both entries in
+> `processes.json` and named in `CraftingActionContentTests.OnlyGrindIsUngated` — deleting the two
+> ids from that test's exception list is what "restored" looks like, whether by putting the old
+> gate back or by re-homing it to the station's own profession.
 
 **A process also declares:** `role_weights` (how much of the result comes from substrate vs
 reagents vs catalyst — Grind is 0.80/0.20/0.00, Steep 0.60/0.35/0.05) and `tag_effects`

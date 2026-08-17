@@ -1158,7 +1158,13 @@ Missing and needed:
 One code-built developer console with a persistent header (tick/sim status, Play/Advance/Save/
 Load), a tabbed body, and an always-visible event log. Dark, code-only theme; no art or audio.
 
-**Tabs:** Character · Char Lab · Equipment · Professions · Crafting · Realm · Combat · Inventory.
+**Tabs:** Character · Char Lab · Equipment · Hideout · Realm · Combat · Inventory.
+
+The **Hideout** tab replaced the Professions and Crafting tabs. Profession training, the
+material-transformation bench and equipment assembly are all reached the same way now — *choose a
+station, then use what that station is for* — over one fixed activity strip (passive bar, active
+timing sweep, Discover → Pursue card). Twenty stations, one per profession; see
+`docs/game-overview.md` §14.
 
 > ⚠ **Unverified in the editor:** several Core-complete surfaces have never been rendered —
 > the Character Lab "Live hooks" panel, the Hit Log toggle, the gauge readout, and the E4

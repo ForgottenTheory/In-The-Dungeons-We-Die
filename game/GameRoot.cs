@@ -11,6 +11,7 @@ using Dungeons.Content;
 using Dungeons.Crafting;
 using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
+using Dungeons.Hideout;
 using Dungeons.Items;
 using Dungeons.Modifiers;
 using Dungeons.Persistence;
@@ -64,6 +65,7 @@ public partial class GameRoot : Node
     private DataStore<ProfessionDefinition> _professionStore = new();
     private DataStore<ProfessionActionDefinition> _actionStore = new();
     private DataStore<TrainingObstacleDefinition> _obstacleStore = new();
+    private DataStore<StationDefinition> _stationStore = new();
 
     private DataStore<CraftingInteractionDefinition> _interactions = new();
     private DataStore<MoveDefinition> _moves = new();
@@ -170,6 +172,7 @@ public partial class GameRoot : Node
         _professionStore = content.Professions;
         _actionStore = content.Actions;
         _obstacleStore = content.TrainingObstacles;
+        _stationStore = content.Stations;
         _interactions = content.Interactions;
         _moves = content.Moves;
         _moveModifierStore = content.MoveModifiers;
@@ -454,6 +457,9 @@ public partial class GameRoot : Node
     public string ProfessionName(string professionId) =>
         _professionStore.TryGetById(professionId, out var def) ? def.Name : professionId;
 
+    public ProfessionDefinition? ProfessionById(string professionId) =>
+        _professionStore.TryGetById(professionId, out var def) ? def : null;
+
     public bool IsPassiveRunning => _passiveRunner.IsRunning;
     public string? CurrentPassiveActionId => _passiveRunner.CurrentActionId;
     public double PassiveProgress => _passiveRunner.Progress();
@@ -676,14 +682,14 @@ public partial class GameRoot : Node
     {
         var failure = _trainingCourse.Fit(slot, obstacleId);
         Emit(failure == CourseFitFailure.None
-            ? $"[Course] Fitted {ObstacleName(obstacleId)} to the {slot} station."
+            ? $"[Course] Fitted {ObstacleName(obstacleId)} to the {slot} slot."
             : $"[Course] Cannot fit {ObstacleName(obstacleId)} ({failure}).");
     }
 
     public void ClearObstacle(TrainingSlot slot)
     {
         _trainingCourse.Clear(slot);
-        Emit($"[Course] Cleared the {slot} station.");
+        Emit($"[Course] Cleared the {slot} slot.");
     }
 
     public void RunTrainingLap()
@@ -704,7 +710,7 @@ public partial class GameRoot : Node
         var bonuses = _trainingCourse.ActiveBonuses();
         if (bonuses.Count == 0)
         {
-            report.Append("No stations fitted — no standing bonuses.");
+            report.Append("No obstacles fitted — no standing bonuses.");
             return report.ToString();
         }
 
@@ -726,6 +732,36 @@ public partial class GameRoot : Node
 
     private string ObstacleName(string obstacleId) =>
         _obstacleStore.TryGetById(obstacleId, out var obstacle) ? obstacle.Name : obstacleId;
+
+    // --- Hideout stations ----------------------------------------------------
+    //
+    // Routing queries only. A station decides *where* the player stands; every gate still lives
+    // where it always did, so a crafting action offered here is the same action with the same
+    // profession requirement it would have anywhere else.
+
+    /// <summary>The stations on one Hideout shelf, filed under the category of the profession
+    /// each is named for. Mirrors <see cref="ProfessionsIn"/> so the two orders agree.</summary>
+    public IReadOnlyList<StationDefinition> StationsIn(ProfessionCategory category) =>
+        _stationStore.GetAll()
+            .Where(station => ProfessionById(station.PrimaryProfessionId)?.Category == category)
+            .OrderBy(station => station.Name, StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>The crafting actions this station's bench offers, gentlest first.</summary>
+    public IReadOnlyList<CraftingActionDefinition> CraftingActionsAt(StationDefinition station) =>
+        station.CraftingActions
+            .Where(_content.CraftingActions.Contains)
+            .Select(_content.CraftingActions.GetById)
+            .OrderBy(craftingAction => craftingAction.Severity)
+            .ToList();
+
+    /// <summary>The equipment blueprints that can be assembled at this station.</summary>
+    public IReadOnlyList<EquipmentBlueprintDefinition> BlueprintsAt(StationDefinition station) =>
+        station.Blueprints
+            .Where(_content.Forms.Contains)
+            .Select(_content.Forms.GetById)
+            .OrderBy(blueprint => blueprint.Name, StringComparer.Ordinal)
+            .ToList();
 
     // --- Assay ---------------------------------------------------------------
 
@@ -775,10 +811,6 @@ public partial class GameRoot : Node
     // These are thin forwards. Every rule lives in Core's MaterialTransformationEngine; GameRoot only turns
     // an outcome into log lines and change events, so the flagged Application-layer extraction
     // does not get any harder than it already is.
-
-    /// <summary>Every crafting action the player can choose between, gentlest first.</summary>
-    public IReadOnlyList<CraftingActionDefinition> CraftingActions =>
-        _content.CraftingActions.GetAll().OrderBy(p => p.Severity).ToList();
 
     /// <summary>
     /// Materials currently on hand, for the crafting pickers. Emergent archetypes appear here
@@ -897,8 +929,26 @@ public partial class GameRoot : Node
     // consumables are produced by fabrication (P5c) and there is no emergent path to one yet.
     // Delete this whole section when P5c lands.
 
-    /// <summary>Brews a Healing Salve from gathered herbs — the crafted Realm supply.</summary>
-    public void BrewHealingSalve() => Experiment("material.sageleaf");
+    /// <summary>The interactions offered at a station — the ones gated on a profession it
+    /// trains, so the Healing Salve is brewed at the Apothecary rather than anywhere.</summary>
+    public IReadOnlyList<CraftingInteractionDefinition> InteractionsAt(StationDefinition station) =>
+        _interactions.GetAll()
+            .Where(interaction => interaction.ProfessionRequirements.Any(r => station.Hosts(r.ProfessionId)))
+            .OrderBy(interaction => interaction.Name, StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>True once the player has discovered what this interaction makes.</summary>
+    public bool IsDiscovered(string discoveryId) => _discoveries.IsDiscovered(discoveryId);
+
+    /// <summary>Runs one known interaction by id, through the same experiment path a blind
+    /// combination takes — so a listed interaction and a guessed one cannot diverge.</summary>
+    public void MakeInteraction(string interactionId)
+    {
+        if (!_interactions.TryGetById(interactionId, out var interaction))
+            return;
+
+        Experiment(interaction.Inputs.Select(input => input.ItemId).ToArray());
+    }
 
     public void Experiment(params string[] itemIds)
     {
@@ -948,27 +998,8 @@ public partial class GameRoot : Node
         _professions.GetProgress("profession.herblore").AddXp(ProfessionLeveling.XpForLevel(15));
         _professions.GetProgress("profession.smithing").AddXp(ProfessionLeveling.XpForLevel(15));
 
-        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every craftingAction unlocked).");
+        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every crafting action unlocked).");
         InventoryChanged?.Invoke();
-    }
-
-    public string CraftingReport()
-    {
-        var report = new StringBuilder();
-        foreach (var interaction in _interactions.GetAll())
-        {
-            var known = _discoveries.IsDiscovered(interaction.DiscoveryId);
-            var inputs = string.Join(" + ", interaction.Inputs.Select(i => $"{i.Quantity} {ItemName(i.ItemId)}"));
-            var requirements = interaction.ProfessionRequirements.Count == 0
-                ? "no requirement"
-                : string.Join(", ", interaction.ProfessionRequirements.Select(r => $"{ProfessionName(r.ProfessionId)} L{r.Level} (have L{_professions.GetProgress(r.ProfessionId).Level})"));
-            var name = known ? interaction.Name : "??? (undiscovered)";
-            report.AppendLine($"{name}");
-            report.AppendLine($"  {inputs}  →  {ItemName(interaction.ResultItemId)}");
-            report.AppendLine($"  requires {requirements}");
-        }
-
-        return report.ToString().TrimEnd();
     }
 
     // --- Combat -------------------------------------------------------------
@@ -1040,10 +1071,6 @@ public partial class GameRoot : Node
     public void CombatWait() => _encounter.Wait();
 
     // --- Fabrication (C2a) --------------------------------------------------
-
-    /// <summary>Forms the player can fabricate into, for the Crafting tab.</summary>
-    public IReadOnlyList<EquipmentBlueprintDefinition> Forms =>
-        _content.Forms.GetAll().OrderBy(f => f.Name).ToList();
 
     /// <summary>Materials on hand eligible for a form slot (any-of tag gate) — the per-slot
     /// component pickers' source (C2b).</summary>
@@ -2008,7 +2035,9 @@ public partial class GameRoot : Node
     public string ActionName(string actionId) =>
         _actionStore.TryGetById(actionId, out var a) ? a.Name : actionId;
 
-    private string ItemName(string itemId)
+    /// <summary>An item's display name, whatever store it lives in. Public because the UI lists
+    /// interaction inputs and outputs, and neither should render a raw content id.</summary>
+    public string ItemName(string itemId)
     {
         if (_materials.TryGetById(itemId, out var m))
             return m.Name;

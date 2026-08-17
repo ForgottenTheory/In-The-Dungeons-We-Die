@@ -1,6 +1,7 @@
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Crafting;
+using Dungeons.Hideout;
 using Dungeons.Items;
 using Dungeons.Professions;
 using Dungeons.Realms;
@@ -30,6 +31,11 @@ public sealed class ContentBundle
     public DataStore<ProfessionDefinition> Professions { get; init; } = new();
     public DataStore<ProfessionActionDefinition> Actions { get; init; } = new();
     public DataStore<TrainingObstacleDefinition> TrainingObstacles { get; init; } = new();
+
+    /// <summary>Hideout stations — the player-facing entry points into the professions,
+    /// the crafting bench and equipment assembly. Routing only; they own no rules.</summary>
+    public DataStore<StationDefinition> Stations { get; init; } = new();
+
     public DataStore<CraftingInteractionDefinition> Interactions { get; init; } = new();
     public DataStore<MoveDefinition> Moves { get; init; } = new();
     public DataStore<MoveModifierDefinition> MoveModifiers { get; init; } = new();

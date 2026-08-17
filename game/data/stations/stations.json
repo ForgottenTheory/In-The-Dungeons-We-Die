@@ -1,0 +1,154 @@
+[
+  // Hideout stations — the player-facing entry points, one per profession.
+  //
+  // A station routes; it never rules. `crafting_actions` and `blueprints` say what is offered
+  // *here*, and the underlying gate is untouched: Distill is offered at the Alchemy Lab and
+  // still asks for Herblore 12, which the picker line says out loud. Grind is ungated, so it
+  // has two homes (a mortar and a mill) rather than being cornered into one.
+  //
+  // The validator enforces the two rules that keep this honest: every profession has exactly
+  // one station, and every station hosts at least one profession.
+
+  // --- Gathering ------------------------------------------------------------------------
+
+  {
+    "id": "station.mineshaft",
+    "name": "Mineshaft",
+    "description": "A lamp, a shaft head and a working face. Ore, stone and crystal come up here; what they become is someone else's station.",
+    "professions": ["profession.mining"]
+  },
+  {
+    "id": "station.timber_yard",
+    "name": "Timber Yard",
+    "description": "Stacked logs, stripped bark, buckets under the cuts. One tree leaves in four directions.",
+    "professions": ["profession.forestry"]
+  },
+  {
+    "id": "station.fishing_dock",
+    "name": "Fishing Dock",
+    "description": "A plank over dark water. What comes up is food, oil and scale — and occasionally a problem.",
+    "professions": ["profession.fishing"]
+  },
+  {
+    "id": "station.garden_plots",
+    "name": "Garden Plots",
+    "description": "Beds, seed and a watering can. Crops keep growing while the game is closed; nothing else in the Hideout does.",
+    "professions": ["profession.farming"]
+  },
+  {
+    "id": "station.hunting_lodge",
+    "name": "Hunting Lodge",
+    "description": "Traps, tracks and patience. It brings the animal home whole — reading it is the Bone Table's job.",
+    "professions": ["profession.hunting"]
+  },
+  {
+    "id": "station.bone_table",
+    "name": "Bone Table",
+    "description": "A scrubbed slab and good light. What a carcass gives up is a matter of knowing where to look.",
+    "professions": ["profession.beast_lore"]
+  },
+  {
+    "id": "station.salvage_yard",
+    "name": "Salvage Yard",
+    "description": "Heaps of somebody else's bad day, sorted into tomorrow's components.",
+    "professions": ["profession.salvaging"]
+  },
+
+  // --- Processing -----------------------------------------------------------------------
+
+  {
+    "id": "station.forge",
+    "name": "Forge",
+    "description": "Fire, anvil and quench barrel. Ore becomes ingot, ingot becomes edge — and the edge leaves here as a weapon.",
+    "professions": ["profession.smithing"],
+    "crafting_actions": [
+      "process.smelt",
+      "process.quench",
+      "process.alloy",
+      "process.forge_infusion"
+    ],
+    "blueprints": ["form.longsword", "form.buckler"]
+  },
+  {
+    "id": "station.apothecary",
+    "name": "Apothecary",
+    "description": "Mortar, press and steeping jars. Everything here prepares an ingredient without changing what it is.",
+    "professions": ["profession.herblore"],
+    "crafting_actions": ["process.grind", "process.steep"]
+  },
+  {
+    "id": "station.alchemy_lab",
+    "name": "Alchemy Lab",
+    "description": "Glassware, a low flame and the willingness to find out. Where the Apothecary prepares, this changes.",
+    "professions": ["profession.alchemy"],
+    "crafting_actions": ["process.distill"]
+  },
+  {
+    "id": "station.kitchen",
+    "name": "Kitchen",
+    "description": "Protein, vegetable, seasoning, liquid. A meal carries what you put in it and nothing you did not.",
+    "professions": ["profession.cooking"]
+  },
+  {
+    "id": "station.tannery",
+    "name": "Tannery",
+    "description": "Lye, a scraping beam and drying frames. Drake leather stays drake; nothing here is flattened into a tier.",
+    "professions": ["profession.leatherworking"],
+    "blueprints": ["form.vest"]
+  },
+  {
+    "id": "station.loom",
+    "name": "Loom",
+    "description": "Fibre, thread, cloth. Slow, quiet, and the only source of anything soft enough to wear.",
+    "professions": ["profession.tailoring"],
+    "blueprints": ["form.vest"]
+  },
+  {
+    "id": "station.fletchers_bench",
+    "name": "Fletcher's Bench",
+    "description": "Shafts, staves, strings and vanes — parts for weapons that have no blueprint yet.",
+    "professions": ["profession.fletching"]
+  },
+  {
+    "id": "station.workbench",
+    "name": "Workbench",
+    "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
+    "professions": ["profession.artifice"],
+    "crafting_actions": ["process.grind"],
+    "blueprints": ["form.buckler"]
+  },
+  {
+    "id": "station.runic_altar",
+    "name": "Runic Altar",
+    "description": "A cut blank, an essence and a very steady hand. Raising a material's resonance starts here.",
+    "professions": ["profession.runecrafting"],
+    "crafting_actions": ["process.attune"]
+  },
+
+  // --- Utility --------------------------------------------------------------------------
+
+  {
+    "id": "station.thieves_nook",
+    "name": "Thieves' Nook",
+    "description": "A dark corner and a list of marks. What comes back is metal, keys and paperwork — there is nothing here to spend.",
+    "professions": ["profession.thieving"]
+  },
+  {
+    "id": "station.training_course",
+    "name": "Training Course",
+    "description": "Five slots, one obstacle each. What you fit is your standing travel, hazard and extraction loadout.",
+    "professions": ["profession.agility"]
+  },
+  {
+    "id": "station.cartographers_desk",
+    "name": "Cartographer's Desk",
+    "description": "Surveys in, charts out, Realm Knowledge filed. This desk understands Realms; the Assay Table understands things.",
+    "professions": ["profession.cartography"]
+  },
+  {
+    "id": "station.assay_table",
+    "name": "Assay Table",
+    "description": "Lenses, reagents and patience. Every level replaces a ??? with what the material was always doing.",
+    "professions": ["profession.assay"]
+  }
+]

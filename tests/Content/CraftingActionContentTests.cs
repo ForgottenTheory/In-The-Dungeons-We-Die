@@ -152,13 +152,28 @@ public class CraftingActionContentTests
         }
     }
 
+    /// <summary>
+    /// Grind is the universal prep step; everything else earns its way in through a profession.
+    ///
+    /// <para>Two named, temporary exceptions (2026-08-17): Distill and Attune were ungated for
+    /// playtesting because the Hideout split gave each its own station — the Alchemy Lab and the
+    /// Runic Altar — while their gates still named Herblore and Alchemy, so neither station could
+    /// be exercised without levelling someone else's profession. <b>Deleting these two entries
+    /// should make the test pass again</b>; that is what "restored" looks like, and either
+    /// restoring the old gate or re-homing it to the station's own profession does it.</para>
+    /// </summary>
     [Fact]
     public void OnlyGrindIsUngated()
     {
+        var temporarilyUngatedForPlaytesting = new[] { "process.distill", "process.attune" };
+
         foreach (var craftingAction in CraftingActions().GetAll())
         {
             if (craftingAction.Id == "process.grind")
                 Assert.True(craftingAction.IsUngated, "Grind is the universal prep step and stays ungated.");
+            else if (temporarilyUngatedForPlaytesting.Contains(craftingAction.Id))
+                Assert.True(craftingAction.IsUngated,
+                    $"{craftingAction.Id} is named as temporarily ungated — re-gate it and remove it from this list.");
             else
                 Assert.False(craftingAction.IsUngated, $"{craftingAction.Id} should be gated by a profession.");
         }

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dungeons.Combat;
-using Dungeons.Crafting;
+using Dungeons.Hideout;
 using Dungeons.Items;
-using Dungeons.Presentation;
-using Dungeons.Realms;
+using Dungeons.Professions;
 using Godot;
+using static Dungeons.Game.Ui.ConsoleTheme;
 
 namespace Dungeons.Game.Ui;
 
@@ -19,27 +19,12 @@ namespace Dungeons.Game.Ui;
 /// </summary>
 public partial class MainMvpUI : Control
 {
-    // --- Palette (code-only theming, no assets) -----------------------------
-    private static readonly Color BackgroundColor = new(0.11f, 0.12f, 0.15f);
-    private static readonly Color PanelColor = new(0.16f, 0.18f, 0.22f);
-    private static readonly Color CardColor = new(0.20f, 0.23f, 0.28f);
-    private static readonly Color Accent = new(0.29f, 0.62f, 1.0f);
-    private static readonly Color Positive = new(0.30f, 0.72f, 0.36f);
-    private static readonly Color Danger = new(0.90f, 0.36f, 0.32f);
-    private static readonly Color TextColor = new(0.84f, 0.86f, 0.90f);
-    private static readonly Color Muted = new(0.55f, 0.58f, 0.64f);
-    private static readonly Color Border = new(0.28f, 0.32f, 0.38f);
-
     private GameRoot _game = null!;
     private TabContainer _tabs = null!;
     private RichTextLabel _log = null!;
     private Label _statusLabel = null!;
     private Label _characterLabel = null!;
-    private Label _professionSummaryLabel = null!;
-    private Label _passiveStatusLabel = null!;
     private Label _inventoryLabel = null!;
-    private Label _craftingLabel = null!;
-    private Label _craftingStashLabel = null!;
     private Label _combatLabel = null!;
     private HBoxContainer _moveButtonsRow = null!;
     private Label _hitLogLabel = null!;
@@ -53,17 +38,20 @@ public partial class MainMvpUI : Control
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
 
-    // --- Professions --------------------------------------------------------
-    private OptionButton _professionPicker = null!;
-    private Label _professionBlurb = null!;
-    private VBoxContainer _actionLadder = null!;
+    // --- Hideout ------------------------------------------------------------
+    private Label _professionSummaryLabel = null!;
+    private Label _passiveStatusLabel = null!;
     private PanelContainer _opportunityCard = null!;
     private Label _opportunityTitle = null!;
     private Label _opportunityPrompt = null!;
     private Label _opportunityCost = null!;
-    private VBoxContainer _farmingControls = null!;
-    private VBoxContainer _courseControls = null!;
-    private Label _courseSummaryLabel = null!;
+    private VBoxContainer _stationIndex = null!;
+    private VBoxContainer _stationPage = null!;
+
+    /// <summary>Station pages are built on first visit and kept, so walking away from a
+    /// half-assembled reagent chain and coming back does not throw the work away.</summary>
+    private readonly Dictionary<string, StationPanel> _visitedStations = new();
+    private StationPanel? _openStation;
 
     // --- Character Lab ------------------------------------------------------
     private OptionButton _basePicker = null!;
@@ -75,33 +63,6 @@ public partial class MainMvpUI : Control
     private Label _labDiffLabel = null!;
     private Label _labReportLabel = null!;
 
-    // --- Crafting bench -----------------------------------------------------
-    private OptionButton _processPicker = null!;
-    private OptionButton _substratePicker = null!;
-    private OptionButton _reagentPicker = null!;
-    private OptionButton _catalystPicker = null!;
-    private OptionButton _formPicker = null!;
-    private VBoxContainer _fabricationSlots = null!;
-    private Label _fabricationPreview = null!;
-    private Label _latestWorkLabel = null!;
-    private readonly Dictionary<string, OptionButton> _slotPickers = new();
-    private readonly Dictionary<string, Label> _slotFitLabels = new();
-    private readonly Dictionary<string, IReadOnlyList<(string Id, string Name, int Quantity)>> _slotEligible = new();
-    private VBoxContainer _reagentChain = null!;
-    private Label _channelLabel = null!;
-    private VBoxContainer _projectionPanel = null!;
-    private Label _advancedProjectionLabel = null!;
-    private CheckButton _advancedToggle = null!;
-    private Label _substrateInspector = null!;
-    private Label _substrateInspectorAdvanced = null!;
-    private Button _craftButton = null!;
-
-    /// <summary>The ordered reagent chain being assembled. Order is the mechanic (§0 D2).</summary>
-    private readonly List<string> _reagents = new();
-
-    /// <summary>Snapshot backing the material pickers, so a picker index maps to an id.</summary>
-    private IReadOnlyList<(string Id, string Name, int Quantity)> _onHand = Array.Empty<(string, string, int)>();
-
     private double _timingPhase;
 
     public override void _Ready()
@@ -112,16 +73,16 @@ public partial class MainMvpUI : Control
 
         _game.LogEmitted += AppendLog;
         _game.CharacterChanged += RefreshCharacter;
-        _game.InventoryChanged += RefreshProfessionsAndInventory;
+        _game.InventoryChanged += RefreshHideoutAndInventory;
         _game.RunningChanged += RefreshRunButton;
-        _game.DiscoveryChanged += RefreshCrafting;
+        _game.DiscoveryChanged += RefreshOpenStation;
         _game.CombatChanged += RefreshCombat;
         _game.RealmChanged += RefreshRealm;
         _game.OpportunityOffered += ShowOpportunity;
 
         _game.ReportStatus();
         RefreshCharacter();
-        RefreshProfessionsAndInventory();
+        RefreshHideoutAndInventory();
         RefreshRunButton();
         RefreshCombat();
         RefreshRealm();
@@ -133,9 +94,9 @@ public partial class MainMvpUI : Control
             return;
         _game.LogEmitted -= AppendLog;
         _game.CharacterChanged -= RefreshCharacter;
-        _game.InventoryChanged -= RefreshProfessionsAndInventory;
+        _game.InventoryChanged -= RefreshHideoutAndInventory;
         _game.RunningChanged -= RefreshRunButton;
-        _game.DiscoveryChanged -= RefreshCrafting;
+        _game.DiscoveryChanged -= RefreshOpenStation;
         _game.CombatChanged -= RefreshCombat;
         _game.RealmChanged -= RefreshRealm;
         _game.OpportunityOffered -= ShowOpportunity;
@@ -174,7 +135,7 @@ public partial class MainMvpUI : Control
     private void BuildLayout()
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Theme = BuildTheme();
+        Theme = ConsoleTheme.Build();
 
         var background = new ColorRect { Color = BackgroundColor, MouseFilter = MouseFilterEnum.Ignore };
         background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -207,8 +168,7 @@ public partial class MainMvpUI : Control
         BuildCharacterSection(MakeTab("Character"));
         BuildCharacterLabSection(MakeTab("Char Lab"));
         BuildEquipmentSection(MakeTab("Equipment"));
-        BuildProfessionSection(MakeTab("Professions"));
-        BuildCraftingSection(MakeTab("Crafting"));
+        BuildHideoutSection(MakeTab("Hideout"));
         BuildRealmSection(MakeTab("Realm"));
         BuildCombatSection(MakeTab("Combat"));
         BuildInventorySection(MakeTab("Inventory"));
@@ -321,18 +281,22 @@ public partial class MainMvpUI : Control
     }
 
     /// <summary>
-    /// The Professions tab. With twenty professions and nearly two hundred actions, one flat
-    /// list is unreadable — so the ladder is behind a profession picker, and the tab's fixed
-    /// furniture is the three things that are always true: what is running, what is on offer,
-    /// and what the course is granting.
+    /// The Hideout: everything you do between runs, reached the way the fiction describes it —
+    /// <b>choose a station, then use what that station is for</b>.
+    ///
+    /// <para>The tab has exactly two layers. The <b>activity strip</b> is fixed furniture,
+    /// because only one thing can be running at a time and the Discover → Pursue offer must
+    /// appear on the same page as the Active button that raised it. Below it, the <b>station
+    /// index</b> and one <b>station page</b> swap places.</para>
+    ///
+    /// <para>This replaced a monolithic Crafting tab that put eight crafting actions and every
+    /// blueprint on one screen regardless of where any of it belonged.</para>
     /// </summary>
-    private void BuildProfessionSection(VBoxContainer root)
+    private void BuildHideoutSection(VBoxContainer root)
     {
-        root.AddChild(SectionTitle("Professions"));
-        _professionSummaryLabel = new Label();
-        root.AddChild(Card(_professionSummaryLabel));
+        root.AddChild(SectionTitle("Hideout"));
 
-        // --- The passive lane: what runs while you are away ---------------------
+        // --- The activity strip: what is running, and what is on offer ----------
         var passiveRow = Row();
         root.AddChild(passiveRow);
         _passiveStatusLabel = new Label { Text = "Passive: (idle)", CustomMinimumSize = new Vector2(260, 0) };
@@ -341,65 +305,107 @@ public partial class MainMvpUI : Control
         passiveRow.AddChild(_passiveBar);
         passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
 
+        passiveRow.AddChild(new Label { Text = "   Active timing:" });
+        _timingBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(180, 0), ShowPercentage = false };
+        passiveRow.AddChild(_timingBar);
+
         var offlineNote = Wrapping(Muted);
         offlineNote.Text = "Whatever is running when you save keeps going while the game is closed — same rate, "
-                          + "no opportunities. Levelling never needs you at the keyboard.";
+                          + "no opportunities. Levelling never needs you at the keyboard. Active play aims for the "
+                          + "middle of the sweep.";
         root.AddChild(offlineNote);
-
-        // --- The active lane: timing, then the decision -------------------------
-        root.AddChild(new HSeparator());
-        var timingRow = Row();
-        root.AddChild(timingRow);
-        timingRow.AddChild(new Label { Text = "Active timing (aim for the middle):" });
-        _timingBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
-        timingRow.AddChild(_timingBar);
 
         _opportunityCard = Card(BuildOpportunityPanel());
         _opportunityCard.Visible = false;
         root.AddChild(_opportunityCard);
 
-        // --- The ladder, one profession at a time -------------------------------
         root.AddChild(new HSeparator());
-        var pickerRow = Row();
-        root.AddChild(pickerRow);
-        pickerRow.AddChild(new Label { Text = "Profession:", CustomMinimumSize = new Vector2(80, 0) });
-        _professionPicker = new OptionButton { CustomMinimumSize = new Vector2(240, 0) };
-        foreach (var profession in AllProfessionsGrouped())
-            _professionPicker.AddItem(profession.Name);
-        _professionPicker.ItemSelected += _ => RebuildActionLadder();
-        pickerRow.AddChild(_professionPicker);
 
-        _professionBlurb = Wrapping(Muted);
-        root.AddChild(_professionBlurb);
+        // --- Index ⟷ station page ----------------------------------------------
+        _stationIndex = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _stationIndex.AddThemeConstantOverride("separation", 8);
+        root.AddChild(_stationIndex);
+        BuildStationIndex(_stationIndex);
 
-        _actionLadder = new VBoxContainer();
-        root.AddChild(_actionLadder);
-
-        // --- Farming plots and the Agility course -------------------------------
-        root.AddChild(new HSeparator());
-        root.AddChild(SectionTitle("Hideout plots"));
-        _farmingControls = new VBoxContainer();
-        root.AddChild(_farmingControls);
-
-        root.AddChild(new HSeparator());
-        root.AddChild(SectionTitle("Training course"));
-        _courseSummaryLabel = new Label();
-        root.AddChild(Card(_courseSummaryLabel));
-        _courseControls = new VBoxContainer();
-        root.AddChild(_courseControls);
-        root.AddChild(MakeButton("Run a lap", () => _game.RunTrainingLap(), Accent));
-
-        RebuildActionLadder();
-        RebuildFarmingControls();
-        RebuildCourseControls();
+        _stationPage = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Visible = false };
+        _stationPage.AddThemeConstantOverride("separation", 8);
+        var leaveRow = Row();
+        leaveRow.AddChild(MakeButton("← Hideout", LeaveStation));
+        _stationPage.AddChild(leaveRow);
+        root.AddChild(_stationPage);
     }
 
-    /// <summary>Every profession in category order, so the picker reads Gathering →
-    /// Processing → Utility rather than alphabetically across twenty unrelated names.</summary>
-    private IReadOnlyList<Dungeons.Professions.ProfessionDefinition> AllProfessionsGrouped() =>
-        System.Enum.GetValues<Dungeons.Professions.ProfessionCategory>()
-            .SelectMany(_game.ProfessionsIn)
-            .ToList();
+    private void BuildStationIndex(VBoxContainer root)
+    {
+        var intro = Wrapping(Muted);
+        intro.Text = "Choose a station. Each one trains its profession and offers whatever it is for — "
+                    + "the Forge smelts and forges blades, the Apothecary steeps, the Assay Table reads.";
+        root.AddChild(intro);
+
+        foreach (var category in Enum.GetValues<ProfessionCategory>())
+        {
+            var stations = _game.StationsIn(category);
+            if (stations.Count == 0)
+                continue;
+
+            var shelf = new Label { Text = category.ToString() };
+            shelf.AddThemeColorOverride("font_color", Muted);
+            root.AddChild(shelf);
+
+            var grid = new GridContainer { Columns = 4, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            grid.AddThemeConstantOverride("h_separation", 6);
+            grid.AddThemeConstantOverride("v_separation", 6);
+            root.AddChild(grid);
+
+            foreach (var station in stations)
+            {
+                var button = MakeButton(station.Name, () => OpenStation(station), Accent);
+                button.CustomMinimumSize = new Vector2(170, 0);
+                button.TooltipText = station.Description;
+                grid.AddChild(button);
+            }
+        }
+
+        root.AddChild(new HSeparator());
+        _professionSummaryLabel = new Label();
+        root.AddChild(Card(_professionSummaryLabel));
+
+        var debugRow = Row();
+        root.AddChild(debugRow);
+        debugRow.AddChild(MakeButton("Grant Test Mats (debug)", () => _game.GrantCraftTestMaterials(), Accent));
+    }
+
+    private void OpenStation(StationDefinition station)
+    {
+        if (!_visitedStations.TryGetValue(station.Id, out var page))
+        {
+            page = new StationPanel(_game, station, CurrentTimingPerformance);
+            _visitedStations[station.Id] = page;
+        }
+
+        if (_openStation is { } previouslyOpen)
+            previouslyOpen.Visible = false;
+
+        if (page.GetParent() is null)
+            _stationPage.AddChild(page);
+
+        page.Visible = true;
+        page.Refresh(); // it may have been sitting behind several level-ups
+        _openStation = page;
+
+        _stationIndex.Visible = false;
+        _stationPage.Visible = true;
+    }
+
+    private void LeaveStation()
+    {
+        if (_openStation is { } page)
+            page.Visible = false;
+        _openStation = null;
+
+        _stationPage.Visible = false;
+        _stationIndex.Visible = true;
+    }
 
     private VBoxContainer BuildOpportunityPanel()
     {
@@ -442,161 +448,6 @@ public partial class MainMvpUI : Control
             : $"{offer.RiskWeight:P0} chance it comes to nothing";
         _opportunityCost.Text = $"Costs {seconds:0.#}s · {risk}";
         _opportunityCard.Visible = true;
-    }
-
-    private void RebuildActionLadder()
-    {
-        var professions = AllProfessionsGrouped();
-        if (professions.Count == 0)
-            return;
-
-        var selected = professions[Mathf.Clamp(_professionPicker.Selected, 0, professions.Count - 1)];
-        _professionBlurb.Text = $"{selected.Description}   ({selected.Category}, L{_game.ProfessionLevel(selected.Id)})";
-
-        foreach (var child in _actionLadder.GetChildren())
-            child.QueueFree();
-
-        foreach (var action in _game.ActionsFor(selected.Id))
-        {
-            var row = Row();
-            _actionLadder.AddChild(row);
-
-            var actionId = action.Id;
-            var locked = _game.ProfessionLevel(selected.Id) < action.RequiredLevel;
-            var label = new Label
-            {
-                Text = $"L{action.RequiredLevel,-3} {action.Name}",
-                CustomMinimumSize = new Vector2(260, 0),
-            };
-            if (locked)
-                label.AddThemeColorOverride("font_color", Muted);
-            row.AddChild(label);
-
-            if (locked)
-            {
-                row.AddChild(new Label { Text = "locked", CustomMinimumSize = new Vector2(140, 0) });
-                continue;
-            }
-
-            row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
-            row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, CurrentTimingPerformance()), Accent));
-
-            if (action.Opportunities.Count > 0)
-            {
-                var marker = new Label { Text = "◆ has an opportunity" };
-                marker.AddThemeColorOverride("font_color", Positive);
-                row.AddChild(marker);
-            }
-
-            if (action.SuccessChance < 1.0)
-            {
-                var chance = new Label { Text = $"{action.SuccessChance:P0} to land" };
-                chance.AddThemeColorOverride("font_color", Muted);
-                row.AddChild(chance);
-            }
-        }
-    }
-
-    private void RebuildFarmingControls()
-    {
-        foreach (var child in _farmingControls.GetChildren())
-            child.QueueFree();
-
-        var plantable = _game.PlantableActions();
-        var unlocked = _game.UnlockedFarmingPlots;
-
-        var header = Wrapping(Muted);
-        header.Text = $"{unlocked} plot(s) open at Farming L{_game.ProfessionLevel("profession.farming")}. "
-                     + "Crops grow on the world clock, so they keep growing while the game is closed.";
-        _farmingControls.AddChild(header);
-
-        for (var index = 0; index < unlocked; index++)
-        {
-            var plot = _game.FarmingPlotsView[index];
-            var plotIndex = index;
-            var row = Row();
-            _farmingControls.AddChild(row);
-            row.AddChild(new Label { Text = $"Plot {index + 1}", CustomMinimumSize = new Vector2(70, 0) });
-
-            if (plot.IsEmpty)
-            {
-                var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
-                foreach (var action in plantable)
-                    picker.AddItem(action.Name);
-                row.AddChild(picker);
-                row.AddChild(MakeButton("Plant", () =>
-                {
-                    if (plantable.Count == 0)
-                        return;
-                    _game.PlantCrop(plotIndex, plantable[Mathf.Clamp(picker.Selected, 0, plantable.Count - 1)].Id);
-                    RebuildFarmingControls();
-                }, Accent));
-                continue;
-            }
-
-            row.AddChild(new Label
-            {
-                Text = _game.ActionName(plot.PlantedActionId!),
-                CustomMinimumSize = new Vector2(220, 0),
-            });
-            var bar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(140, 0), ShowPercentage = false };
-            bar.Value = _game.PlotProgress(plotIndex) * 100.0;
-            row.AddChild(bar);
-            row.AddChild(MakeButton("Harvest", () =>
-            {
-                _game.HarvestPlot(plotIndex);
-                RebuildFarmingControls();
-            }, Positive));
-        }
-    }
-
-    private void RebuildCourseControls()
-    {
-        foreach (var child in _courseControls.GetChildren())
-            child.QueueFree();
-
-        _courseSummaryLabel.Text = _game.TrainingCourseSummary();
-
-        foreach (var slot in System.Enum.GetValues<Dungeons.Professions.TrainingSlot>())
-        {
-            var available = _game.ObstaclesFor(slot);
-            var row = Row();
-            _courseControls.AddChild(row);
-            row.AddChild(new Label { Text = slot.ToString(), CustomMinimumSize = new Vector2(90, 0) });
-
-            if (available.Count == 0)
-            {
-                var none = new Label { Text = "nothing unlocked yet" };
-                none.AddThemeColorOverride("font_color", Muted);
-                row.AddChild(none);
-                continue;
-            }
-
-            var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
-            foreach (var obstacle in available)
-                picker.AddItem(obstacle.Name);
-
-            var fitted = _game.FittedObstacle(slot);
-            if (fitted is not null)
-            {
-                var fittedIndex = available.ToList().FindIndex(o => o.Id == fitted);
-                if (fittedIndex >= 0)
-                    picker.Selected = fittedIndex;
-            }
-
-            row.AddChild(picker);
-            var slotValue = slot;
-            row.AddChild(MakeButton("Fit", () =>
-            {
-                _game.FitObstacle(slotValue, available[Mathf.Clamp(picker.Selected, 0, available.Count - 1)].Id);
-                RebuildCourseControls();
-            }, Accent));
-            row.AddChild(MakeButton("Clear", () =>
-            {
-                _game.ClearObstacle(slotValue);
-                RebuildCourseControls();
-            }));
-        }
     }
 
     /// <summary>
@@ -722,557 +573,6 @@ public partial class MainMvpUI : Control
         _labDiffLabel.Text = diff.Count == 0 ? "(pick a different component)" : string.Join("\n", diff);
     }
 
-    /// <summary>
-    /// The emergent crafting bench (docs/emergent-item-system.md §7.1, §6.2c).
-    ///
-    /// <para>The layout follows the spec's insistence that order be <b>legible</b>: the player
-    /// literally sees "Base: Iron Ingot → Step 1: Ember Sap → Step 2: Stormglass" and can
-    /// reorder the steps, rather than dragging abstract properties around. Permuting the
-    /// reagents permutes the outcome, and the UI makes that visible.</para>
-    ///
-    /// <para>The projection panel is <b>required scope</b>, not polish: workability 0 destroys
-    /// the material, and that rule is only fair if destruction is never a surprise.</para>
-    /// </summary>
-    private void BuildCraftingSection(VBoxContainer root)
-    {
-        root.AddChild(SectionTitle("Crafting"));
-
-        // --- Process ---------------------------------------------------------
-        var processRow = Row();
-        root.AddChild(processRow);
-        processRow.AddChild(new Label { Text = "Process:", CustomMinimumSize = new Vector2(70, 0) });
-        _processPicker = new OptionButton { CustomMinimumSize = new Vector2(420, 0) };
-        foreach (var craftingAction in _game.CraftingActions)
-            _processPicker.AddItem(_game.CraftingActionLabel(craftingAction));
-        _processPicker.ItemSelected += _ => RefreshProjection();
-        processRow.AddChild(_processPicker);
-
-        _channelLabel = new Label();
-        _channelLabel.AddThemeColorOverride("font_color", Muted);
-        root.AddChild(_channelLabel);
-
-        // --- Substrate -------------------------------------------------------
-        var substrateRow = Row();
-        root.AddChild(substrateRow);
-        substrateRow.AddChild(new Label { Text = "Base:", CustomMinimumSize = new Vector2(70, 0) });
-        _substratePicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
-        _substratePicker.ItemSelected += _ => RefreshProjection();
-        substrateRow.AddChild(_substratePicker);
-
-        // --- Reagent chain ---------------------------------------------------
-        var reagentRow = Row();
-        root.AddChild(reagentRow);
-        reagentRow.AddChild(new Label { Text = "Add step:", CustomMinimumSize = new Vector2(70, 0) });
-        _reagentPicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
-        reagentRow.AddChild(_reagentPicker);
-        reagentRow.AddChild(MakeButton("Add →", AddReagent, Accent));
-        reagentRow.AddChild(MakeButton("Clear", () => { _reagents.Clear(); RebuildReagentChain(); }, Danger));
-
-        _reagentChain = new VBoxContainer();
-        _reagentChain.AddThemeConstantOverride("separation", 2);
-        root.AddChild(Card(_reagentChain));
-
-        // --- Catalyst --------------------------------------------------------
-        var catalystRow = Row();
-        root.AddChild(catalystRow);
-        catalystRow.AddChild(new Label { Text = "Catalyst:", CustomMinimumSize = new Vector2(70, 0) });
-        _catalystPicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
-        _catalystPicker.ItemSelected += _ => RefreshProjection();
-        catalystRow.AddChild(_catalystPicker);
-        var catalystHint = new Label { Text = "not consumed; lends its affinity" };
-        catalystHint.AddThemeColorOverride("font_color", Muted);
-        catalystRow.AddChild(catalystHint);
-
-        // --- Projection + commit ---------------------------------------------
-        root.AddChild(new HSeparator());
-        var projectionHeadRow = Row();
-        root.AddChild(projectionHeadRow);
-        var projectionHead = new Label { Text = "Before you commit:" };
-        projectionHead.AddThemeColorOverride("font_color", Muted);
-        projectionHead.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        projectionHeadRow.AddChild(projectionHead);
-
-        // §2F: the numeric voice is one toggle away, never the default.
-        _advancedToggle = new CheckButton { Text = "Advanced" };
-        _advancedToggle.AddThemeColorOverride("font_color", Muted);
-        _advancedToggle.Toggled += _ => RefreshProjection();
-        projectionHeadRow.AddChild(_advancedToggle);
-
-        // The pre-commit panel: one row per ProjectionLine, coloured by kind (D30 §3).
-        var projectionBox = new VBoxContainer();
-        projectionBox.AddThemeConstantOverride("separation", 2);
-        _projectionPanel = new VBoxContainer();
-        _projectionPanel.AddThemeConstantOverride("separation", 2);
-        projectionBox.AddChild(_projectionPanel);
-        _advancedProjectionLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
-        _advancedProjectionLabel.AddThemeColorOverride("font_color", Muted);
-        projectionBox.AddChild(_advancedProjectionLabel);
-        root.AddChild(Card(projectionBox));
-
-        var commitRow = Row();
-        root.AddChild(commitRow);
-        _craftButton = MakeButton("Craft", CommitCraft, Positive);
-        _craftButton.CustomMinimumSize = new Vector2(160, 0);
-        commitRow.AddChild(_craftButton);
-        commitRow.AddChild(MakeButton("Refresh", RefreshCraftingPickers));
-        commitRow.AddChild(MakeButton("Grant Test Mats", () => _game.GrantCraftTestMaterials(), Accent));
-        commitRow.AddChild(MakeButton("Brew Healing Salve", () => _game.BrewHealingSalve()));
-
-        // C2b fabrication: pick a form, then a material per slot — each slot's picker lists
-        // only what its tag gate accepts, crafted (emergent) and authored materials alike.
-        var fabricateRow = Row();
-        root.AddChild(fabricateRow);
-        fabricateRow.AddChild(new Label { Text = "Fabricate:" });
-        _formPicker = new OptionButton { CustomMinimumSize = new Vector2(140, 0) };
-        foreach (var form in _game.Forms)
-            _formPicker.AddItem(form.Name);
-        _formPicker.ItemSelected += _ => RebuildFabricationSlots();
-        fabricateRow.AddChild(_formPicker);
-        fabricateRow.AddChild(MakeButton("Fabricate", CommitFabrication, Positive));
-
-        _fabricationSlots = new VBoxContainer();
-        _fabricationSlots.AddThemeConstantOverride("separation", 4);
-        root.AddChild(_fabricationSlots);
-
-        // The pre-commit fabrication card (R3): what would be made, read through the same seam
-        // the minted item will use — components are consumed forever, so no surprises.
-        _fabricationPreview = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        _fabricationPreview.AddThemeColorOverride("font_color", Muted);
-        root.AddChild(Card(_fabricationPreview));
-
-        // The §6 reveal — the payoff screen for the experiment.
-        var latestHeadRow = Row();
-        root.AddChild(latestHeadRow);
-        var latestHead = new Label { Text = "Latest work:" };
-        latestHead.AddThemeColorOverride("font_color", Muted);
-        latestHead.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        latestHeadRow.AddChild(latestHead);
-        latestHeadRow.AddChild(MakeButton("Reroll (debug)", DebugRerollLatest));
-        _latestWorkLabel = new Label { Text = "(nothing fabricated yet)", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        _latestWorkLabel.AddThemeColorOverride("font_color", Muted);
-        root.AddChild(Card(_latestWorkLabel));
-
-        // --- Inspector + legacy report ---------------------------------------
-        root.AddChild(new HSeparator());
-        var inspectorHead = new Label { Text = "Base material:" };
-        inspectorHead.AddThemeColorOverride("font_color", Muted);
-        root.AddChild(inspectorHead);
-        var inspectorBox = new VBoxContainer();
-        inspectorBox.AddThemeConstantOverride("separation", 2);
-        _substrateInspector = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        inspectorBox.AddChild(_substrateInspector);
-        _substrateInspectorAdvanced = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
-        _substrateInspectorAdvanced.AddThemeColorOverride("font_color", Muted);
-        inspectorBox.AddChild(_substrateInspectorAdvanced);
-        root.AddChild(Card(inspectorBox));
-
-        var stashHead = new Label { Text = "Materials on hand:" };
-        stashHead.AddThemeColorOverride("font_color", Muted);
-        root.AddChild(stashHead);
-        _craftingStashLabel = new Label();
-        root.AddChild(Card(_craftingStashLabel));
-
-        _craftingLabel = new Label();
-        root.AddChild(Card(_craftingLabel));
-
-        RefreshCraftingPickers();
-    }
-
-    // --- Crafting bench behaviour -------------------------------------------
-
-    /// <summary>Repopulates the material pickers from what is actually on hand, preserving the
-    /// current selection where it still exists.</summary>
-    private void RefreshCraftingPickers()
-    {
-        // Read the selections against the *old* list before replacing it — a picker index only
-        // means anything relative to the snapshot it was populated from.
-        var previousSubstrate = SelectedMaterialId(_substratePicker);
-        var previousReagent = SelectedMaterialId(_reagentPicker);
-        var previousCatalyst = SelectedMaterialId(_catalystPicker);
-
-        _onHand = _game.MaterialsOnHand;
-
-        RepopulateMaterialPicker(_substratePicker, previousSubstrate, includeNone: false);
-        RepopulateMaterialPicker(_reagentPicker, previousReagent, includeNone: false);
-        RepopulateMaterialPicker(_catalystPicker, previousCatalyst, includeNone: true);
-        RebuildFabricationSlots();
-
-        // Steps referring to materials no longer on hand would fail the gate confusingly.
-        _reagents.RemoveAll(id => _onHand.All(m => m.Id != id));
-        RebuildReagentChain();
-    }
-
-    /// <summary>
-    /// Refills a material picker from what is currently on hand, restoring
-    /// <paramref name="previouslySelectedId"/> if that material is still available.
-    /// </summary>
-    private void RepopulateMaterialPicker(OptionButton picker, string? previouslySelectedId, bool includeNone)
-    {
-        picker.Clear();
-
-        if (includeNone)
-            picker.AddItem("(none)");
-
-        foreach (var material in _onHand)
-        {
-            var glyphStrip = _game.MaterialStrip(material.Id);
-            picker.AddItem($"{material.Name}  ×{material.Quantity}{(glyphStrip.Length > 0 ? "   " + glyphStrip : "")}");
-        }
-
-        var restoredIndex = _onHand.ToList().FindIndex(m => m.Id == previouslySelectedId);
-        if (restoredIndex >= 0)
-            picker.Selected = restoredIndex + (includeNone ? 1 : 0);
-        else if (picker.ItemCount > 0)
-            picker.Selected = 0;
-    }
-
-    /// <summary>One row per slot of the chosen form, each picker filtered by the slot's tag
-    /// gate (C2b). Selections survive rebuilds where the material is still eligible.</summary>
-    private void RebuildFabricationSlots()
-    {
-        var previous = _slotPickers.ToDictionary(
-            p => p.Key,
-            p => _slotEligible.TryGetValue(p.Key, out var list) && p.Value.Selected >= 0 && p.Value.Selected < list.Count
-                ? list[p.Value.Selected].Id
-                : null);
-
-        foreach (var child in _fabricationSlots.GetChildren())
-        {
-            _fabricationSlots.RemoveChild(child);
-            child.QueueFree();
-        }
-        _slotPickers.Clear();
-        _slotFitLabels.Clear();
-        _slotEligible.Clear();
-
-        var form = SelectedForm();
-        if (form is null)
-            return;
-
-        foreach (var (slotName, _) in form.Slots)
-        {
-            var row = Row();
-            _fabricationSlots.AddChild(row);
-            row.AddChild(new Label { Text = $"  {slotName}:", CustomMinimumSize = new Vector2(90, 0) });
-
-            var eligible = _game.EligibleForSlot(form.Id, slotName);
-            var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
-            foreach (var material in eligible)
-            {
-                var strip = _game.MaterialStrip(material.Id);
-                picker.AddItem($"{material.Name}  ×{material.Quantity}{(strip.Length > 0 ? "   " + strip : "")}");
-            }
-
-            var restored = eligible.ToList().FindIndex(m => m.Id == previous.GetValueOrDefault(slotName));
-            picker.Selected = restored >= 0 ? restored : (picker.ItemCount > 0 ? 0 : -1);
-
-            var slot = slotName;
-            picker.ItemSelected += _ => { RefreshSlotFit(slot); RefreshFabricationPreview(); };
-
-            _slotPickers[slotName] = picker;
-            _slotEligible[slotName] = eligible;
-            row.AddChild(picker);
-
-            // §2E: why this material appears suitable here — derived from the form's own data.
-            var fit = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-            fit.AddThemeColorOverride("font_color", Muted);
-            _slotFitLabels[slotName] = fit;
-            _fabricationSlots.AddChild(Indent(fit));
-
-            RefreshSlotFit(slotName);
-        }
-
-        RefreshFabricationPreview();
-    }
-
-    /// <summary>The chosen material id per slot, or null while any slot is empty.</summary>
-    private Dictionary<string, string>? ChosenSlotMaterials()
-    {
-        var chosen = new Dictionary<string, string>();
-        foreach (var (slotName, picker) in _slotPickers)
-        {
-            var eligible = _slotEligible[slotName];
-            if (picker.Selected < 0 || picker.Selected >= eligible.Count)
-                return null;
-            chosen[slotName] = eligible[picker.Selected].Id;
-        }
-
-        return chosen;
-    }
-
-    private void RefreshSlotFit(string slotName)
-    {
-        if (!_slotFitLabels.TryGetValue(slotName, out var label) || SelectedForm() is not { } form)
-            return;
-
-        var eligible = _slotEligible[slotName];
-        var picker = _slotPickers[slotName];
-        label.Text = picker.Selected >= 0 && picker.Selected < eligible.Count
-            ? _game.SlotFitText(form.Id, slotName, eligible[picker.Selected].Id)
-            : "(nothing eligible on hand)";
-    }
-
-    private void RefreshFabricationPreview()
-    {
-        if (_fabricationPreview is null || SelectedForm() is not { } form)
-            return;
-
-        var chosen = ChosenSlotMaterials();
-        _fabricationPreview.Text = chosen is null
-            ? "(choose a material for every slot)"
-            : _game.FabricationPreviewText(form.Id, chosen);
-        _fabricationPreview.AddThemeColorOverride(
-            "font_color", chosen is null ? Muted : TextColor);
-    }
-
-    private static Control Indent(Control control)
-    {
-        var row = new HBoxContainer();
-        row.AddChild(new Control { CustomMinimumSize = new Vector2(98, 0) });
-        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        row.AddChild(control);
-        return row;
-    }
-
-    private Dungeons.Crafting.EquipmentBlueprintDefinition? SelectedForm()
-    {
-        var forms = _game.Forms;
-        return _formPicker.Selected >= 0 && _formPicker.Selected < forms.Count ? forms[_formPicker.Selected] : null;
-    }
-
-    private void CommitFabrication()
-    {
-        var form = SelectedForm();
-        if (form is null || ChosenSlotMaterials() is not { } chosen)
-            return; // a slot has nothing eligible — nothing sensible to commit
-
-        var outcome = _game.FabricateItem(form.Id, chosen);
-
-        // The §6 reveal: the experiment pays off in gameplay language, not a log line.
-        if (outcome.Success && outcome.Item is { } item)
-        {
-            _latestWorkId = item.InstanceId;
-            _latestWorkLabel.Text = _game.ItemCardText(item);
-            _latestWorkLabel.AddThemeColorOverride("font_color", outcome.IsFirstOfItsKind ? Accent : TextColor);
-        }
-
-        RefreshCraftingPickers();
-    }
-
-    private long _latestWorkId = -1;
-
-    private void DebugRerollLatest()
-    {
-        if (_latestWorkId < 0)
-            return;
-
-        if (_game.DebugRerollAffixes(_latestWorkId) is { } rerolled)
-            _latestWorkLabel.Text = _game.ItemCardText(rerolled);
-    }
-
-    /// <summary>The material id a picker is on, or null for "(none)" / an empty picker.</summary>
-    private string? SelectedMaterialId(OptionButton picker)
-    {
-        var offset = picker == _catalystPicker ? 1 : 0;
-        var index = picker.Selected - offset;
-        return index >= 0 && index < _onHand.Count ? _onHand[index].Id : null;
-    }
-
-    private void AddReagent()
-    {
-        if (SelectedMaterialId(_reagentPicker) is not { } id)
-            return;
-
-        // 1–3 ordered reagents (§7.1). Beyond three the chain stops being legible, which is
-        // the whole reason order lives in slots rather than in an abstract permutation.
-        if (_reagents.Count >= 3)
-        {
-            AppendLog("[Craft] A craftingAction takes at most three steps.");
-            return;
-        }
-
-        _reagents.Add(id);
-        RebuildReagentChain();
-    }
-
-    /// <summary>Renders the ordered chain, with the reordering controls that make §0 Decision 2
-    /// something the player can actually play with.</summary>
-    private void RebuildReagentChain()
-    {
-        // RemoveChild first: QueueFree is deferred, so freeing alone would leave the old rows
-        // on screen for a frame and the chain would appear duplicated.
-        foreach (var child in _reagentChain.GetChildren())
-        {
-            _reagentChain.RemoveChild(child);
-            child.QueueFree();
-        }
-
-        if (_reagents.Count == 0)
-        {
-            var empty = new Label { Text = "(no steps — add a reagent above)" };
-            empty.AddThemeColorOverride("font_color", Muted);
-            _reagentChain.AddChild(empty);
-            RefreshProjection();
-            return;
-        }
-
-        for (var i = 0; i < _reagents.Count; i++)
-        {
-            var index = i;
-            var row = Row(4);
-            _reagentChain.AddChild(row);
-
-            var stepStrip = _game.MaterialStrip(_reagents[i]);
-            row.AddChild(new Label
-            {
-                Text = $"Step {i + 1}:  {NameOf(_reagents[i])}{(stepStrip.Length > 0 ? "   " + stepStrip : "")}",
-                CustomMinimumSize = new Vector2(260, 0),
-            });
-
-            if (index > 0)
-                row.AddChild(MakeButton("↑", () => SwapReagents(index, index - 1)));
-            if (index < _reagents.Count - 1)
-                row.AddChild(MakeButton("↓", () => SwapReagents(index, index + 1)));
-
-            row.AddChild(MakeButton("✕", () => { _reagents.RemoveAt(index); RebuildReagentChain(); }, Danger));
-        }
-
-        RefreshProjection();
-    }
-
-    private void SwapReagents(int firstIndex, int secondIndex)
-    {
-        (_reagents[firstIndex], _reagents[secondIndex]) = (_reagents[secondIndex], _reagents[firstIndex]);
-        RebuildReagentChain();
-    }
-
-    /// <summary>
-    /// Recomputes the pre-commit projection (§6.2c). Runs on every selection change, because a
-    /// destruction warning the player has to ask for is not a warning.
-    /// </summary>
-    private void RefreshProjection()
-    {
-        if (_processPicker is null || _projectionPanel is null)
-            return; // still building the tab
-
-        var advanced = _advancedToggle is { ButtonPressed: true };
-        var processes = _game.CraftingActions;
-        var craftingAction = _processPicker.Selected >= 0 && _processPicker.Selected < processes.Count
-            ? processes[_processPicker.Selected]
-            : null;
-
-        _channelLabel.Text = craftingAction is null ? string.Empty
-            : advanced ? AdvancedFormat.AffectedQualities(craftingAction)
-            : _game.AffectedQualitiesLabel(craftingAction);
-
-        var substrate = SelectedMaterialId(_substratePicker);
-        _substrateInspector.Text = substrate is null ? "(nothing selected)" : _game.MaterialSummary(substrate);
-        _substrateInspectorAdvanced.Visible = advanced && substrate is not null;
-        _substrateInspectorAdvanced.Text = advanced && substrate is not null
-            ? _game.MaterialSummaryAdvanced(substrate)
-            : string.Empty;
-
-        ClearChildren(_projectionPanel);
-        _advancedProjectionLabel.Visible = false;
-
-        if (craftingAction is null || substrate is null || _reagents.Count == 0)
-        {
-            AddProjectionRow("Choose a craftingAction, a base material, and at least one step.", Muted);
-            _craftButton.Disabled = true;
-            _craftButton.Text = "Craft";
-            return;
-        }
-
-        var projection = _game.ProjectCraft(craftingAction.Id, substrate, _reagents, SelectedMaterialId(_catalystPicker));
-        var reading = _game.ProjectionReading(projection, substrate);
-
-        foreach (var line in _game.ProjectionLines(reading))
-            AddProjectionRow(line.Text, LineColor(line.Kind, reading));
-
-        if (advanced)
-        {
-            _advancedProjectionLabel.Visible = true;
-            _advancedProjectionLabel.Text = _game.ProjectionTextAdvanced(projection, substrate);
-        }
-
-        // Destruction stays available — pushing a deep material is a legible gamble the player
-        // is allowed to take (§6.2c) — but the button says plainly what it will do.
-        _craftButton.Disabled = !projection.CanCraft;
-        _craftButton.Text = projection.WarnsOfDestruction ? "Craft (destroys!)"
-            : projection.WarnsOfRisk ? "Craft (risky)"
-            : "Craft";
-        _craftButton.AddThemeColorOverride(
-            "font_color", projection.WarnsOfDestruction || projection.WarnsOfRisk ? Danger : Positive);
-    }
-
-    private void AddProjectionRow(string text, Color color)
-    {
-        var row = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        row.AddThemeColorOverride("font_color", color);
-        _projectionPanel.AddChild(row);
-    }
-
-    /// <summary>Colour by line kind (D30 §3) — the client decides colour and layout, never words.</summary>
-    private Color LineColor(ProjectionLineKind kind, CraftReading reading) => kind switch
-    {
-        ProjectionLineKind.Aim => reading.FirstDiscovery ? Accent : TextColor,
-        ProjectionLineKind.Strengthening => Positive,
-        ProjectionLineKind.TraitBirth => Positive,
-        ProjectionLineKind.Opposition => Accent,
-        ProjectionLineKind.Nearby => Accent,
-        ProjectionLineKind.Essence => Accent,
-        ProjectionLineKind.StressWarning => Danger,
-        ProjectionLineKind.Risk => reading.Risk switch
-        {
-            RiskBand.Perilous or RiskBand.Destroys => Danger,
-            RiskBand.Strained => Accent,
-            _ => Muted,
-        },
-        ProjectionLineKind.Failure => Muted,
-        _ => Muted,
-    };
-
-    private static void ClearChildren(Container container)
-    {
-        foreach (var child in container.GetChildren())
-        {
-            container.RemoveChild(child);
-            child.QueueFree();
-        }
-    }
-
-    private void CommitCraft()
-    {
-        var processes = _game.CraftingActions;
-        if (_processPicker.Selected < 0 || _processPicker.Selected >= processes.Count)
-            return;
-        if (SelectedMaterialId(_substratePicker) is not { } substrate)
-            return;
-
-        var outcome = _game.Craft(
-            processes[_processPicker.Selected].Id, substrate, _reagents.ToList(), SelectedMaterialId(_catalystPicker));
-
-        // A successful craft consumed its steps; keep the base pointed at the result so the
-        // recursion the system exists for is one click away.
-        if (outcome.Success)
-        {
-            _reagents.Clear();
-            RefreshCraftingPickers();
-
-            if (outcome.ResultItemId is { } produced)
-            {
-                var index = _onHand.ToList().FindIndex(m => m.Id == produced);
-                if (index >= 0)
-                    _substratePicker.Selected = index;
-            }
-        }
-
-        RefreshProjection();
-    }
-
-    private string NameOf(string materialId) =>
-        _onHand.FirstOrDefault(m => m.Id == materialId).Name ?? materialId;
-
     private void BuildRealmSection(VBoxContainer root)
     {
         root.AddChild(SectionTitle("Realm"));
@@ -1353,11 +653,7 @@ public partial class MainMvpUI : Control
 
     private void RebuildTechniqueControls()
     {
-        foreach (var child in _techniqueControls.GetChildren())
-        {
-            _techniqueControls.RemoveChild(child);
-            child.QueueFree();
-        }
+        ClearChildren(_techniqueControls);
 
         var owned = _game.OwnedTechniques;
         if (owned.Count == 0)
@@ -1389,11 +685,7 @@ public partial class MainMvpUI : Control
 
     private void RebuildEquipmentControls()
     {
-        foreach (var child in _equipmentControls.GetChildren())
-        {
-            _equipmentControls.RemoveChild(child);
-            child.QueueFree();
-        }
+        ClearChildren(_equipmentControls);
 
         AddSlotRow(EquipmentSlot.Weapon, _game.EquippedWeapon, _game.EquippedWeaponSummary());
         AddSlotRow(EquipmentSlot.Armor, _game.EquippedArmor, _game.EquippedArmorSummary());
@@ -1439,11 +731,7 @@ public partial class MainMvpUI : Control
             return;
 
         _moveButtonsKey = key;
-        foreach (var child in _moveButtonsRow.GetChildren())
-        {
-            _moveButtonsRow.RemoveChild(child);
-            child.QueueFree();
-        }
+        ClearChildren(_moveButtonsRow);
 
         _moveButtonsRow.AddChild(new Label { Text = "Moves:" });
         AddMoveButtons(_moveButtonsRow);
@@ -1472,11 +760,7 @@ public partial class MainMvpUI : Control
 
     private void RebuildRealmControls()
     {
-        foreach (var child in _realmControls.GetChildren())
-        {
-            _realmControls.RemoveChild(child);
-            child.QueueFree();
-        }
+        ClearChildren(_realmControls);
 
         if (!_game.InRealm)
         {
@@ -1545,28 +829,23 @@ public partial class MainMvpUI : Control
         }
     }
 
-    private void RefreshProfessionsAndInventory()
+    private void RefreshHideoutAndInventory()
     {
         _professionSummaryLabel.Text = _game.ProfessionSummary();
 
-        // A level-up unlocks ladder rungs, plots and obstacles, and a harvest empties a plot —
-        // all three panels are level- or state-dependent, so they follow the inventory.
-        RebuildActionLadder();
-        RebuildFarmingControls();
-        RebuildCourseControls();
+        // A level-up unlocks ladder rungs, plots and obstacles, a harvest empties a plot, and
+        // every material picker is a snapshot — the whole open page follows the inventory.
+        RefreshOpenStation();
 
         _inventoryLabel.Text = _game.InventoryReport();
-        _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed
         RebuildTechniqueControls(); // technique items granted, learned, or spent
         RebuildMoveButtons(); // a weapon swap changes the granted moves (guarded — no-op if unchanged)
-        RefreshCrafting(); // herblore level shown in the crafting requirement can change
-
-        // What is craftable changed, and so did every projection that depends on it.
-        RefreshCraftingPickers();
     }
 
-    private void RefreshCrafting() => _craftingLabel.Text = _game.CraftingReport();
+    /// <summary>Stations the player is not standing in are left stale on purpose; each is
+    /// refreshed when it is opened, which is the only moment its contents are read.</summary>
+    private void RefreshOpenStation() => _openStation?.Refresh();
 
     private void RefreshCombat()
     {
@@ -1596,113 +875,7 @@ public partial class MainMvpUI : Control
 
     private void AppendLog(string message) => _log.AddText(message + "\n");
 
-    // --- Theming helpers ----------------------------------------------------
-
     /// <summary>1.0 when the active-timing sweep is dead-centre, falling to 0 at the edges.</summary>
     private double CurrentTimingPerformance() =>
-        Dungeons.Professions.ProfessionTuning.TimingPerformance(_timingBar.Value / 100.0);
-
-    private static Label SectionTitle(string text)
-    {
-        var label = new Label { Text = text.ToUpperInvariant() };
-        label.AddThemeFontSizeOverride("font_size", 15);
-        label.AddThemeColorOverride("font_color", Accent);
-        return label;
-    }
-
-    private static HBoxContainer Row(int separation = 8)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", separation);
-        return row;
-    }
-
-    /// <summary>
-    /// A Label that wraps on words and actually takes the width available to it.
-    ///
-    /// <para><b>Only put one of these in a VBoxContainer or a Card.</b> An autowrapping Label
-    /// inside an HBoxContainer collapses to its minimum width and wraps a single character per
-    /// line — the row gives it no width to work with.</para>
-    /// </summary>
-    private static Label Wrapping(Color? color = null)
-    {
-        var label = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(320, 0),
-        };
-
-        if (color.HasValue)
-            label.AddThemeColorOverride("font_color", color.Value);
-
-        return label;
-    }
-
-    private static PanelContainer Card(Control inner)
-    {
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", Flat(CardColor, 6, 10, Border, 1));
-        panel.AddChild(inner);
-        return panel;
-    }
-
-    private static Button MakeButton(string text, Action onPressed, Color? accentText = null)
-    {
-        var button = new Button { Text = text };
-        button.Pressed += onPressed;
-        if (accentText.HasValue)
-            button.AddThemeColorOverride("font_color", accentText.Value);
-        return button;
-    }
-
-    private static StyleBoxFlat Flat(Color bg, int radius, int pad, Color? border = null, int borderWidth = 0)
-    {
-        var box = new StyleBoxFlat { BgColor = bg };
-        box.SetCornerRadiusAll(radius);
-        box.SetContentMarginAll(pad);
-        if (border.HasValue && borderWidth > 0)
-        {
-            box.BorderColor = border.Value;
-            box.SetBorderWidthAll(borderWidth);
-        }
-
-        return box;
-    }
-
-    private static Theme BuildTheme()
-    {
-        var theme = new Theme();
-
-        theme.SetColor("font_color", "Label", TextColor);
-        theme.SetFontSize("font_size", "Label", 13);
-
-        theme.SetStylebox("normal", "Button", Flat(PanelColor, 5, 8, Border, 1));
-        theme.SetStylebox("hover", "Button", Flat(CardColor, 5, 8, Accent, 1));
-        theme.SetStylebox("pressed", "Button", Flat(Accent, 5, 8));
-        theme.SetStylebox("focus", "Button", new StyleBoxEmpty());
-        theme.SetColor("font_color", "Button", TextColor);
-        theme.SetColor("font_hover_color", "Button", new Color(1, 1, 1));
-        theme.SetColor("font_pressed_color", "Button", new Color(1, 1, 1));
-        theme.SetFontSize("font_size", "Button", 13);
-
-        theme.SetStylebox("panel", "PanelContainer", Flat(PanelColor, 8, 10, Border, 1));
-
-        theme.SetStylebox("panel", "TabContainer", Flat(PanelColor, 8, 10, Border, 1));
-        theme.SetStylebox("tab_selected", "TabContainer", Flat(Accent, 5, 8));
-        theme.SetStylebox("tab_unselected", "TabContainer", Flat(CardColor, 5, 8));
-        theme.SetStylebox("tab_hovered", "TabContainer", Flat(CardColor, 5, 8, Accent, 1));
-        theme.SetStylebox("tabbar_background", "TabContainer", new StyleBoxEmpty());
-        theme.SetColor("font_selected_color", "TabContainer", new Color(1, 1, 1));
-        theme.SetColor("font_unselected_color", "TabContainer", Muted);
-        theme.SetColor("font_hovered_color", "TabContainer", TextColor);
-
-        theme.SetStylebox("background", "ProgressBar", Flat(BackgroundColor, 4, 0));
-        theme.SetStylebox("fill", "ProgressBar", Flat(Accent, 4, 0));
-        theme.SetColor("font_color", "ProgressBar", TextColor);
-
-        theme.SetColor("default_color", "RichTextLabel", TextColor);
-        theme.SetFontSize("normal_font_size", "RichTextLabel", 12);
-        return theme;
-    }
+        ProfessionTuning.TimingPerformance(_timingBar.Value / 100.0);
 }

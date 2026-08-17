@@ -41,10 +41,14 @@
     }
   },
 
+  // ⚠ TEMPORARY — UNGATED FOR PLAYTESTING (2026-08-17). Was `profession.herblore` at level 12,
+  // which meant the Alchemy Lab's only action asked for a *different* profession. Ungated so the
+  // station can be exercised; restore the two lines below, or re-home the gate to
+  // `profession.alchemy` if the Alchemy Lab should own it for real.
   {
     "id": "process.distill",
     "name": "Distill",
-    "profession": "profession.herblore",
+    "profession": "",
     "severity": 0.50,
     "medium": "solvent",
     "role_weights": { "substrate": 0.70, "reagent": 0.28, "catalyst": 0.02 },
@@ -56,7 +60,7 @@
       { "property": "solubility", "rate": 0.30 }
     ],
     "essence_rate": 0.55,
-    "requires": { "substrate_tags": [], "profession_level": 12 },
+    "requires": { "substrate_tags": [], "profession_level": 0 },
     "tag_effects": {
       "set": ["form:liquid", "state:distillate"],
       "clear": ["form:*", "state:*"]
@@ -149,10 +153,15 @@
 
   // The resonance-raising process (§7.2, C1b): gentle, arcane-medium, and the answer to a
   // strained vessel — "attune first, then infuse" is the technique the strain warning teaches.
+  //
+  // ⚠ TEMPORARY — UNGATED FOR PLAYTESTING (2026-08-17). Was `profession.alchemy` at level 10,
+  // which meant the Runic Altar's only action asked for a *different* profession. Ungated so the
+  // station can be exercised; restore the two lines below, or re-home the gate to
+  // `profession.runecrafting` if the Runic Altar should own it for real.
   {
     "id": "process.attune",
     "name": "Attune",
-    "profession": "profession.alchemy",
+    "profession": "",
     "severity": 0.35,
     "medium": "arcane",
     "role_weights": { "substrate": 0.75, "reagent": 0.22, "catalyst": 0.03 },
@@ -161,7 +170,7 @@
       { "property": "arcane", "rate": 0.35 }
     ],
     "essence_rate": 0.30,
-    "requires": { "substrate_tags": [], "profession_level": 10 },
+    "requires": { "substrate_tags": [], "profession_level": 0 },
     "tag_effects": {
       "set": ["state:attuned"],
       "clear": ["state:*"]
