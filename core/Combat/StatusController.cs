@@ -99,7 +99,7 @@ public sealed class StatusController
     /// </param>
     public ControlOutcome Apply(
         Combatant target, string statusId, string sourceId, double magnitude = 0, int durationOverride = 0,
-        Rules.EffectContext? context = null, string? storedMoveId = null)
+        Rules.EffectContext? context = null, string? storedMoveId = null, double durationMultiplier = 1.0)
     {
         if (!_definitions.TryGetById(statusId, out var definition))
             return ControlOutcome.Ungated;
@@ -107,7 +107,7 @@ public sealed class StatusController
         if (definition.IsControl)
             return ApplyControl(target, definition, sourceId, magnitude, durationOverride, context);
 
-        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId);
+        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId, durationMultiplier);
         return ControlOutcome.Applied;
     }
 
@@ -156,10 +156,13 @@ public sealed class StatusController
 
     private void Land(
         Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
-        Rules.EffectContext? context, string? storedMoveId)
+        Rules.EffectContext? context, string? storedMoveId, double durationMultiplier = 1.0)
     {
         var now = _currentTick();
-        var duration = durationOverride > 0 ? durationOverride : definition.DurationTicks;
+        // R4c-2: the receiver's `status.duration.mult` scales landed durations (never controls —
+        // those run on Resolve). 1.0 without a source; floored at one tick so nothing lands dead.
+        var duration = Math.Max(1, (int)Math.Round(
+            (durationOverride > 0 ? durationOverride : definition.DurationTicks) * durationMultiplier));
         var list = _active.TryGetValue(target, out var existing) ? existing : _active[target] = new List<StatusInstance>();
         var current = list.FirstOrDefault(s => s.Id == definition.Id);
 

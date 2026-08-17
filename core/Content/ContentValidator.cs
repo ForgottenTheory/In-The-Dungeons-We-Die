@@ -91,8 +91,117 @@ public static class ContentValidator
         ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
         ValidateStatuses(content, problems);
         ValidateComponentMoves(content, problems);
+        ValidateAffixes(content, knownProperties, problems);
 
         return problems;
+    }
+
+    /// <summary>The docs/affixes.md §8 rules R4b can enforce at load: every grant resolves,
+    /// tiers are monotonic with sane ranges, $roll parity holds, ids avoid the D-17 collision,
+    /// slots/classes are known, and eligibility names real properties. (Reachability and the
+    /// distribution guarantees live in the seeded test suite; family-≥2 waits for catalog
+    /// breadth.)</summary>
+    private static void ValidateAffixes(ContentBundle content, HashSet<string> knownProperties, List<ContentProblem> problems)
+    {
+        var slots = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "prefix", "suffix", "innate" };
+        var classes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "standard", "trigger", "innate", "exotic", "signature", "anomalous" };
+
+        foreach (var affix in content.Affixes.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("affix", $"{affix.Id}: {message}"));
+
+            if (affix.Id.StartsWith("prefix.", StringComparison.Ordinal)
+                || affix.Id.StartsWith("suffix.", StringComparison.Ordinal))
+                Problem("affix ids must not start 'prefix.'/'suffix.' (D-17 naming collision)");
+
+            if (!slots.Contains(affix.Slot))
+                Problem($"unknown slot '{affix.Slot}'");
+            if (!classes.Contains(affix.Class))
+                Problem($"unknown class '{affix.Class}'");
+            if (string.IsNullOrWhiteSpace(affix.Family))
+                Problem("family is required — it is the anti-stacking unit (§3.5)");
+
+            foreach (var requirement in affix.Eligibility.Requires)
+            {
+                if (!knownProperties.Contains(requirement.Property))
+                    Problem($"eligibility names unknown property '{requirement.Property}'");
+            }
+
+            foreach (var scale in affix.Weight.Scale)
+            {
+                if (scale.Property is { Length: > 0 } p && !knownProperties.Contains(p))
+                    Problem($"weight scales on unknown property '{p}'");
+            }
+
+            if (affix.Tiers.Count == 0)
+            {
+                Problem("no tiers — nothing can ever roll");
+            }
+            else
+            {
+                var ordered = affix.Tiers.OrderBy(t => t.Tier).ToList();
+                for (var i = 0; i < ordered.Count; i++)
+                {
+                    if (ordered[i].Range.Count != 2)
+                        Problem($"tier {ordered[i].Tier} range must be [lo, hi]");
+
+                    foreach (var key in ordered[i].Requires.Keys)
+                    {
+                        var bare = key.StartsWith("essence.", StringComparison.OrdinalIgnoreCase)
+                            ? null
+                            : key;
+                        if (bare is not null && !knownProperties.Contains(bare))
+                            Problem($"tier {ordered[i].Tier} requires unknown property '{key}'");
+                    }
+                }
+            }
+
+            var hasRollGrant = false;
+            foreach (var grant in affix.Grants)
+            {
+                switch (grant.Type.ToLowerInvariant())
+                {
+                    case "stat":
+                        if (!content.ModifierKeys.Contains(grant.Key))
+                            Problem($"stat grant targets unknown modifier key '{grant.Key}'");
+                        if (string.Equals(grant.Value, "$roll", StringComparison.OrdinalIgnoreCase))
+                            hasRollGrant = true;
+                        else if (!double.TryParse(grant.Value, System.Globalization.NumberStyles.Float,
+                                     System.Globalization.CultureInfo.InvariantCulture, out _))
+                            Problem($"stat grant value '{grant.Value}' is neither $roll nor a number");
+                        break;
+
+                    case "rule":
+                        if (grant.Rule is null)
+                            Problem("rule grant carries no rule");
+                        else if (string.IsNullOrWhiteSpace(grant.Rule.Event))
+                            Problem($"rule grant '{grant.Rule.Id}' names no event");
+                        if (grant.RollInto is "chance" or "amount")
+                            hasRollGrant = true;
+                        break;
+
+                    case "movemodifier":
+                        if (!content.MoveModifiers.Contains(grant.Key))
+                            Problem($"moveModifier grant targets unknown modifier '{grant.Key}'");
+                        break;
+
+                    default:
+                        Problem($"unknown grant type '{grant.Type}'");
+                        break;
+                }
+            }
+
+            if (affix.Grants.Count == 0)
+                Problem("no grants — the modifier would do nothing when equipped (D30)");
+
+            // §8's parity rule: the tooltip and the mechanics may never drift.
+            var describesRoll = affix.Description.Contains("$roll", StringComparison.Ordinal);
+            if (hasRollGrant && !describesRoll)
+                Problem("$roll is granted but never described — silent tooltip drift");
+            if (!hasRollGrant && describesRoll)
+                Problem("$roll is described but never granted — the tooltip lies");
+        }
     }
 
     private static void ValidateMaterials(

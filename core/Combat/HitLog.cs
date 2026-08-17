@@ -66,6 +66,7 @@ public static class HitStages
     public const string Dodge = "Dodge";
     public const string PerfectBlock = "PerfectBlock";
     public const string Evade = "Evade";
+    public const string Parry = "Parry";
     public const string Negate = "Negate";
     public const string Crit = "Crit";
     public const string Scaling = "Scaling";

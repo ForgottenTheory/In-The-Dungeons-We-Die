@@ -22,6 +22,40 @@ public sealed class ItemInstanceSave
     public Dictionary<string, double> Properties { get; init; } = new();
     public List<string> Provenance { get; init; } = new();
     public List<string> Traits { get; init; } = new();
+
+    /// <summary>v6: the genome, computed once at fabrication and never recomputed
+    /// (docs/affixes.md §2.1). Null for pre-affix and authored gear.</summary>
+    public GenomeSave? Genome { get; init; }
+
+    /// <summary>v6: innates + rolled modifiers, in display order.</summary>
+    public List<RolledAffixSave> Affixes { get; init; } = new();
+}
+
+/// <summary>Serializable form of a <see cref="Dungeons.Crafting.Genome"/>.</summary>
+public sealed class GenomeSave
+{
+    public string FormId { get; init; } = string.Empty;
+    public Dictionary<string, double> Pressure { get; init; } = new();
+    public Dictionary<string, double> Essence { get; init; } = new();
+    public List<TraitInstanceSave> Expressed { get; init; } = new();
+    public List<TraitInstanceSave> Dormant { get; init; } = new();
+    public List<string> Tags { get; init; } = new();
+    public int Potency { get; init; }
+    public int GenerationDepth { get; init; }
+    public List<string> Signatures { get; init; } = new();
+}
+
+public sealed class TraitInstanceSave
+{
+    public string Id { get; init; } = string.Empty;
+    public double Magnitude { get; init; }
+}
+
+public sealed class RolledAffixSave
+{
+    public string AffixId { get; init; } = string.Empty;
+    public int Tier { get; init; }
+    public double Roll { get; init; }
 }
 
 /// <summary>One ancestral root and its share, flattened for the save.</summary>
@@ -84,8 +118,12 @@ public sealed class SaveData
     ///
     /// <para>v5 added <see cref="LearnedMoves"/> (M2′ technique acquisition). Same rule: an
     /// older save loads with an empty learned list.</para>
+    ///
+    /// <para>v6 added the Genome and rolled affixes to <see cref="ItemInstanceSave"/> (R4b,
+    /// D30). Older instances load with a null genome and no affixes — pre-affix gear stays
+    /// plain rather than being retroactively rolled.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 5;
+    public const int CurrentSchemaVersion = 6;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }

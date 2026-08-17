@@ -1,3 +1,4 @@
+using Dungeons.Content;
 using Dungeons.Items;
 
 namespace Dungeons.Crafting;
@@ -55,7 +56,9 @@ public sealed record CraftProjection(
     int ProjectedPotency,
     string ProjectedName,
     bool WouldBeFirstDiscovery,
-    ReactionLog Preview)
+    ReactionLog Preview,
+    MaterialProfile? Projected = null,
+    IReadOnlyList<ReactionStepResult>? Steps = null)
 {
     public bool CanCraft => Failure == CraftFailure.None;
 
@@ -64,6 +67,11 @@ public sealed record CraftProjection(
 
     /// <summary>Destruction is possible; show the percentage (§6.2c).</summary>
     public bool WarnsOfRisk => CanCraft && Integrity.IsAtRisk;
+
+    /// <summary>The typed per-step property movements behind <see cref="Preview"/> — the
+    /// semantic layer's input (D30). Read-model exposure only: the numbers are the same ones
+    /// the log already narrates.</summary>
+    public IReadOnlyList<ReactionStepResult> StepResults => Steps ?? Array.Empty<ReactionStepResult>();
 
     public static CraftProjection Failed(CraftFailure failure) => new(
         failure,

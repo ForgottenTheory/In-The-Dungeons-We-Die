@@ -118,6 +118,10 @@ public sealed class Hit
     /// <summary>Control buildup toward Stun. Consumed in E2; carried now so the shape is fixed.</summary>
     public double StaggerPower { get; init; }
 
+    /// <summary>True when the move gave no telegraph — the only hits Evade may roll against
+    /// (D-07: the passive can never replace reading telegraphs).</summary>
+    public bool Untelegraphed { get; init; }
+
     /// <summary>Damage before any mitigation — the denominator for "how much did I prevent?".</summary>
     public double RawTotal => Packets.Sum(p => p.Amount);
 

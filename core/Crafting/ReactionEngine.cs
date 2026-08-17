@@ -80,7 +80,9 @@ public sealed class ReactionEngine : IReactionEngine
             run.Potency,
             _names.Generate(run.Profile, run.Tags, NameIsTaken),
             WouldBeFirstDiscovery: !_registry.Contains(run.Signature),
-            Preview: run.Log);
+            Preview: run.Log,
+            Projected: run.Profile,
+            Steps: run.Steps);
     }
 
     public CraftOutcome Resolve(CraftRequest request)
@@ -229,6 +231,7 @@ public sealed class ReactionEngine : IReactionEngine
         var destroyed = false;
         var qualityNorm = 0.0;
         var variance = 0.0;
+        var steps = new List<ReactionStepResult>();
 
         foreach (var reagent in gate.Reagents)
         {
@@ -266,6 +269,7 @@ public sealed class ReactionEngine : IReactionEngine
                 process, gate.Substrate.Name, reagent.Name,
                 state, reagent.BaseProperties, step, integrity, after, cost));
             log.Essence(essenceStep);
+            steps.Add(step);
 
             state = step.Properties;
             essence = essenceStep.Essence;
@@ -346,7 +350,7 @@ public sealed class ReactionEngine : IReactionEngine
 
         return new RunResult(
             profile with { Signature = signature }, tags, signature, potency,
-            totalCost, variance, destroyed, log);
+            totalCost, variance, destroyed, log, steps);
     }
 
     /// <summary>
@@ -431,7 +435,8 @@ public sealed class ReactionEngine : IReactionEngine
         double TotalCost,
         double VarianceMagnitude,
         bool Destroyed,
-        ReactionLogBuilder LogBuilder)
+        ReactionLogBuilder LogBuilder,
+        IReadOnlyList<ReactionStepResult> Steps)
     {
         public ReactionLog Log => LogBuilder.Build();
     }

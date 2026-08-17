@@ -71,6 +71,16 @@ public static class GameEvents
     public const string CriticalLanded = "CriticalLanded";
     public const string Blocked = "Blocked";
     public const string Dodged = "Dodged";
+
+    /// <summary>R4c-2 (D-06): a gear-granted parry landed — negation plus the counter-window.</summary>
+    public const string Parried = "Parried";
+
+    /// <summary>R4c-2 (D-06 §6.3): damage prevented by mitigation; `amount` is the prevented
+    /// total — the basis for reflect-% retaliation and, later, stored retaliation.</summary>
+    public const string DamageMitigated = "DamageMitigated";
+
+    /// <summary>R4c-2: a Barrier absorbed its last point and shattered (D-06's sixth event).</summary>
+    public const string BarrierBroken = "BarrierBroken";
     public const string Healed = "Healed";
     public const string StatusApplied = "StatusApplied";
     public const string StatusExpired = "StatusExpired";
@@ -105,7 +115,8 @@ public static class GameEvents
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         ActionQueued, ActionTelegraphed, ActionResolved, ActionInterrupted, RecoveryStarted, MoveExecuted,
-        DamageDealt, DamageTaken, CriticalLanded, Blocked, Dodged, Healed, StatusApplied, StatusExpired,
+        DamageDealt, DamageTaken, CriticalLanded, Blocked, Dodged, Parried, DamageMitigated, BarrierBroken,
+        Healed, StatusApplied, StatusExpired,
         Killed, Defeated, Moved, ResourceGenerated, ResourceSpent, ControlResisted,
         ItemReceived, ChestOpened, CraftCompleted, CraftFailed, DiscoveryMade, LocationDiscovered,
         RealmEntered, DepthChanged, ExtractionCompleted, EncounterStarted, EncounterEnded,

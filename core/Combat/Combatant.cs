@@ -101,6 +101,11 @@ public sealed class Combatant
     public long BlockUntilTick { get; set; } = -1;
     public long DodgeUntilTick { get; set; } = -1;
 
+    /// <summary>Tick up to which a parry attempt is live (R4c-2; gear-granted, 3-tick window).</summary>
+    public long ParryUntilTick { get; set; } = -1;
+
+    public bool IsParrying(long tick) => tick <= ParryUntilTick;
+
     /// <summary>Tick the block stance was raised — the reference for the Perfect Block window.</summary>
     public long BlockStartTick { get; set; } = -1;
 
@@ -121,16 +126,17 @@ public sealed class Combatant
         (Attributes.Constitution * CombatTuning.ArmorPerConstitution) + ArmorProfile.Armor;
 
     /// <summary>
-    /// Resistance in one lane after capping and flooring (docs/damage-and-defense.md §4.2).
-    /// Exposure, inversion and penetration slot in here in E3/E5; the ordering they need is
-    /// already the reason this is a method rather than a dictionary read.
+    /// Resistance in one lane after capping and flooring (docs/damage-and-defense.md §4.2),
+    /// from the armour profile alone. The pipeline resolves `combat.resist.<lane>`
+    /// contributions on top of this base (R4a) and caps via <see cref="CapResistance"/>;
+    /// exposure, inversion and penetration slot into that ordering in R4c.
     /// </summary>
-    public double EffectiveResistance(string lane)
-    {
-        var total = ArmorProfile.ResistanceFor(lane);
-        var capped = Math.Min(total, CombatTuning.MaxResistance);
-        return Math.Max(capped, CombatTuning.ResistanceFloor);
-    }
+    public double EffectiveResistance(string lane) =>
+        CapResistance(ArmorProfile.ResistanceFor(lane));
+
+    /// <summary>The §4.2 cap and floor, shared by every resistance read.</summary>
+    public static double CapResistance(double total) =>
+        Math.Max(Math.Min(total, CombatTuning.MaxResistance), CombatTuning.ResistanceFloor);
 
     /// <summary>
     /// Per-damage-type multiplier (D-02). Two-way and clamped: a skeleton can take 25% more

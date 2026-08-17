@@ -12,6 +12,7 @@ using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
 using Dungeons.Items;
 using Dungeons.Persistence;
+using Dungeons.Presentation;
 using Dungeons.Professions;
 using Dungeons.Randomness;
 using Dungeons.Realms;
@@ -82,6 +83,8 @@ public partial class GameRoot : Node
     private FabricationEngine _fabrication = null!;
     private IReactionEngine _reactions = null!;
     private MaterialProfileResolver _profiles = null!;
+    private PropertyGlossary _glossary = null!;
+    private SeededRandom _affixRng = null!;
     private BuildResolver _buildResolver = null!;
     private CombatEncounter _encounter = null!;
     private bool _everFought;
@@ -192,6 +195,7 @@ public partial class GameRoot : Node
         // matching entirely; the interaction system above survives only to keep the Healing
         // Salve brewable until fabrication lands in P5c.
         _profiles = new MaterialProfileResolver(content.Properties);
+        _glossary = new PropertyGlossary(content.Properties);
         _emergentRegistry = new EmergentRegistry(_materials);
         _reactions = new ReactionEngine(
             content,
@@ -205,7 +209,8 @@ public partial class GameRoot : Node
             professionLevel: id => _professions.GetProgress(id).Level,
             new SeededRandom(0xC12AF7));
 
-        _fabrication = new FabricationEngine(content, () => CurrentBag, _profiles, _instanceIds);
+        _affixRng = new SeededRandom(0xD1CE5);
+        _fabrication = new FabricationEngine(content, () => CurrentBag, _profiles, _instanceIds, _affixRng);
 
         var combatRng = new SeededRandom(0x0C0FFEE);
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
@@ -216,7 +221,10 @@ public partial class GameRoot : Node
         _modifiers = new CombatantModifiers(
             content.ModifierKeys,
             isOwner: c => c.Team == CombatTeam.Player,
-            buildModifiers: () => _buildResolver.Resolve(_build).Modifiers.Contributions,
+            // Build statics plus whatever the worn items' affixes grant (R4b) — equipment is
+            // just another contribution source, with per-affix provenance.
+            buildModifiers: () => _buildResolver.Resolve(_build).Modifiers.Contributions
+                .Concat(EquippedAffixContributions()),
             _statuses, _gauges);
 
         _encounter = new CombatEncounter(
@@ -481,7 +489,7 @@ public partial class GameRoot : Node
             .ToList();
 
         foreach (var instance in bag.Instances.OrderBy(i => i.DisplayName))
-            lines.Add("  " + InstanceLabel(instance));
+            lines.Add("  " + ItemLabel(instance));
 
         return lines.Count == 0 ? "  (empty)" : string.Join("\n", lines);
     }
@@ -509,20 +517,62 @@ public partial class GameRoot : Node
             .ToList();
 
     /// <summary>A material's emergent profile, for the crafting inspector. Null if unknown.</summary>
+    /// <summary>The material inspector, in the player crafting language (D30). Thin forward —
+    /// the reading and the wording live in Core (<c>MaterialReadings</c>/<c>SemanticFormat</c>).</summary>
     public string MaterialSummary(string materialId)
     {
         if (!_materials.TryGetById(materialId, out var material))
             return string.Empty;
 
-        var profile = _profiles.Resolve(material);
-        var properties = profile.Properties.AsDictionary()
-            .OrderByDescending(p => p.Value)
-            .Take(5)
-            .Select(p => $"{p.Key} {p.Value:0}");
-
-        return $"{material.Name} — potency {profile.Potency}, integrity {profile.Integrity}, "
-            + $"gen {profile.Generation}\n  {string.Join(", ", properties)}\n  {string.Join(" ", material.Tags)}";
+        var reading = MaterialReadings.From(
+            material, _profiles.Resolve(material), _content.Properties, _content.Traits, _content.Essences);
+        return SemanticFormat.Material(reading, _glossary);
     }
+
+    /// <summary>The same inspector in the numeric voice — the §2F Advanced toggle's text.</summary>
+    public string MaterialSummaryAdvanced(string materialId) =>
+        _materials.TryGetById(materialId, out var material)
+            ? AdvancedFormat.Material(material, _profiles.Resolve(material))
+            : string.Empty;
+
+    /// <summary>A process picker line in the player language (D30).</summary>
+    public string ProcessLabel(ProcessDefinition process) =>
+        SemanticFormat.Process(process, ProfessionName(process.Profession));
+
+    /// <summary>What a process drives, in words — the channel line under the picker.</summary>
+    public string ProcessChannelLabel(ProcessDefinition process) =>
+        SemanticFormat.Channel(process, _glossary);
+
+    /// <summary>The pre-commit reading (D30): groups, risk band, emergence — built from the
+    /// projection's typed movements. The UI styles it; every word comes from Core.</summary>
+    public CraftReading ProjectionReading(CraftProjection projection, string substrateId) =>
+        _materials.TryGetById(substrateId, out var substrate)
+            ? CraftReadings.From(projection, substrate.Name, _profiles.Resolve(substrate), _content)
+            : CraftReadings.Failed(CraftFailure.UnknownSubstrate, substrateId);
+
+    /// <summary>The reading as typed lines the client colours by kind.</summary>
+    public IReadOnlyList<ProjectionLine> ProjectionLines(CraftReading reading) =>
+        SemanticFormat.ProjectionLines(reading, _glossary);
+
+    /// <summary>The pre-commit panel text in the player language (D30).</summary>
+    public string ProjectionText(CraftProjection projection, string substrateId) =>
+        SemanticFormat.Projection(ProjectionReading(projection, substrateId), _glossary);
+
+    /// <summary>The compact glyph+pips strip for a picker row ("▲●●●●●  !●●●●○").</summary>
+    public string MaterialStrip(string materialId)
+    {
+        if (!_materials.TryGetById(materialId, out var material))
+            return string.Empty;
+
+        var reading = MaterialReadings.From(
+            material, _profiles.Resolve(material), _content.Properties, _content.Traits, _content.Essences);
+        return SemanticFormat.MaterialStrip(reading, _glossary);
+    }
+
+    /// <summary>The pre-commit panel in the numeric voice (§2F Advanced).</summary>
+    public string ProjectionTextAdvanced(CraftProjection projection, string substrateId) =>
+        AdvancedFormat.Projection(
+            projection, _materials.TryGetById(substrateId, out var substrate) ? substrate.Name : substrateId);
 
     /// <summary>
     /// What a craft would cost and risk, <b>before</b> committing to it
@@ -678,12 +728,19 @@ public partial class GameRoot : Node
         var actor = _actors.GetById(actorId);
         var resolvedActor = ActorResolver.Resolve(actor, _enemyFamilies, _enemyRoles, _aiProfiles);
         var player = Combatant.FromCharacter(Character, ResolvePlayerMoveset(), ResolvePlayerArmor());
+        _encounter.PlayerCanParry = PlayerCanParry; // gear-granted (D-26), snapshotted at Start
         _encounter.Start(player, new[] { Combatant.FromActor(resolvedActor, ResolveActorMoveset(actor)) });
         SetRunning(true); // telegraphs advance in real time
         CombatChanged?.Invoke();
     }
 
     public void CombatAttack() => _encounter.Attack();
+
+    /// <summary>Parry is a capability the gear grants (D-26): true while any worn item's
+    /// definition carries the `parry` tag — a form declares it, never a class.</summary>
+    public bool PlayerCanParry => EquippedTags().Contains("parry", StringComparer.OrdinalIgnoreCase);
+
+    public void CombatParry() => _encounter.Parry();
 
     /// <summary>Uses a specific move from the player's moveset (E4).</summary>
     public void CombatUseMove(string moveId) => _encounter.UseMove(moveId);
@@ -729,26 +786,107 @@ public partial class GameRoot : Node
 
     /// <summary>Multi-component fabrication (C2b): one material per named slot. Terminal —
     /// materials consumed, an ItemInstance lands in the current bag.</summary>
-    public void FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
+    public FabricationOutcome FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
     {
         if (!_content.Forms.TryGetById(formId, out var form))
-            return;
+            return FabricationOutcome.Failed(FabricationFailure.UnknownForm);
 
         var outcome = _fabrication.Fabricate(new FabricationRequest(formId, slotMaterials));
 
         if (!outcome.Success)
         {
-            Emit($"[Fabricate] {form.Name}: {outcome.Failure}.");
-            return;
+            Emit($"[Fabricate] {form.Name}: {SemanticFormat.FabricationFailureText(outcome.Failure)}");
+            return outcome;
         }
 
         var traits = outcome.Expressed.Count == 0
             ? ""
-            : $" — {string.Join(", ", outcome.Expressed.Select(t => t.Id))}";
+            : $" — {string.Join(", ", outcome.Expressed.Select(t => TraitName(t.Id)))}";
         var dormant = outcome.Dormant.Count == 0 ? "" : $" ({outcome.Dormant.Count} dormant)";
         Emit($"[Fabricate] {(outcome.IsFirstOfItsKind ? "✦ " : "")}{outcome.Name}{traits}{dormant}.");
         InventoryChanged?.Invoke();
+        return outcome;
     }
+
+    private string TraitName(string traitId) =>
+        _content.Traits.TryGetById(traitId, out var def) ? def.Name : traitId;
+
+    /// <summary>The pre-commit fabrication view — same composition, no side effects (R3).</summary>
+    public FabricationProjection ProjectFabrication(string formId, IReadOnlyDictionary<string, string> slotMaterials) =>
+        _fabrication.Project(new FabricationRequest(formId, slotMaterials));
+
+    /// <summary>The fabrication preview card, read through the same seam the minted item uses.
+    /// Promises the deterministic layer (stats, innates) and translates the genome's supported
+    /// families — the engineering half of the casino (D-21/D29).</summary>
+    public string FabricationPreviewText(string formId, IReadOnlyDictionary<string, string> slotMaterials)
+    {
+        var projection = ProjectFabrication(formId, slotMaterials);
+        if (!projection.CanFabricate)
+            return SemanticFormat.FabricationFailureText(projection.Failure);
+
+        var form = _content.Forms.GetById(formId);
+        var reading = ItemReadings.From(projection, form, _content);
+        return SemanticFormat.Fabrication(
+            projection, reading, ItemReadings.Supports(projection.Genome, _content));
+    }
+
+    /// <summary>Why a material suits (or doesn't suit) a slot — §2E context at the bench.</summary>
+    public string SlotFitText(string formId, string slotName, string materialId)
+    {
+        if (!_content.Forms.TryGetById(formId, out var form)
+            || !_materials.TryGetById(materialId, out var material))
+            return string.Empty;
+
+        var reading = SlotReadings.For(form, slotName, material, _profiles.Resolve(material), _content.Traits);
+        return SemanticFormat.SlotFit(reading, _glossary);
+    }
+
+    /// <summary>Debug-only: reroll a stash instance's prefixes and suffixes. Innates never
+    /// reroll (U-7 — the genome speaking). The player-facing reroll path is E7's operations;
+    /// this exists so the casino can be verified without loot faucets.</summary>
+    public ItemInstance? DebugRerollAffixes(long instanceId)
+    {
+        var instance = _stash.GetInstance(instanceId);
+        if (instance?.Genome is not { } genome)
+            return null;
+
+        var affixes = new List<Dungeons.Affixes.RolledAffix>(
+            Dungeons.Affixes.AffixRoller.Innates(genome, _content.Affixes.GetAll()));
+        affixes.AddRange(Dungeons.Affixes.AffixRoller.Roll(genome, "prefix", _content.Affixes.GetAll(), _affixRng));
+        affixes.AddRange(Dungeons.Affixes.AffixRoller.Roll(genome, "suffix", _content.Affixes.GetAll(), _affixRng));
+
+        var rerolled = new ItemInstance
+        {
+            InstanceId = instance.InstanceId,
+            BaseDefinitionId = instance.BaseDefinitionId,
+            ItemType = instance.ItemType,
+            DisplayName = instance.DisplayName,
+            Quality = instance.Quality,
+            Properties = instance.Properties,
+            Provenance = instance.Provenance,
+            Traits = instance.Traits,
+            Genome = instance.Genome,
+            Affixes = affixes,
+        };
+
+        _stash.RemoveInstance(instanceId);
+        _stash.AddInstance(rerolled);
+        Emit($"[Debug] Rerolled {rerolled.DisplayName}: {affixes.Count} modifiers.");
+        InventoryChanged?.Invoke();
+        return rerolled;
+    }
+
+    /// <summary>The full §6 reveal card for an owned item.</summary>
+    public string ItemCardText(ItemInstance instance) =>
+        _content.Equipment.TryGetById(instance.BaseDefinitionId, out var definition)
+            ? SemanticFormat.Item(ItemReadings.From(instance, definition, _content))
+            : instance.DisplayName;
+
+    /// <summary>The one-line item label for lists — replaces the property wall (D30).</summary>
+    public string ItemLabel(ItemInstance instance) =>
+        _content.Equipment.TryGetById(instance.BaseDefinitionId, out var definition)
+            ? SemanticFormat.ItemStrip(ItemReadings.From(instance, definition, _content))
+            : instance.DisplayName;
 
     // --- Techniques (M2′ acquisition) ---------------------------------------
 
@@ -923,6 +1061,7 @@ public partial class GameRoot : Node
         var displaced = _playerEquipment.Equip(def.Slot, instance);
         if (displaced is not null)
             _stash.AddInstance(displaced);
+        AttachBuildRules(); // affix rules swap with the gear (R4b)
         Emit($"[Equipment] Equipped {instance.DisplayName}.");
     }
 
@@ -933,6 +1072,7 @@ public partial class GameRoot : Node
         if (removed is null)
             return;
         _stash.AddInstance(removed);
+        AttachBuildRules(); // an unequipped item's affix rules must stop firing
         Emit($"[Equipment] Unequipped {removed.DisplayName}.");
     }
 
@@ -952,14 +1092,21 @@ public partial class GameRoot : Node
     public string EquippedArmorSummary()
     {
         var armorProfile = ResolvePlayerArmor();
+
+        // D-05a: resistances display as `capped / raw` wherever they appear — the raw number
+        // only shows once it exceeds the cap, so the complexity appears exactly when earned.
         var resist = armorProfile.Resistances.Count == 0
             ? string.Empty
-            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r => $"{r.Key} {r.Value:P0}"));
+            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r =>
+            {
+                var capped = Dungeons.Combat.Combatant.CapResistance(r.Value);
+                return r.Value > capped + 0.0001
+                    ? $"{r.Key} {capped:P0}/{r.Value:P0}"
+                    : $"{r.Key} {capped:P0}";
+            }));
         return $"{armorProfile.Armor:0.#} armor{resist}";
     }
 
-    /// <summary>One-line description of an instance: name, id, and any derived properties.</summary>
-    public string InstanceLabel(ItemInstance instance) => ItemFormat.InstanceLabel(instance);
 
     public string EquipmentReport()
     {
@@ -1025,6 +1172,14 @@ public partial class GameRoot : Node
                 foreach (var modifierId in def.MoveModifierIds)
                     if (_moveModifierStore.TryGetById(modifierId, out var definition))
                         modifierGrants.Add(new MoveModifierGrant(definition, item.DisplayName));
+
+        // R4c-2: worn affixes author move modifiers too — the 11-op system's third grantor,
+        // through the same builder path as equipment and character components.
+        foreach (var (instance, rolled, affixDef) in EquippedAffixes())
+            foreach (var grant in affixDef.Grants)
+                if (string.Equals(grant.Type, "moveModifier", StringComparison.OrdinalIgnoreCase)
+                    && _moveModifierStore.TryGetById(grant.Key, out var moveModifier))
+                    modifierGrants.Add(new MoveModifierGrant(moveModifier, $"{affixDef.Name} ({instance.DisplayName})"));
 
         // Weapon-adjusted definitions override the store's for the weapon's own ids.
         var weaponAdjusted = new DataStore<MoveDefinition>();
@@ -1363,10 +1518,37 @@ public partial class GameRoot : Node
         foreach (var attached in resolved.Rules)
             _ruleEngine.Attach(attached.Rule, attached.Source);
 
+        // R4b: triggered affixes on worn items attach beside the build's own hooks and swap
+        // with the gear — an unequipped item's rules must stop firing exactly like a retired
+        // Prefix's would.
+        foreach (var (instance, rolled, definition) in EquippedAffixes())
+        {
+            foreach (var rule in Dungeons.Affixes.AffixGrants.Rules(rolled, definition))
+                _ruleEngine.Attach(rule, $"{definition.Name} ({instance.DisplayName})");
+        }
+
         // The gauge set is part of the build, so it swaps with it — otherwise a retired Prefix's
         // meter would keep filling from feeds that no longer exist.
         _gauges.Reconfigure(resolved.Gauges, _tick.CurrentTick);
     }
+
+    /// <summary>Every rolled affix on every worn item, with its definition resolved.</summary>
+    private IEnumerable<(ItemInstance Instance, Dungeons.Affixes.RolledAffix Rolled, Dungeons.Affixes.AffixDefinition Definition)> EquippedAffixes()
+    {
+        foreach (var instance in _playerEquipment.Slots.Values)
+        {
+            foreach (var rolled in instance.Affixes)
+            {
+                if (_content.Affixes.TryGetById(rolled.AffixId, out var definition))
+                    yield return (instance, rolled, definition);
+            }
+        }
+    }
+
+    /// <summary>Stat grants from worn items' affixes, as ordinary scoped contributions.</summary>
+    private IEnumerable<Dungeons.Modifiers.ModifierContribution> EquippedAffixContributions() =>
+        EquippedAffixes().SelectMany(a =>
+            Dungeons.Affixes.AffixGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
 
     /// <summary>Tags of everything currently worn, for the <c>equippedTag</c> condition.</summary>
     private IEnumerable<string> EquippedTags() =>

@@ -217,6 +217,23 @@ public static class SaveMapper
         Properties = new Dictionary<string, double>(instance.Properties.AsDictionary()),
         Provenance = instance.Provenance.ToList(),
         Traits = instance.Traits.ToList(),
+        Genome = instance.Genome is { } genome
+            ? new GenomeSave
+            {
+                FormId = genome.FormId,
+                Pressure = new Dictionary<string, double>(genome.Pressure.ToDictionary(p => p.Key, p => p.Value)),
+                Essence = new Dictionary<string, double>(genome.Essence.ToDictionary(e => e.Key, e => e.Value)),
+                Expressed = genome.Expressed.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
+                Dormant = genome.Dormant.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
+                Tags = genome.Tags.ToList(),
+                Potency = genome.Potency,
+                GenerationDepth = genome.GenerationDepth,
+                Signatures = genome.Signatures.ToList(),
+            }
+            : null,
+        Affixes = instance.Affixes
+            .Select(a => new RolledAffixSave { AffixId = a.AffixId, Tier = a.Tier, Roll = a.Roll })
+            .ToList(),
     };
 
     private static ItemInstance FromSave(ItemInstanceSave save) => new()
@@ -229,5 +246,20 @@ public static class SaveMapper
         Properties = new PropertySet(save.Properties),
         Provenance = save.Provenance,
         Traits = save.Traits,
+        Genome = save.Genome is { } genome
+            ? new Dungeons.Crafting.Genome(
+                genome.FormId,
+                genome.Pressure,
+                genome.Essence,
+                genome.Expressed.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
+                genome.Dormant.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
+                genome.Tags,
+                genome.Potency,
+                genome.GenerationDepth,
+                genome.Signatures)
+            : null,
+        Affixes = save.Affixes
+            .Select(a => new Dungeons.Affixes.RolledAffix(a.AffixId, a.Tier, a.Roll))
+            .ToList(),
     };
 }

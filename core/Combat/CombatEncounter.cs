@@ -434,6 +434,35 @@ public sealed class CombatEncounter
 
     public void Dodge() => EnterStance("dodge", CombatTuning.DodgeStaminaCost, isBlock: false);
 
+    /// <summary>Gear-granted (D-26): the composition root sets this from the worn items' tags.
+    /// Without a parrying form equipped, the command does not exist.</summary>
+    public bool PlayerCanParry { get; set; }
+
+    /// <summary>The 3-tick negate-and-punish window (R4c-2). The top of the skill ladder —
+    /// deliberately unreachable for an 8-tick auto-combat reaction (§5.1.1).</summary>
+    public void Parry()
+    {
+        if (!IsActive)
+            return;
+        if (!PlayerCanParry)
+        {
+            Log("Nothing you carry can parry.");
+            return;
+        }
+        if (_player.Stamina.Current < CombatTuning.ParryStaminaCost)
+        {
+            Log("Not enough stamina to parry.");
+            return;
+        }
+
+        _player.Stamina.Reduce(CombatTuning.ParryStaminaCost);
+        _player.ParryUntilTick = _tick.CurrentTick + CombatTuning.ParryWindowTicks;
+        Log("You angle to parry.");
+        Publish(GameEvents.ResourceSpent, source: SelfId, amount: CombatTuning.ParryStaminaCost,
+            tags: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "stamina", "defensive", "parry" });
+        StateChanged?.Invoke();
+    }
+
     public void Wait()
     {
         if (!IsActive)
@@ -671,6 +700,7 @@ public sealed class CombatEncounter
                 Packets = move.Packets,
                 Tags = tags,
                 StaggerPower = move.StaggerPower,
+                Untelegraphed = move.Timing.TelegraphTicks <= 0,
             }, _tick.CurrentTick);
 
             ApplyResult(attacker, target, move.Name, result, tags, context);
@@ -712,6 +742,7 @@ public sealed class CombatEncounter
                 Name = $"{move.Name} (chain)",
                 Packets = move.Packets.Select(p => p.WithAmount(p.Amount * factor)).ToList(),
                 Tags = chainTags,
+                Untelegraphed = move.Timing.TelegraphTicks <= 0,
             }, _tick.CurrentTick);
 
             ApplyResult(attacker, enemy, move.Name, result, chainTags, context);
@@ -916,7 +947,7 @@ public sealed class CombatEncounter
         if (!IsActive || applied <= 0 || !target.IsAlive)
             return 0;
 
-        target.Health.Reduce(applied);
+        ReduceWithBarrier(target, applied, context);
 
         var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "effect" };
         Publish(GameEvents.DamageDealt, Id(source), Id(target), applied, tags, context);
@@ -1136,13 +1167,25 @@ public sealed class CombatEncounter
 
         if (result.Avoided)
         {
-            var how = result.PerfectBlock ? "blocks perfectly" : "dodges";
+            var how = result.AvoidedBy == AvoidedVia.Parry ? "parries"
+                : result.PerfectBlock ? "blocks perfectly"
+                : result.AvoidedBy == AvoidedVia.Evade ? "evades"
+                : "dodges";
             Log($"{target.Name} {how} {attacker.Name}'s {attackName}!");
 
             // Dodged is the only avoidance event in E0's vocabulary; E1 does not widen it.
             // HitAvoided arrives in E3 with the rest of §3.1.
             if (result.Dodged)
                 Publish(GameEvents.Dodged, source: victim, target: source, tags: tags, context: context);
+
+            // PARRIED (R4c-2): negation plus the counter-window — heavy stagger on the
+            // attacker, as Stun buildup through the ordinary Resolve gate (D-08).
+            if (result.AvoidedBy == AvoidedVia.Parry)
+            {
+                Publish(GameEvents.Parried, source: victim, target: source, tags: tags, context: context);
+                ApplyStatus(attacker, StunStatusId, victim, CombatTuning.ParryStaggerPower, context: context);
+                Log($"{attacker.Name} is thrown open by the parry!");
+            }
 
             StateChanged?.Invoke();
             return;
@@ -1151,12 +1194,20 @@ public sealed class CombatEncounter
         if (result.Crit)
             tags.Add("critical");
 
-        target.Health.Reduce(result.Amount);
+        // DAMAGE MITIGATED (R4c-2, D-06 §6.3): the prevented total, published before the wound
+        // lands — the basis for reflect-% retaliation (and stored retaliation, later).
+        if (result.Blocked && result.Mitigated > 0.5)
+            Publish(GameEvents.DamageMitigated, source: victim, target: source,
+                amount: result.Mitigated, tags: tags, context: context);
+
+        var absorbed = ReduceWithBarrier(target, result.Amount, context);
 
         Publish(GameEvents.DamageDealt, source, victim, result.Amount, tags, context);
         Publish(GameEvents.DamageTaken, source: victim, target: source, amount: result.Amount, tags: tags, context: context);
 
-        var suffix = (result.Crit ? " (crit!)" : string.Empty) + (result.Blocked ? " (blocked)" : string.Empty);
+        var suffix = (result.Crit ? " (crit!)" : string.Empty)
+            + (result.Blocked ? " (blocked)" : string.Empty)
+            + (absorbed > 0 ? $" (barrier absorbs {absorbed})" : string.Empty);
         Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{suffix}. " +
             $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
 
@@ -1392,6 +1443,41 @@ public sealed class CombatEncounter
     /// Applies a status through the controller, publishing whatever the attempt produced. The
     /// controller decides whether a control actually lands; combat only reports it.
     /// </summary>
+    /// <summary>Barrier absorption (R4c-2, the long-standing HitPipeline debt): `status.barrier`
+    /// magnitude soaks damage before Health does. Recovery is Barrier, not healing (§5.5).
+    /// Returns the amount absorbed; shattering raises <c>BarrierBroken</c> (D-06's sixth event).</summary>
+    private int ReduceWithBarrier(Combatant target, int amount, EffectContext? context)
+    {
+        var barrier = Statuses?.Find(target, BarrierStatusId);
+        if (barrier is null || barrier.Magnitude <= 0)
+        {
+            target.Health.Reduce(amount);
+            return 0;
+        }
+
+        var absorbed = (int)Math.Min(barrier.Magnitude, amount);
+        barrier.Magnitude -= absorbed;
+        if (barrier.Magnitude <= 0)
+        {
+            Statuses!.Remove(target, BarrierStatusId);
+            Publish(GameEvents.BarrierBroken, source: Id(target), target: Id(target), amount: absorbed, context: context);
+            Log($"{target.Name}'s barrier shatters!");
+        }
+
+        target.Health.Reduce(amount - absorbed);
+        return absorbed;
+    }
+
+    private const string BarrierStatusId = "status.barrier";
+
+    /// <summary>The combatant an event id names, or null for non-combatant sources ("world").</summary>
+    private Combatant? ById(string id)
+    {
+        if (_player is not null && Id(_player) == id)
+            return _player;
+        return _enemies.FirstOrDefault(e => Id(e) == id);
+    }
+
     public ControlOutcome ApplyStatus(
         Combatant target, string statusId, string sourceId, double magnitude = 0,
         int durationOverride = 0, EffectContext? context = null, string? storedMoveId = null)
@@ -1399,7 +1485,20 @@ public sealed class CombatEncounter
         if (Statuses is null)
             return ControlOutcome.Ungated;
 
-        var outcome = Statuses.Apply(target, statusId, sourceId, magnitude, durationOverride, context, storedMoveId);
+        // R4c-2 — the status depth keys. Potency scales the applier's magnitude; duration
+        // scales on the receiver (defensive "shorter suffering"). Both scoped by status id,
+        // both no-ops at their defaults, so nothing changes without a source.
+        var applier = ById(sourceId);
+        var statusContext = ModifierContext.For(ScopeDimensions.Status, statusId);
+        if (magnitude > 0 && applier is not null && Modifiers is not null)
+            magnitude *= Modifiers.Resolve(applier, ModifierKeys.StatusPotencyMult, statusContext, 1.0);
+
+        var durationMultiplier = Modifiers is null
+            ? 1.0
+            : Modifiers.Resolve(target, ModifierKeys.StatusDurationMult, statusContext, 1.0);
+
+        var outcome = Statuses.Apply(
+            target, statusId, sourceId, magnitude, durationOverride, context, storedMoveId, durationMultiplier);
 
         if (outcome == ControlOutcome.Applied)
             Log($"{target.Name} is affected by {Statuses.Find(target, statusId)?.Definition.Name ?? statusId}.");

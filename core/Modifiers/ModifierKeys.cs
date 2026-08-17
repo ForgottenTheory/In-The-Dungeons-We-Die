@@ -44,7 +44,27 @@ public static class ModifierKeys
     public const string Armor = "combat.armor";
     public const string DamageTakenMult = "combat.damage_taken.mult";
     public const string BlockMult = "combat.block.mult";
-    public const string DodgeChance = "combat.dodge.chance";
+
+    /// <summary>D-07 (executed R4a): the passive avoidance roll that replaced dodge.chance —
+    /// dodge remains the timed stance, never a key.</summary>
+    public const string EvadeChance = "combat.evade.chance";
+
+    /// <summary>Rare, hard-capped, lane-scoped negation (danger-capped as data).</summary>
+    public const string AvoidLane = "combat.avoid.lane";
+
+    /// <summary>Flat lane penetration, attacker-side, applied after the resistance cap
+    /// (§4.2 step 6) — the workhorse that eats overcap. Lane-scoped.</summary>
+    public const string PenLane = "combat.pen.lane";
+
+    /// <summary>Applier-side status magnitude scaling, status-scoped (R4c-2).</summary>
+    public const string StatusPotencyMult = "status.potency.mult";
+
+    /// <summary>Receiver-side status duration scaling, status-scoped — lower is better (R4c-2).</summary>
+    public const string StatusDurationMult = "status.duration.mult";
+
+    /// <summary>The per-lane resistance key: <c>combat.resist.physical</c>, <c>.heat</c>, …
+    /// The eight lanes only — arcane has no lane and no key, by design (D-04).</summary>
+    public static string ResistLane(string lane) => "combat.resist." + lane;
 
     public const string InterruptImmune = "combat.interrupt.immune";
     public const string Uncancellable = "combat.uncancellable";

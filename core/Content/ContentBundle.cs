@@ -23,6 +23,7 @@ public sealed class ContentBundle
     public DataStore<TraitDefinition> Traits { get; init; } = new();
     public DataStore<EssenceDefinition> Essences { get; init; } = new();
     public DataStore<FormTemplateDefinition> Forms { get; init; } = new();
+    public DataStore<Affixes.AffixDefinition> Affixes { get; init; } = new();
     public DataStore<NameWordDefinition> NameGrammar { get; init; } = new();
     public DataStore<Modifiers.ModifierKeyDefinition> ModifierKeys { get; init; } = new();
     public DataStore<Dungeons.Characters.Composition.NameFormatDefinition> NameFormats { get; init; } = new();

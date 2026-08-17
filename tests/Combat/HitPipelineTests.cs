@@ -311,4 +311,64 @@ public class HitPipelineTests
         foreach (var line in result.Log.Lines)
             Assert.False(string.IsNullOrWhiteSpace(line.Detail), $"stage {line.Stage} explains nothing");
     }
+
+    // --- R4a: the lane-resistance keys finally have a reader ---------------------------------
+
+    private static HitPipeline PipelineWith(params Dungeons.Modifiers.ModifierContribution[] contributions)
+    {
+        var bus = new Dungeons.Events.GameEventBus();
+        var statuses = new StatusController(
+            TestPaths.LoadStore<StatusDefinition>("statuses"), bus, () => 0);
+        var modifiers = new CombatantModifiers(
+            TestPaths.LoadStore<Dungeons.Modifiers.ModifierKeyDefinition>("modifier_keys"),
+            isOwner: c => c.Team == CombatTeam.Player,
+            buildModifiers: () => contributions,
+            statuses,
+            new Dungeons.Characters.GaugeController(
+                Array.Empty<Dungeons.Characters.Composition.GaugeDefinition>()));
+
+        return new HitPipeline(new FakeRandom(0.99), modifiers);
+    }
+
+    /// <summary>A `combat.resist.<lane>` contribution now mitigates that lane's packets —
+    /// the seam every R4b defence affix lands on. Base 0 + granted 0.5 → half damage.</summary>
+    [Fact]
+    public void AGrantedLaneResistanceMitigatesThatLane()
+    {
+        var target = Player(attrs: Attrs());
+        var attacker = Enemy("A", 50, Attrs(), Move("move.strike", DamageType.Magic, 8, 2, 8, 15));
+        var pipeline = PipelineWith(new Dungeons.Modifiers.ModifierContribution(
+            Dungeons.Modifiers.ModifierKeys.ResistLane(DamageLanes.Heat), 0.5, "test affix"));
+
+        var baseline = PipelineWith().Resolve(
+            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Heat, 20)), currentTick: 0);
+        var resisted = pipeline.Resolve(
+            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Heat, 20)), currentTick: 0);
+
+        Assert.True(
+            Math.Abs(resisted.Amount - baseline.Amount * 0.5) <= 1,
+            $"expected ≈half of {baseline.Amount}, got {resisted.Amount}");
+    }
+
+    /// <summary>Stacked contributions cannot pass the 75% cap — the §4.2 cap survives the new
+    /// read path (the 0.90 key ceiling is the max-res-affix headroom, not a bypass).</summary>
+    [Fact]
+    public void GrantedResistanceStillCapsAtSeventyFivePercent()
+    {
+        var target = Player(attrs: Attrs());
+        var attacker = Enemy("A", 50, Attrs(), Move("move.strike", DamageType.Magic, 8, 2, 8, 15));
+        var pipeline = PipelineWith(
+            new Dungeons.Modifiers.ModifierContribution(
+                Dungeons.Modifiers.ModifierKeys.ResistLane(DamageLanes.Cold), 0.6, "one"),
+            new Dungeons.Modifiers.ModifierContribution(
+                Dungeons.Modifiers.ModifierKeys.ResistLane(DamageLanes.Cold), 0.6, "two"));
+
+        var baseline = PipelineWith().Resolve(
+            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Cold, 40)), currentTick: 0);
+        var resisted = pipeline.Resolve(
+            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Cold, 40)), currentTick: 0);
+
+        // ×(1 − 0.75), never ×(1 − 0.9) — 1.2 total contribution hits the CombatTuning cap.
+        Assert.Equal((int)Math.Round(baseline.Amount * 0.25), resisted.Amount);
+    }
 }

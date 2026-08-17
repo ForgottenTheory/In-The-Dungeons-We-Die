@@ -74,4 +74,13 @@ public sealed class PropertyDefinition : IDefinition
     /// <summary>Tags this property confers on a result once it passes a threshold (§4.2).</summary>
     [JsonPropertyName("grants_tags")]
     public IReadOnlyList<TagGrant> GrantsTags { get; init; } = Array.Empty<TagGrant>();
+
+    /// <summary>Display glyph for the player crafting language (D30;
+    /// docs/presentation-architecture.md §2A). Placeholder Unicode until art exists — data,
+    /// never a code switch, so swapping a tofu glyph is a JSON edit.</summary>
+    public string Glyph { get; init; } = string.Empty;
+
+    /// <summary>One-line player-facing meaning ("Carries and channels energy."), the §2E
+    /// context voice. Never contains numbers.</summary>
+    public string Gloss { get; init; } = string.Empty;
 }

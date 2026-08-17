@@ -8,6 +8,7 @@ public static class AvoidedVia
 {
     public const string Dodge = "dodge";
     public const string PerfectBlock = "perfect_block";
+    public const string Parry = "parry";
     public const string Evade = "evade";
     public const string Negate = "negate";
 }
@@ -107,8 +108,21 @@ public sealed class HitPipeline
             return Avoided(hit, log, AvoidedVia.PerfectBlock,
                 $"within {CombatTuning.PerfectBlockWindowTicks} ticks of raising guard");
 
-        // Evade (untelegraphed hits only) and per-lane Negate have no source until E5's
-        // avoidance affixes. Recorded as stages so the ordering is fixed now.
+        // PARRY (R4c-2, D-26): gear-granted, the tightest window — negates and (encounter-side)
+        // staggers the attacker open. The encounter gates the command; the pipeline only times it.
+        if (target.IsParrying(currentTick))
+            return Avoided(hit, log, AvoidedVia.Parry,
+                $"within the {CombatTuning.ParryWindowTicks}-tick parry window");
+
+        // EVADE (R4c, D-07): the one passive avoidance roll, and only against hits that gave
+        // no telegraph — the skill test stays mandatory for everything the player can read.
+        // Diminishing and danger-capped at 15% as data.
+        if (hit.Untelegraphed)
+        {
+            var evade = Resolve(target, ModifierKeys.EvadeChance, ContextFor(hit), 0);
+            if (evade > 0 && _rng.NextDouble() < evade)
+                return Avoided(hit, log, AvoidedVia.Evade, $"{evade:P0} vs an untelegraphed hit");
+        }
 
         // ── THE HIT LANDS ────────────────────────────────────────────────────
 
@@ -191,7 +205,14 @@ public sealed class HitPipeline
 
     private static HitResult Avoided(Hit hit, HitLog log, string via, string why)
     {
-        log.Add(via == AvoidedVia.Dodge ? HitStages.Dodge : HitStages.PerfectBlock, $"AVOIDED — {why}");
+        var stage = via switch
+        {
+            AvoidedVia.Dodge => HitStages.Dodge,
+            AvoidedVia.Evade => HitStages.Evade,
+            AvoidedVia.Parry => HitStages.Parry,
+            _ => HitStages.PerfectBlock,
+        };
+        log.Add(stage, $"AVOIDED — {why}");
 
         return new HitResult
         {
@@ -257,6 +278,18 @@ public sealed class HitPipeline
     {
         var amount = packet.Amount;
 
+        // LANE AVOIDANCE (R4c): rare, diminishing, danger-capped at 25% — negates this packet
+        // outright. Arcane has no lane and therefore cannot be avoided this way (D-03a).
+        if (packet.Lane is { } avoidableLane)
+        {
+            var avoid = Resolve(target, ModifierKeys.AvoidLane, ContextFor(hit, packet), 0);
+            if (avoid > 0 && _rng.NextDouble() < avoid)
+            {
+                log.Add(HitStages.Negate, $"{avoidableLane} — negated ({avoid:P0} lane avoidance)", amount, 0);
+                return packet.WithAmount(0);
+            }
+        }
+
         // ARMOUR — physical-typed packets only, whatever their aspect.
         if (packet.ArmourApplies)
         {
@@ -281,11 +314,29 @@ public sealed class HitPipeline
         }
         else
         {
-            var effective = target.EffectiveResistance(lane);
-            if (Math.Abs(effective) > 0.0001)
+            // R4a: the lane total is base (armour profile / physiology) plus every
+            // `combat.resist.<lane>` contribution — which is what lets affixes, statuses and
+            // build sources grant real lane resistance. Cap and floor stay the combatant's.
+            var total = Resolve(
+                target, ModifierKeys.ResistLane(lane), ContextFor(hit, packet),
+                target.ArmorProfile.ResistanceFor(lane));
+            var capped = Combatant.CapResistance(total);
+
+            // PENETRATION (R4c, §4.2 step 6): flat, attacker-side, applied AFTER the cap — so
+            // it eats through overcap, which is exactly what keeps it distinct from exposure
+            // (a negative contribution summed before the cap). Floored at −100%.
+            var pen = Resolve(hit.Source, ModifierKeys.PenLane, ContextFor(hit, packet), 0);
+            var effective = pen > 0
+                ? Math.Max(capped - pen, CombatTuning.ResistanceFloor)
+                : capped;
+
+            if (Math.Abs(effective) > 0.0001 || pen > 0)
             {
                 var after = amount * (1.0 - effective);
-                log.Add(HitStages.Resistance, $"{lane} {effective:P0}", amount, after);
+                var detail = pen > 0
+                    ? $"{lane} {capped:P0} − pen {pen:P0} → {effective:P0}"
+                    : $"{lane} {effective:P0}";
+                log.Add(HitStages.Resistance, detail, amount, after);
                 amount = after;
             }
         }

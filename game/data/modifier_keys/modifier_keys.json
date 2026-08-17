@@ -55,14 +55,29 @@
   { "id": "combat.armor",             "name": "Armour",         "kind": "additive",       "family": "defence", "min": 0 },
   { "id": "combat.damage_taken.mult", "name": "Damage Taken",   "kind": "multiplicative", "family": "defence", "min": 0, "lower_is_better": true },
   { "id": "combat.block.mult",        "name": "Block Strength", "kind": "multiplicative", "family": "defence", "min": 0 },
-  // Left additive deliberately: D-07 retires this key in favour of `combat.avoid.lane` (0.25)
-  // and `combat.evade.chance` (0.15), both diminishing. Re-shaping it here would be balancing a
-  // key that is scheduled to stop existing.
-  { "id": "combat.dodge.chance",      "name": "Dodge Chance",   "kind": "additive",       "family": "defence", "min": 0, "max": 1 },
-  { "id": "combat.resist.slashing",   "name": "Slashing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
-  { "id": "combat.resist.crushing",   "name": "Crushing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
-  { "id": "combat.resist.piercing",   "name": "Piercing Resistance", "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
-  { "id": "combat.resist.magic",      "name": "Magic Resistance",    "kind": "additive", "family": "defence", "min": 0, "max": 0.9 },
+  // D-07 executed (R4a): dodge.chance is retired. Evade is the passive avoidance roll
+  // (mechanic lands in R4c); lane avoidance is the rare, hard-capped negation the affix spec's
+  // own exemplar targets. Both diminishing, both danger — avoidance stacking is the classic
+  // way defence becomes degenerate.
+  { "id": "combat.evade.chance",      "name": "Evade Chance",   "kind": "diminishing",    "family": "defence", "min": 0, "max": 0.15, "danger": true },
+  { "id": "combat.avoid.lane",        "name": "Lane Avoidance", "kind": "diminishing",    "family": "defence", "min": 0, "max": 0.25, "scoped_by": "lane", "danger": true },
+  { "id": "combat.pen.lane",          "name": "Lane Penetration", "kind": "additive",     "family": "offence", "min": 0, "max": 0.5, "scoped_by": "lane" },
+  { "id": "status.potency.mult",      "name": "Status Potency",   "kind": "multiplicative", "family": "offence", "min": 0.5, "scoped_by": "status" },
+  { "id": "status.duration.mult",     "name": "Status Duration",  "kind": "multiplicative", "family": "defence", "min": 0.2, "scoped_by": "status", "lower_is_better": true },
+
+  // The eight-lane alignment (R4a, D30 §4 G8): Slashing/Crushing/Piercing share ONE physical
+  // lane (D-02 — per-type weakness lives on enemies as vulnerability multipliers). Floors at
+  // -1.0 so authored enemy weaknesses and future exposure can push a lane negative; the 0.90
+  // key ceiling is CombatTuning.MaxResistanceCeiling — the cap max-res affixes may raise the
+  // 0.75 cap toward, never past.
+  { "id": "combat.resist.physical",   "name": "Physical Resistance",  "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.magic",      "name": "Magic Resistance",     "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.heat",       "name": "Heat Resistance",      "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.cold",       "name": "Cold Resistance",      "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.charge",     "name": "Charge Resistance",    "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.toxin",      "name": "Toxin Resistance",     "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.corrosion",  "name": "Corrosion Resistance", "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
+  { "id": "combat.resist.decay",      "name": "Decay Resistance",     "kind": "additive", "family": "defence", "min": -1, "max": 0.9 },
 
   // --- Rule flags -------------------------------------------------------------------------
   { "id": "combat.interrupt.immune",   "name": "Uninterruptible",     "kind": "flag", "family": "rule" },

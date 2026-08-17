@@ -37,7 +37,7 @@
     "id": "form.buckler",
     "name": "Buckler",
     "type": "Armor",
-    "tags": ["armor", "shield"],
+    "tags": ["armor", "shield", "parry"],
     "slots": {
       "face": {
         "requires_tags": ["form:metal", "form:wood"],

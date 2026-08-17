@@ -211,4 +211,63 @@ public class FabricationTests
         Assert.Equal(derived.Properties, restored.Properties);
         Assert.Equal(derived.Moves.Select(m => m.Id), restored.Moves.Select(m => m.Id));
     }
+
+    // ---- R3: the pre-commit fabrication projection --------------------------------------------
+
+    /// <summary>One computation, two callers: the projection must match what Fabricate then
+    /// mints, and must touch nothing — components are consumed forever, so the preview being
+    /// wrong or the preview consuming anything would each break the §6.2c fairness extension.</summary>
+    [Fact]
+    public void ProjectMatchesFabricateAndHasNoSideEffects()
+    {
+        var harness = new Harness();
+        harness.Inventory.Add("material.iron_ingot", 4);
+        harness.Inventory.Add("material.leather", 2);
+
+        var request = new FabricationRequest("form.longsword", new Dictionary<string, string>
+        {
+            ["edge"] = "material.iron_ingot",
+            ["core"] = "material.iron_ingot",
+            ["binding"] = "material.leather",
+        });
+
+        var equipmentBefore = harness.Content.Equipment.Count;
+        var projection = harness.Engine.Project(request);
+
+        Assert.True(projection.CanFabricate, projection.Failure.ToString());
+        Assert.True(projection.WouldBeFirstOfItsKind);
+        Assert.Equal(4, harness.Inventory.GetQuantity("material.iron_ingot"));   // nothing consumed
+        Assert.Equal(equipmentBefore, harness.Content.Equipment.Count);          // nothing registered
+        Assert.Equal(("edge", "Iron Ingot"), projection.ComponentNames[0]);      // identity slot leads
+
+        var outcome = harness.Engine.Fabricate(request);
+        Assert.True(outcome.Success);
+        Assert.Equal(projection.Name, outcome.Name);
+        Assert.Equal(
+            projection.Stats.OrderBy(s => s.Key).Select(s => (s.Key, s.Value)),
+            outcome.Item!.Properties.AsDictionary().OrderBy(s => s.Key).Select(s => (s.Key, s.Value)));
+        Assert.Equal(projection.Expressed.Select(t => t.Id), outcome.Expressed.Select(t => t.Id));
+    }
+
+    [Fact]
+    public void ProjectionReportsGateFailuresWithoutThrowing()
+    {
+        var harness = new Harness(); // empty inventory
+
+        var missing = harness.Engine.Project(new FabricationRequest("form.longsword", new Dictionary<string, string>
+        {
+            ["edge"] = "material.iron_ingot",
+            ["core"] = "material.iron_ingot",
+            ["binding"] = "material.leather",
+        }));
+        Assert.Equal(FabricationFailure.MissingInputs, missing.Failure);
+
+        var rejected = harness.Engine.Project(new FabricationRequest("form.longsword", new Dictionary<string, string>
+        {
+            ["edge"] = "material.leather",
+            ["core"] = "material.iron_ingot",
+            ["binding"] = "material.leather",
+        }));
+        Assert.Equal(FabricationFailure.SlotRejected, rejected.Failure);
+    }
 }

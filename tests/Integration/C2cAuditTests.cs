@@ -1,0 +1,156 @@
+using Dungeons.Content;
+using Dungeons.Crafting;
+using Dungeons.Professions;
+using Xunit;
+
+namespace Dungeons.Tests.Integration;
+
+/// <summary>
+/// The C2c checkpoint's machine-verifiable half: the ValidateForms failing-content gap
+/// (HANDOFF debt — shipped content exercises the rules; broken stores didn't), the D28/D29
+/// first-session sufficiency audit, and the D29.3 essence source audit. The playtest half —
+/// balance feel — is the user's by standing decision.
+/// </summary>
+public class C2cAuditTests
+{
+    // ---- ValidateForms — per-rule failing content -------------------------------------------
+
+    private static IReadOnlyList<ContentProblem> FormProblems(FormTemplateDefinition broken)
+    {
+        var forms = new DataStore<FormTemplateDefinition>();
+        forms.Add(broken);
+        var content = new ContentBundle
+        {
+            Forms = forms,
+            Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
+            Moves = TestPaths.LoadStore<Dungeons.Combat.MoveDefinition>("moves"),
+        };
+
+        return ContentValidator.Validate(content).Where(p => p.Category == "forms").ToList();
+    }
+
+    [Fact]
+    public void AFormWithNoSlotsFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition { Id = "form.broken" }),
+            p => p.Message.Contains("no slots"));
+
+    [Fact]
+    public void AZeroTraitCapFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition
+        {
+            Id = "form.broken",
+            TraitCap = 0,
+            Slots = { ["face"] = new FormSlot() },
+        }), p => p.Message.Contains("trait_cap"));
+
+    [Fact]
+    public void AnUnknownApertureCategoryFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition
+        {
+            Id = "form.broken",
+            Slots = { ["face"] = new FormSlot { Aperture = { ["sonic"] = 1.0 } } },
+        }), p => p.Message.Contains("unknown category 'sonic'"));
+
+    [Fact]
+    public void AStatMapReadingAnUnknownPropertyFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition
+        {
+            Id = "form.broken",
+            Slots = { ["face"] = new FormSlot() },
+            StatMap = { ["mass"] = new[] { new StatContribution { Slot = "face", Property = "wobble" } } },
+        }), p => p.Message.Contains("unknown property 'wobble'"));
+
+    [Fact]
+    public void AStatMapReadingAnUnknownSlotFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition
+        {
+            Id = "form.broken",
+            Slots = { ["face"] = new FormSlot() },
+            StatMap = { ["mass"] = new[] { new StatContribution { Slot = "edge", Property = "mass" } } },
+        }), p => p.Message.Contains("unknown slot 'edge'"));
+
+    [Fact]
+    public void AFormGrantingAnUnknownMoveFailsLoudly() =>
+        Assert.Contains(FormProblems(new FormTemplateDefinition
+        {
+            Id = "form.broken",
+            Slots = { ["face"] = new FormSlot() },
+            Moves = new[] { new Dungeons.Combat.MoveGrantSpec { Id = "move.imaginary" } },
+        }), p => p.Message.Contains("unknown move"));
+
+    // ---- D28/D29 — the first-session sufficiency audit ---------------------------------------
+
+    /// <summary>A fresh character must reach a fabricated Longsword with professions only:
+    /// ore from Mining, Smelt at Smithing 1 turning form:ore into form:metal, and a
+    /// binding-legal hide from an early Beast Lore ladder rung. Content, not debug grants.</summary>
+    [Fact]
+    public void AFreshCharacterCanReachALongswordThroughProfessionsAlone()
+    {
+        var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
+        var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
+        var processes = TestPaths.LoadStore<ProcessDefinition>("processes");
+        var forms = TestPaths.LoadStore<FormTemplateDefinition>("forms");
+
+        // Ore exists as a profession faucet (the P1 pin, restated here for the chain).
+        Assert.Contains(actions, a => a.Outputs.Any(o => o.ItemId == "material.iron_ore"));
+
+        // Smelt is reachable in the first session and turns ore into metal.
+        var smelt = processes.GetById("process.smelt");
+        Assert.True(smelt.Requires.ProfessionLevel <= 1, "Smelt must be a first-session process");
+        Assert.Contains("form:ore", smelt.Requires.SubstrateTags);
+        Assert.Contains("form:metal", smelt.TagEffects.Set);
+
+        // A binding-legal material (form:hide / form:fiber) flows from an early action —
+        // bonus outputs count: Track Boar's 30% hide at a 130-tick interval is a genuine
+        // first-session faucet, a few tracks in.
+        bool BindingLegal(string id) =>
+            materials.TryGetById(id, out var m)
+            && (m.Tags.Contains("form:hide", StringComparer.OrdinalIgnoreCase)
+                || m.Tags.Contains("form:fiber", StringComparer.OrdinalIgnoreCase));
+
+        var bindingActions = actions.Where(a =>
+            a.Outputs.Any(o => BindingLegal(o.ItemId))
+            || a.BonusOutputs.Any(o => BindingLegal(o.ItemId))).ToList();
+        Assert.NotEmpty(bindingActions);
+        Assert.True(bindingActions.Min(a => a.RequiredLevel) <= 10,
+            $"a binding-legal hide/fiber must be reachable early (best: level {bindingActions.Min(a => a.RequiredLevel)})");
+
+        // And the Longsword's slots ask for exactly what that chain supplies.
+        var longsword = forms.GetById("form.longsword");
+        Assert.Contains("form:metal", longsword.Slots["edge"].RequiresTags);
+        Assert.Contains(longsword.Slots["binding"].RequiresTags,
+            t => t is "form:hide" or "form:fiber");
+    }
+
+    // ---- D29.3 — the essence source audit ------------------------------------------------------
+
+    /// <summary>"Trace profession essence must never compete economically with Realm
+    /// extraction" (D29.3, user's phrasing). This pins the overlap between essence-authored
+    /// materials and profession outputs to the audited allowlist — today exactly one, the
+    /// shock-eel skin. Whether that faucet needs a rarity gate is a C2c playtest question;
+    /// a NEW overlap appearing silently is a content bug this test catches.</summary>
+    [Fact]
+    public void ProfessionFaucetsYieldEssenceOnlyFromTheAuditedAllowlist()
+    {
+        var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
+        var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
+
+        // The complete audited list (2026-08-16): the shock-eel fishing rung, skin + gland —
+        // both storm-trace, both flagged for C2c's economic-noncompete check. Anything new
+        // appearing here must be argued through D29.3, not slipped in.
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "material.eel_skin",
+            "material.shock_eel_gland",
+        };
+
+        var essenceOutputs = actions
+            .SelectMany(a => a.Outputs.Select(o => o.ItemId).Concat(a.BonusOutputs.Select(o => o.ItemId)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(id => materials.TryGetById(id, out var m) && m.Essence.Count > 0)
+            .ToList();
+
+        foreach (var id in essenceOutputs)
+            Assert.Contains(id, allowed);
+    }
+}

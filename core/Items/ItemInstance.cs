@@ -26,6 +26,13 @@ public sealed class ItemInstance
     /// <summary>Definition ids of the materials this instance was made from.</summary>
     public IReadOnlyList<string> Provenance { get; init; } = Array.Empty<string>();
 
+    /// <summary>The genetic profile computed at fabrication (docs/affixes.md §2.1) — stored,
+    /// never recomputed (save v6). Null on pre-affix instances and authored starter gear.</summary>
+    public Crafting.Genome? Genome { get; init; }
+
+    /// <summary>Innates + rolled modifiers, in display order: innates first (D-21).</summary>
+    public IReadOnlyList<Affixes.RolledAffix> Affixes { get; init; } = Array.Empty<Affixes.RolledAffix>();
+
     /// <summary>Named traits/effects generated during crafting (reserved for the reaction sim).</summary>
     public IReadOnlyList<string> Traits { get; init; } = Array.Empty<string>();
 

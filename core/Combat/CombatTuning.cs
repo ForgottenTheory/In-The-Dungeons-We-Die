@@ -59,6 +59,14 @@ public static class CombatTuning
     /// </summary>
     public const int PerfectBlockWindowTicks = 4;
 
+    /// <summary>Parry (R4c-2, D-26 gear-granted): a 3-tick window — the top of the skill
+    /// ladder, deliberately out of an 8-tick auto-combat reaction's reach (§5.1.1).</summary>
+    public const int ParryWindowTicks = 3;
+    public const int ParryStaminaCost = 6;
+
+    /// <summary>Stagger applied to the parried attacker — the counter-window, as Stun buildup.</summary>
+    public const double ParryStaggerPower = 25;
+
     // --- Resolve: the one crowd-control mechanism (D-08, docs/statuses.md §4) ---------------
 
     /// <summary>Used when an actor declares no Resolve of its own.</summary>

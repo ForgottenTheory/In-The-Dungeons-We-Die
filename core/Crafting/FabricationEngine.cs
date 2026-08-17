@@ -27,6 +27,33 @@ public sealed record FabricationOutcome(
 }
 
 /// <summary>
+/// What a fabrication <i>would</i> produce, computed before the player commits — the §6.2c
+/// fairness principle extended to the terminal step (D30/R3): components are consumed forever,
+/// so the payoff is never a surprise. Pure read-model: nothing is consumed or registered.
+/// </summary>
+public sealed record FabricationProjection(
+    FabricationFailure Failure,
+    string Name,
+    IReadOnlyDictionary<string, double> Stats,
+    IReadOnlyList<TraitInstance> Expressed,
+    IReadOnlyList<TraitInstance> Dormant,
+    IReadOnlyDictionary<string, double> Essence,
+    ArmorStats? Armor,
+    IReadOnlyList<(string Slot, string Material)> ComponentNames,
+    bool WouldBeFirstOfItsKind,
+    Genome Genome,
+    IReadOnlyList<Affixes.RolledAffix> Innates)
+{
+    public bool CanFabricate => Failure == FabricationFailure.None;
+
+    public static FabricationProjection Failed(FabricationFailure failure) => new(
+        failure, string.Empty,
+        new Dictionary<string, double>(), Array.Empty<TraitInstance>(), Array.Empty<TraitInstance>(),
+        new Dictionary<string, double>(), null, Array.Empty<(string, string)>(), false,
+        Genome.Empty, Array.Empty<Affixes.RolledAffix>());
+}
+
+/// <summary>
 /// The §16 fabrication boundary — where materials stop. Terminal on purpose (§16.1): inputs
 /// are consumed, integrity is irrelevant, and the output is an <see cref="ItemInstance"/> over
 /// a <b>derived equipment definition</b> registered by signature into the same equipment store
@@ -42,44 +69,156 @@ public sealed class FabricationEngine
     private readonly Func<Inventory> _inventory;
     private readonly MaterialProfileResolver _profiles;
     private readonly InstanceIdSource _instanceIds;
+    private readonly Randomness.IRandomSource? _random;
 
+    /// <param name="random">The seeded roll source for affixes (R4b). Null = no rolling —
+    /// items still get a genome and innates (both deterministic), never rolled modifiers.</param>
     public FabricationEngine(
         ContentBundle content, Func<Inventory> inventory,
-        MaterialProfileResolver profiles, InstanceIdSource instanceIds)
+        MaterialProfileResolver profiles, InstanceIdSource instanceIds,
+        Randomness.IRandomSource? random = null)
     {
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
         _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
         _instanceIds = instanceIds ?? throw new ArgumentNullException(nameof(instanceIds));
+        _random = random;
+    }
+
+    /// <summary>The pre-commit view: same composition as <see cref="Fabricate"/>, no side
+    /// effects. One computation, two callers — the projection can never drift from the truth.</summary>
+    public FabricationProjection Project(FabricationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var composed = Compose(request);
+        if (composed.Failure != FabricationFailure.None)
+            return FabricationProjection.Failed(composed.Failure);
+
+        // Identity-bearing slot first: the edge leads the sentence, the binding closes it.
+        var componentNames = composed.Components
+            .OrderByDescending(c => composed.Form.Slots[c.Key].MassShare)
+            .ThenBy(c => c.Key, StringComparer.Ordinal)
+            .Select(c => (Slot: c.Key, Material: c.Value.Material.Name))
+            .ToList();
+
+        return new FabricationProjection(
+            FabricationFailure.None,
+            composed.Name,
+            composed.Stats,
+            composed.Expressed,
+            composed.Dormant,
+            composed.Essence,
+            composed.Armor,
+            componentNames,
+            WouldBeFirstOfItsKind: !_content.Equipment.Contains(composed.Signature),
+            composed.Genome,
+            // Innates are deterministic — the preview can promise them (D-21: the genome
+            // speaking directly). Rolled modifiers stay behind the commit, by design.
+            Affixes.AffixRoller.Innates(composed.Genome, _content.Affixes.GetAll()));
     }
 
     public FabricationOutcome Fabricate(FabricationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        var composed = Compose(request);
+        if (composed.Failure != FabricationFailure.None)
+            return FabricationOutcome.Failed(composed.Failure);
+
+        var form = composed.Form;
+        var inventory = _inventory();
+
+        foreach (var (material, _) in composed.Components.Values)
+            inventory.TryRemove(material.Id, 1);
+
+        var isFirst = !_content.Equipment.Contains(composed.Signature);
+        if (isFirst)
+        {
+            _content.Equipment.Add(new EquipmentDefinition
+            {
+                Id = composed.Signature,
+                Name = composed.Name,
+                Slot = form.Type,
+                Tags = form.Tags,
+                Moves = form.Moves,
+                Armor = composed.Armor,
+                Properties = new Dictionary<string, double>(composed.Stats),
+                ExpressedTraits = composed.Expressed,
+                DormantTraits = composed.Dormant,
+                Essence = composed.Essence,
+            });
+        }
+
+        // Innates first (deterministic), then the rolled prefixes and suffixes (§3.1 order).
+        var affixes = new List<Affixes.RolledAffix>(
+            Affixes.AffixRoller.Innates(composed.Genome, _content.Affixes.GetAll()));
+        if (_random is not null)
+        {
+            affixes.AddRange(Affixes.AffixRoller.Roll(composed.Genome, "prefix", _content.Affixes.GetAll(), _random));
+            affixes.AddRange(Affixes.AffixRoller.Roll(composed.Genome, "suffix", _content.Affixes.GetAll(), _random));
+        }
+
+        var instance = new ItemInstance
+        {
+            InstanceId = _instanceIds.Next(),
+            BaseDefinitionId = composed.Signature,
+            ItemType = form.Type == EquipmentSlot.Weapon ? ItemType.Weapon : ItemType.Armor,
+            DisplayName = composed.Name,
+            Properties = new PropertySet(composed.Stats),
+            Provenance = composed.Components.Values.Select(c => c.Material.Id).ToList(),
+            Traits = composed.Expressed.Select(t => t.Id).ToList(),
+            Genome = composed.Genome,
+            Affixes = affixes,
+        };
+        inventory.AddInstance(instance);
+
+        return new FabricationOutcome(
+            FabricationFailure.None, instance, composed.Name, composed.Expressed, composed.Dormant, isFirst);
+    }
+
+    // ---- The shared composition (§16.3 steps 1–6, side-effect free) --------------------------
+
+    private sealed record Composition(
+        FabricationFailure Failure,
+        FormTemplateDefinition Form,
+        Dictionary<string, (MaterialDefinition Material, MaterialProfile Profile)> Components,
+        Dictionary<string, double> Stats,
+        List<TraitInstance> Expressed,
+        List<TraitInstance> Dormant,
+        Dictionary<string, double> Essence,
+        ArmorStats? Armor,
+        string Name,
+        string Signature,
+        Genome Genome)
+    {
+        public static Composition Rejected(FabricationFailure failure) => new(
+            failure, null!, new(), new(), new(), new(), new(), null, string.Empty, string.Empty,
+            Genome.Empty);
+    }
+
+    private Composition Compose(FabricationRequest request)
+    {
         if (!_content.Forms.TryGetById(request.FormId, out var form))
-            return FabricationOutcome.Failed(FabricationFailure.UnknownForm);
+            return Composition.Rejected(FabricationFailure.UnknownForm);
 
         var components = new Dictionary<string, (MaterialDefinition Material, MaterialProfile Profile)>(StringComparer.Ordinal);
         foreach (var (slotName, slot) in form.Slots)
         {
             if (!request.SlotMaterials.TryGetValue(slotName, out var materialId))
-                return FabricationOutcome.Failed(FabricationFailure.MissingSlot);
+                return Composition.Rejected(FabricationFailure.MissingSlot);
             if (!_content.Materials.TryGetById(materialId, out var material))
-                return FabricationOutcome.Failed(FabricationFailure.UnknownMaterial);
+                return Composition.Rejected(FabricationFailure.UnknownMaterial);
             if (slot.RequiresTags.Count > 0
                 && !slot.RequiresTags.Any(t => material.Tags.Contains(t, StringComparer.OrdinalIgnoreCase)))
-                return FabricationOutcome.Failed(FabricationFailure.SlotRejected);
+                return Composition.Rejected(FabricationFailure.SlotRejected);
             components[slotName] = (material, _profiles.Resolve(material));
         }
 
         var inventory = _inventory();
         if (components.Values.GroupBy(c => c.Material.Id)
             .Any(g => inventory.GetQuantity(g.Key) < g.Count()))
-            return FabricationOutcome.Failed(FabricationFailure.MissingInputs);
-
-        foreach (var (material, _) in components.Values)
-            inventory.TryRemove(material.Id, 1);
+            return Composition.Rejected(FabricationFailure.MissingInputs);
 
         // ---- §16.3 step 2: stats, in combat units ------------------------------------------
         var stats = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
@@ -144,43 +283,31 @@ public sealed class FabricationEngine
             armor = new ArmorStats { Armor = 0, Resistances = resistances };
         }
 
-        // ---- §16.3 step 7: signature → derived definition → instance ------------------------
+        // ---- §16.3 step 7: signature → derived identity --------------------------------------
         var primary = form.Slots.OrderByDescending(s => s.Value.MassShare)
             .ThenBy(s => s.Key, StringComparer.Ordinal).First().Key;
         var name = ComposeName(form, components[primary].Material, kept);
         var signature = Signature(form, components, stats);
 
-        var isFirst = !_content.Equipment.Contains(signature);
-        if (isFirst)
-        {
-            _content.Equipment.Add(new EquipmentDefinition
-            {
-                Id = signature,
-                Name = name,
-                Slot = form.Type,
-                Tags = form.Tags,
-                Moves = form.Moves,
-                Armor = armor,
-                Properties = new Dictionary<string, double>(stats),
-                ExpressedTraits = kept,
-                DormantTraits = dormant,
-                Essence = essence,
-            });
-        }
+        // ---- The Genome (affixes.md §2.1) — computed here, stored on the instance, never
+        // recomputed. Potency is the mass-share-weighted mean of the components (a mean, so
+        // junk still dilutes); generation is the deepest component's.
+        var potency = (int)Math.Round(form.Slots.Sum(s =>
+            components[s.Key].Profile.Potency * s.Value.MassShare));
+        var genome = new Genome(
+            form.Id,
+            GenomeCalculator.Pressure(form, components),
+            essence,
+            kept,
+            dormant,
+            form.Tags,
+            potency,
+            components.Values.Max(c => c.Profile.Generation),
+            Array.Empty<string>()); // fabrication signatures are P4
 
-        var instance = new ItemInstance
-        {
-            InstanceId = _instanceIds.Next(),
-            BaseDefinitionId = signature,
-            ItemType = form.Type == EquipmentSlot.Weapon ? ItemType.Weapon : ItemType.Armor,
-            DisplayName = name,
-            Properties = new PropertySet(stats),
-            Provenance = components.Values.Select(c => c.Material.Id).ToList(),
-            Traits = kept.Select(t => t.Id).ToList(),
-        };
-        inventory.AddInstance(instance);
-
-        return new FabricationOutcome(FabricationFailure.None, instance, name, kept, dormant, isFirst);
+        return new Composition(
+            FabricationFailure.None, form, components, stats, kept, dormant, essence, armor, name, signature,
+            genome);
     }
 
     /// <summary>§16.5 — the dominant expressed trait's adjective, the primary material's root
