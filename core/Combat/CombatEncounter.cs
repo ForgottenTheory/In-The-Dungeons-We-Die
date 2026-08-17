@@ -61,6 +61,16 @@ public sealed class ActionInFlight
     internal ScheduledAction? Scheduled { get; set; }
 }
 
+/// <summary>The two timed defensive stances the player can raise (docs/damage-and-defense.md §5).</summary>
+public enum DefensiveStance
+{
+    /// <summary>Mitigates, and opens the Perfect Block window for its first few ticks.</summary>
+    Block,
+
+    /// <summary>Avoids outright while the stance is up, at the cost of action time.</summary>
+    Dodge,
+}
+
 /// <summary>A pending enemy attack the player can see and react to.</summary>
 public sealed class EnemyIntent
 {
@@ -80,7 +90,8 @@ public sealed class CombatOutcome
 }
 
 /// <summary>
-/// Authoritative tick-driven encounter (docs/combat-spec.md). Enemies run a
+/// Authoritative tick-driven encounter (lifecycle: docs/moves.md §2.3; damage:
+/// docs/damage-and-defense.md). Enemies run a
 /// self-scheduling decide → telegraph → execute → recovery loop on the shared
 /// <see cref="TickEngine"/>; the player issues commands that resolve on the same
 /// clock. Blocking and dodging are timed stances that only matter if landed near an
@@ -104,7 +115,7 @@ public sealed class CombatEncounter
     private readonly HitPipeline _pipeline;
     private readonly DataStore<MoveDefinition> _moves;
     private readonly DataStore<MoveModifierDefinition>? _moveModifiers;
-    private readonly IRandomSource _rng;
+    private readonly IRandomSource _random;
     private readonly IGameEventBus _bus;
 
     /// <summary>Per-combatant, per-move cooldown bookkeeping.</summary>
@@ -138,7 +149,7 @@ public sealed class CombatEncounter
         TickEngine tick,
         HitPipeline pipeline,
         DataStore<MoveDefinition> moves,
-        IRandomSource rng,
+        IRandomSource random,
         IGameEventBus bus,
         StatusController? statuses = null,
         Characters.GaugeController? gauges = null,
@@ -148,7 +159,7 @@ public sealed class CombatEncounter
         _tick = tick ?? throw new ArgumentNullException(nameof(tick));
         _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
         _moves = moves ?? throw new ArgumentNullException(nameof(moves));
-        _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+        _random = random ?? throw new ArgumentNullException(nameof(random));
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
         _moveModifiers = moveModifiers;
 
@@ -430,9 +441,9 @@ public sealed class CombatEncounter
             _cooldowns[(actor, move.Id)] = _tick.CurrentTick + move.CooldownTicks;
     }
 
-    public void Block() => EnterStance("raise your guard", CombatTuning.BlockStaminaCost, isBlock: true);
+    public void Block() => EnterStance(DefensiveStance.Block);
 
-    public void Dodge() => EnterStance("dodge", CombatTuning.DodgeStaminaCost, isBlock: false);
+    public void Dodge() => EnterStance(DefensiveStance.Dodge);
 
     /// <summary>Gear-granted (D-26): the composition root sets this from the worn items' tags.
     /// Without a parrying form equipped, the command does not exist.</summary>
@@ -534,7 +545,7 @@ public sealed class CombatEncounter
     /// <summary>
     /// Weighted move selection over the AI profile (docs/moves.md §5.2). AI chooses intent; the
     /// tick engine resolves timing. An empty profile is uniform over the moveset — exactly what
-    /// the old <c>_rng.NextInt</c> line did, which this replaces.
+    /// the single uniform random draw this replaced did.
     /// </summary>
     private ResolvedMove? ChooseMove(Combatant enemy)
     {
@@ -580,7 +591,7 @@ public sealed class CombatEncounter
 
         // Deterministic weighted pick under the seed — same state, same roll, same choice.
         var total = candidates.Sum(c => c.Weight);
-        var roll = _rng.NextDouble() * total;
+        var roll = _random.NextDouble() * total;
 
         foreach (var (move, weight) in candidates)
         {
@@ -769,7 +780,7 @@ public sealed class CombatEncounter
 
         foreach (var effect in move.Effects)
         {
-            if (effect.Chance < 1.0 && _rng.NextDouble() >= effect.Chance)
+            if (effect.Chance < 1.0 && _random.NextDouble() >= effect.Chance)
                 continue;
 
             // A rider is the move's own payload, so it starts a chain (depth 0) unless the move
@@ -779,13 +790,21 @@ public sealed class CombatEncounter
 
             EffectSink.Execute(new EffectInvocation(effect, effect.Magnitude(trigger), trigger, move.Id)
             {
-                Target = effect.Target ?? (move.Targeting == Targeting.Self ? EffectTarget.Self
-                    : move.Targeting == Targeting.AllEnemies ? EffectTarget.AllEnemies
-                    : EffectTarget.TriggerTarget),
+                // An explicit per-effect target wins (Drain's heal names TriggerSource);
+                // otherwise the rider inherits the move's own targeting.
+                Target = effect.Target ?? DefaultRiderTarget(move.Targeting),
                 Context = riderContext,
             });
         }
     }
+
+    /// <summary>Where a move's rider lands when the effect does not name a target of its own.</summary>
+    private static EffectTarget DefaultRiderTarget(Targeting targeting) => targeting switch
+    {
+        Targeting.Self => EffectTarget.Self,
+        Targeting.AllEnemies => EffectTarget.AllEnemies,
+        _ => EffectTarget.TriggerTarget,
+    };
 
     /// <summary>Applies any active `modifyMove` grants matching this move, at execution time.</summary>
     private ResolvedMove WithTimedModifiers(Combatant actor, ResolvedMove move)
@@ -1044,9 +1063,19 @@ public sealed class CombatEncounter
     private double ModifierOn(Combatant combatant, string key) =>
         Modifiers?.Resolve(combatant, key, ModifierContext.None) ?? 1.0;
 
-    /// <summary>The combatant an event id refers to — <see cref="SelfId"/> or an enemy's name.</summary>
-    public Combatant? Find(string? id) =>
-        string.IsNullOrEmpty(id) ? null : Combatants.FirstOrDefault(c => string.Equals(Id(c), id, StringComparison.Ordinal));
+    /// <summary>
+    /// The combatant an event id refers to — <see cref="SelfId"/> or an enemy's name. Null for a
+    /// non-combatant source such as "world", and null before an encounter has started.
+    /// </summary>
+    public Combatant? Find(string? id)
+    {
+        if (string.IsNullOrEmpty(id) || _player is null)
+            return null;
+
+        return string.Equals(Id(_player), id, StringComparison.Ordinal)
+            ? _player
+            : _enemies.FirstOrDefault(enemy => string.Equals(Id(enemy), id, StringComparison.Ordinal));
+    }
 
     /// <summary>
     /// Cuts an action short. Returns false if the combatant has nothing committed.
@@ -1096,10 +1125,20 @@ public sealed class CombatEncounter
 
     // --- Shared -------------------------------------------------------------
 
-    private void EnterStance(string verb, int staminaCost, bool isBlock)
+    /// <summary>
+    /// Raises a timed defensive stance. Both stances cost stamina and last a fixed window; the
+    /// difference is which window the hit pipeline reads, and that Block additionally opens the
+    /// Perfect Block sub-window.
+    /// </summary>
+    private void EnterStance(DefensiveStance stance)
     {
         if (!IsActive)
             return;
+
+        var isBlock = stance == DefensiveStance.Block;
+        var verb = isBlock ? "raise your guard" : "dodge";
+        var staminaCost = isBlock ? CombatTuning.BlockStaminaCost : CombatTuning.DodgeStaminaCost;
+
         if (_player.Stamina.Current < staminaCost)
         {
             Log($"Not enough stamina to {verb}.");
@@ -1107,15 +1146,17 @@ public sealed class CombatEncounter
         }
 
         _player.Stamina.Reduce(staminaCost);
-        var until = _tick.CurrentTick + (isBlock ? CombatTuning.BlockDurationTicks : CombatTuning.DodgeDurationTicks);
+        var stanceEndsTick = _tick.CurrentTick
+            + (isBlock ? CombatTuning.BlockDurationTicks : CombatTuning.DodgeDurationTicks);
+
         if (isBlock)
         {
-            _player.BlockUntilTick = until;
+            _player.BlockUntilTick = stanceEndsTick;
             _player.BlockStartTick = _tick.CurrentTick;   // the Perfect Block window starts here
         }
         else
         {
-            _player.DodgeUntilTick = until;
+            _player.DodgeUntilTick = stanceEndsTick;
         }
 
         Log($"You {verb}.");
@@ -1167,11 +1208,11 @@ public sealed class CombatEncounter
 
         if (result.Avoided)
         {
-            var how = result.AvoidedBy == AvoidedVia.Parry ? "parries"
+            var avoidanceVerb = result.AvoidedBy == AvoidedVia.Parry ? "parries"
                 : result.PerfectBlock ? "blocks perfectly"
                 : result.AvoidedBy == AvoidedVia.Evade ? "evades"
                 : "dodges";
-            Log($"{target.Name} {how} {attacker.Name}'s {attackName}!");
+            Log($"{target.Name} {avoidanceVerb} {attacker.Name}'s {attackName}!");
 
             // Dodged is the only avoidance event in E0's vocabulary; E1 does not widen it.
             // HitAvoided arrives in E3 with the rest of §3.1.
@@ -1205,10 +1246,10 @@ public sealed class CombatEncounter
         Publish(GameEvents.DamageDealt, source, victim, result.Amount, tags, context);
         Publish(GameEvents.DamageTaken, source: victim, target: source, amount: result.Amount, tags: tags, context: context);
 
-        var suffix = (result.Crit ? " (crit!)" : string.Empty)
+        var outcomeNotes = (result.Crit ? " (crit!)" : string.Empty)
             + (result.Blocked ? " (blocked)" : string.Empty)
             + (absorbed > 0 ? $" (barrier absorbs {absorbed})" : string.Empty);
-        Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{suffix}. " +
+        Log($"{attacker.Name}'s {attackName} hits {target.Name} for {result.Amount} {result.Type}{outcomeNotes}. " +
             $"[{target.Name} {target.Health.Current}/{target.Health.Max}]");
 
         // Ailments resolve LAST and from the damage that actually landed in each lane — so the
@@ -1323,13 +1364,6 @@ public sealed class CombatEncounter
         combatant.Team == CombatTeam.Player ? SelfId : combatant.Name;
 
     /// <summary>
-    /// Tags describing one attack. `heavy` is derived from time-to-impact
-    /// (<see cref="CombatTuning.HeavyTimeToImpactTicks"/>) rather than authored, which is what
-    /// makes Exploding Kneecaps and the Venomous burst fire against the Goblin Brute today.
-    /// <para><b>Known simplification:</b> everything is `melee` because everything currently is.
-    /// Real delivery tags arrive with moves in E4.</para>
-    /// </summary>
-    /// <summary>
     /// The tags a move's events carry: the move's own namespaced tags, its id, and the <b>bare
     /// legacy aliases</b>.
     ///
@@ -1385,7 +1419,7 @@ public sealed class CombatEncounter
                 continue;
 
             var chance = attacker.AilmentChanceFor(lane);
-            if (chance <= 0 || _rng.NextDouble() >= chance)
+            if (chance <= 0 || _random.NextDouble() >= chance)
                 continue;
 
             var statusId = AilmentForLane(lane);
@@ -1439,10 +1473,6 @@ public sealed class CombatEncounter
         return true;
     }
 
-    /// <summary>
-    /// Applies a status through the controller, publishing whatever the attempt produced. The
-    /// controller decides whether a control actually lands; combat only reports it.
-    /// </summary>
     /// <summary>Barrier absorption (R4c-2, the long-standing HitPipeline debt): `status.barrier`
     /// magnitude soaks damage before Health does. Recovery is Barrier, not healing (§5.5).
     /// Returns the amount absorbed; shattering raises <c>BarrierBroken</c> (D-06's sixth event).</summary>
@@ -1470,14 +1500,10 @@ public sealed class CombatEncounter
 
     private const string BarrierStatusId = "status.barrier";
 
-    /// <summary>The combatant an event id names, or null for non-combatant sources ("world").</summary>
-    private Combatant? ById(string id)
-    {
-        if (_player is not null && Id(_player) == id)
-            return _player;
-        return _enemies.FirstOrDefault(e => Id(e) == id);
-    }
-
+    /// <summary>
+    /// Applies a status through the controller, publishing whatever the attempt produced. The
+    /// controller decides whether a control actually lands; combat only reports it.
+    /// </summary>
     public ControlOutcome ApplyStatus(
         Combatant target, string statusId, string sourceId, double magnitude = 0,
         int durationOverride = 0, EffectContext? context = null, string? storedMoveId = null)
@@ -1488,7 +1514,7 @@ public sealed class CombatEncounter
         // R4c-2 — the status depth keys. Potency scales the applier's magnitude; duration
         // scales on the receiver (defensive "shorter suffering"). Both scoped by status id,
         // both no-ops at their defaults, so nothing changes without a source.
-        var applier = ById(sourceId);
+        var applier = Find(sourceId);
         var statusContext = ModifierContext.For(ScopeDimensions.Status, statusId);
         if (magnitude > 0 && applier is not null && Modifiers is not null)
             magnitude *= Modifiers.Resolve(applier, ModifierKeys.StatusPotencyMult, statusContext, 1.0);

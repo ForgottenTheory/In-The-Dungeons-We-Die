@@ -5,6 +5,16 @@ using Dungeons.Items;
 
 namespace Dungeons.Crafting;
 
+/// <summary>Slot-name conventions shared by form templates and everything that reads them.</summary>
+public static class FormSlots
+{
+    /// <summary>
+    /// The wildcard slot name. A stat-map read against it takes the mass-share-weighted total
+    /// across every slot, rather than one named component.
+    /// </summary>
+    public const string AllSlots = "*";
+}
+
 /// <summary>One component slot of a form (§16.2): what it accepts, how much of the item it
 /// is, and how much of each trait category it lets express.</summary>
 public sealed class FormSlot
@@ -22,12 +32,13 @@ public sealed class FormSlot
 }
 
 /// <summary>One weighted read in a stat map: this slot's property, at this weight.
-/// Slot <c>"*"</c> means the mass-share-weighted total across all slots.</summary>
+/// Slot <see cref="FormSlots.AllSlots"/> means the mass-share-weighted total across all slots.</summary>
 public sealed class StatContribution
 {
-    public string Slot { get; init; } = "*";
+    public string Slot { get; init; } = FormSlots.AllSlots;
     public string Property { get; init; } = string.Empty;
-    public double W { get; init; } = 1.0;
+    /// <summary>How strongly this read contributes to the stat, relative to the other reads.</summary>
+    public double Weight { get; init; } = 1.0;
 }
 
 /// <summary>

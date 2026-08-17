@@ -44,14 +44,14 @@ public static class IntegrityCalculator
     /// <param name="stateDelta">Total normalized property movement (§6.2a).</param>
     /// <param name="severity">The process's severity.</param>
     /// <param name="strainReleased">Energy released by annihilation (§8.5).</param>
-    /// <param name="qualityNorm">Normalized execution quality, 0–1.</param>
+    /// <param name="craftQuality">Normalized execution quality, 0–1.</param>
     /// <param name="traitsCreated">Always 0 in P1 — traits are P2.</param>
     /// <param name="extraCost">Signature-reaction surcharge. Always 0 in P1 — signatures are P4.</param>
     public static double Cost(
         double stateDelta,
         double severity,
         double strainReleased,
-        double qualityNorm,
+        double craftQuality,
         int traitsCreated = 0,
         double extraCost = 0.0)
     {
@@ -60,7 +60,7 @@ public static class IntegrityCalculator
             + strainReleased * RefinementTuning.StrainCost
             + extraCost;
 
-        var mitigation = Math.Clamp(qualityNorm, 0.0, 1.0) * RefinementTuning.SkillMitigationFraction;
+        var mitigation = Math.Clamp(craftQuality, 0.0, 1.0) * RefinementTuning.SkillMitigationFraction;
         return Math.Max(gross * (1.0 - mitigation), RefinementTuning.MinimumIntegrityCost);
     }
 
@@ -83,8 +83,8 @@ public static class IntegrityCalculator
     /// reliably hitting the material you were aiming for; low skill or low integrity scatters
     /// you across neighbouring buckets, and you find things by accident.
     /// </summary>
-    public static double VarianceMagnitude(double effectiveInstability, double qualityNorm, double severity) =>
-        Math.Max(0.0, effectiveInstability * (1.0 - Math.Clamp(qualityNorm, 0.0, 1.0)) * severity);
+    public static double VarianceMagnitude(double effectiveInstability, double craftQuality, double severity) =>
+        Math.Max(0.0, effectiveInstability * (1.0 - Math.Clamp(craftQuality, 0.0, 1.0)) * severity);
 
     /// <summary>
     /// Projects the cost, the resulting integrity and the destruction risk before the player

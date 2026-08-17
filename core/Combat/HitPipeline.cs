@@ -44,26 +44,26 @@ public sealed class HitResult
 /// and appends to a <see cref="HitLog"/>; golden tests assert the whole trace rather than the
 /// final number, so a reordering cannot pass silently.</para>
 ///
-/// <para><b>E1 scope.</b> The offensive scaling stages (flat added / increased / more /
-/// conversion / added-as-extra) and the avoidance stages (evade / negate) exist in order but
-/// have no source feeding them — equipment produces <see cref="AttackProfile"/>, not modifier
-/// contributions, until E3 wires <c>ModifierSet</c> in. Pinning the ordering while it is cheap
-/// is the point. Barrier absorption and ailment application arrive with statuses in E2.</para>
+/// <para><b>Every stage's source is a modifier contribution</b>, resolved through
+/// <see cref="CombatantModifiers"/> — which is what lets an affix, a status or a build hook all
+/// feed the same stage without the pipeline knowing any of them exist. A stage with no
+/// contribution falls back to its <see cref="CombatTuning"/> constant.</para>
 ///
-/// <para>Deterministic given the RNG. Mutates nothing — the encounter applies the result.</para>
+/// <para>Deterministic given the random source. Mutates nothing — the encounter applies the
+/// result.</para>
 /// </summary>
 public sealed class HitPipeline
 {
-    private readonly IRandomSource _rng;
+    private readonly IRandomSource _random;
     private readonly CombatantModifiers? _modifiers;
 
     /// <param name="modifiers">
     /// The modifier read path (E3c-2). Optional so calculation tests need not assemble one; when
-    /// absent every stage falls back to its tuning constant, which is exactly the E1 behaviour.
+    /// absent every stage falls back to its tuning constant.
     /// </param>
-    public HitPipeline(IRandomSource rng, CombatantModifiers? modifiers = null)
+    public HitPipeline(IRandomSource random, CombatantModifiers? modifiers = null)
     {
-        _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+        _random = random ?? throw new ArgumentNullException(nameof(random));
         _modifiers = modifiers;
     }
 
@@ -120,7 +120,7 @@ public sealed class HitPipeline
         if (hit.Untelegraphed)
         {
             var evade = Resolve(target, ModifierKeys.EvadeChance, ContextFor(hit), 0);
-            if (evade > 0 && _rng.NextDouble() < evade)
+            if (evade > 0 && _random.NextDouble() < evade)
                 return Avoided(hit, log, AvoidedVia.Evade, $"{evade:P0} vs an untelegraphed hit");
         }
 
@@ -147,9 +147,9 @@ public sealed class HitPipeline
 
         // INCREASED — the first stage with a real source. `more`/`less`, conversion and
         // added-as-extra still sit here with none.
-        var increased = Resolve(attacker, ModifierKeys.DamageMult, context, 1.0);
-        if (Math.Abs(increased - 1.0) > 0.0001)
-            packets = Scale(packets, increased, log, HitStages.Increased, $"×{increased:0.###}");
+        var increasedMultiplier = Resolve(attacker, ModifierKeys.DamageMult, context, 1.0);
+        if (Math.Abs(increasedMultiplier - 1.0) > CombatTuning.MultiplierEpsilon)
+            packets = Scale(packets, increasedMultiplier, log, HitStages.Increased, $"×{increasedMultiplier:0.###}");
 
         // ── PER-PACKET MITIGATION ────────────────────────────────────────────
 
@@ -164,15 +164,19 @@ public sealed class HitPipeline
             // Block *strength* scales how much of the hit the guard eats, not the damage that
             // gets through — so "+30% block strength" reads as mitigating 30% more rather than
             // taking 30% more damage, which is what the sign would say if it multiplied directly.
-            var strength = Resolve(target, ModifierKeys.BlockMult, context, 1.0);
-            var throughput = Math.Max(0, 1.0 - ((1.0 - CombatTuning.BlockDamageMultiplier) * strength));
+            var blockStrength = Resolve(target, ModifierKeys.BlockMult, context, 1.0);
+            var throughput = Math.Max(0, 1.0 - ((1.0 - CombatTuning.BlockDamageMultiplier) * blockStrength));
+            var strengthNote = Math.Abs(blockStrength - 1.0) > CombatTuning.MultiplierEpsilon
+                ? $", strength ×{blockStrength:0.##}"
+                : string.Empty;
             packets = Scale(packets, throughput, log, HitStages.Block,
-                $"×{throughput:0.##} (guard held{(Math.Abs(strength - 1.0) > 0.0001 ? $", strength ×{strength:0.##}" : string.Empty)})");
+                $"×{throughput:0.##} (guard held{strengthNote})");
         }
 
-        var taken = Resolve(target, ModifierKeys.DamageTakenMult, context, 1.0);
-        if (Math.Abs(taken - 1.0) > 0.0001)
-            packets = Scale(packets, taken, log, HitStages.DamageTaken, $"×{taken:0.###}");
+        var damageTakenMultiplier = Resolve(target, ModifierKeys.DamageTakenMult, context, 1.0);
+        if (Math.Abs(damageTakenMultiplier - 1.0) > CombatTuning.MultiplierEpsilon)
+            packets = Scale(packets, damageTakenMultiplier, log, HitStages.DamageTaken,
+                $"×{damageTakenMultiplier:0.###}");
 
         // The floor applies to the hit TOTAL, not per packet — otherwise a three-packet hit
         // would floor three times and out-damage a single packet of the same size against a
@@ -203,16 +207,18 @@ public sealed class HitPipeline
 
     // --- Stages -------------------------------------------------------------
 
-    private static HitResult Avoided(Hit hit, HitLog log, string via, string why)
+    /// <param name="avoidedVia">One of <see cref="AvoidedVia"/> — which defence stopped the hit.</param>
+    /// <param name="reason">The trace line's explanation, e.g. "within the 3-tick parry window".</param>
+    private static HitResult Avoided(Hit hit, HitLog log, string avoidedVia, string reason)
     {
-        var stage = via switch
+        var stage = avoidedVia switch
         {
             AvoidedVia.Dodge => HitStages.Dodge,
             AvoidedVia.Evade => HitStages.Evade,
             AvoidedVia.Parry => HitStages.Parry,
             _ => HitStages.PerfectBlock,
         };
-        log.Add(stage, $"AVOIDED — {why}");
+        log.Add(stage, $"AVOIDED — {reason}");
 
         return new HitResult
         {
@@ -220,9 +226,9 @@ public sealed class HitPipeline
             Amount = 0,
             Packets = Array.Empty<Packet>(),
             Log = log,
-            AvoidedBy = via,
-            Blocked = via == AvoidedVia.PerfectBlock,
-            PerfectBlock = via == AvoidedVia.PerfectBlock,
+            AvoidedBy = avoidedVia,
+            Blocked = avoidedVia == AvoidedVia.PerfectBlock,
+            PerfectBlock = avoidedVia == AvoidedVia.PerfectBlock,
             Mitigated = hit.RawTotal,
         };
     }
@@ -232,9 +238,10 @@ public sealed class HitPipeline
         // The tuning cap bounds what *Luck alone* can buy; modifiers add on top and answer to the
         // key's own clamp instead. Capping the total here would make every crit-chance affix past
         // 50% worth exactly zero without saying so.
-        var innate = Math.Min(CombatTuning.MaxCritChance, attacker.Attributes.Luck * CombatTuning.CritChancePerLuck);
-        var chance = Resolve(attacker, ModifierKeys.CritChance, context, innate);
-        var crit = _rng.NextDouble() < chance;
+        var critChanceFromLuck = Math.Min(
+            CombatTuning.MaxCritChance, attacker.Attributes.Luck * CombatTuning.CritChancePerLuck);
+        var chance = Resolve(attacker, ModifierKeys.CritChance, context, critChanceFromLuck);
+        var crit = _random.NextDouble() < chance;
         if (!crit && chance > 0)
             log.Add(HitStages.Crit, $"no ({chance:P0} chance)");
         return crit;
@@ -283,7 +290,7 @@ public sealed class HitPipeline
         if (packet.Lane is { } avoidableLane)
         {
             var avoid = Resolve(target, ModifierKeys.AvoidLane, ContextFor(hit, packet), 0);
-            if (avoid > 0 && _rng.NextDouble() < avoid)
+            if (avoid > 0 && _random.NextDouble() < avoid)
             {
                 log.Add(HitStages.Negate, $"{avoidableLane} — negated ({avoid:P0} lane avoidance)", amount, 0);
                 return packet.WithAmount(0);
@@ -317,25 +324,25 @@ public sealed class HitPipeline
             // R4a: the lane total is base (armour profile / physiology) plus every
             // `combat.resist.<lane>` contribution — which is what lets affixes, statuses and
             // build sources grant real lane resistance. Cap and floor stay the combatant's.
-            var total = Resolve(
+            var resistanceTotal = Resolve(
                 target, ModifierKeys.ResistLane(lane), ContextFor(hit, packet),
                 target.ArmorProfile.ResistanceFor(lane));
-            var capped = Combatant.CapResistance(total);
+            var cappedResistance = Combatant.CapResistance(resistanceTotal);
 
             // PENETRATION (R4c, §4.2 step 6): flat, attacker-side, applied AFTER the cap — so
             // it eats through overcap, which is exactly what keeps it distinct from exposure
             // (a negative contribution summed before the cap). Floored at −100%.
-            var pen = Resolve(hit.Source, ModifierKeys.PenLane, ContextFor(hit, packet), 0);
-            var effective = pen > 0
-                ? Math.Max(capped - pen, CombatTuning.ResistanceFloor)
-                : capped;
+            var penetration = Resolve(hit.Source, ModifierKeys.PenLane, ContextFor(hit, packet), 0);
+            var effectiveResistance = penetration > 0
+                ? Math.Max(cappedResistance - penetration, CombatTuning.ResistanceFloor)
+                : cappedResistance;
 
-            if (Math.Abs(effective) > 0.0001 || pen > 0)
+            if (Math.Abs(effectiveResistance) > CombatTuning.MultiplierEpsilon || penetration > 0)
             {
-                var after = amount * (1.0 - effective);
-                var detail = pen > 0
-                    ? $"{lane} {capped:P0} − pen {pen:P0} → {effective:P0}"
-                    : $"{lane} {effective:P0}";
+                var after = amount * (1.0 - effectiveResistance);
+                var detail = penetration > 0
+                    ? $"{lane} {cappedResistance:P0} − pen {penetration:P0} → {effectiveResistance:P0}"
+                    : $"{lane} {effectiveResistance:P0}";
                 log.Add(HitStages.Resistance, detail, amount, after);
                 amount = after;
             }
@@ -344,7 +351,7 @@ public sealed class HitPipeline
         // VULNERABILITY — per damage *type*, on the enemy (D-02). Two-way: >1 is a weakness,
         // <1 is toughness, so a skeleton can be soft to crushing and hard against piercing.
         var vulnerability = target.VulnerabilityTo(packet.Type);
-        if (Math.Abs(vulnerability - 1.0) > 0.0001)
+        if (Math.Abs(vulnerability - 1.0) > CombatTuning.MultiplierEpsilon)
         {
             var after = amount * vulnerability;
             log.Add(HitStages.Vulnerability, $"{Describe(packet)} ×{vulnerability:0.##}", amount, after);

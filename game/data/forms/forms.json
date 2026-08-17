@@ -26,8 +26,8 @@
       }
     },
     "stat_map": {
-      "mass":     [ { "slot": "*",    "property": "mass",     "w": 1.0 } ],
-      "hardness": [ { "slot": "edge", "property": "hardness", "w": 0.8 }, { "slot": "core", "property": "hardness", "w": 0.2 } ]
+      "mass":     [ { "slot": "*",    "property": "mass",     "weight": 1.0 } ],
+      "hardness": [ { "slot": "edge", "property": "hardness", "weight": 0.8 }, { "slot": "core", "property": "hardness", "weight": 0.2 } ]
     },
     "trait_cap": 4,
     "moves": ["move.iron_slash", "move.heavy_strike"],
@@ -46,8 +46,8 @@
       }
     },
     "stat_map": {
-      "hardness": [ { "slot": "face", "property": "hardness", "w": 1.0 } ],
-      "mass":     [ { "slot": "face", "property": "mass",     "w": 0.8 } ]
+      "hardness": [ { "slot": "face", "property": "hardness", "weight": 1.0 } ],
+      "mass":     [ { "slot": "face", "property": "mass",     "weight": 0.8 } ]
     },
     "trait_cap": 4,
     "description": "A small answer to large questions. Carrying one makes Shield Bash yours."
@@ -65,8 +65,8 @@
       }
     },
     "stat_map": {
-      "hardness": [ { "slot": "shell", "property": "hardness", "w": 0.6 }, { "slot": "shell", "property": "flexibility", "w": 0.4 } ],
-      "mass":     [ { "slot": "shell", "property": "mass",     "w": 1.0 } ]
+      "hardness": [ { "slot": "shell", "property": "hardness", "weight": 0.6 }, { "slot": "shell", "property": "flexibility", "weight": 0.4 } ],
+      "mass":     [ { "slot": "shell", "property": "mass",     "weight": 1.0 } ]
     },
     "trait_cap": 4,
     "description": "Worn close. The material decides whether that is comfort or armour."

@@ -179,7 +179,7 @@ public sealed class FabricationEngine
 
     // ---- The shared composition (§16.3 steps 1–6, side-effect free) --------------------------
 
-    private sealed record Composition(
+    private sealed record ComposedItem(
         FabricationFailure Failure,
         FormTemplateDefinition Form,
         Dictionary<string, (MaterialDefinition Material, MaterialProfile Profile)> Components,
@@ -192,68 +192,71 @@ public sealed class FabricationEngine
         string Signature,
         Genome Genome)
     {
-        public static Composition Rejected(FabricationFailure failure) => new(
+        public static ComposedItem Rejected(FabricationFailure failure) => new(
             failure, null!, new(), new(), new(), new(), new(), null, string.Empty, string.Empty,
             Genome.Empty);
     }
 
-    private Composition Compose(FabricationRequest request)
+    private ComposedItem Compose(FabricationRequest request)
     {
         if (!_content.Forms.TryGetById(request.FormId, out var form))
-            return Composition.Rejected(FabricationFailure.UnknownForm);
+            return ComposedItem.Rejected(FabricationFailure.UnknownForm);
 
         var components = new Dictionary<string, (MaterialDefinition Material, MaterialProfile Profile)>(StringComparer.Ordinal);
         foreach (var (slotName, slot) in form.Slots)
         {
             if (!request.SlotMaterials.TryGetValue(slotName, out var materialId))
-                return Composition.Rejected(FabricationFailure.MissingSlot);
+                return ComposedItem.Rejected(FabricationFailure.MissingSlot);
             if (!_content.Materials.TryGetById(materialId, out var material))
-                return Composition.Rejected(FabricationFailure.UnknownMaterial);
+                return ComposedItem.Rejected(FabricationFailure.UnknownMaterial);
             if (slot.RequiresTags.Count > 0
                 && !slot.RequiresTags.Any(t => material.Tags.Contains(t, StringComparer.OrdinalIgnoreCase)))
-                return Composition.Rejected(FabricationFailure.SlotRejected);
+                return ComposedItem.Rejected(FabricationFailure.SlotRejected);
             components[slotName] = (material, _profiles.Resolve(material));
         }
 
         var inventory = _inventory();
         if (components.Values.GroupBy(c => c.Material.Id)
             .Any(g => inventory.GetQuantity(g.Key) < g.Count()))
-            return Composition.Rejected(FabricationFailure.MissingInputs);
+            return ComposedItem.Rejected(FabricationFailure.MissingInputs);
 
         // ---- §16.3 step 2: stats, in combat units ------------------------------------------
         var stats = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (stat, reads) in form.StatMap)
+        foreach (var (stat, contributions) in form.StatMap)
         {
             var total = 0.0;
-            foreach (var read in reads)
+            foreach (var contribution in contributions)
             {
-                double value = read.Slot == "*"
-                    ? form.Slots.Sum(s => components[s.Key].Profile.Properties.Get(read.Property) * s.Value.MassShare)
-                    : components[read.Slot].Profile.Properties.Get(read.Property);
-                total += value / 100.0 * read.W;
+                // Slot "*" reads the mass-share-weighted total across every slot; a named slot
+                // reads only that component — which is what makes placement a real decision.
+                double propertyValue = contribution.Slot == FormSlots.AllSlots
+                    ? form.Slots.Sum(s =>
+                        components[s.Key].Profile.Properties.Get(contribution.Property) * s.Value.MassShare)
+                    : components[contribution.Slot].Profile.Properties.Get(contribution.Property);
+                total += propertyValue / 100.0 * contribution.Weight;
             }
             stats[stat] = Math.Round(Math.Max(0, total) * FabricationTuning.CombatUnitScale, 2);
         }
 
         // ---- §16.3 steps 3–4: traits through the aperture; the rest go dormant --------------
-        var expressed = new List<(TraitInstance Trait, double Expressed)>();
+        var traitsByExpression = new List<(TraitInstance Trait, double ExpressedMagnitude)>();
         foreach (var (slotName, component) in components)
         {
             var aperture = form.Slots[slotName].Aperture;
             foreach (var trait in component.Profile.Traits)
             {
                 var category = _content.Traits.TryGetById(trait.Id, out var def) ? def.Category : "structural";
-                var gate = aperture.GetValueOrDefault(category, 1.0);
-                expressed.Add((trait, trait.Magnitude * gate));
+                var apertureFactor = aperture.GetValueOrDefault(category, 1.0);
+                traitsByExpression.Add((trait, trait.Magnitude * apertureFactor));
             }
         }
 
-        var ranked = expressed
-            .OrderByDescending(t => t.Expressed)
+        var ranked = traitsByExpression
+            .OrderByDescending(t => t.ExpressedMagnitude)
             .ThenBy(t => t.Trait.Id, StringComparer.Ordinal)
             .ToList();
-        var kept = ranked.Take(form.TraitCap)
-            .Select(t => new TraitInstance(t.Trait.Id, Math.Round(t.Expressed, 1))).ToList();
+        var expressed = ranked.Take(form.TraitCap)
+            .Select(t => new TraitInstance(t.Trait.Id, Math.Round(t.ExpressedMagnitude, 1))).ToList();
         var dormant = ranked.Skip(form.TraitCap).Select(t => t.Trait).ToList();
 
         // ---- §16.3 step 5: essence, mass-share weighted, arcane-amplified -------------------
@@ -284,10 +287,11 @@ public sealed class FabricationEngine
         }
 
         // ---- §16.3 step 7: signature → derived identity --------------------------------------
-        var primary = form.Slots.OrderByDescending(s => s.Value.MassShare)
+        // The heaviest slot names the item: an iron-edged longsword is an "Iron Longsword".
+        var primarySlotName = form.Slots.OrderByDescending(s => s.Value.MassShare)
             .ThenBy(s => s.Key, StringComparer.Ordinal).First().Key;
-        var name = ComposeName(form, components[primary].Material, kept);
-        var signature = Signature(form, components, stats);
+        var name = ComposeName(form, components[primarySlotName].Material, expressed);
+        var signature = ComputeSignature(form, components, stats);
 
         // ---- The Genome (affixes.md §2.1) — computed here, stored on the instance, never
         // recomputed. Potency is the mass-share-weighted mean of the components (a mean, so
@@ -298,15 +302,15 @@ public sealed class FabricationEngine
             form.Id,
             GenomeCalculator.Pressure(form, components),
             essence,
-            kept,
+            expressed,
             dormant,
             form.Tags,
             potency,
             components.Values.Max(c => c.Profile.Generation),
             Array.Empty<string>()); // fabrication signatures are P4
 
-        return new Composition(
-            FabricationFailure.None, form, components, stats, kept, dormant, essence, armor, name, signature,
+        return new ComposedItem(
+            FabricationFailure.None, form, components, stats, expressed, dormant, essence, armor, name, signature,
             genome);
     }
 
@@ -323,7 +327,7 @@ public sealed class FabricationEngine
 
     /// <summary>Same form + same component archetypes + same stats = the same item kind —
     /// material archetype ids already encode their whole state, so this stays short.</summary>
-    private static string Signature(
+    private static string ComputeSignature(
         FormTemplateDefinition form,
         Dictionary<string, (MaterialDefinition Material, MaterialProfile Profile)> components,
         Dictionary<string, double> stats)

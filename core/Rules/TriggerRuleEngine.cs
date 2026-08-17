@@ -64,7 +64,13 @@ public sealed class TriggerRuleEngine : IDisposable, IEffectSink
     private readonly Func<long> _currentTick;
     private readonly Dictionary<string, IEffectHandler> _handlers = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Registration> _rules = new();
-    private readonly Dictionary<string, long> _readyAt = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// When each cooldown next expires. Holds two kinds of key, deliberately in one map because
+    /// they never collide: <c>"source|ruleId"</c> for a rule's own cooldown, and
+    /// <c>"source|ruleId|targetId"</c> for its per-target internal cooldown.
+    /// </summary>
+    private readonly Dictionary<string, long> _cooldownReadyTick = new(StringComparer.Ordinal);
     private readonly List<EffectInvocation> _unhandled = new();
     private readonly List<string> _unevaluated = new();
     private readonly IConditionWorld? _world;
@@ -130,7 +136,7 @@ public sealed class TriggerRuleEngine : IDisposable, IEffectSink
     public void DetachAll()
     {
         _rules.Clear();
-        _readyAt.Clear();
+        _cooldownReadyTick.Clear();
         _firedInChain.Clear();
         _chainEffectCount.Clear();
     }
@@ -163,14 +169,14 @@ public sealed class TriggerRuleEngine : IDisposable, IEffectSink
                 continue;
 
             var cooldownKey = registration.Source + "|" + rule.Id;
-            if (_readyAt.TryGetValue(cooldownKey, out var readyAt) && _currentTick() < readyAt)
+            if (_cooldownReadyTick.TryGetValue(cooldownKey, out var readyAt) && _currentTick() < readyAt)
                 continue;
 
             // Per-target internal cooldown. Chosen over PoE-style proc coefficients deliberately:
             // an ICD is readable in a tooltip ("once every 2s") and a proc coefficient is not.
-            var icdKey = cooldownKey + "|" + (gameEvent.Target ?? string.Empty);
+            var perTargetCooldownKey = cooldownKey + "|" + (gameEvent.Target ?? string.Empty);
             if (rule.Proc.IcdTicks > 0
-                && _readyAt.TryGetValue(icdKey, out var targetReadyAt)
+                && _cooldownReadyTick.TryGetValue(perTargetCooldownKey, out var targetReadyAt)
                 && _currentTick() < targetReadyAt)
                 continue;
 
@@ -184,9 +190,9 @@ public sealed class TriggerRuleEngine : IDisposable, IEffectSink
                 continue;
 
             if (rule.CooldownTicks > 0)
-                _readyAt[cooldownKey] = _currentTick() + rule.CooldownTicks;
+                _cooldownReadyTick[cooldownKey] = _currentTick() + rule.CooldownTicks;
             if (rule.Proc.IcdTicks > 0)
-                _readyAt[icdKey] = _currentTick() + rule.Proc.IcdTicks;
+                _cooldownReadyTick[perTargetCooldownKey] = _currentTick() + rule.Proc.IcdTicks;
 
             var context = new EffectContext(
                 chainId,

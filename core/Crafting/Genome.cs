@@ -35,6 +35,12 @@ public sealed record Genome(
 public static class GenomeCalculator
 {
     /// <summary>
+    /// Pressure below this is trace and is dropped, so the genome lists only properties that
+    /// actually reach the item rather than every rounding artefact a deep material carries.
+    /// </summary>
+    public const double PressureFloor = 0.5;
+
+    /// <summary>
     /// §2.2 — pressure is the <b>stat-map-weighted</b> property value: how much of the property
     /// actually reaches the parts of the item that matter. Relevance is the form's stat_map
     /// weight for that (slot, property), renormalised per property; slots the stat_map never
@@ -49,22 +55,26 @@ public static class GenomeCalculator
         ArgumentNullException.ThrowIfNull(components);
 
         // Which properties does the stat_map read at all, and at what per-slot weight?
-        var statWeights = new Dictionary<string, Dictionary<string, double>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var reads in form.StatMap.Values)
+        var weightPerSlotByProperty =
+            new Dictionary<string, Dictionary<string, double>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var contributions in form.StatMap.Values)
         {
-            foreach (var read in reads)
+            foreach (var contribution in contributions)
             {
-                if (!statWeights.TryGetValue(read.Property, out var perSlot))
-                    statWeights[read.Property] = perSlot = new Dictionary<string, double>(StringComparer.Ordinal);
+                if (!weightPerSlotByProperty.TryGetValue(contribution.Property, out var weightPerSlot))
+                    weightPerSlotByProperty[contribution.Property] =
+                        weightPerSlot = new Dictionary<string, double>(StringComparer.Ordinal);
 
-                if (read.Slot == "*")
+                if (contribution.Slot == FormSlots.AllSlots)
                 {
                     foreach (var (slotName, slot) in form.Slots)
-                        perSlot[slotName] = perSlot.GetValueOrDefault(slotName) + read.W * slot.MassShare;
+                        weightPerSlot[slotName] =
+                            weightPerSlot.GetValueOrDefault(slotName) + (contribution.Weight * slot.MassShare);
                 }
                 else
                 {
-                    perSlot[read.Slot] = perSlot.GetValueOrDefault(read.Slot) + read.W;
+                    weightPerSlot[contribution.Slot] =
+                        weightPerSlot.GetValueOrDefault(contribution.Slot) + contribution.Weight;
                 }
             }
         }
@@ -77,26 +87,27 @@ public static class GenomeCalculator
 
         foreach (var property in properties)
         {
-            double value;
-            if (statWeights.TryGetValue(property, out var perSlot) && perSlot.Values.Sum() > 0)
+            double propertyPressure;
+            if (weightPerSlotByProperty.TryGetValue(property, out var weightPerSlot)
+                && weightPerSlot.Values.Sum() > 0)
             {
-                var totalWeight = perSlot.Values.Sum();
-                value = perSlot.Sum(kv =>
-                    components.TryGetValue(kv.Key, out var c)
-                        ? c.Profile.Properties.Get(property) * (kv.Value / totalWeight)
+                var totalWeight = weightPerSlot.Values.Sum();
+                propertyPressure = weightPerSlot.Sum(entry =>
+                    components.TryGetValue(entry.Key, out var component)
+                        ? component.Profile.Properties.Get(property) * (entry.Value / totalWeight)
                         : 0.0);
             }
             else
             {
                 // The stat_map never reads it — mass share is the honest fallback.
-                value = form.Slots.Sum(s =>
-                    components.TryGetValue(s.Key, out var c)
-                        ? c.Profile.Properties.Get(property) * s.Value.MassShare
+                propertyPressure = form.Slots.Sum(slot =>
+                    components.TryGetValue(slot.Key, out var component)
+                        ? component.Profile.Properties.Get(property) * slot.Value.MassShare
                         : 0.0);
             }
 
-            if (value > 0.5)
-                pressure[property] = Math.Round(value, 1);
+            if (propertyPressure > PressureFloor)
+                pressure[property] = Math.Round(propertyPressure, 1);
         }
 
         return pressure;

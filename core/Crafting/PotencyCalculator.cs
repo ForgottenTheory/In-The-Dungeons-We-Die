@@ -25,14 +25,14 @@ public static class PotencyCalculator
     /// <param name="catalystPotency">Potency of the catalyst, or null when none is slotted.</param>
     /// <param name="weights">The process's role weights, summing to 1.0.</param>
     /// <param name="qualityMultiplier">Execution quality, 0.85–1.12 (§7.4).</param>
-    /// <param name="qualityNorm">Normalized execution quality, 0–1; raises the ceiling.</param>
+    /// <param name="craftQuality">Normalized execution quality, 0–1; raises the ceiling.</param>
     public static int Compute(
         int substratePotency,
         IReadOnlyList<int> reagentPotencies,
         int? catalystPotency,
         RoleWeights weights,
         double qualityMultiplier,
-        double qualityNorm)
+        double craftQuality)
     {
         ArgumentNullException.ThrowIfNull(reagentPotencies);
         ArgumentNullException.ThrowIfNull(weights);
@@ -47,7 +47,7 @@ public static class PotencyCalculator
             + (catalystPotency ?? 0) * weights.Catalyst;
 
         var result = weighted * qualityMultiplier;
-        var ceiling = Ceiling(substratePotency, reagentPotencies, catalystPotency, qualityNorm);
+        var ceiling = Ceiling(substratePotency, reagentPotencies, catalystPotency, craftQuality);
 
         return (int)Math.Clamp(
             Math.Round(Math.Min(result, ceiling), MidpointRounding.AwayFromZero),
@@ -64,7 +64,7 @@ public static class PotencyCalculator
         int substratePotency,
         IReadOnlyList<int> reagentPotencies,
         int? catalystPotency,
-        double qualityNorm)
+        double craftQuality)
     {
         ArgumentNullException.ThrowIfNull(reagentPotencies);
 
@@ -74,11 +74,11 @@ public static class PotencyCalculator
         if (catalystPotency is { } catalyst)
             best = Math.Max(best, catalyst);
 
-        return best + RefinementTuning.PotencyCeilingBonus * Math.Clamp(qualityNorm, 0.0, 1.0);
+        return best + RefinementTuning.PotencyCeilingBonus * Math.Clamp(craftQuality, 0.0, 1.0);
     }
 
     /// <summary>Execution quality as a multiplier, 0.85–1.12 (§7.4).</summary>
-    public static double QualityMultiplier(double qualityNorm) =>
+    public static double QualityMultiplier(double craftQuality) =>
         RefinementTuning.QualityMultiplierBase
-        + RefinementTuning.QualityMultiplierScale * Math.Clamp(qualityNorm, 0.0, 1.0);
+        + RefinementTuning.QualityMultiplierScale * Math.Clamp(craftQuality, 0.0, 1.0);
 }

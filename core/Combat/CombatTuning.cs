@@ -26,6 +26,13 @@ public static class CombatTuning
     public const int MinimumDamage = 1;
 
     /// <summary>
+    /// How far a resolved multiplier must sit from its neutral value before a pipeline stage
+    /// bothers to apply it and write a trace line. Purely a floating-point guard: without it,
+    /// a multiplier of exactly 1.0 arriving as 0.99999999 would put a no-op line in every trace.
+    /// </summary>
+    public const double MultiplierEpsilon = 0.0001;
+
+    /// <summary>
     /// Armour's diminishing constant: <c>reduction = armour / (armour + K × packet)</c>
     /// (D-25, D-27). Replaces flat subtraction, which was total against chip damage (a
     /// 5-damage hit became 1) and near-irrelevant against a telegraphed smash — backwards for a

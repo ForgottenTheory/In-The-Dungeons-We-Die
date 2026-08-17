@@ -22,6 +22,16 @@ public static class AffixTuning
 
     /// <summary>An innate must clear this weight to exist — trace pressure earns nothing.</summary>
     public const double InnateWeightFloor = 25.0;
+
+    /// <summary>
+    /// Where in a tier's [lo, hi] range a potency-0 item lands. A floor rather than zero, so a
+    /// low-potency item still gets a usable modifier — potency is roll <i>quality</i>, not a gate.
+    /// </summary>
+    public const double MinRollPosition = 0.35;
+
+    /// <summary>How much of the tier range potency buys, on top of <see cref="MinRollPosition"/>.
+    /// The two sum to 1.0, so potency 100 reaches the top of the tier.</summary>
+    public const double PotencyRollSpan = 0.65;
 }
 
 /// <summary>
@@ -42,16 +52,17 @@ public static class AffixRoller
         ArgumentNullException.ThrowIfNull(definitions);
 
         return definitions
-            .Where(d => string.Equals(d.Slot, "innate", StringComparison.OrdinalIgnoreCase))
-            .Where(d => IsEligible(d, genome, Array.Empty<string>()))
-            .Select(d => (Definition: d, Weight: WeightOf(d, genome)))
-            .Where(x => x.Weight >= AffixTuning.InnateWeightFloor)
-            .OrderByDescending(x => x.Weight)
-            .ThenBy(x => x.Definition.Id, StringComparer.Ordinal)
+            .Where(affix => string.Equals(affix.Slot, "innate", StringComparison.OrdinalIgnoreCase))
+            .Where(affix => IsEligible(affix, genome, Array.Empty<string>()))
+            .Select(affix => (Definition: affix, Weight: WeightOf(affix, genome)))
+            .Where(candidate => candidate.Weight >= AffixTuning.InnateWeightFloor)
+            .OrderByDescending(candidate => candidate.Weight)
+            .ThenBy(candidate => candidate.Definition.Id, StringComparer.Ordinal)
             .Take(AffixTuning.MaxInnates)
-            .Select(x => Materialise(x.Definition, genome, position: PotencyPosition(genome.Potency)))
-            .Where(r => r is not null)
-            .Select(r => r!)
+            .Select(candidate => RollValue(
+                candidate.Definition, genome, positionInTierRange: PotencyPosition(genome.Potency)))
+            .Where(rolled => rolled is not null)
+            .Select(rolled => rolled!)
             .ToList();
     }
 
@@ -63,38 +74,38 @@ public static class AffixRoller
         ArgumentNullException.ThrowIfNull(definitions);
         ArgumentNullException.ThrowIfNull(random);
 
-        var max = string.Equals(slot, "prefix", StringComparison.OrdinalIgnoreCase)
+        var maxForSlot = string.Equals(slot, "prefix", StringComparison.OrdinalIgnoreCase)
             ? AffixTuning.MaxPrefixes
             : AffixTuning.MaxSuffixes;
-        var count = Math.Min(max, WeightedCount(random));
+        var affixCount = Math.Min(maxForSlot, RollAffixCount(random));
 
-        var rolled = new List<RolledAffix>();
-        var families = new List<string>();
+        var rolledAffixes = new List<RolledAffix>();
+        var familiesAlreadyRolled = new List<string>();
 
-        for (var i = 0; i < count; i++)
+        for (var i = 0; i < affixCount; i++)
         {
             // Step 1 — the pool: slot matches, eligibility passes, family not already present.
             var pool = definitions
-                .Where(d => string.Equals(d.Slot, slot, StringComparison.OrdinalIgnoreCase))
-                .Where(d => RollableClasses.Contains(d.Class))
-                .Where(d => !families.Contains(d.Family, StringComparer.OrdinalIgnoreCase))
-                .Where(d => IsEligible(d, genome, families))
-                .Select(d => (Definition: d, Weight: WeightOf(d, genome)))
-                .Where(x => x.Weight > 0)
-                .OrderBy(x => x.Definition.Id, StringComparer.Ordinal)
+                .Where(affix => string.Equals(affix.Slot, slot, StringComparison.OrdinalIgnoreCase))
+                .Where(affix => RollableClasses.Contains(affix.Class))
+                .Where(affix => !familiesAlreadyRolled.Contains(affix.Family, StringComparer.OrdinalIgnoreCase))
+                .Where(affix => IsEligible(affix, genome, familiesAlreadyRolled))
+                .Select(affix => (Definition: affix, Weight: WeightOf(affix, genome)))
+                .Where(candidate => candidate.Weight > 0)
+                .OrderBy(candidate => candidate.Definition.Id, StringComparer.Ordinal)
                 .ToList();
 
             if (pool.Count == 0)
                 break;
 
             // Step 3 — weighted choice.
-            var total = pool.Sum(x => x.Weight);
-            var pick = random.NextDouble() * total;
+            var totalWeight = pool.Sum(candidate => candidate.Weight);
+            var weightedRoll = random.NextDouble() * totalWeight;
             var chosen = pool[^1].Definition;
             foreach (var candidate in pool)
             {
-                pick -= candidate.Weight;
-                if (pick <= 0)
+                weightedRoll -= candidate.Weight;
+                if (weightedRoll <= 0)
                 {
                     chosen = candidate.Definition;
                     break;
@@ -102,16 +113,16 @@ public static class AffixRoller
             }
 
             // Steps 4–5 — tier ceiling by genome, value by potency ± variance.
-            var variance = (random.NextDouble() * 2.0 - 1.0) * AffixTuning.RollVariance;
-            var affix = Materialise(chosen, genome, PotencyPosition(genome.Potency) + variance);
-            if (affix is null)
+            var variance = ((random.NextDouble() * 2.0) - 1.0) * AffixTuning.RollVariance;
+            var affixRoll = RollValue(chosen, genome, PotencyPosition(genome.Potency) + variance);
+            if (affixRoll is null)
                 break;
 
-            rolled.Add(affix);
-            families.Add(chosen.Family);
+            rolledAffixes.Add(affixRoll);
+            familiesAlreadyRolled.Add(chosen.Family);
         }
 
-        return rolled;
+        return rolledAffixes;
     }
 
     // ---- The three genetic levers (§3.3) -------------------------------------------------------
@@ -178,21 +189,30 @@ public static class AffixRoller
                 ? genome.EssenceOf(req.Key["essence.".Length..]) >= req.Value
                 : genome.PressureOf(req.Key) >= req.Value);
 
-    private static RolledAffix? Materialise(AffixDefinition affix, Genome genome, double position)
+    /// <summary>
+    /// Turns a definition into a concrete rolled affix: pick the best tier the genome qualifies
+    /// for, then land the value at <paramref name="positionInTierRange"/> within that tier's
+    /// [lo, hi]. Null when even the lowest tier is out of the genome's reach.
+    /// </summary>
+    /// <param name="positionInTierRange">0 = the bottom of the tier, 1 = the top. Clamped.</param>
+    private static RolledAffix? RollValue(AffixDefinition affix, Genome genome, double positionInTierRange)
     {
         var tier = TierFor(affix, genome);
         if (tier is null || tier.Range.Count < 2)
             return null;
 
-        var t = Math.Clamp(position, 0.0, 1.0);
-        var value = tier.Range[0] + (tier.Range[1] - tier.Range[0]) * t;
+        var clampedPosition = Math.Clamp(positionInTierRange, 0.0, 1.0);
+        var value = tier.Range[0] + ((tier.Range[1] - tier.Range[0]) * clampedPosition);
         return new RolledAffix(affix.Id, tier.Tier, Math.Round(value, 4));
     }
 
     /// <summary>§3.3's roll-quality lever: potency decides where in the tier the value lands.</summary>
-    public static double PotencyPosition(int potency) => 0.35 + 0.65 * Math.Clamp(potency, 0, 100) / 100.0;
+    public static double PotencyPosition(int potency) =>
+        AffixTuning.MinRollPosition
+        + (AffixTuning.PotencyRollSpan * Math.Clamp(potency, 0, 100) / 100.0);
 
-    private static int WeightedCount(IRandomSource random)
+    /// <summary>How many affixes this slot side rolls, drawn from <see cref="AffixTuning.CountWeights"/>.</summary>
+    private static int RollAffixCount(IRandomSource random)
     {
         var roll = random.NextDouble() * AffixTuning.CountWeights.Sum();
         for (var i = 0; i < AffixTuning.CountWeights.Length; i++)
@@ -225,12 +245,14 @@ public static class AffixGrants
                 ? rolled.Roll
                 : double.Parse(grant.Value, System.Globalization.CultureInfo.InvariantCulture);
 
+            // A scope is authored as "dimension:value", e.g. "lane:heat". The value half may
+            // itself contain colons ("move_tag:mech:heavy"), so only the FIRST colon splits.
             ModifierScope? scope = null;
-            if (grant.Scope is { Length: > 0 } text)
+            if (grant.Scope is { Length: > 0 } scopeText)
             {
-                var cut = text.IndexOf(':');
-                if (cut > 0)
-                    scope = new ModifierScope(text[..cut], text[(cut + 1)..]);
+                var dimensionEnd = scopeText.IndexOf(':');
+                if (dimensionEnd > 0)
+                    scope = new ModifierScope(scopeText[..dimensionEnd], scopeText[(dimensionEnd + 1)..]);
             }
 
             yield return new ModifierContribution(grant.Key, value, source, scope);

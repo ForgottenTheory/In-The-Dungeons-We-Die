@@ -73,7 +73,7 @@ public sealed class StatusController
         BaseResolve(combatant) * (1.0 + _resolveBonus.GetValueOrDefault(combatant));
 
     public double BuildupOn(Combatant combatant, string statusId) =>
-        _buildup.TryGetValue(combatant, out var pools) ? pools.GetValueOrDefault(statusId) : 0;
+        _buildup.TryGetValue(combatant, out var buildupByStatus) ? buildupByStatus.GetValueOrDefault(statusId) : 0;
 
     public bool IsControlImmune(Combatant combatant) =>
         _currentTick() < _immuneUntil.GetValueOrDefault(combatant, long.MinValue);
@@ -107,7 +107,7 @@ public sealed class StatusController
         if (definition.IsControl)
             return ApplyControl(target, definition, sourceId, magnitude, durationOverride, context);
 
-        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId, durationMultiplier);
+        AttachOrRefresh(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId, durationMultiplier);
         return ControlOutcome.Applied;
     }
 
@@ -115,8 +115,8 @@ public sealed class StatusController
         Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
         Rules.EffectContext? context)
     {
-        // A gate is not a resistance — an unchilled target accumulates no Freeze at all.
-        if (definition.RequiresStatus is { } gate && !Has(target, gate))
+        // A prerequisite is not a resistance — an unchilled target accumulates no Freeze at all.
+        if (definition.RequiresStatus is { } prerequisiteStatusId && !Has(target, prerequisiteStatusId))
         {
             RaiseResisted(target, definition, sourceId, "ungated", context);
             return ControlOutcome.Ungated;
@@ -128,33 +128,38 @@ public sealed class StatusController
             return ControlOutcome.Immune;
         }
 
-        var pools = _buildup.TryGetValue(target, out var existing)
+        var buildupByStatus = _buildup.TryGetValue(target, out var existing)
             ? existing
             : _buildup[target] = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
-        var added = definition.ControlBuildup > 0 ? definition.ControlBuildup : magnitude;
-        var total = pools.GetValueOrDefault(definition.Id) + added;
+        var buildupAdded = definition.ControlBuildup > 0 ? definition.ControlBuildup : magnitude;
+        var buildupTotal = buildupByStatus.GetValueOrDefault(definition.Id) + buildupAdded;
         var resolve = ResolveOf(target);
 
-        if (total < resolve)
+        if (buildupTotal < resolve)
         {
             // Buildup is tracked per control type, but the threshold, the immunity window and
             // the escalation are shared — which is what stops a build rotating Stun → Fear →
             // Freeze to keep something permanently disabled.
-            pools[definition.Id] = total;
+            buildupByStatus[definition.Id] = buildupTotal;
             RaiseResisted(target, definition, sourceId, "buildup", context);
             return ControlOutcome.Resisted;
         }
 
-        pools[definition.Id] = 0;
+        buildupByStatus[definition.Id] = 0;
         _immuneUntil[target] = _currentTick() + CombatTuning.ControlImmunityTicks;
         _resolveBonus[target] = _resolveBonus.GetValueOrDefault(target) + CombatTuning.ResolveEscalation;
 
-        Land(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId: null);
+        AttachOrRefresh(target, definition, sourceId, magnitude, durationOverride, context, storedMoveId: null);
         return ControlOutcome.Applied;
     }
 
-    private void Land(
+    /// <summary>
+    /// Puts the status on the target: a fresh instance, or a refresh/stack of the one already
+    /// there, per the definition's <see cref="StackPolicy"/>. Controls have already cleared the
+    /// Resolve gate by the time they reach here.
+    /// </summary>
+    private void AttachOrRefresh(
         Combatant target, StatusDefinition definition, string sourceId, double magnitude, int durationOverride,
         Rules.EffectContext? context, string? storedMoveId, double durationMultiplier = 1.0)
     {
@@ -163,8 +168,10 @@ public sealed class StatusController
         // those run on Resolve). 1.0 without a source; floored at one tick so nothing lands dead.
         var duration = Math.Max(1, (int)Math.Round(
             (durationOverride > 0 ? durationOverride : definition.DurationTicks) * durationMultiplier));
-        var list = _active.TryGetValue(target, out var existing) ? existing : _active[target] = new List<StatusInstance>();
-        var current = list.FirstOrDefault(s => s.Id == definition.Id);
+        var activeOnTarget = _active.TryGetValue(target, out var existing)
+            ? existing
+            : _active[target] = new List<StatusInstance>();
+        var current = activeOnTarget.FirstOrDefault(s => s.Id == definition.Id);
 
         // A refreshed store remembers the NEW move — "your most recent move", not your first.
         if (definition.StoresMove && current is not null && storedMoveId is not null)
@@ -192,7 +199,7 @@ public sealed class StatusController
                 break;
 
             default:
-                list.Add(new StatusInstance
+                activeOnTarget.Add(new StatusInstance
                 {
                     Definition = definition,
                     SourceId = sourceId,
@@ -212,11 +219,11 @@ public sealed class StatusController
     }
 
     private void RaiseResisted(
-        Combatant target, StatusDefinition definition, string sourceId, string why,
+        Combatant target, StatusDefinition definition, string sourceId, string reason,
         Rules.EffectContext? context = null) =>
         _bus.Publish(new GameEvent(
             GameEvents.ControlResisted, sourceId, target.Name, 0,
-            new HashSet<string>(Tags(definition), StringComparer.OrdinalIgnoreCase) { why },
+            new HashSet<string>(Tags(definition), StringComparer.OrdinalIgnoreCase) { reason },
             Values(definition),
             ChainId: context?.ChainId, Depth: context?.Depth ?? 0));
 

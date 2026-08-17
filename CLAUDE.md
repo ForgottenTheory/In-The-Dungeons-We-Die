@@ -6,6 +6,8 @@ Permanent project instructions and development rules. **Keep this file concise �
 A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 spatial realms + extraction risk/loss + tick-based tactical combat + emergent crafting). Godot 4.7 (.NET) client over an engine-independent C# domain. The playable MVP vertical slice is complete; current work is the **equipment + emergent-crafting system**.
 
 ## Read these first (handoff docs, kept current)
+- `docs/game-overview.md` — the top-down map of the game: every system, how they connect, and how far each one got. **Start here.**
+- `docs/code-map.md` — the developer's technical map: layers, entry points, every subsystem, and **"Where do I change X?"**. Includes the do-not-rename persistent-identifier list.
 - `PROJECT_STATE.md` — what's implemented / partial / scaffolded / planned.
 - `SYSTEM_INDEX.md` — systems, key files, how they connect.
 - `DECISIONS.md` — architectural/gameplay decisions **and why** (+ rejected options).
@@ -20,8 +22,25 @@ A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 sp
 3. **Data-driven content.** Definitions are JSON under `game/data/<type>/`, loaded via `ContentLoader` (Godot) into `DataStore<T>` (Core, path-agnostic — it takes JSON text, never file paths). Use stable namespaced ids (`material.oak_bark`, `equip.iron_sword`).
 4. **Definitions vs runtime state are separate.** `IItemDefinition`/`MaterialDefinition`/`EquipmentDefinition` describe kinds; `ItemInstance` is a specific owned item with derived properties. Raw stackables stay quantity-based; anything with derived/unique properties is an instance. Never mutate definitions.
 5. **Deterministic tick simulation.** One shared `TickEngine` drives combat + passive gathering; `GameRoot._Process` advances it. Inject `IRandomSource` (seeded) — no scattered global RNG.
-6. **Properties are string-keyed** (`PropertySet`); new material/item properties are data, not code. Crafting derives instance properties through the single `CraftingDerivation` seam; combat reads neutral `AttackProfile`/`ArmorProfile` (via `EquipmentResolver`), never equipment types.
+6. **Properties are string-keyed** (`PropertySet`); new material/item properties are data, not code. Fabrication is the one place the 0–100 material scale meets combat units; combat reads neutral `ResolvedMove`s and an `ArmorProfile` (via `EquipmentResolver`), never equipment types.
 7. **Three languages (D30).** Raw simulation values (0–100 properties, rates, coefficients) never appear on normal play surfaces — Advanced/Assay/labs only. The only path from simulation state to player-facing crafting/item text is the semantic layer (`Dungeons.Presentation`): one-way, deterministic, unit-tested. Items speak gameplay language (damage, crit, Thorns…), never property language. A player-facing modifier ships only when its mechanic resolves. See `docs/presentation-architecture.md`.
+8. **Code optimizes for human comprehension.** See the next section — it is a hard rule, not a style preference.
+
+## Readability (permanent rule)
+
+**CODE MUST OPTIMIZE FOR HUMAN COMPREHENSION.** A developer unfamiliar with the implementation should usually be able to infer the purpose of a class, method, parameter, or important variable **from its name alone**, without opening another file.
+
+Prefer: explicit names · clear single responsibility · straightforward control flow · small understandable methods · meaningful domain terminology.
+Over: shorthand · cleverness · dense abstractions · unnecessary indirection · premature generalization.
+
+- **Expressive names.** `remainingMaterialIntegrity`, `finalDamageAfterResistance`, `eligibleModifierDefinitions`, `ResolveIncomingDamage()`, `EvaluateCraftingReaction()` — never `x`, `tmp`, `res`, `calc`, `mgr`, `val`, `mat`, `gen`, `DoThing()`, `Handle()`, `Process()`. Not absurdly long either: name for the reader, not for the word count.
+- **No shorthand** unless it is a universal term (`ID`, `UI`, `AI`, `HP`, `XP`) — and prefer clarity even then. A short lambda parameter in a one-line LINQ chain is fine; a name that lives for 30 lines is not.
+- **One name per concept, project-wide.** *Suffix* is a character component. *Modifier* is the player-facing word for an affix. *Pool* is a `ResourcePool`. *Lane* is a resistance lane. Reusing a domain word for something else is the most expensive naming mistake in this codebase.
+- **No magic numbers.** Every tuned value goes in the relevant `*Tuning` class with a doc comment saying what it means. Twelve `*Tuning` classes is not too many.
+- **No behaviour-selecting boolean parameters.** Use a small enum (see `DefensiveStance`).
+- **Comment the *why*, especially the rejected alternative.** Mechanics are readable from the code; the reasoning is not.
+- **Delete a doc comment the moment the code moves out from under it.** A stale comment is worse than none.
+- **Separate code-symbol renaming from persistent-identifier renaming.** Save-file keys (`SaveData` / `*Save` properties), content ids, property names, modifier keys, lane/tag strings and anything hashed into a signature are **data**. Renaming them breaks saves or content. Document the desired rename instead; see `docs/code-map.md §12` for the full list.
 
 ## Coding standards
 - Modern C#, nullable enabled, `ImplicitUsings` on (Core). Composition over inheritance. Constructor DI for domain services. Keep authoritative calcs deterministic. Small focused classes; no god objects; no giant id switches.

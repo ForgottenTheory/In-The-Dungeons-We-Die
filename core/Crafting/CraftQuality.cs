@@ -31,7 +31,7 @@ public static class CraftQuality
     /// <param name="professionLevel">Level in the gating profession; 0 for an ungated process.</param>
     /// <param name="effectiveInstability">The material's instability including wear (§6.2b).</param>
     /// <param name="performance">Active-crafting timing result, 0–1; 0.5 for a passive craft.</param>
-    public static double Norm(int professionLevel, double effectiveInstability, double performance = 0.5)
+    public static double Normalised(int professionLevel, double effectiveInstability, double performance = 0.5)
     {
         var level = Math.Clamp(professionLevel, 0, ProfessionLeveling.MaxLevel) / (double)ProfessionLeveling.MaxLevel;
 

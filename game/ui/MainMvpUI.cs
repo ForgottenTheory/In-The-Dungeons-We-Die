@@ -20,13 +20,13 @@ namespace Dungeons.Game.Ui;
 public partial class MainMvpUI : Control
 {
     // --- Palette (code-only theming, no assets) -----------------------------
-    private static readonly Color Bg = new(0.11f, 0.12f, 0.15f);
-    private static readonly Color PanelCol = new(0.16f, 0.18f, 0.22f);
-    private static readonly Color CardCol = new(0.20f, 0.23f, 0.28f);
+    private static readonly Color BackgroundColor = new(0.11f, 0.12f, 0.15f);
+    private static readonly Color PanelColor = new(0.16f, 0.18f, 0.22f);
+    private static readonly Color CardColor = new(0.20f, 0.23f, 0.28f);
     private static readonly Color Accent = new(0.29f, 0.62f, 1.0f);
     private static readonly Color Positive = new(0.30f, 0.72f, 0.36f);
     private static readonly Color Danger = new(0.90f, 0.36f, 0.32f);
-    private static readonly Color TextCol = new(0.84f, 0.86f, 0.90f);
+    private static readonly Color TextColor = new(0.84f, 0.86f, 0.90f);
     private static readonly Color Muted = new(0.55f, 0.58f, 0.64f);
     private static readonly Color Border = new(0.28f, 0.32f, 0.38f);
 
@@ -131,8 +131,8 @@ public partial class MainMvpUI : Control
     {
         // Sweep the active-timing indicator 0 → 100 → 0.
         _timingPhase = (_timingPhase + (delta * 0.6)) % 1.0;
-        var t = _timingPhase < 0.5 ? _timingPhase * 2.0 : 2.0 - (_timingPhase * 2.0);
-        _timingBar.Value = t * 100.0;
+        var sweep = _timingPhase < 0.5 ? _timingPhase * 2.0 : 2.0 - (_timingPhase * 2.0);
+        _timingBar.Value = sweep * 100.0;
 
         _statusLabel.Text = $"Tick {_game.CurrentTick}    Sim {(_game.IsRunning ? "▶ RUNNING" : "❚❚ paused")} @ {GameRoot.TicksPerSecond}/s";
 
@@ -152,9 +152,9 @@ public partial class MainMvpUI : Control
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Theme = BuildTheme();
 
-        var bg = new ColorRect { Color = Bg, MouseFilter = MouseFilterEnum.Ignore };
-        bg.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        AddChild(bg);
+        var background = new ColorRect { Color = BackgroundColor, MouseFilter = MouseFilterEnum.Ignore };
+        background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(background);
 
         var margin = new MarginContainer();
         margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -624,9 +624,9 @@ public partial class MainMvpUI : Control
 
         _onHand = _game.MaterialsOnHand;
 
-        Repopulate(_substratePicker, previousSubstrate, includeNone: false);
-        Repopulate(_reagentPicker, previousReagent, includeNone: false);
-        Repopulate(_catalystPicker, previousCatalyst, includeNone: true);
+        RepopulateMaterialPicker(_substratePicker, previousSubstrate, includeNone: false);
+        RepopulateMaterialPicker(_reagentPicker, previousReagent, includeNone: false);
+        RepopulateMaterialPicker(_catalystPicker, previousCatalyst, includeNone: true);
         RebuildFabricationSlots();
 
         // Steps referring to materials no longer on hand would fail the gate confusingly.
@@ -634,7 +634,11 @@ public partial class MainMvpUI : Control
         RebuildReagentChain();
     }
 
-    private void Repopulate(OptionButton picker, string? previous, bool includeNone)
+    /// <summary>
+    /// Refills a material picker from what is currently on hand, restoring
+    /// <paramref name="previouslySelectedId"/> if that material is still available.
+    /// </summary>
+    private void RepopulateMaterialPicker(OptionButton picker, string? previouslySelectedId, bool includeNone)
     {
         picker.Clear();
 
@@ -643,13 +647,13 @@ public partial class MainMvpUI : Control
 
         foreach (var material in _onHand)
         {
-            var strip = _game.MaterialStrip(material.Id);
-            picker.AddItem($"{material.Name}  ×{material.Quantity}{(strip.Length > 0 ? "   " + strip : "")}");
+            var glyphStrip = _game.MaterialStrip(material.Id);
+            picker.AddItem($"{material.Name}  ×{material.Quantity}{(glyphStrip.Length > 0 ? "   " + glyphStrip : "")}");
         }
 
-        var restored = _onHand.ToList().FindIndex(m => m.Id == previous);
-        if (restored >= 0)
-            picker.Selected = restored + (includeNone ? 1 : 0);
+        var restoredIndex = _onHand.ToList().FindIndex(m => m.Id == previouslySelectedId);
+        if (restoredIndex >= 0)
+            picker.Selected = restoredIndex + (includeNone ? 1 : 0);
         else if (picker.ItemCount > 0)
             picker.Selected = 0;
     }
@@ -750,7 +754,7 @@ public partial class MainMvpUI : Control
             ? "(choose a material for every slot)"
             : _game.FabricationPreviewText(form.Id, chosen);
         _fabricationPreview.AddThemeColorOverride(
-            "font_color", chosen is null ? Muted : TextCol);
+            "font_color", chosen is null ? Muted : TextColor);
     }
 
     private static Control Indent(Control control)
@@ -781,7 +785,7 @@ public partial class MainMvpUI : Control
         {
             _latestWorkId = item.InstanceId;
             _latestWorkLabel.Text = _game.ItemCardText(item);
-            _latestWorkLabel.AddThemeColorOverride("font_color", outcome.IsFirstOfItsKind ? Accent : TextCol);
+            _latestWorkLabel.AddThemeColorOverride("font_color", outcome.IsFirstOfItsKind ? Accent : TextColor);
         }
 
         RefreshCraftingPickers();
@@ -868,9 +872,9 @@ public partial class MainMvpUI : Control
         RefreshProjection();
     }
 
-    private void SwapReagents(int a, int b)
+    private void SwapReagents(int firstIndex, int secondIndex)
     {
-        (_reagents[a], _reagents[b]) = (_reagents[b], _reagents[a]);
+        (_reagents[firstIndex], _reagents[secondIndex]) = (_reagents[secondIndex], _reagents[firstIndex]);
         RebuildReagentChain();
     }
 
@@ -943,7 +947,7 @@ public partial class MainMvpUI : Control
     /// <summary>Colour by line kind (D30 §3) — the client decides colour and layout, never words.</summary>
     private Color LineColor(ProjectionLineKind kind, CraftReading reading) => kind switch
     {
-        ProjectionLineKind.Aim => reading.FirstDiscovery ? Accent : TextCol,
+        ProjectionLineKind.Aim => reading.FirstDiscovery ? Accent : TextColor,
         ProjectionLineKind.Strengthening => Positive,
         ProjectionLineKind.TraitBirth => Positive,
         ProjectionLineKind.Opposition => Accent,
@@ -1363,7 +1367,7 @@ public partial class MainMvpUI : Control
     private static PanelContainer Card(Control inner)
     {
         var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", Flat(CardCol, 6, 10, Border, 1));
+        panel.AddThemeStyleboxOverride("panel", Flat(CardColor, 6, 10, Border, 1));
         panel.AddChild(inner);
         return panel;
     }
@@ -1395,34 +1399,34 @@ public partial class MainMvpUI : Control
     {
         var theme = new Theme();
 
-        theme.SetColor("font_color", "Label", TextCol);
+        theme.SetColor("font_color", "Label", TextColor);
         theme.SetFontSize("font_size", "Label", 13);
 
-        theme.SetStylebox("normal", "Button", Flat(PanelCol, 5, 8, Border, 1));
-        theme.SetStylebox("hover", "Button", Flat(CardCol, 5, 8, Accent, 1));
+        theme.SetStylebox("normal", "Button", Flat(PanelColor, 5, 8, Border, 1));
+        theme.SetStylebox("hover", "Button", Flat(CardColor, 5, 8, Accent, 1));
         theme.SetStylebox("pressed", "Button", Flat(Accent, 5, 8));
         theme.SetStylebox("focus", "Button", new StyleBoxEmpty());
-        theme.SetColor("font_color", "Button", TextCol);
+        theme.SetColor("font_color", "Button", TextColor);
         theme.SetColor("font_hover_color", "Button", new Color(1, 1, 1));
         theme.SetColor("font_pressed_color", "Button", new Color(1, 1, 1));
         theme.SetFontSize("font_size", "Button", 13);
 
-        theme.SetStylebox("panel", "PanelContainer", Flat(PanelCol, 8, 10, Border, 1));
+        theme.SetStylebox("panel", "PanelContainer", Flat(PanelColor, 8, 10, Border, 1));
 
-        theme.SetStylebox("panel", "TabContainer", Flat(PanelCol, 8, 10, Border, 1));
+        theme.SetStylebox("panel", "TabContainer", Flat(PanelColor, 8, 10, Border, 1));
         theme.SetStylebox("tab_selected", "TabContainer", Flat(Accent, 5, 8));
-        theme.SetStylebox("tab_unselected", "TabContainer", Flat(CardCol, 5, 8));
-        theme.SetStylebox("tab_hovered", "TabContainer", Flat(CardCol, 5, 8, Accent, 1));
+        theme.SetStylebox("tab_unselected", "TabContainer", Flat(CardColor, 5, 8));
+        theme.SetStylebox("tab_hovered", "TabContainer", Flat(CardColor, 5, 8, Accent, 1));
         theme.SetStylebox("tabbar_background", "TabContainer", new StyleBoxEmpty());
         theme.SetColor("font_selected_color", "TabContainer", new Color(1, 1, 1));
         theme.SetColor("font_unselected_color", "TabContainer", Muted);
-        theme.SetColor("font_hovered_color", "TabContainer", TextCol);
+        theme.SetColor("font_hovered_color", "TabContainer", TextColor);
 
-        theme.SetStylebox("background", "ProgressBar", Flat(Bg, 4, 0));
+        theme.SetStylebox("background", "ProgressBar", Flat(BackgroundColor, 4, 0));
         theme.SetStylebox("fill", "ProgressBar", Flat(Accent, 4, 0));
-        theme.SetColor("font_color", "ProgressBar", TextCol);
+        theme.SetColor("font_color", "ProgressBar", TextColor);
 
-        theme.SetColor("default_color", "RichTextLabel", TextCol);
+        theme.SetColor("default_color", "RichTextLabel", TextColor);
         theme.SetFontSize("normal_font_size", "RichTextLabel", 12);
         return theme;
     }

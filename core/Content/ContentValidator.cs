@@ -1275,8 +1275,17 @@ public static class ContentValidator
 
     /// <summary>
     /// The move rules from docs/moves.md §6 — everything a typo could hide behind, plus the two
-    /// structural ones: no triggerMove may target a move that can itself triggerMove, and every
-    /// move must be reachable from some source (orphan content is content nobody can ever see).
+    /// structural ones: no <c>triggerMove</c> may target a move that can itself
+    /// <c>triggerMove</c>, and every move must be reachable from some source (orphan content is
+    /// content nobody can ever see).
+    ///
+    /// <para>Organised in four independent blocks — read only the one you care about:</para>
+    /// <list type="number">
+    /// <item>per-move: tags, costs, requirements, targeting, packets, riders</item>
+    /// <item>move modifiers: match shape and op vocabulary</item>
+    /// <item>techniques: the move they teach must exist</item>
+    /// <item>reachability: every move must be granted by something</item>
+    /// </list>
     /// </summary>
     private static void ValidateMoves(ContentBundle content, List<ContentProblem> problems)
     {
@@ -1288,13 +1297,15 @@ public static class ContentValidator
             .Where(n => !string.IsNullOrEmpty(n))
             .Select(n => n!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var pools = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "health", "stamina", "mana" };
+        var poolNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "health", "stamina", "mana" };
+
+        // --- Per-move rules -------------------------------------------------------------------
 
         foreach (var move in moves.GetAll())
         {
             foreach (var tag in move.Tags)
-                if (!Dungeons.Combat.MoveTags.IsValidOnMove(tag, out var why))
-                    problems.Add(new("moves", $"{move.Id}: {why}"));
+                if (!Dungeons.Combat.MoveTags.IsValidOnMove(tag, out var tagProblem))
+                    problems.Add(new("moves", $"{move.Id}: {tagProblem}"));
 
             if (!move.Tags.Any(t => t.StartsWith("action:", StringComparison.OrdinalIgnoreCase)))
                 problems.Add(new("moves", $"{move.Id} carries no action: tag — CanAct gating and every action-scoped hook would miss it."));
@@ -1305,7 +1316,7 @@ public static class ContentValidator
 
             foreach (var cost in move.Costs)
             {
-                if (!pools.Contains(cost.Resource) && !gaugeNames.Contains(cost.Resource))
+                if (!poolNames.Contains(cost.Resource) && !gaugeNames.Contains(cost.Resource))
                     problems.Add(new("moves", $"{move.Id} costs unknown resource '{cost.Resource}' (not a pool, not an authored gauge)."));
                 if (cost.Amount <= 0)
                     problems.Add(new("moves", $"{move.Id} has a non-positive cost for '{cost.Resource}'."));

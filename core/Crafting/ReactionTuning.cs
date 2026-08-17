@@ -23,6 +23,12 @@ public static class ReactionTuning
     /// <summary>Catalyst factor when no catalyst is slotted (§8.1).</summary>
     public const double NoCatalyst = 1.0;
 
+    /// <summary>
+    /// How much a catalyst at affinity 100 adds to the reaction rate (§7.1). A catalyst transfers
+    /// nothing of its own, so its <i>affinity</i> — its willingness to bond — is what it lends.
+    /// </summary>
+    public const double CatalystAffinityBonus = 0.25;
+
     // ---- §8.2 convergence ---------------------------------------------------------------
 
     /// <summary>

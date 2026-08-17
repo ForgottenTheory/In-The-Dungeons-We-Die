@@ -36,8 +36,8 @@ public static class EquipmentResolver
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(moves);
 
-        var props = instance?.Properties ?? definition.BaseProperties;
-        var mass = props.Get(ItemProperties.Mass);
+        var properties = instance?.Properties ?? definition.BaseProperties;
+        var mass = properties.Get(ItemProperties.Mass);
         var resolved = new List<MoveDefinition>();
 
         foreach (var grant in definition.Moves)
@@ -89,8 +89,8 @@ public static class EquipmentResolver
         if (definition.Armor is null)
             return ArmorProfile.None;
 
-        var props = instance?.Properties ?? definition.BaseProperties;
-        var hardness = props.Get(ItemProperties.Hardness);
+        var properties = instance?.Properties ?? definition.BaseProperties;
+        var hardness = properties.Get(ItemProperties.Hardness);
 
         // Keyed by DamageLane, not by damage-type name (D-02). Future: derive lane resistances
         // from instance reactive properties here — insulation → heat/cold, etc.

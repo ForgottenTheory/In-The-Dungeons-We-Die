@@ -3,7 +3,7 @@ namespace Dungeons.Characters;
 /// <summary>
 /// A current/maximum resource pool (Health, Mana or Stamina). Current is always
 /// clamped to [0, Max]. This type never regenerates on its own — Health recovery
-/// in particular must come from explicit systems (docs/combat-spec.md §12).
+/// in particular must come from explicit systems (docs/GDD.md §5.4).
 /// </summary>
 public sealed class ResourcePool
 {

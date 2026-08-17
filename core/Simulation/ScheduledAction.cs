@@ -2,9 +2,10 @@ namespace Dungeons.Simulation;
 
 /// <summary>
 /// A unit of work registered with the <see cref="TickEngine"/> to resolve at a
-/// specific simulation tick. This is the low-level scheduling primitive only —
-/// combat-specific concepts (telegraph/windup/recovery, actor, action type) are
-/// layered on top in later milestones and deliberately not modelled here yet.
+/// specific simulation tick. This is the low-level scheduling primitive only — it
+/// knows nothing about combat, and deliberately never will. Higher-level concepts
+/// (telegraph/windup/recovery, actor, action kind) live in
+/// <c>Dungeons.Combat.ActionInFlight</c>, which schedules onto this.
 /// </summary>
 public sealed class ScheduledAction
 {

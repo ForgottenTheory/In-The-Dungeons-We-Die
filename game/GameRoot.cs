@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Dungeons.Affixes;
 using Dungeons.Characters;
 using Dungeons.Characters.Composition;
 using Dungeons.Characters.Rules;
@@ -11,6 +12,7 @@ using Dungeons.Crafting;
 using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
 using Dungeons.Items;
+using Dungeons.Modifiers;
 using Dungeons.Persistence;
 using Dungeons.Presentation;
 using Dungeons.Professions;
@@ -35,6 +37,12 @@ public partial class GameRoot : Node
     /// <summary>Simulation ticks advanced per real second while running.</summary>
     public const int TicksPerSecond = 20;
 
+    /// <summary>
+    /// Ceiling on how much simulation one frame may catch up on. Guards against a very long
+    /// frame (a breakpoint, a stalled window) asking for minutes of ticks at once.
+    /// </summary>
+    private const int MaxTicksPerFrame = 10_000;
+
     /// <summary>Debug rotation through the fully-expressed suffixes — the ones that actually
     /// do something on every channel today.</summary>
     private static readonly string[] SuffixCycle =
@@ -53,8 +61,8 @@ public partial class GameRoot : Node
 
     private ContentBundle _content = new();
     private DataStore<MaterialDefinition> _materials = new();
-    private DataStore<ProfessionDefinition> _professionDefs = new();
-    private DataStore<ProfessionActionDefinition> _actionDefs = new();
+    private DataStore<ProfessionDefinition> _professionStore = new();
+    private DataStore<ProfessionActionDefinition> _actionStore = new();
 
     private DataStore<CraftingInteractionDefinition> _interactions = new();
     private DataStore<MoveDefinition> _moves = new();
@@ -78,13 +86,13 @@ public partial class GameRoot : Node
     private ProfessionSystem _professions = null!;
     private PassiveProfessionRunner _passiveRunner = null!;
     private DiscoverySystem _discoveries = null!;
-    private CraftingExperimentSystem _crafting = null!;
+    private CraftingExperimentSystem _legacyInteractionCrafting = null!;
     private IEmergentRegistry _emergentRegistry = null!;
     private FabricationEngine _fabrication = null!;
-    private IReactionEngine _reactions = null!;
+    private IReactionEngine _reactionEngine = null!;
     private MaterialProfileResolver _profiles = null!;
     private PropertyGlossary _glossary = null!;
-    private SeededRandom _affixRng = null!;
+    private SeededRandom _affixRandom = null!;
     private BuildResolver _buildResolver = null!;
     private CombatEncounter _encounter = null!;
     private bool _everFought;
@@ -109,8 +117,12 @@ public partial class GameRoot : Node
     private string? _realmCombatLocationId;
     private readonly Dictionary<string, int> _realmKnowledge = new();
 
-    /// <summary>Where loot currently flows: the run inventory in a Realm, else the Stash.</summary>
-    private Inventory CurrentBag => _run is { Active: true } ? _run.RunInventory : _stash;
+    /// <summary>
+    /// Where everything the player acquires currently lands: the <b>unsecured</b> run inventory
+    /// while inside a Realm, otherwise the Stash. This one expression is the extraction risk
+    /// model — every system that produces an item deposits here without knowing which it is.
+    /// </summary>
+    private Inventory ActiveInventory => _run is { Active: true } ? _run.RunInventory : _stash;
 
     private CharacterBuild _build = new(
         new SpeciesId("species.fey_touched"), new BaseClassId("class.wizard"),
@@ -139,8 +151,8 @@ public partial class GameRoot : Node
 
         _content = content;
         _materials = content.Materials;
-        _professionDefs = content.Professions;
-        _actionDefs = content.Actions;
+        _professionStore = content.Professions;
+        _actionStore = content.Actions;
         _interactions = content.Interactions;
         _moves = content.Moves;
         _moveModifierStore = content.MoveModifiers;
@@ -175,7 +187,7 @@ public partial class GameRoot : Node
 
         // Gathering deposits into the current bag: the Stash in the Hideout, the run
         // inventory while in a Realm (unsecured until extraction).
-        _professions = new ProfessionSystem(_actionDefs, () => CurrentBag, new SeededRandom(20260814));
+        _professions = new ProfessionSystem(_actionStore, () => ActiveInventory, new SeededRandom(20260814));
         _passiveRunner = new PassiveProfessionRunner(_tick, _professions);
         _professions.ActionCompleted += OnActionCompleted;
         _professions.LeveledUp += OnLeveledUp;
@@ -185,7 +197,7 @@ public partial class GameRoot : Node
 
         // Crafting happens in the Hideout, against the Stash (field crafting deferred).
         _discoveries = new DiscoverySystem();
-        _crafting = new CraftingExperimentSystem(
+        _legacyInteractionCrafting = new CraftingExperimentSystem(
             _interactions, _materials, _stash, _discoveries,
             professionLevel: id => _professions.GetProgress(id).Level,
             instanceIds: _instanceIds);
@@ -197,9 +209,9 @@ public partial class GameRoot : Node
         _profiles = new MaterialProfileResolver(content.Properties);
         _glossary = new PropertyGlossary(content.Properties);
         _emergentRegistry = new EmergentRegistry(_materials);
-        _reactions = new ReactionEngine(
+        _reactionEngine = new ReactionEngine(
             content,
-            () => CurrentBag,
+            () => ActiveInventory,
             _profiles,
             _emergentRegistry,
             new NameGenerator(_materials, content.Properties, content.NameGrammar),
@@ -209,10 +221,10 @@ public partial class GameRoot : Node
             professionLevel: id => _professions.GetProgress(id).Level,
             new SeededRandom(0xC12AF7));
 
-        _affixRng = new SeededRandom(0xD1CE5);
-        _fabrication = new FabricationEngine(content, () => CurrentBag, _profiles, _instanceIds, _affixRng);
+        _affixRandom = new SeededRandom(0xD1CE5);
+        _fabrication = new FabricationEngine(content, () => ActiveInventory, _profiles, _instanceIds, _affixRandom);
 
-        var combatRng = new SeededRandom(0x0C0FFEE);
+        var combatRandom = new SeededRandom(0x0C0FFEE);
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
 
         // E3c-2: the modifier read path. Build statics, status `while_active`, gauge bands and
@@ -228,13 +240,13 @@ public partial class GameRoot : Node
             _statuses, _gauges);
 
         _encounter = new CombatEncounter(
-            _tick, new HitPipeline(combatRng, _modifiers), _moves, combatRng, _events,
+            _tick, new HitPipeline(combatRandom, _modifiers), _moves, combatRandom, _events,
             _statuses, _gauges, _modifiers, _moveModifierStore);
 
         // E3c: effects stop landing in `Unhandled`. Eleven kinds are combat's (E4 added the
         // move-granting four); the rest belong to systems that do not exist yet and stay
         // visibly inert. This also hands the encounter its effect sink for move riders.
-        _ruleEngine.RegisterCombatHandlers(_encounter, combatRng);
+        _ruleEngine.RegisterCombatHandlers(_encounter, combatRandom);
 
         // E3c-3: the stateful conditions get something to ask. Equipped tags come from the worn
         // items' definitions, so `equippedTag` reads what the player is actually wearing.
@@ -245,7 +257,7 @@ public partial class GameRoot : Node
         _encounter.Ended += OnCombatEnded;
         _encounter.HitResolved += OnHitResolved;
 
-        GD.Print($"[GameRoot] Ready. {_materials.Count} materials, {_professionDefs.Count} professions, {_actionDefs.Count} actions, {_interactions.Count} interactions.");
+        GD.Print($"[GameRoot] Ready. {_materials.Count} materials, {_professionStore.Count} professions, {_actionStore.Count} actions, {_interactions.Count} interactions.");
     }
 
     /// <summary>
@@ -272,8 +284,11 @@ public partial class GameRoot : Node
             return;
 
         _tickAccumulator += delta * TicksPerSecond;
-        var guard = 0;
-        while (_tickAccumulator >= 1.0 && guard++ < 10000)
+
+        // The iteration cap only matters after a long freeze (a breakpoint, a stalled frame):
+        // without it the accumulator could ask for minutes of simulation inside one frame.
+        var ticksThisFrame = 0;
+        while (_tickAccumulator >= 1.0 && ticksThisFrame++ < MaxTicksPerFrame)
         {
             _tick.Advance(1);
             _tickAccumulator -= 1.0;
@@ -337,48 +352,48 @@ public partial class GameRoot : Node
     public string BuildReport()
     {
         var build = _buildResolver.Resolve(_build);
-        var sb = new StringBuilder();
+        var report = new StringBuilder();
 
-        sb.AppendLine(build.Name);
-        sb.AppendLine();
-        sb.AppendLine($"Engine     {build.Base.Engine}");
-        sb.AppendLine($"Weakness   {build.Base.Weakness}");
-        sb.AppendLine($"Resource   {build.Base.PrimaryResource}    Channel  {build.Channel}");
-        sb.AppendLine();
+        report.AppendLine(build.Name);
+        report.AppendLine();
+        report.AppendLine($"Engine     {build.Base.Engine}");
+        report.AppendLine($"Weakness   {build.Base.Weakness}");
+        report.AppendLine($"Resource   {build.Base.PrimaryResource}    Channel  {build.Channel}");
+        report.AppendLine();
 
-        sb.AppendLine("Growth per level (budget " + AttributeGrowth.BudgetPerLevel.ToString("0.#") + ")");
+        report.AppendLine("Growth per level (budget " + AttributeGrowth.BudgetPerLevel.ToString("0.#") + ")");
         foreach (var (attribute, weight) in build.GrowthPerLevel.OrderByDescending(p => p.Value))
-            sb.AppendLine($"  {attribute,-13} {weight,5:0.###}   → +{build.GrowthAt(21)[attribute]} by L21");
-        sb.AppendLine();
+            report.AppendLine($"  {attribute,-13} {weight,5:0.###}   → +{build.GrowthAt(21)[attribute]} by L21");
+        report.AppendLine();
 
-        sb.AppendLine(build.Gauges.Count == 0
+        report.AppendLine(build.Gauges.Count == 0
             ? "Gauges     (none — this Base runs without a meter)"
             : "Gauges");
         foreach (var gauge in build.Gauges)
-            sb.AppendLine($"  {gauge.Name,-12} {gauge.Behaviour}, max {gauge.Max:0}, {gauge.Feeds.Count} feed(s), {gauge.Bands.Count} band(s)");
-        sb.AppendLine();
+            report.AppendLine($"  {gauge.Name,-12} {gauge.Behaviour}, max {gauge.Max:0}, {gauge.Feeds.Count} feed(s), {gauge.Bands.Count} band(s)");
+        report.AppendLine();
 
-        sb.AppendLine($"Hooks ({build.Rules.Count})");
+        report.AppendLine($"Hooks ({build.Rules.Count})");
         foreach (var rule in build.Rules)
-            sb.AppendLine($"  {rule.Origin,-28} on {rule.Rule.Event} → {string.Join(" + ", rule.Rule.Payload.Select(e => e.Kind))}");
+            report.AppendLine($"  {rule.Origin,-28} on {rule.Rule.Event} → {string.Join(" + ", rule.Rule.Payload.Select(e => e.Kind))}");
 
         if (build.Suffix is { } suffix)
         {
-            sb.AppendLine();
-            sb.AppendLine($"Suffix     {suffix.Fantasy}");
-            sb.AppendLine(suffix.IsFullyExpressed
+            report.AppendLine();
+            report.AppendLine($"Suffix     {suffix.Fantasy}");
+            report.AppendLine(suffix.IsFullyExpressed
                 ? $"           {suffix.For(build.Channel)!.Drawback}"
                 : "           (roster entry — no mechanics authored yet)");
         }
 
         // E0: hooks are live. Until E3 registers effect handlers, firing and landing in
         // Unhandled is the expected outcome — the point is that it is now *visible*.
-        sb.AppendLine();
-        sb.AppendLine($"Live hooks  {_ruleEngine.Fired.Count} fired  ·  {_ruleEngine.Unhandled.Count} awaiting a handler");
+        report.AppendLine();
+        report.AppendLine($"Live hooks  {_ruleEngine.Fired.Count} fired  ·  {_ruleEngine.Unhandled.Count} awaiting a handler");
         foreach (var recent in _ruleEngine.Fired.TakeLast(6))
-            sb.AppendLine($"  fired  {recent.Source,-22} {recent.Trigger.Kind} → {recent.Kind}");
+            report.AppendLine($"  fired  {recent.Source,-22} {recent.Trigger.Kind} → {recent.Kind}");
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
     // --- Character ----------------------------------------------------------
@@ -411,10 +426,10 @@ public partial class GameRoot : Node
     // --- Professions --------------------------------------------------------
 
     public IReadOnlyList<ProfessionActionDefinition> Actions =>
-        _actionDefs.GetAll().OrderBy(a => a.ProfessionId).ThenBy(a => a.Id).ToList();
+        _actionStore.GetAll().OrderBy(a => a.ProfessionId).ThenBy(a => a.Id).ToList();
 
     public string ProfessionName(string professionId) =>
-        _professionDefs.TryGetById(professionId, out var def) ? def.Name : professionId;
+        _professionStore.TryGetById(professionId, out var def) ? def.Name : professionId;
 
     public bool IsPassiveRunning => _passiveRunner.IsRunning;
     public string? CurrentPassiveActionId => _passiveRunner.CurrentActionId;
@@ -456,39 +471,39 @@ public partial class GameRoot : Node
 
     public string ProfessionSummary()
     {
-        var sb = new StringBuilder();
-        foreach (var def in _professionDefs.GetAll().OrderBy(p => p.Name))
+        var report = new StringBuilder();
+        foreach (var def in _professionStore.GetAll().OrderBy(p => p.Name))
         {
             var progress = _professions.GetProgress(def.Id);
-            sb.AppendLine($"{def.Name,-10} L{progress.Level}  (xp {progress.Xp}, {progress.ProgressToNextLevel:P0} to next)");
+            report.AppendLine($"{def.Name,-10} L{progress.Level}  (xp {progress.Xp}, {progress.ProgressToNextLevel:P0} to next)");
         }
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
     public string InventoryReport()
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("STASH (secured):");
-        sb.AppendLine(FormatBag(_stash));
+        var report = new StringBuilder();
+        report.AppendLine("STASH (secured):");
+        report.AppendLine(FormatInventory(_stash));
 
         if (InRealm)
         {
-            sb.AppendLine();
-            sb.AppendLine("UNSECURED — lost if you die:");
-            sb.AppendLine(FormatBag(_run!.RunInventory));
+            report.AppendLine();
+            report.AppendLine("UNSECURED — lost if you die:");
+            report.AppendLine(FormatInventory(_run!.RunInventory));
         }
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
-    private string FormatBag(Inventory bag)
+    private string FormatInventory(Inventory inventory)
     {
-        var lines = bag.Snapshot().OrderBy(s => s.ItemId)
+        var lines = inventory.Snapshot().OrderBy(s => s.ItemId)
             .Select(s => $"  {ItemName(s.ItemId),-16} x{s.Quantity}")
             .ToList();
 
-        foreach (var instance in bag.Instances.OrderBy(i => i.DisplayName))
+        foreach (var instance in inventory.Instances.OrderBy(i => i.DisplayName))
             lines.Add("  " + ItemLabel(instance));
 
         return lines.Count == 0 ? "  (empty)" : string.Join("\n", lines);
@@ -510,13 +525,12 @@ public partial class GameRoot : Node
     /// them into the same store (DECISIONS D20).
     /// </summary>
     public IReadOnlyList<(string Id, string Name, int Quantity)> MaterialsOnHand =>
-        CurrentBag.Snapshot()
+        ActiveInventory.Snapshot()
             .Where(s => _materials.Contains(s.ItemId))
             .Select(s => (s.ItemId, _materials.GetById(s.ItemId).Name, s.Quantity))
             .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    /// <summary>A material's emergent profile, for the crafting inspector. Null if unknown.</summary>
     /// <summary>The material inspector, in the player crafting language (D30). Thin forward —
     /// the reading and the wording live in Core (<c>MaterialReadings</c>/<c>SemanticFormat</c>).</summary>
     public string MaterialSummary(string materialId)
@@ -580,12 +594,12 @@ public partial class GameRoot : Node
     /// always show this first.
     /// </summary>
     public CraftProjection ProjectCraft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null) =>
-        _reactions.Project(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+        _reactionEngine.Project(new CraftRequest(processId, substrateId, reagentIds, catalystId));
 
     /// <summary>Runs a craft and reports it. Order of reagents is the mechanic (§0 Decision 2).</summary>
     public CraftOutcome Craft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null)
     {
-        var outcome = _reactions.Resolve(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+        var outcome = _reactionEngine.Resolve(new CraftRequest(processId, substrateId, reagentIds, catalystId));
 
         if (!outcome.Success)
         {
@@ -627,14 +641,14 @@ public partial class GameRoot : Node
 
     public void Experiment(params string[] itemIds)
     {
-        var outcome = _crafting.Experiment(itemIds);
+        var outcome = _legacyInteractionCrafting.Experiment(itemIds);
         if (outcome.Success)
         {
-            var props = outcome.ResultProperties.Count > 0
+            var properties = outcome.ResultProperties.Count > 0
                 ? " (" + string.Join(", ", outcome.ResultProperties.Select(p => $"{p.Property} {p.Value:0.##}")) + ")"
                 : string.Empty;
             var kind = outcome.ProducedInstance is not null ? " [instance]" : string.Empty;
-            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}{kind}{props}.");
+            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}{kind}{properties}.");
             return;
         }
 
@@ -679,21 +693,21 @@ public partial class GameRoot : Node
 
     public string CraftingReport()
     {
-        var sb = new StringBuilder();
+        var report = new StringBuilder();
         foreach (var interaction in _interactions.GetAll())
         {
             var known = _discoveries.IsDiscovered(interaction.DiscoveryId);
             var inputs = string.Join(" + ", interaction.Inputs.Select(i => $"{i.Quantity} {ItemName(i.ItemId)}"));
-            var reqs = interaction.ProfessionRequirements.Count == 0
+            var requirements = interaction.ProfessionRequirements.Count == 0
                 ? "no requirement"
                 : string.Join(", ", interaction.ProfessionRequirements.Select(r => $"{ProfessionName(r.ProfessionId)} L{r.Level} (have L{_professions.GetProgress(r.ProfessionId).Level})"));
             var name = known ? interaction.Name : "??? (undiscovered)";
-            sb.AppendLine($"{name}");
-            sb.AppendLine($"  {inputs}  →  {ItemName(interaction.ResultItemId)}");
-            sb.AppendLine($"  requires {reqs}");
+            report.AppendLine($"{name}");
+            report.AppendLine($"  {inputs}  →  {ItemName(interaction.ResultItemId)}");
+            report.AppendLine($"  requires {requirements}");
         }
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
     // --- Combat -------------------------------------------------------------
@@ -850,10 +864,10 @@ public partial class GameRoot : Node
         if (instance?.Genome is not { } genome)
             return null;
 
-        var affixes = new List<Dungeons.Affixes.RolledAffix>(
-            Dungeons.Affixes.AffixRoller.Innates(genome, _content.Affixes.GetAll()));
-        affixes.AddRange(Dungeons.Affixes.AffixRoller.Roll(genome, "prefix", _content.Affixes.GetAll(), _affixRng));
-        affixes.AddRange(Dungeons.Affixes.AffixRoller.Roll(genome, "suffix", _content.Affixes.GetAll(), _affixRng));
+        var affixes = new List<RolledAffix>(
+            AffixRoller.Innates(genome, _content.Affixes.GetAll()));
+        affixes.AddRange(AffixRoller.Roll(genome, "prefix", _content.Affixes.GetAll(), _affixRandom));
+        affixes.AddRange(AffixRoller.Roll(genome, "suffix", _content.Affixes.GetAll(), _affixRandom));
 
         var rerolled = new ItemInstance
         {
@@ -936,7 +950,7 @@ public partial class GameRoot : Node
 
     /// <summary>Consumables the player currently carries in the active bag.</summary>
     public IReadOnlyList<ConsumableDefinition> UsableConsumables =>
-        _consumables.GetAll().Where(c => CurrentBag.Contains(c.Id)).OrderBy(c => c.Name).ToList();
+        _consumables.GetAll().Where(c => ActiveInventory.Contains(c.Id)).OrderBy(c => c.Name).ToList();
 
     public void CombatUseConsumable(string itemId)
     {
@@ -944,13 +958,13 @@ public partial class GameRoot : Node
             return;
         if (!_consumables.TryGetById(itemId, out var consumable))
             return;
-        if (!CurrentBag.Contains(itemId))
+        if (!ActiveInventory.Contains(itemId))
         {
             Emit($"[Combat] No {consumable.Name} to use.");
             return;
         }
 
-        CurrentBag.TryRemove(itemId, 1);
+        ActiveInventory.TryRemove(itemId, 1);
         _encounter.UseHealingItem(consumable.Name, consumable.HealAmount);
         InventoryChanged?.Invoke();
     }
@@ -961,29 +975,29 @@ public partial class GameRoot : Node
             return "(no combat yet — start a fight below)";
 
         var now = _tick.CurrentTick;
-        var sb = new StringBuilder();
-        foreach (var c in _encounter.Combatants)
+        var report = new StringBuilder();
+        foreach (var combatant in _encounter.Combatants)
         {
-            var stance = c.IsDodging(now) ? "  [DODGING]" : c.IsBlocking(now) ? "  [BLOCKING]" : string.Empty;
-            sb.AppendLine($"{c.Name,-16} HP {c.Health.Current,3}/{c.Health.Max}   STA {c.Stamina.Current,3}/{c.Stamina.Max}{stance}");
+            var stance = combatant.IsDodging(now) ? "  [DODGING]" : combatant.IsBlocking(now) ? "  [BLOCKING]" : string.Empty;
+            report.AppendLine($"{combatant.Name,-16} HP {combatant.Health.Current,3}/{combatant.Health.Max}   STA {combatant.Stamina.Current,3}/{combatant.Stamina.Max}{stance}");
         }
 
         if (_encounter.IsActive)
         {
-            sb.AppendLine(_encounter.PlayerReady ? "You are READY to act." : "You are recovering…");
+            report.AppendLine(_encounter.PlayerReady ? "You are READY to act." : "You are recovering…");
             foreach (var intent in _encounter.Intents)
             {
                 var seconds = Math.Max(0, intent.ExecuteTick - now) / (double)TicksPerSecond;
                 var type = intent.Move.Packets.Count > 0 ? intent.Move.Packets[0].Type.ToString() : intent.Move.Kind.ToString();
-                sb.AppendLine($"⚠ {intent.Attacker.Name}: {intent.Move.Name} — impact in {seconds:0.0}s ({type})");
+                report.AppendLine($"⚠ {intent.Attacker.Name}: {intent.Move.Name} — impact in {seconds:0.0}s ({type})");
             }
         }
         else
         {
-            sb.AppendLine("Combat over.");
+            report.AppendLine("Combat over.");
         }
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
     private void OnCombatEnded(CombatOutcome outcome)
@@ -994,7 +1008,7 @@ public partial class GameRoot : Node
             {
                 if (string.IsNullOrEmpty(enemy.LootItemId))
                     continue;
-                CurrentBag.Add(enemy.LootItemId, 1);
+                ActiveInventory.Add(enemy.LootItemId, 1);
                 Emit($"[Loot] {ItemName(enemy.LootItemId)} x1.");
             }
         }
@@ -1095,25 +1109,29 @@ public partial class GameRoot : Node
 
         // D-05a: resistances display as `capped / raw` wherever they appear — the raw number
         // only shows once it exceeds the cap, so the complexity appears exactly when earned.
-        var resist = armorProfile.Resistances.Count == 0
+        static string DescribeLaneResistance(string lane, double raw)
+        {
+            var capped = Dungeons.Combat.Combatant.CapResistance(raw);
+            return raw > capped + Dungeons.Combat.CombatTuning.MultiplierEpsilon
+                ? $"{lane} {capped:P0}/{raw:P0}"
+                : $"{lane} {capped:P0}";
+        }
+
+        var resistanceText = armorProfile.Resistances.Count == 0
             ? string.Empty
-            : "  resist " + string.Join(", ", armorProfile.Resistances.Select(r =>
-            {
-                var capped = Dungeons.Combat.Combatant.CapResistance(r.Value);
-                return r.Value > capped + 0.0001
-                    ? $"{r.Key} {capped:P0}/{r.Value:P0}"
-                    : $"{r.Key} {capped:P0}";
-            }));
-        return $"{armorProfile.Armor:0.#} armor{resist}";
+            : "  resist " + string.Join(", ",
+                armorProfile.Resistances.Select(r => DescribeLaneResistance(r.Key, r.Value)));
+
+        return $"{armorProfile.Armor:0.#} armor{resistanceText}";
     }
 
 
     public string EquipmentReport()
     {
-        var sb = new StringBuilder();
-        sb.AppendLine($"Weapon: {(EquippedWeapon?.DisplayName ?? "— (unarmed)")}  →  {EquippedWeaponSummary()}");
-        sb.Append($"Armor:  {(EquippedArmor?.DisplayName ?? "— (none)")}  →  {EquippedArmorSummary()}");
-        return sb.ToString();
+        var report = new StringBuilder();
+        report.AppendLine($"Weapon: {(EquippedWeapon?.DisplayName ?? "— (unarmed)")}  →  {EquippedWeaponSummary()}");
+        report.Append($"Armor:  {(EquippedArmor?.DisplayName ?? "— (none)")}  →  {EquippedArmorSummary()}");
+        return report.ToString();
     }
 
     private void EquipStarterLoadout()
@@ -1148,14 +1166,17 @@ public partial class GameRoot : Node
         var grants = new List<MoveGrant>();
         var modifierGrants = new List<MoveModifierGrant>();
 
+        // Resolved ONCE: these are per-instance definitions with the weapon's mass already
+        // applied, and they are needed twice — as grants, and as overrides in the store the
+        // builder reads from. Resolving twice would risk the two halves disagreeing.
         var weapon = _playerEquipment.InSlot(EquipmentSlot.Weapon);
-        if (weapon is not null && _equipment.TryGetById(weapon.BaseDefinitionId, out var weaponDef))
-        {
-            // The resolver hands back per-instance definitions (mass applied), so the builder
-            // must not re-resolve the ids from the shared store.
-            foreach (var move in EquipmentResolver.ResolveWeaponMoves(weaponDef, weapon, _moves))
-                grants.Add(new MoveGrant(new MoveGrantSpec { Id = move.Id }, weapon.DisplayName));
-        }
+        var weaponMoves = weapon is not null
+            && _equipment.TryGetById(weapon.BaseDefinitionId, out var weaponDefinition)
+                ? EquipmentResolver.ResolveWeaponMoves(weaponDefinition, weapon, _moves)
+                : Array.Empty<MoveDefinition>();
+
+        foreach (var move in weaponMoves)
+            grants.Add(new MoveGrant(new MoveGrantSpec { Id = move.Id }, weapon!.DisplayName));
 
         grants.AddRange(Character.Blueprint.MoveGrants);
 
@@ -1181,21 +1202,20 @@ public partial class GameRoot : Node
                     && _moveModifierStore.TryGetById(grant.Key, out var moveModifier))
                     modifierGrants.Add(new MoveModifierGrant(moveModifier, $"{affixDef.Name} ({instance.DisplayName})"));
 
-        // Weapon-adjusted definitions override the store's for the weapon's own ids.
-        var weaponAdjusted = new DataStore<MoveDefinition>();
-        var adjustedIds = new HashSet<string>(StringComparer.Ordinal);
-        if (weapon is not null && _equipment.TryGetById(weapon.BaseDefinitionId, out var wd))
+        // The store the builder reads from: the weapon's own mass-adjusted definitions win over
+        // the shared store's for those ids, and everything else comes through unchanged.
+        var moveStoreWithWeaponAdjustments = new DataStore<MoveDefinition>();
+        var weaponAdjustedIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var move in weaponMoves)
         {
-            foreach (var move in EquipmentResolver.ResolveWeaponMoves(wd, weapon, _moves))
-            {
-                weaponAdjusted.Add(move);
-                adjustedIds.Add(move.Id);
-            }
+            moveStoreWithWeaponAdjustments.Add(move);
+            weaponAdjustedIds.Add(move.Id);
         }
-        foreach (var move in _moves.GetAll().Where(m => !adjustedIds.Contains(m.Id)))
-            weaponAdjusted.Add(move);
+        foreach (var move in _moves.GetAll().Where(m => !weaponAdjustedIds.Contains(m.Id)))
+            moveStoreWithWeaponAdjustments.Add(move);
 
-        var conflicts = new MovesetBuilder(weaponAdjusted).Build(grants, modifierGrants, out var moveset);
+        var conflicts = new MovesetBuilder(moveStoreWithWeaponAdjustments)
+            .Build(grants, modifierGrants, out var moveset);
         foreach (var conflict in conflicts)
             Emit($"[Moveset] {conflict}");
 
@@ -1232,7 +1252,7 @@ public partial class GameRoot : Node
     public bool RealmBusy => _encounter.IsActive;
     public bool RealmCanDescend => _run?.CanDescend ?? false;
     public bool RealmCanExtract => _run?.CanExtract ?? false;
-    public int Knowledge(string realmId) => _realmKnowledge.TryGetValue(realmId, out var k) ? k : 0;
+    public int Knowledge(string realmId) => _realmKnowledge.TryGetValue(realmId, out var knowledge) ? knowledge : 0;
 
     public string ActorName(string actorId) => _actors.TryGetById(actorId, out var a) ? a.Name : actorId;
 
@@ -1241,12 +1261,12 @@ public partial class GameRoot : Node
     {
         if (_run is null)
             return null;
-        var loc = _run.CurrentLocation;
-        return loc.Type switch
+        var location = _run.CurrentLocation;
+        return location.Type switch
         {
-            RealmLocationType.Combat => _run.IsCleared(loc.Id) ? null : $"Fight {ActorName(loc.ActorId ?? string.Empty)}",
+            RealmLocationType.Combat => _run.IsCleared(location.Id) ? null : $"Fight {ActorName(location.ActorId ?? string.Empty)}",
             RealmLocationType.Gather => "Gather here",
-            RealmLocationType.Event => _run.IsCleared(loc.Id) ? null : "Investigate",
+            RealmLocationType.Event => _run.IsCleared(location.Id) ? null : "Investigate",
             _ => null,
         };
     }
@@ -1292,42 +1312,42 @@ public partial class GameRoot : Node
         if (_run is null || _encounter.IsActive)
             return;
 
-        var loc = _run.CurrentLocation;
-        switch (loc.Type)
+        var location = _run.CurrentLocation;
+        switch (location.Type)
         {
             case RealmLocationType.Combat:
-                if (_run.IsCleared(loc.Id))
+                if (_run.IsCleared(location.Id))
                 {
                     Emit("[Realm] This area is already cleared.");
                     return;
                 }
-                if (loc.ActorId is null)
+                if (location.ActorId is null)
                     return;
-                _realmCombatLocationId = loc.Id;
-                StartCombatInternal(loc.ActorId);
+                _realmCombatLocationId = location.Id;
+                StartCombatInternal(location.ActorId);
                 RealmChanged?.Invoke();
                 break;
 
             case RealmLocationType.Gather:
-                if (loc.ProfessionActionId is null)
+                if (location.ProfessionActionId is null)
                     return;
-                _professions.Execute(loc.ProfessionActionId); // logs + inventory via existing wiring
+                _professions.Execute(location.ProfessionActionId); // logs + inventory via existing wiring
                 RealmChanged?.Invoke();
                 break;
 
             case RealmLocationType.Event:
-                if (_run.IsCleared(loc.Id))
+                if (_run.IsCleared(location.Id))
                 {
                     Emit("[Realm] Nothing else of interest here.");
                     return;
                 }
-                Emit($"[Event] {loc.EventText}");
-                if (!string.IsNullOrEmpty(loc.RewardItemId))
+                Emit($"[Event] {location.EventText}");
+                if (!string.IsNullOrEmpty(location.RewardItemId))
                 {
-                    CurrentBag.Add(loc.RewardItemId, loc.RewardQuantity);
-                    Emit($"[Loot] {ItemName(loc.RewardItemId)} x{loc.RewardQuantity}.");
+                    ActiveInventory.Add(location.RewardItemId, location.RewardQuantity);
+                    Emit($"[Loot] {ItemName(location.RewardItemId)} x{location.RewardQuantity}.");
                 }
-                _run.MarkCleared(loc.Id);
+                _run.MarkCleared(location.Id);
                 AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerEvent);
                 RealmChanged?.Invoke();
                 break;
@@ -1375,19 +1395,19 @@ public partial class GameRoot : Node
         }
 
         var run = _run;
-        var loc = run.CurrentLocation;
-        var cleared = loc.Type == RealmLocationType.Combat && run.IsCleared(loc.Id) ? " (cleared)" : string.Empty;
-        var hp = Character is null ? "-" : $"{Character.Health.Current}/{Character.Health.Max}";
+        var location = run.CurrentLocation;
+        var cleared = location.Type == RealmLocationType.Combat && run.IsCleared(location.Id) ? " (cleared)" : string.Empty;
+        var healthText = Character is null ? "-" : $"{Character.Health.Current}/{Character.Health.Max}";
 
         var unsecured = run.RunInventory.Snapshot().Sum(s => s.Quantity);
-        var sb = new StringBuilder();
-        sb.AppendLine($"{run.Realm.Name} — Tier {run.Tier}   Depth {run.CurrentDepth}");
-        sb.AppendLine($"Location: {loc.Name} [{loc.Type}]{cleared}");
-        sb.AppendLine($"Party HP: {hp}    Knowledge: {Knowledge(run.Realm.Id)}");
-        sb.AppendLine($"Unsecured loot at risk: {unsecured} item(s)");
+        var report = new StringBuilder();
+        report.AppendLine($"{run.Realm.Name} — Tier {run.Tier}   Depth {run.CurrentDepth}");
+        report.AppendLine($"Location: {location.Name} [{location.Type}]{cleared}");
+        report.AppendLine($"Party HP: {healthText}    Knowledge: {Knowledge(run.Realm.Id)}");
+        report.AppendLine($"Unsecured loot at risk: {unsecured} item(s)");
         if (_encounter.IsActive)
-            sb.AppendLine("In combat — see the Combat panel.");
-        return sb.ToString().TrimEnd();
+            report.AppendLine("In combat — see the Combat panel.");
+        return report.ToString().TrimEnd();
     }
 
     private void EndRealmRun(bool died)
@@ -1460,7 +1480,7 @@ public partial class GameRoot : Node
 
     public void ReportStatus()
     {
-        Emit($"[Content] {_materials.Count} materials, {_professionDefs.Count} professions, {_actionDefs.Count} actions.");
+        Emit($"[Content] {_materials.Count} materials, {_professionStore.Count} professions, {_actionStore.Count} actions.");
         if (Character is not null)
             Emit($"[Character] Active build: {Character.DisplayName}");
     }
@@ -1470,27 +1490,30 @@ public partial class GameRoot : Node
         if (Character is null)
             return "No character.";
 
-        var c = Character;
-        var effective = c.EffectiveAttributes;
-        var baseAttributes = c.BaseAttributes;
+        var character = Character;
+        var effectiveAttributes = character.EffectiveAttributes;
+        var baseAttributes = character.BaseAttributes;
 
-        var sb = new StringBuilder();
-        sb.AppendLine(c.DisplayName);
-        sb.AppendLine($"Primary resource: {c.Blueprint.PrimaryResource}");
-        sb.AppendLine($"HP {c.Health.Current}/{c.Health.Max}    Mana {c.Mana.Current}/{c.Mana.Max}    Stamina {c.Stamina.Current}/{c.Stamina.Max}");
-        sb.AppendLine(EquipmentReport());
-        sb.AppendLine("Attributes  (effective / base):");
+        var report = new StringBuilder();
+        report.AppendLine(character.DisplayName);
+        report.AppendLine($"Primary resource: {character.Blueprint.PrimaryResource}");
+        report.AppendLine(
+            $"HP {character.Health.Current}/{character.Health.Max}" +
+            $"    Mana {character.Mana.Current}/{character.Mana.Max}" +
+            $"    Stamina {character.Stamina.Current}/{character.Stamina.Max}");
+        report.AppendLine(EquipmentReport());
+        report.AppendLine("Attributes  (effective / base):");
         foreach (var attribute in AttributeTypes.All)
-            sb.AppendLine($"  {attribute,-13} {effective[attribute],3} / {baseAttributes[attribute]}");
-        sb.AppendLine($"Tags: {string.Join(", ", c.Blueprint.Tags)}");
-        if (c.Blueprint.Rules.Count > 0)
+            report.AppendLine($"  {attribute,-13} {effectiveAttributes[attribute],3} / {baseAttributes[attribute]}");
+        report.AppendLine($"Tags: {string.Join(", ", character.Blueprint.Tags)}");
+        if (character.Blueprint.Rules.Count > 0)
         {
-            sb.AppendLine("Rules:");
-            foreach (var rule in c.Blueprint.Rules)
-                sb.AppendLine($"  • {rule.Description}");
+            report.AppendLine("Rules:");
+            foreach (var rule in character.Blueprint.Rules)
+                report.AppendLine($"  • {rule.Description}");
         }
 
-        return sb.ToString().TrimEnd();
+        return report.ToString().TrimEnd();
     }
 
     // --- Internals ----------------------------------------------------------
@@ -1523,7 +1546,7 @@ public partial class GameRoot : Node
         // Prefix's would.
         foreach (var (instance, rolled, definition) in EquippedAffixes())
         {
-            foreach (var rule in Dungeons.Affixes.AffixGrants.Rules(rolled, definition))
+            foreach (var rule in AffixGrants.Rules(rolled, definition))
                 _ruleEngine.Attach(rule, $"{definition.Name} ({instance.DisplayName})");
         }
 
@@ -1533,7 +1556,7 @@ public partial class GameRoot : Node
     }
 
     /// <summary>Every rolled affix on every worn item, with its definition resolved.</summary>
-    private IEnumerable<(ItemInstance Instance, Dungeons.Affixes.RolledAffix Rolled, Dungeons.Affixes.AffixDefinition Definition)> EquippedAffixes()
+    private IEnumerable<(ItemInstance Instance, RolledAffix Rolled, AffixDefinition Definition)> EquippedAffixes()
     {
         foreach (var instance in _playerEquipment.Slots.Values)
         {
@@ -1546,9 +1569,9 @@ public partial class GameRoot : Node
     }
 
     /// <summary>Stat grants from worn items' affixes, as ordinary scoped contributions.</summary>
-    private IEnumerable<Dungeons.Modifiers.ModifierContribution> EquippedAffixContributions() =>
+    private IEnumerable<ModifierContribution> EquippedAffixContributions() =>
         EquippedAffixes().SelectMany(a =>
-            Dungeons.Affixes.AffixGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
+            AffixGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
 
     /// <summary>Tags of everything currently worn, for the <c>equippedTag</c> condition.</summary>
     private IEnumerable<string> EquippedTags() =>
@@ -1632,10 +1655,10 @@ public partial class GameRoot : Node
     }
 
     private string ProfessionOf(string actionId) =>
-        _actionDefs.TryGetById(actionId, out var a) ? ProfessionName(a.ProfessionId) : "?";
+        _actionStore.TryGetById(actionId, out var a) ? ProfessionName(a.ProfessionId) : "?";
 
     private string ActionName(string actionId) =>
-        _actionDefs.TryGetById(actionId, out var a) ? a.Name : actionId;
+        _actionStore.TryGetById(actionId, out var a) ? a.Name : actionId;
 
     private string ItemName(string itemId)
     {

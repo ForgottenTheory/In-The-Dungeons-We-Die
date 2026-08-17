@@ -39,7 +39,7 @@ public class RefinementTests
             catalystPotency: null,
             StandardWeights,
             qualityMultiplier: 1.05,
-            qualityNorm: 1.0);
+            craftQuality: 1.0);
 
         Assert.Equal(49, potency);
     }
@@ -62,11 +62,11 @@ public class RefinementTests
     {
         foreach (var substrate in new[] { 1, 20, 50, 80, 100 })
         foreach (var reagent in new[] { 1, 20, 50, 80, 100 })
-        foreach (var qualityNorm in new[] { 0.0, 0.5, 1.0 })
+        foreach (var craftQuality in new[] { 0.0, 0.5, 1.0 })
         {
             var potency = PotencyCalculator.Compute(
                 substrate, new[] { reagent }, catalystPotency: 100, StandardWeights,
-                PotencyCalculator.QualityMultiplier(qualityNorm), qualityNorm);
+                PotencyCalculator.QualityMultiplier(craftQuality), craftQuality);
 
             var best = Math.Max(Math.Max(substrate, reagent), 100);
             Assert.True(potency <= best + RefinementTuning.PotencyCeilingBonus,
@@ -78,8 +78,8 @@ public class RefinementTests
     [Fact]
     public void Potency_CannotImproveOnTheBestInput_WithoutSkill()
     {
-        Assert.Equal(70.0, PotencyCalculator.Ceiling(40, new[] { 70 }, null, qualityNorm: 0.0));
-        Assert.Equal(78.0, PotencyCalculator.Ceiling(40, new[] { 70 }, null, qualityNorm: 1.0));
+        Assert.Equal(70.0, PotencyCalculator.Ceiling(40, new[] { 70 }, null, craftQuality: 0.0));
+        Assert.Equal(78.0, PotencyCalculator.Ceiling(40, new[] { 70 }, null, craftQuality: 1.0));
     }
 
     /// <summary>An empty catalyst slot contributes zero rather than being renormalized away
@@ -100,8 +100,8 @@ public class RefinementTests
     [Fact]
     public void IntegrityCost_ScalesWithChangeAndSeverity()
     {
-        var gentlePrecise = IntegrityCalculator.Cost(stateDelta: 0.10, severity: 0.20, strainReleased: 0, qualityNorm: 0.5);
-        var bruteForce = IntegrityCalculator.Cost(stateDelta: 0.80, severity: 0.60, strainReleased: 0, qualityNorm: 0.5);
+        var gentlePrecise = IntegrityCalculator.Cost(stateDelta: 0.10, severity: 0.20, strainReleased: 0, craftQuality: 0.5);
+        var bruteForce = IntegrityCalculator.Cost(stateDelta: 0.80, severity: 0.60, strainReleased: 0, craftQuality: 0.5);
 
         Assert.True(bruteForce > gentlePrecise * 4,
             $"thrashing the vector ({bruteForce:0.##}) should cost far more than a precise step ({gentlePrecise:0.##}).");
@@ -110,8 +110,8 @@ public class RefinementTests
     [Fact]
     public void IntegrityCost_RisesWithStrainReleased()
     {
-        var calm = IntegrityCalculator.Cost(0.3, 0.5, strainReleased: 0, qualityNorm: 0.5);
-        var violent = IntegrityCalculator.Cost(0.3, 0.5, strainReleased: 40, qualityNorm: 0.5);
+        var calm = IntegrityCalculator.Cost(0.3, 0.5, strainReleased: 0, craftQuality: 0.5);
+        var violent = IntegrityCalculator.Cost(0.3, 0.5, strainReleased: 40, craftQuality: 0.5);
 
         Assert.True(violent > calm, "annihilating opposites should cost integrity.");
     }
@@ -121,11 +121,11 @@ public class RefinementTests
     [Fact]
     public void IntegrityCost_IsMitigatedBySkill_ButNeverReachesZero()
     {
-        var unskilled = IntegrityCalculator.Cost(0.4, 0.5, 0, qualityNorm: 0.0);
-        var master = IntegrityCalculator.Cost(0.4, 0.5, 0, qualityNorm: 1.0);
+        var unskilled = IntegrityCalculator.Cost(0.4, 0.5, 0, craftQuality: 0.0);
+        var master = IntegrityCalculator.Cost(0.4, 0.5, 0, craftQuality: 1.0);
 
         Assert.True(master < unskilled);
-        Assert.True(IntegrityCalculator.Cost(0.0, 0.0, 0, qualityNorm: 1.0) >= RefinementTuning.MinimumIntegrityCost);
+        Assert.True(IntegrityCalculator.Cost(0.0, 0.0, 0, craftQuality: 1.0) >= RefinementTuning.MinimumIntegrityCost);
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public class RefinementTests
 
         while (integrity > 0)
         {
-            var next = IntegrityCalculator.Apply(integrity, IntegrityCalculator.Cost(0.0, 0.0, 0, qualityNorm: 1.0));
+            var next = IntegrityCalculator.Apply(integrity, IntegrityCalculator.Cost(0.0, 0.0, 0, craftQuality: 1.0));
             Assert.True(next < integrity, "no step may restore or preserve integrity.");
             integrity = next;
 
@@ -169,8 +169,8 @@ public class RefinementTests
     [Fact]
     public void Variance_VanishesAtPerfectSkill_AndWidensWithoutIt()
     {
-        Assert.Equal(0.0, IntegrityCalculator.VarianceMagnitude(80, qualityNorm: 1.0, severity: 0.6));
-        Assert.True(IntegrityCalculator.VarianceMagnitude(80, qualityNorm: 0.1, severity: 0.6) > 0);
+        Assert.Equal(0.0, IntegrityCalculator.VarianceMagnitude(80, craftQuality: 1.0, severity: 0.6));
+        Assert.True(IntegrityCalculator.VarianceMagnitude(80, craftQuality: 0.1, severity: 0.6) > 0);
     }
 
     // ---- §6.2c destruction and its projection -------------------------------------------------
@@ -297,19 +297,19 @@ public class RefinementTests
         var integrity = 90;
         var generation = 1;
 
-        const double qualityNorm = 1.0;
-        var qualityMultiplier = PotencyCalculator.QualityMultiplier(qualityNorm);
+        const double craftQuality = 1.0;
+        var qualityMultiplier = PotencyCalculator.QualityMultiplier(craftQuality);
 
         while (integrity > 0 && generation < 100)
         {
             var step = ReactionAlgebra.ApplyReagent(
                 state, reagent.BaseProperties, process, properties, integrity, qualityMultiplier);
 
-            var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, qualityNorm);
+            var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, craftQuality);
 
             state = step.Properties;
             potency = PotencyCalculator.Compute(
-                potency, new[] { reagentProfile.Potency }, null, process.RoleWeights, qualityMultiplier, qualityNorm);
+                potency, new[] { reagentProfile.Potency }, null, process.RoleWeights, qualityMultiplier, craftQuality);
             integrity = IntegrityCalculator.Apply(integrity, cost);
             generation++;
 

@@ -19,15 +19,15 @@ public sealed class ProfessionSystem
 {
     private readonly DataStore<ProfessionActionDefinition> _actions;
     private readonly Func<Inventory> _inventoryProvider;
-    private readonly IRandomSource _rng;
+    private readonly IRandomSource _random;
     private readonly Dictionary<string, ProfessionProgress> _progress = new(StringComparer.Ordinal);
 
     public ProfessionSystem(
         DataStore<ProfessionActionDefinition> actions,
         Inventory inventory,
-        IRandomSource rng,
+        IRandomSource random,
         IEnumerable<ProfessionProgress>? initialProgress = null)
-        : this(actions, () => inventory, rng, initialProgress)
+        : this(actions, () => inventory, random, initialProgress)
     {
         ArgumentNullException.ThrowIfNull(inventory);
     }
@@ -39,12 +39,12 @@ public sealed class ProfessionSystem
     public ProfessionSystem(
         DataStore<ProfessionActionDefinition> actions,
         Func<Inventory> inventoryProvider,
-        IRandomSource rng,
+        IRandomSource random,
         IEnumerable<ProfessionProgress>? initialProgress = null)
     {
         _actions = actions ?? throw new ArgumentNullException(nameof(actions));
         _inventoryProvider = inventoryProvider ?? throw new ArgumentNullException(nameof(inventoryProvider));
-        _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+        _random = random ?? throw new ArgumentNullException(nameof(random));
 
         if (initialProgress is not null)
         {
@@ -122,7 +122,7 @@ public sealed class ProfessionSystem
             bag.TryRemoveAll(action.Inputs); // guaranteed by CheckExecutable above
 
         var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.Resolve(action, mastery, performance, _rng);
+        var yield = ActionResolver.Resolve(action, mastery, performance, _random);
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 

@@ -2,7 +2,7 @@ namespace Dungeons.Characters;
 
 /// <summary>
 /// Derives base maximum resources from an attribute set. Coefficients are
-/// placeholder balance values for the vertical slice; combat-spec.md keeps exact
+/// placeholder balance values for the vertical slice; docs/damage-and-defense.md keeps the exact
 /// formulas as configurable balance data, so these live behind one seam.
 /// </summary>
 public static class ResourceCalculator

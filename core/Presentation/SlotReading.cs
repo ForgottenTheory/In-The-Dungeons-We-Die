@@ -79,12 +79,12 @@ public static class SlotReadings
         {
             foreach (var read in contributions)
             {
-                var shared = read.Slot == "*";
+                var shared = read.Slot == FormSlots.AllSlots;
                 if (!shared && !string.Equals(read.Slot, slotName, StringComparison.Ordinal))
                     continue;
 
                 // For a "*" read this slot's effective pull is its mass share of the weight.
-                var effectiveWeight = shared ? read.W * slot.MassShare : read.W;
+                var effectiveWeight = shared ? read.Weight * slot.MassShare : read.Weight;
 
                 reads.Add(new StatRead(
                     stat,

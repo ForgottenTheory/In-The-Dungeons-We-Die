@@ -1,6 +1,6 @@
 namespace Dungeons.Combat;
 
-/// <summary>Initial damage categories (docs/combat-spec.md §15). Magic may gain subtypes later.</summary>
+/// <summary>Initial damage categories (docs/damage-and-defense.md §2). Magic may gain subtypes later.</summary>
 public enum DamageType
 {
     Slashing,

@@ -26,7 +26,7 @@ public class ReactionLogTests
         TestPaths.LoadStore<ProcessDefinition>("processes");
 
     /// <summary>Runs §19 attempt 2 and logs it — the craft §15.3's sample trace depicts.</summary>
-    private static (ReactionLog Log, string Text) WorkedExample(double qualityNorm = 1.0)
+    private static (ReactionLog Log, string Text) WorkedExample(double craftQuality = 1.0)
     {
         var properties = Properties();
         var materials = Materials();
@@ -38,7 +38,7 @@ public class ReactionLogTests
             substrate.BaseProperties, reagent.BaseProperties, process, properties,
             substrateIntegrity: 90, qualityMultiplier: 1.05);
 
-        var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, qualityNorm);
+        var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, craftQuality);
         var after = IntegrityCalculator.Apply(90, cost);
 
         var log = new ReactionLogBuilder(properties)

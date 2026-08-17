@@ -22,10 +22,6 @@ public sealed class ResourceDelta
 }
 
 /// <summary>
-/// Data-driven enemy/actor definition (docs/json-schema.md §4). Runtime combat state
-/// lives in <see cref="Combatant"/>, never here.
-/// </summary>
-/// <summary>
 /// One weighted AI rule (docs/moves.md §5.2): when the conditions pass, this move is a
 /// candidate at this weight. AI chooses intent; the tick engine resolves timing.
 /// </summary>
@@ -48,6 +44,10 @@ public sealed class AiRuleSpec
     public double Weight { get; init; } = 1.0;
 }
 
+/// <summary>
+/// Data-driven enemy/actor definition (docs/json-schema.md §4). Runtime combat state
+/// lives in <see cref="Combatant"/>, never here.
+/// </summary>
 public sealed class ActorDefinition : IDefinition
 {
     public string Id { get; init; } = string.Empty;

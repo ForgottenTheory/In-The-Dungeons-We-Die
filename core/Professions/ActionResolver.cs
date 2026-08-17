@@ -20,10 +20,10 @@ public sealed class ResolvedYield
 /// </summary>
 public static class ActionResolver
 {
-    public static ResolvedYield Resolve(ProfessionActionDefinition action, int mastery, double performance, IRandomSource rng)
+    public static ResolvedYield Resolve(ProfessionActionDefinition action, int mastery, double performance, IRandomSource random)
     {
         ArgumentNullException.ThrowIfNull(action);
-        ArgumentNullException.ThrowIfNull(rng);
+        ArgumentNullException.ThrowIfNull(random);
         performance = Math.Clamp(performance, 0.0, 1.0);
 
         var produced = new List<ItemStack>();
@@ -35,7 +35,7 @@ public static class ActionResolver
         foreach (var bonus in action.BonusOutputs)
         {
             var chance = bonus.Chance + masteryBonus + activeBonus;
-            if (rng.NextDouble() < chance)
+            if (random.NextDouble() < chance)
                 produced.Add(bonus.Stack);
         }
 

@@ -9,7 +9,7 @@ namespace Dungeons.Simulation;
 /// <remarks>
 /// This type contains no Godot dependency and is fully unit-testable. It is the
 /// shared timing foundation for combat, gathering, crafting and idle progression
-/// (see docs/architecture.md §11 and docs/combat-spec.md §3).
+/// (see docs/architecture.md §11 and docs/code-map.md §10.1).
 /// </remarks>
 public sealed class TickEngine
 {

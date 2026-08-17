@@ -42,7 +42,7 @@ public sealed class HitLog
     /// no-ops is a trace nobody reads.</summary>
     public void AddIfChanged(string stage, string detail, double before, double after)
     {
-        if (Math.Abs(before - after) > 0.0001)
+        if (Math.Abs(before - after) > CombatTuning.MultiplierEpsilon)
             Add(stage, detail, before, after);
     }
 
