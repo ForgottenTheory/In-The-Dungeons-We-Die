@@ -462,7 +462,7 @@ public partial class MainMvpUI : Control
     /// reorder the steps, rather than dragging abstract properties around. Permuting the
     /// reagents permutes the outcome, and the UI makes that visible.</para>
     ///
-    /// <para>The projection panel is <b>required scope</b>, not polish: integrity 0 destroys
+    /// <para>The projection panel is <b>required scope</b>, not polish: workability 0 destroys
     /// the material, and that rule is only fair if destruction is never a surprise.</para>
     /// </summary>
     private void BuildCraftingSection(VBoxContainer root)
@@ -474,8 +474,8 @@ public partial class MainMvpUI : Control
         root.AddChild(processRow);
         processRow.AddChild(new Label { Text = "Process:", CustomMinimumSize = new Vector2(70, 0) });
         _processPicker = new OptionButton { CustomMinimumSize = new Vector2(420, 0) };
-        foreach (var process in _game.Processes)
-            _processPicker.AddItem(_game.ProcessLabel(process));
+        foreach (var craftingAction in _game.CraftingActions)
+            _processPicker.AddItem(_game.CraftingActionLabel(craftingAction));
         _processPicker.ItemSelected += _ => RefreshProjection();
         processRow.AddChild(_processPicker);
 
@@ -766,7 +766,7 @@ public partial class MainMvpUI : Control
         return row;
     }
 
-    private Dungeons.Crafting.FormTemplateDefinition? SelectedForm()
+    private Dungeons.Crafting.EquipmentBlueprintDefinition? SelectedForm()
     {
         var forms = _game.Forms;
         return _formPicker.Selected >= 0 && _formPicker.Selected < forms.Count ? forms[_formPicker.Selected] : null;
@@ -819,7 +819,7 @@ public partial class MainMvpUI : Control
         // the whole reason order lives in slots rather than in an abstract permutation.
         if (_reagents.Count >= 3)
         {
-            AppendLog("[Craft] A process takes at most three steps.");
+            AppendLog("[Craft] A craftingAction takes at most three steps.");
             return;
         }
 
@@ -888,14 +888,14 @@ public partial class MainMvpUI : Control
             return; // still building the tab
 
         var advanced = _advancedToggle is { ButtonPressed: true };
-        var processes = _game.Processes;
-        var process = _processPicker.Selected >= 0 && _processPicker.Selected < processes.Count
+        var processes = _game.CraftingActions;
+        var craftingAction = _processPicker.Selected >= 0 && _processPicker.Selected < processes.Count
             ? processes[_processPicker.Selected]
             : null;
 
-        _channelLabel.Text = process is null ? string.Empty
-            : advanced ? AdvancedFormat.Channel(process)
-            : _game.ProcessChannelLabel(process);
+        _channelLabel.Text = craftingAction is null ? string.Empty
+            : advanced ? AdvancedFormat.AffectedQualities(craftingAction)
+            : _game.AffectedQualitiesLabel(craftingAction);
 
         var substrate = SelectedMaterialId(_substratePicker);
         _substrateInspector.Text = substrate is null ? "(nothing selected)" : _game.MaterialSummary(substrate);
@@ -907,15 +907,15 @@ public partial class MainMvpUI : Control
         ClearChildren(_projectionPanel);
         _advancedProjectionLabel.Visible = false;
 
-        if (process is null || substrate is null || _reagents.Count == 0)
+        if (craftingAction is null || substrate is null || _reagents.Count == 0)
         {
-            AddProjectionRow("Choose a process, a base material, and at least one step.", Muted);
+            AddProjectionRow("Choose a craftingAction, a base material, and at least one step.", Muted);
             _craftButton.Disabled = true;
             _craftButton.Text = "Craft";
             return;
         }
 
-        var projection = _game.ProjectCraft(process.Id, substrate, _reagents, SelectedMaterialId(_catalystPicker));
+        var projection = _game.ProjectCraft(craftingAction.Id, substrate, _reagents, SelectedMaterialId(_catalystPicker));
         var reading = _game.ProjectionReading(projection, substrate);
 
         foreach (var line in _game.ProjectionLines(reading))
@@ -953,7 +953,7 @@ public partial class MainMvpUI : Control
         ProjectionLineKind.Opposition => Accent,
         ProjectionLineKind.Nearby => Accent,
         ProjectionLineKind.Essence => Accent,
-        ProjectionLineKind.StrainWarning => Danger,
+        ProjectionLineKind.StressWarning => Danger,
         ProjectionLineKind.Risk => reading.Risk switch
         {
             RiskBand.Perilous or RiskBand.Destroys => Danger,
@@ -975,7 +975,7 @@ public partial class MainMvpUI : Control
 
     private void CommitCraft()
     {
-        var processes = _game.Processes;
+        var processes = _game.CraftingActions;
         if (_processPicker.Selected < 0 || _processPicker.Selected >= processes.Count)
             return;
         if (SelectedMaterialId(_substratePicker) is not { } substrate)

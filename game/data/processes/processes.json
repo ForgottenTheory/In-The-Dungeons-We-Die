@@ -6,7 +6,7 @@
     "severity": 0.30,
     "medium": "mechanical",
     "role_weights": { "substrate": 0.80, "reagent": 0.20, "catalyst": 0.00 },
-    "channel": [
+    "affected_qualities": [
       { "property": "solubility", "rate": 0.45 },
       { "property": "mass", "rate": 0.35 },
       { "property": "hardness", "rate": 0.30 }
@@ -26,7 +26,7 @@
     "severity": 0.20,
     "medium": "solvent",
     "role_weights": { "substrate": 0.60, "reagent": 0.35, "catalyst": 0.05 },
-    "channel": [
+    "affected_qualities": [
       { "property": "heat", "rate": 0.55 },
       { "property": "toxicity", "rate": 0.55 },
       { "property": "growth", "rate": 0.55 },
@@ -48,7 +48,7 @@
     "severity": 0.50,
     "medium": "solvent",
     "role_weights": { "substrate": 0.70, "reagent": 0.28, "catalyst": 0.02 },
-    "channel": [
+    "affected_qualities": [
       { "property": "toxicity", "rate": 0.75 },
       { "property": "arcane", "rate": 0.60 },
       { "property": "decay", "rate": 0.55 },
@@ -70,7 +70,7 @@
     "severity": 0.60,
     "medium": "thermal",
     "role_weights": { "substrate": 0.75, "reagent": 0.22, "catalyst": 0.03 },
-    "channel": [
+    "affected_qualities": [
       { "property": "hardness", "rate": 0.40 },
       { "property": "mass", "rate": 0.35 },
       { "property": "conductivity", "rate": 0.30 },
@@ -91,7 +91,7 @@
     "severity": 0.35,
     "medium": "thermal",
     "role_weights": { "substrate": 0.72, "reagent": 0.25, "catalyst": 0.03 },
-    "channel": [
+    "affected_qualities": [
       { "property": "cold", "rate": 0.70 },
       { "property": "hardness", "rate": 0.30 },
       { "property": "flexibility", "rate": 0.28 }
@@ -111,7 +111,7 @@
     "severity": 0.45,
     "medium": "thermal",
     "role_weights": { "substrate": 0.55, "reagent": 0.42, "catalyst": 0.03 },
-    "channel": [
+    "affected_qualities": [
       { "property": "hardness", "rate": 0.45 },
       { "property": "mass", "rate": 0.40 },
       { "property": "conductivity", "rate": 0.35 },
@@ -133,7 +133,7 @@
     "severity": 0.55,
     "medium": "thermal",
     "role_weights": { "substrate": 0.65, "reagent": 0.30, "catalyst": 0.05 },
-    "channel": [
+    "affected_qualities": [
       { "property": "heat", "rate": 0.80 },
       { "property": "charge", "rate": 0.55 },
       { "property": "hardness", "rate": 0.25 },
@@ -156,7 +156,7 @@
     "severity": 0.35,
     "medium": "arcane",
     "role_weights": { "substrate": 0.75, "reagent": 0.22, "catalyst": 0.03 },
-    "channel": [
+    "affected_qualities": [
       { "property": "resonance", "rate": 0.60 },
       { "property": "arcane", "rate": 0.35 }
     ],

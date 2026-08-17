@@ -6,14 +6,14 @@ namespace Dungeons.Tests.Content;
 
 /// <summary>
 /// P1 slice 1 of the emergent item system: every material kind has a
-/// <see cref="MaterialProfile"/>. The ~470 authored materials carry no potency/integrity, so
+/// <see cref="MaterialState"/>. The ~470 authored materials carry no material strength/workability, so
 /// theirs is derived from data they already have (docs/emergent-item-system.md §6). These
 /// tests pin the derivation's <i>shape</i> — the relationships that must hold — rather than
 /// exact constants, which are explicitly first-pass and expected to be tuned.
 /// </summary>
-public class MaterialProfileTests
+public class MaterialStateTests
 {
-    private static MaterialProfileResolver Resolver() =>
+    private static MaterialStateResolver MaterialStates() =>
         new(TestPaths.LoadStore<PropertyDefinition>("properties"));
 
     private static DataStore<MaterialDefinition> Materials() =>
@@ -31,7 +31,7 @@ public class MaterialProfileTests
             Properties = new Dictionary<string, double>(properties ?? new Dictionary<string, double>()),
         };
 
-    // ---- Integrity (§6.2) ---------------------------------------------------------------
+    // ---- Workability (§6.2) ---------------------------------------------------------------
 
     [Theory]
     [InlineData("raw", 100)]
@@ -41,28 +41,28 @@ public class MaterialProfileTests
     [InlineData("spent", 60)]
     public void Integrity_ComesFromTheStateTag(string state, int expected)
     {
-        Assert.Equal(expected, MaterialProfileResolver.DeriveIntegrity(new[] { $"state:{state}" }));
+        Assert.Equal(expected, MaterialStateResolver.DeriveWorkability(new[] { $"state:{state}" }));
     }
 
     [Fact]
     public void Integrity_FallsBackToFullBudget_WhenNoStateTagIsPresent()
     {
         Assert.Equal(
-            MaterialProfileTuning.DefaultIntegrity,
-            MaterialProfileResolver.DeriveIntegrity(new[] { "form:metal" }));
+            MaterialStateTuning.DefaultWorkability,
+            MaterialStateResolver.DeriveWorkability(new[] { "form:metal" }));
     }
 
-    // ---- Potency (§6.1) -----------------------------------------------------------------
+    // ---- MaterialStrength (§6.1) -----------------------------------------------------------------
 
     [Fact]
     public void Potency_RisesWithRarity_WhenPropertiesMatch()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
         var properties = new Dictionary<string, double> { ["hardness"] = 50 };
 
-        var common = resolver.Resolve(Material("m.common", new[] { "rarity:common" }, properties)).Potency;
-        var rare = resolver.Resolve(Material("m.rare", new[] { "rarity:rare" }, properties)).Potency;
-        var exceptional = resolver.Resolve(Material("m.exc", new[] { "rarity:exceptional" }, properties)).Potency;
+        var common = materialStates.StateOf(Material("m.common", new[] { "rarity:common" }, properties)).MaterialStrength;
+        var rare = materialStates.StateOf(Material("m.rare", new[] { "rarity:rare" }, properties)).MaterialStrength;
+        var exceptional = materialStates.StateOf(Material("m.exc", new[] { "rarity:exceptional" }, properties)).MaterialStrength;
 
         Assert.True(common < rare, $"common {common} should be under rare {rare}");
         Assert.True(rare < exceptional, $"rare {rare} should be under exceptional {exceptional}");
@@ -71,30 +71,30 @@ public class MaterialProfileTests
     [Fact]
     public void Potency_RisesWithExpressiveProperties_WhenRarityMatches()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
 
-        var weak = resolver.Resolve(Material("m.weak", new[] { "rarity:common" },
-            new Dictionary<string, double> { ["hardness"] = 20 })).Potency;
-        var strong = resolver.Resolve(Material("m.strong", new[] { "rarity:common" },
-            new Dictionary<string, double> { ["hardness"] = 90 })).Potency;
+        var weak = materialStates.StateOf(Material("m.weak", new[] { "rarity:common" },
+            new Dictionary<string, double> { ["hardness"] = 20 })).MaterialStrength;
+        var strong = materialStates.StateOf(Material("m.strong", new[] { "rarity:common" },
+            new Dictionary<string, double> { ["hardness"] = 90 })).MaterialStrength;
 
         Assert.True(weak < strong, $"weak {weak} should be under strong {strong}");
     }
 
     /// <summary>
-    /// §6.1's stated intent: a high-potency mundane material must be able to beat a
-    /// low-potency exotic one, which is what keeps base resources relevant forever. If
+    /// §6.1's stated intent: a high-material strength mundane material must be able to beat a
+    /// low-material strength exotic one, which is what keeps base resources relevant forever. If
     /// rarity ever dominates the formula, this fails.
     /// </summary>
     [Fact]
     public void Potency_LetsAStrongCommonMaterialBeatAWeakExceptionalOne()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
 
-        var strongCommon = resolver.Resolve(Material("m.granite", new[] { "rarity:common" },
-            new Dictionary<string, double> { ["hardness"] = 68, ["mass"] = 66 })).Potency;
-        var weakExceptional = resolver.Resolve(Material("m.wisp", new[] { "rarity:exceptional" },
-            new Dictionary<string, double> { ["mass"] = 4, ["affinity"] = 10 })).Potency;
+        var strongCommon = materialStates.StateOf(Material("m.granite", new[] { "rarity:common" },
+            new Dictionary<string, double> { ["hardness"] = 68, ["mass"] = 66 })).MaterialStrength;
+        var weakExceptional = materialStates.StateOf(Material("m.wisp", new[] { "rarity:exceptional" },
+            new Dictionary<string, double> { ["mass"] = 4, ["affinity"] = 10 })).MaterialStrength;
 
         Assert.True(strongCommon > weakExceptional,
             $"strong common {strongCommon} should beat weak exceptional {weakExceptional}");
@@ -102,22 +102,22 @@ public class MaterialProfileTests
 
     /// <summary>
     /// Sourcing properties describe how hard a thing was to <i>obtain</i> (§2.2) and must be
-    /// inert here — otherwise potency would "alloy the difficulty of mining."
+    /// inert here — otherwise material strength would "alloy the difficulty of mining."
     /// </summary>
     [Fact]
     public void Potency_IgnoresSourcingAndResponseProperties()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
 
-        var plain = resolver.Resolve(Material("m.plain", new[] { "rarity:common" },
-            new Dictionary<string, double> { ["hardness"] = 30 })).Potency;
-        var padded = resolver.Resolve(Material("m.padded", new[] { "rarity:common" },
+        var plain = materialStates.StateOf(Material("m.plain", new[] { "rarity:common" },
+            new Dictionary<string, double> { ["hardness"] = 30 })).MaterialStrength;
+        var padded = materialStates.StateOf(Material("m.padded", new[] { "rarity:common" },
             new Dictionary<string, double>
             {
                 ["hardness"] = 30,
                 ["harvest_resistance"] = 100,
                 ["heat_resistance"] = 100,
-            })).Potency;
+            })).MaterialStrength;
 
         Assert.Equal(plain, padded);
     }
@@ -132,22 +132,22 @@ public class MaterialProfileTests
     [InlineData("material.iron_ingot", 40)]
     [InlineData("material.ember_sap", 45)]
     [InlineData("material.ember_core", 70)]
-    public void Potency_TracksTheWorkedExample(string materialId, int specPotency)
+    public void Potency_TracksTheWorkedExample(string materialId, int specStrength)
     {
-        var potency = Resolver().Resolve(Materials().GetById(materialId)).Potency;
-        Assert.InRange(potency, specPotency - 8, specPotency + 8);
+        var materialStrength = MaterialStates().StateOf(Materials().GetById(materialId)).MaterialStrength;
+        Assert.InRange(materialStrength, specStrength - 8, specStrength + 8);
     }
 
     /// <summary>
-    /// §6.1's ceiling rule (<c>max(input.potency) + 8</c>) only means something if authored
-    /// materials leave headroom above them — the top of the potency range has to be earned
+    /// §6.1's ceiling rule (<c>max(input.material strength) + 8</c>) only means something if authored
+    /// materials leave headroom above them — the top of the material strength range has to be earned
     /// by refinement, not handed out at the quarry.
     /// </summary>
     [Fact]
     public void AuthoredLibrary_LeavesHeadroomForRefinementToClimbInto()
     {
-        var resolver = Resolver();
-        var potencies = Materials().GetAll().Select(m => resolver.Resolve(m).Potency).ToList();
+        var materialStates = MaterialStates();
+        var potencies = Materials().GetAll().Select(m => materialStates.StateOf(m).MaterialStrength).ToList();
 
         Assert.True(potencies.Max() <= 75, $"the strongest authored material is {potencies.Max()}; no headroom left.");
         Assert.True(potencies.Max() - potencies.Min() >= 25, "the authored library is too flat to differentiate reagents.");
@@ -156,13 +156,13 @@ public class MaterialProfileTests
     [Fact]
     public void Potency_StaysWithinRange_ForEveryShippedMaterial()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
 
         foreach (var material in Materials().GetAll())
         {
-            var profile = resolver.Resolve(material);
-            Assert.InRange(profile.Potency, 1, 100);
-            Assert.InRange(profile.Integrity, 1, 100);
+            var state = materialStates.StateOf(material);
+            Assert.InRange(state.MaterialStrength, 1, 100);
+            Assert.InRange(state.Workability, 1, 100);
         }
     }
 
@@ -171,21 +171,21 @@ public class MaterialProfileTests
     [Fact]
     public void AuthoredOverrides_WinOverTheDerivation()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
         var definition = new MaterialDefinition
         {
             Id = "m.override",
             Name = "Override",
             Tags = new[] { "rarity:common", "state:raw" },
             Properties = new Dictionary<string, double> { ["hardness"] = 30 },
-            Potency = 77,
-            Integrity = 42,
+            MaterialStrength = 77,
+            Workability = 42,
         };
 
-        var profile = resolver.Resolve(definition);
+        var state = materialStates.StateOf(definition);
 
-        Assert.Equal(77, profile.Potency);
-        Assert.Equal(42, profile.Integrity);
+        Assert.Equal(77, state.MaterialStrength);
+        Assert.Equal(42, state.Workability);
     }
 
     /// <summary>No authored material overrides these yet; the whole library is derived. If one
@@ -195,8 +195,8 @@ public class MaterialProfileTests
     {
         foreach (var material in Materials().GetAll())
         {
-            Assert.Null(material.Potency);
-            Assert.Null(material.Integrity);
+            Assert.Null(material.MaterialStrength);
+            Assert.Null(material.Workability);
         }
     }
 
@@ -205,31 +205,31 @@ public class MaterialProfileTests
     [Fact]
     public void AuthoredMaterials_AreTheirOwnArchetypeAtGenerationOne()
     {
-        var resolver = Resolver();
-        var profile = resolver.Resolve(Materials().GetById("material.iron_ingot"));
+        var materialStates = MaterialStates();
+        var state = materialStates.StateOf(Materials().GetById("material.iron_ingot"));
 
-        Assert.Equal("material.iron_ingot", profile.Signature);
-        Assert.Equal(1, profile.Generation);
-        Assert.Equal("material.iron_ingot", profile.Lineage.DominantRoot?.RootId);
-        Assert.Equal(1.0, profile.Lineage.DominantRoot?.Weight);
-        Assert.Empty(profile.Lineage.ParentSignatures);
-        Assert.False(profile.IsDestroyed);
+        Assert.Equal("material.iron_ingot", state.Signature);
+        Assert.Equal(1, state.Generation);
+        Assert.Equal("material.iron_ingot", state.Lineage.DominantRoot?.RootId);
+        Assert.Equal(1.0, state.Lineage.DominantRoot?.Weight);
+        Assert.Empty(state.Lineage.ParentSignatures);
+        Assert.False(state.IsDestroyed);
     }
 
-    /// <summary>An emergent archetype is born with its profile and must be returned unchanged
+    /// <summary>An emergent archetype is born with its state and must be returned unchanged
     /// — the derivation is only a fallback for the authored library.</summary>
     [Fact]
     public void EmergentDefinitions_KeepTheirOwnProfile()
     {
-        var resolver = Resolver();
-        var profile = new MaterialProfile(
+        var materialStates = MaterialStates();
+        var state = new MaterialState(
             Properties: PropertySet.FromValues(new Dictionary<string, double> { ["heat"] = 35 }),
-            Potency: 49,
-            Integrity: 72,
+            MaterialStrength: 49,
+            Workability: 72,
             Lineage: new Lineage(
                 new[] { new RootShare("material.iron_ingot", 1.0) },
                 Generation: 2,
-                ProcessId: "process.forge_infusion",
+                CraftingActionId: "process.forge_infusion",
                 ParentSignatures: new[] { "material.iron_ingot" }),
             Signature: "emergent.7f3a91c4");
 
@@ -238,11 +238,11 @@ public class MaterialProfileTests
             Id = "emergent.7f3a91c4",
             Name = "Emberveined Iron",
             Tags = new[] { "state:alloy", "form:metal" },
-            Profile = profile,
+            State = state,
         };
 
-        Assert.Same(profile, resolver.Resolve(definition));
-        Assert.Equal(2, resolver.Resolve(definition).Generation);
+        Assert.Same(state, materialStates.StateOf(definition));
+        Assert.Equal(2, materialStates.StateOf(definition).Generation);
     }
 
     /// <summary>The reaction engine will resolve profiles per craft step; resolution must be
@@ -250,12 +250,12 @@ public class MaterialProfileTests
     [Fact]
     public void Resolution_IsDeterministicAndCached()
     {
-        var resolver = Resolver();
+        var materialStates = MaterialStates();
         var iron = Materials().GetById("material.iron_ingot");
 
-        Assert.Same(resolver.Resolve(iron), resolver.Resolve(iron));
+        Assert.Same(materialStates.StateOf(iron), materialStates.StateOf(iron));
         Assert.Equal(
-            Resolver().Resolve(iron).Potency,
-            Resolver().Resolve(iron).Potency);
+            MaterialStates().StateOf(iron).MaterialStrength,
+            MaterialStates().StateOf(iron).MaterialStrength);
     }
 }

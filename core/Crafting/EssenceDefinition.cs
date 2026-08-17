@@ -17,7 +17,7 @@ public sealed class EssenceDefinition : IDefinition
     /// <summary>The bare vector key materials author (<c>"essence": { "fire": 60 }</c>).</summary>
     public string Key => Id.StartsWith("essence.", StringComparison.Ordinal) ? Id["essence.".Length..] : Id;
 
-    /// <summary>The mundane property this essence amplifies and rides along with — a process
+    /// <summary>The mundane property this essence amplifies and rides along with — a crafting action
     /// whose channel moves the anchor moves this essence at a bonus (§8.4). Empty for radiant,
     /// which anchors on <c>resonance</c> by authoring it here explicitly.</summary>
     public string Anchor { get; init; } = string.Empty;
@@ -34,7 +34,7 @@ public static class EssenceTuning
     /// Essence beyond it is strain — powerful magic needs a worthy vessel.</summary>
     public const double CapacityPerResonance = 1.5;
 
-    /// <summary>Extra gain share when the process channel includes the essence's anchor —
+    /// <summary>Extra gain share when the crafting action channel includes the essence's anchor —
     /// §8.4's "plus a bonus": a forge that moves heat carries fire essence more willingly.</summary>
     public const double AnchorChannelBonus = 0.5;
 
@@ -46,7 +46,7 @@ public static class EssenceTuning
     public static double Capacity(double resonance) => Math.Max(0, resonance) * CapacityPerResonance;
 
     /// <summary>§5.3 strain: the amount over capacity, which feeds effective instability.</summary>
-    public static double Strain(IReadOnlyDictionary<string, double> essence, double resonance) =>
+    public static double Stress(IReadOnlyDictionary<string, double> essence, double resonance) =>
         Math.Max(0, essence.Values.Sum() - Capacity(resonance));
 
     /// <summary>§5.2.1 rule 2 — essence expresses through the arcane medium:

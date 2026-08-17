@@ -5,11 +5,11 @@ using Xunit;
 namespace Dungeons.Tests.Presentation;
 
 /// <summary>§3's risk ladder — SAFE · COSTLY · STRAINED · PERILOUS · DESTROYS — mapped from
-/// the same <see cref="IntegrityProjection"/> the §6.2c guarantees ride on.</summary>
+/// the same <see cref="WorkabilityProjection"/> the §6.2c guarantees ride on.</summary>
 public class RiskBandTests
 {
     private static RiskBand Of(double cost, double spread, int projected, double chance) =>
-        Risk.Of(new IntegrityProjection(cost, spread, projected, chance));
+        Risk.Of(new WorkabilityProjection(cost, spread, projected, chance));
 
     [Fact]
     public void CertainDestructionReadsDestroys() => Assert.Equal(RiskBand.Destroys, Of(40, 0, 0, 1.0));

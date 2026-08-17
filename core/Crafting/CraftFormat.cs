@@ -17,7 +17,7 @@ public static class CraftFormat
         CraftFailure.MissingInputs => "You do not have the materials.",
         CraftFailure.NoReagents => "Choose at least one reagent.",
         CraftFailure.InvalidQuantity => "Choose how many to craft.",
-        CraftFailure.UnknownProcess or CraftFailure.UnknownSubstrate
+        CraftFailure.UnknownCraftingAction or CraftFailure.UnknownSubstrate
             or CraftFailure.UnknownReagent or CraftFailure.UnknownCatalyst => "Unknown material or process.",
         _ => "Nothing happens.",
     };

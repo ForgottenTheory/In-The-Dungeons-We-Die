@@ -311,7 +311,7 @@ public sealed class StatusController
                 }
             }
 
-            // Buildup bleeds away, so pressure has to be sustained rather than accumulated
+            // Buildup bleeds away, so materialInfluence has to be sustained rather than accumulated
             // across a whole fight.
             //
             // Outside the status loop deliberately: a target part-way to being Stunned has

@@ -14,21 +14,21 @@ namespace Dungeons.Tests.Presentation;
 /// </summary>
 public class ItemReadingTests
 {
-    private static (FabricationEngine Engine, ContentBundle Content, Inventory Inventory) Harness()
+    private static (EquipmentAssemblyEngine Engine, ContentBundle Content, Inventory Inventory) Harness()
     {
         var content = new ContentBundle
         {
             Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
             Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
             Traits = TestPaths.LoadStore<TraitDefinition>("traits"),
-            Forms = TestPaths.LoadStore<FormTemplateDefinition>("forms"),
+            Forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms"),
             Equipment = TestPaths.LoadStore<EquipmentDefinition>("equipment"),
             Moves = TestPaths.LoadStore<Dungeons.Combat.MoveDefinition>("moves"),
         };
 
         var inventory = new Inventory();
-        var engine = new FabricationEngine(
-            content, () => inventory, new MaterialProfileResolver(content.Properties), new InstanceIdSource());
+        var engine = new EquipmentAssemblyEngine(
+            content, () => inventory, new MaterialStateResolver(content.Properties), new InstanceIdSource());
 
         inventory.Add("material.iron_ingot", 6);
         inventory.Add("material.leather", 3);
@@ -36,7 +36,7 @@ public class ItemReadingTests
         return (engine, content, inventory);
     }
 
-    private static FabricationRequest Longsword => new("form.longsword", new Dictionary<string, string>
+    private static EquipmentAssemblyRequest Longsword => new("form.longsword", new Dictionary<string, string>
     {
         ["edge"] = "material.iron_ingot",
         ["core"] = "material.iron_ingot",
@@ -47,7 +47,7 @@ public class ItemReadingTests
     public void TheRevealLeadsWithIdentityThenCombatStatsNeverProperties()
     {
         var (engine, content, _) = Harness();
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
         Assert.True(outcome.Success, outcome.Failure.ToString());
 
         var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
@@ -70,7 +70,7 @@ public class ItemReadingTests
     public void TheItemStripReplacesThePropertyWall()
     {
         var (engine, content, _) = Harness();
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
 
         var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
         var strip = SemanticFormat.ItemStrip(ItemReadings.From(outcome.Item, definition, content));
@@ -88,7 +88,7 @@ public class ItemReadingTests
     {
         var (engine, content, _) = Harness();
 
-        var projection = engine.Project(Longsword);
+        var projection = engine.Preview(Longsword);
         var form = content.Forms.GetById("form.longsword");
         var previewReading = ItemReadings.From(projection, form, content);
         var preview = SemanticFormat.Fabrication(projection, previewReading);
@@ -99,7 +99,7 @@ public class ItemReadingTests
         Assert.Contains("Made of: ", preview);
         Assert.Contains("edge Iron Ingot", preview);
 
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
         var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
         var mintedCard = SemanticFormat.Item(ItemReadings.From(outcome.Item, definition, content));
 
@@ -112,7 +112,7 @@ public class ItemReadingTests
     public void ArmourFormsReadArmourAndResistances()
     {
         var (engine, content, _) = Harness();
-        var outcome = engine.Fabricate(new FabricationRequest("form.vest", new Dictionary<string, string>
+        var outcome = engine.Assemble(new EquipmentAssemblyRequest("form.vest", new Dictionary<string, string>
         {
             ["shell"] = "material.leather",
         }));
@@ -130,12 +130,12 @@ public class ItemReadingTests
     {
         var (_, content, _) = Harness();
         var glossary = new PropertyGlossary(content.Properties);
-        var resolver = new MaterialProfileResolver(content.Properties);
+        var materialStates = new MaterialStateResolver(content.Properties);
         var form = content.Forms.GetById("form.longsword");
 
         var iron = content.Materials.GetById("material.iron_ingot");
         var edge = SemanticFormat.SlotFit(
-            SlotReadings.For(form, "edge", iron, resolver.Resolve(iron), content.Traits), glossary);
+            SlotReadings.For(form, "edge", iron, materialStates.StateOf(iron), content.Traits), glossary);
 
         Assert.Contains("bears most of the item", edge);
         Assert.Contains("◆ Hardness", edge);
@@ -143,7 +143,7 @@ public class ItemReadingTests
         Assert.DoesNotMatch(new Regex(@"\d"), edge);
 
         var binding = SemanticFormat.SlotFit(
-            SlotReadings.For(form, "binding", iron, resolver.Resolve(iron), content.Traits), glossary);
+            SlotReadings.For(form, "binding", iron, materialStates.StateOf(iron), content.Traits), glossary);
         Assert.Contains("won't take this", binding);
         Assert.Contains("hide", binding);
     }

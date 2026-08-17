@@ -9,7 +9,7 @@ namespace Dungeons.Presentation;
 /// <summary>One innate or rolled modifier, in player language ($roll already substituted).</summary>
 public sealed record AffixLine(string Text, int Tier, bool Innate, string? Drawback);
 
-/// <summary>One family the genome supports, for the pre-roll readout ("engineer, then gamble").</summary>
+/// <summary>One family the item potential supports, for the pre-roll readout ("engineer, then gamble").</summary>
 public sealed record GenomeSupport(string Family, int BestTier, double Weight);
 
 /// <summary>One damage packet of a granted move, in gameplay language: lane + combat units.</summary>
@@ -97,7 +97,7 @@ public static class ItemReadings
                 continue;
 
             lines.Add(new AffixLine(
-                AffixGrants.Describe(rolled, definition),
+                ModifierGrants.Describe(rolled, definition),
                 rolled.Tier,
                 string.Equals(definition.Slot, "innate", StringComparison.OrdinalIgnoreCase),
                 string.IsNullOrWhiteSpace(definition.Drawback) ? null : definition.Drawback));
@@ -110,7 +110,7 @@ public static class ItemReadings
     /// definition built from the projected stats, resolved through the same
     /// <see cref="EquipmentResolver"/> seam, so the preview and the minted item can never
     /// disagree. Nothing is registered.</summary>
-    public static ItemReading From(FabricationProjection projection, FormTemplateDefinition form, ContentBundle content)
+    public static ItemReading From(EquipmentAssemblyPreview projection, EquipmentBlueprintDefinition form, ContentBundle content)
     {
         ArgumentNullException.ThrowIfNull(projection);
         ArgumentNullException.ThrowIfNull(form);
@@ -134,23 +134,23 @@ public static class ItemReadings
         return From(null, ephemeral, content) with
         {
             ComponentNames = projection.ComponentNames,
-            // The preview promises the deterministic layer only: innates are the genome
+            // The preview promises the deterministic layer only: innates are the item potential
             // speaking (D-21); rolled modifiers stay behind the commit, by design.
             Innates = AffixLines(projection.Innates, content),
         };
     }
 
-    /// <summary>The pre-roll genome translation (§2.3, semantic half): which families this
-    /// genome supports and at what ceiling — grouped best-tier-per-family, strongest first.</summary>
-    public static IReadOnlyList<GenomeSupport> Supports(Genome genome, ContentBundle content, int max = 5)
+    /// <summary>The pre-roll item potential translation (§2.3, semantic half): which families this
+    /// item potential supports and at what ceiling — grouped best-tier-per-family, strongest first.</summary>
+    public static IReadOnlyList<GenomeSupport> Supports(ItemPotential itemPotential, ContentBundle content, int max = 5)
     {
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
         ArgumentNullException.ThrowIfNull(content);
 
         return content.Affixes.GetAll()
             .Where(d => d.Slot is "prefix" or "suffix")
-            .Where(d => AffixRoller.IsEligible(d, genome, Array.Empty<string>()))
-            .Select(d => (d.Family, Tier: AffixRoller.TierFor(d, genome), Weight: AffixRoller.WeightOf(d, genome)))
+            .Where(d => ModifierGenerator.IsAvailableFor(d, itemPotential, Array.Empty<string>()))
+            .Select(d => (d.Family, Tier: ModifierGenerator.MaximumModifierTier(d, itemPotential), Weight: ModifierGenerator.ChanceWeightFor(d, itemPotential)))
             .Where(x => x.Tier is not null && x.Weight > 0)
             .GroupBy(x => x.Family, StringComparer.OrdinalIgnoreCase)
             .Select(g => new GenomeSupport(

@@ -9,19 +9,19 @@ using Xunit;
 namespace Dungeons.Tests.Affixes;
 
 /// <summary>
-/// R4b end to end: fabrication computes a genome, mints innates and rolled modifiers, the
+/// R4b end to end: fabrication computes an item potential, mints innates and rolled modifiers, the
 /// reveal card speaks them, and the whole thing survives a save round-trip (v6).
 /// </summary>
 public class AffixIntegrationTests
 {
-    private static (FabricationEngine Engine, ContentBundle Content, Inventory Inventory) Harness(int seed = 99)
+    private static (EquipmentAssemblyEngine Engine, ContentBundle Content, Inventory Inventory) Harness(int seed = 99)
     {
         var content = new ContentBundle
         {
             Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
             Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
             Traits = TestPaths.LoadStore<TraitDefinition>("traits"),
-            Forms = TestPaths.LoadStore<FormTemplateDefinition>("forms"),
+            Forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms"),
             Equipment = TestPaths.LoadStore<EquipmentDefinition>("equipment"),
             Moves = TestPaths.LoadStore<Dungeons.Combat.MoveDefinition>("moves"),
             Affixes = TestPaths.LoadStore<AffixDefinition>("affixes"),
@@ -30,8 +30,8 @@ public class AffixIntegrationTests
         };
 
         var inventory = new Inventory();
-        var engine = new FabricationEngine(
-            content, () => inventory, new MaterialProfileResolver(content.Properties),
+        var engine = new EquipmentAssemblyEngine(
+            content, () => inventory, new MaterialStateResolver(content.Properties),
             new InstanceIdSource(), new SeededRandom(seed));
 
         inventory.Add("material.iron_ingot", 8);
@@ -40,7 +40,7 @@ public class AffixIntegrationTests
         return (engine, content, inventory);
     }
 
-    private static FabricationRequest Longsword => new("form.longsword", new Dictionary<string, string>
+    private static EquipmentAssemblyRequest Longsword => new("form.longsword", new Dictionary<string, string>
     {
         ["edge"] = "material.iron_ingot",
         ["core"] = "material.iron_ingot",
@@ -51,30 +51,30 @@ public class AffixIntegrationTests
     public void FabricationMintsAGenomeInnatesAndRolledModifiers()
     {
         var (engine, _, _) = Harness();
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
 
         Assert.True(outcome.Success, outcome.Failure.ToString());
         var item = outcome.Item!;
 
-        Assert.NotNull(item.Genome);
-        Assert.Equal("form.longsword", item.Genome!.FormId);
-        Assert.True(item.Genome.PressureOf("hardness") > 50, "the edge carries iron's hardness into pressure");
+        Assert.NotNull(item.Potential);
+        Assert.Equal("form.longsword", item.Potential!.BlueprintId);
+        Assert.True(item.Potential.InfluenceOf("hardness") > 50, "the edge carries iron's hardness into materialInfluence");
 
         // Iron is hard enough for the Keen Edge innate — guaranteed, not rolled (D-21).
         Assert.Contains(item.Affixes, a => a.AffixId == "affix.innate_keen_edge");
     }
 
-    /// <summary>§2.2's whole point: same materials, different form, different genome.</summary>
+    /// <summary>§2.2's whole point: same materials, different form, different item potential.</summary>
     [Fact]
     public void TheSameMaterialPressesDifferentlyInDifferentForms()
     {
         var (engine, _, _) = Harness();
 
-        var sword = engine.Project(Longsword);
-        var vest = engine.Project(new FabricationRequest("form.vest",
+        var sword = engine.Preview(Longsword);
+        var vest = engine.Preview(new EquipmentAssemblyRequest("form.vest",
             new Dictionary<string, string> { ["shell"] = "material.leather" }));
 
-        Assert.True(sword.Genome.PressureOf("hardness") > vest.Genome.PressureOf("hardness"));
+        Assert.True(sword.Potential.InfluenceOf("hardness") > vest.Potential.InfluenceOf("hardness"));
     }
 
     [Fact]
@@ -82,10 +82,10 @@ public class AffixIntegrationTests
     {
         var (engine, _, _) = Harness();
 
-        var projection = engine.Project(Longsword);
+        var projection = engine.Preview(Longsword);
         Assert.Contains(projection.Innates, a => a.AffixId == "affix.innate_keen_edge");
 
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
 
         // Every promised innate is on the minted item, identically.
         foreach (var innate in projection.Innates)
@@ -96,7 +96,7 @@ public class AffixIntegrationTests
     public void TheRevealCardSpeaksInnatesAndModifiers()
     {
         var (engine, content, _) = Harness();
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
         var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
 
         var card = SemanticFormat.Item(ItemReadings.From(outcome.Item, definition, content));
@@ -110,9 +110,9 @@ public class AffixIntegrationTests
     public void ThePreviewTranslatesTheGenomeIntoSupportedFamilies()
     {
         var (engine, content, _) = Harness();
-        var projection = engine.Project(Longsword);
+        var projection = engine.Preview(Longsword);
 
-        var supports = ItemReadings.Supports(projection.Genome, content);
+        var supports = ItemReadings.Supports(projection.Potential, content);
         Assert.NotEmpty(supports);
 
         var line = SemanticFormat.Supports(supports);
@@ -124,7 +124,7 @@ public class AffixIntegrationTests
     public void GenomeAndAffixesSurviveTheSaveRoundTrip()
     {
         var (engine, _, inventory) = Harness();
-        var outcome = engine.Fabricate(Longsword);
+        var outcome = engine.Assemble(Longsword);
         var minted = outcome.Item!;
 
         var save = Dungeons.Persistence.SaveMapper.Capture(
@@ -139,7 +139,7 @@ public class AffixIntegrationTests
 
         var restored = loaded.StashInstances.Single(i => i.InstanceId == minted.InstanceId);
         Assert.NotNull(restored.Genome);
-        Assert.Equal(minted.Genome!.Pressure["hardness"], restored.Genome!.Pressure["hardness"]);
+        Assert.Equal(minted.Potential!.MaterialInfluence["hardness"], restored.Genome!.Pressure["hardness"]);
         Assert.Equal(minted.Affixes.Count, restored.Affixes.Count);
         Assert.Equal(minted.Affixes[0].AffixId, restored.Affixes[0].AffixId);
         Assert.Equal(minted.Affixes[0].Roll, restored.Affixes[0].Roll);

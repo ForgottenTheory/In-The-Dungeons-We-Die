@@ -6,15 +6,15 @@ namespace Dungeons.Crafting;
 
 /// <summary>Everything one reagent step needs to explain itself.</summary>
 public sealed record ReactionStepContext(
-    ProcessDefinition Process,
+    CraftingActionDefinition Process,
     string SubstrateName,
     string ReagentName,
     PropertySet Substrate,
     PropertySet Reagent,
-    ReactionStepResult Result,
-    int IntegrityBefore,
-    int IntegrityAfter,
-    double IntegrityCost);
+    TransformationStepResult Result,
+    int WorkabilityBefore,
+    int WorkabilityAfter,
+    double WorkabilityCost);
 
 /// <summary>
 /// Turns a craft into the trace of docs/emergent-item-system.md §15.3.
@@ -39,7 +39,7 @@ public sealed class ReactionLogBuilder
 
     public ReactionLog Build() => new(_entries.ToList());
 
-    /// <summary>Appends one reagent step: header, coefficients, property movements, integrity.</summary>
+    /// <summary>Appends one reagent step: header, coefficients, property movements, workability.</summary>
     public ReactionLogBuilder Step(ReactionStepContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -47,7 +47,7 @@ public sealed class ReactionLogBuilder
         Add(ReactionLogKind.Step, $"{context.Process.Name} — {context.SubstrateName} ← {context.ReagentName}");
         Coefficients(context);
         Changes(context);
-        Integrity(context);
+        Workability(context);
 
         return this;
     }
@@ -58,28 +58,28 @@ public sealed class ReactionLogBuilder
         var affinity = context.Substrate.Get(ItemProperties.Affinity);
 
         Add(ReactionLogKind.Coefficient,
-            $"Acceptance {Coefficient(coefficients.Acceptance)} — {context.SubstrateName} "
-            + $"{AcceptanceVerb(affinity)} bonding (affinity {Value(affinity)})",
+            $"Acceptance {Coefficient(coefficients.Compatibility)} — {context.SubstrateName} "
+            + $"{CompatibilityVerb(affinity)} bonding (affinity {Value(affinity)})",
             indent: 1,
             property: ItemProperties.Affinity,
-            after: coefficients.Acceptance);
+            after: coefficients.Compatibility);
 
         var mediumProperty = MediumPropertyName(context.Process.Medium);
-        var mediumValue = ReactionCoefficients.MediumProperty(context.Process.Medium, context.Reagent);
+        var mediumValue = TransferCoefficients.MediumProperty(context.Process.Medium, context.Reagent);
 
         Add(ReactionLogKind.Coefficient,
-            $"Release {Coefficient(coefficients.Release)} — {context.ReagentName} "
-            + $"{ReleaseVerb(mediumValue)} under {context.Process.Medium.ToString().ToLowerInvariant()} "
+            $"Release {Coefficient(coefficients.TransferStrength)} — {context.ReagentName} "
+            + $"{TransferStrengthVerb(mediumValue)} under {context.Process.Medium.ToString().ToLowerInvariant()} "
             + $"({mediumProperty} {Value(mediumValue)})",
             indent: 1,
             property: mediumProperty,
-            after: coefficients.Release);
+            after: coefficients.TransferStrength);
 
-        if (coefficients.IntegrityFactor < 1.0)
+        if (coefficients.WorkabilityFactor < 1.0)
         {
             Add(ReactionLogKind.Coefficient,
-                $"Integrity factor {Coefficient(coefficients.IntegrityFactor)} — "
-                + $"{context.IntegrityBefore} integrity remaining",
+                $"Integrity factor {Coefficient(coefficients.WorkabilityFactor)} — "
+                + $"{context.WorkabilityBefore} integrity remaining",
                 indent: 1);
         }
     }
@@ -132,31 +132,31 @@ public sealed class ReactionLogBuilder
             Add(ReactionLogKind.Property, "(resistances recomputed from the new state)", indent: 1);
     }
 
-    private void Integrity(ReactionStepContext context)
+    private void Workability(ReactionStepContext context)
     {
-        var strain = context.Result.StrainReleased;
+        var strain = context.Result.StressReleased;
         var detail = $"Δstate {context.Result.StateDelta.ToString("0.00", CultureInfo.InvariantCulture)} "
             + $"× severity {context.Process.Severity.ToString("0.00", CultureInfo.InvariantCulture)}";
 
         if (strain > 0)
             detail += $", strain {Value(strain)}";
 
-        Add(ReactionLogKind.Integrity,
-            $"Integrity {context.IntegrityBefore} → {context.IntegrityAfter}  "
-            + $"(cost {context.IntegrityCost.ToString("0.#", CultureInfo.InvariantCulture)}: {detail})",
+        Add(ReactionLogKind.Workability,
+            $"Integrity {context.WorkabilityBefore} → {context.WorkabilityAfter}  "
+            + $"(cost {context.WorkabilityCost.ToString("0.#", CultureInfo.InvariantCulture)}: {detail})",
             indent: 1,
-            before: context.IntegrityBefore,
-            after: context.IntegrityAfter);
+            before: context.WorkabilityBefore,
+            after: context.WorkabilityAfter);
     }
 
-    /// <summary>"Potency 40, 70 → 53" — the inputs alongside the result, because potency being
+    /// <summary>"Potency 40, 70 → 53" — the inputs alongside the result, because material strength being
     /// a mean is only learnable if the player can see what it averaged.</summary>
-    public ReactionLogBuilder Potency(int substrate, IReadOnlyList<int> reagents, int result)
+    public ReactionLogBuilder MaterialStrength(int substrate, IReadOnlyList<int> reagents, int result)
     {
         ArgumentNullException.ThrowIfNull(reagents);
 
         var inputs = string.Join(", ", new[] { substrate }.Concat(reagents));
-        Add(ReactionLogKind.Potency, $"Potency {inputs} → {result}", indent: 1, after: result);
+        Add(ReactionLogKind.MaterialStrength, $"Potency {inputs} → {result}", indent: 1, after: result);
 
         return this;
     }
@@ -198,9 +198,9 @@ public sealed class ReactionLogBuilder
                 indent: 1, property: key, before: before, after: after);
         }
 
-        if (step.StrainReleased > 0)
+        if (step.StressReleased > 0)
             Add(ReactionLogKind.Essence,
-                $"Opposition released {step.StrainReleased:0.#} strain — only the asymmetry survives",
+                $"Opposition released {step.StressReleased:0.#} strain — only the asymmetry survives",
                 indent: 1);
 
         return this;
@@ -208,7 +208,7 @@ public sealed class ReactionLogBuilder
 
     /// <summary>§5.3's warning line: essence past capacity is strain, and strain makes every
     /// further craft wilder. The fix is a worthier vessel — Attune raises resonance.</summary>
-    public ReactionLogBuilder EssenceStrain(double totalEssence, double capacity, double resonance)
+    public ReactionLogBuilder EssenceStress(double totalEssence, double capacity, double resonance)
     {
         Add(ReactionLogKind.Essence,
             $"⚠ Strained vessel: essence {totalEssence:0.#} exceeds capacity {capacity:0.#} " +
@@ -247,10 +247,10 @@ public sealed class ReactionLogBuilder
 
     // ---- Phrasing --------------------------------------------------------------------------
 
-    private string Reason(PropertyChange change, ProcessDefinition process) => change.Kind switch
+    private string Reason(PropertyChange change, CraftingActionDefinition craftingAction) => change.Kind switch
     {
-        PropertyChangeKind.Channel =>
-            $"channel, rate {process.ChannelRate(change.Property).ToString("0.00", CultureInfo.InvariantCulture)}",
+        PropertyChangeKind.OnChannelTransfer =>
+            $"channel, rate {craftingAction.TransferRateFor(change.Property).ToString("0.00", CultureInfo.InvariantCulture)}",
         PropertyChangeKind.StructuralBlend => "structural blend",
         PropertyChangeKind.Dilution => "diluted, off channel",
         PropertyChangeKind.Pruned => $"pruned below floor {Floor(change.Property)}",
@@ -260,7 +260,7 @@ public sealed class ReactionLogBuilder
     };
 
     private int Floor(string property) =>
-        _properties.TryGetById(property, out var definition) ? definition.Floor : ReactionTuning.DefaultFloor;
+        _properties.TryGetById(property, out var definition) ? definition.Floor : MaterialTransformationTuning.DefaultFloor;
 
     private string Opposite(string property) =>
         _properties.TryGetById(property, out var definition) ? definition.Opposes ?? "its opposite" : "its opposite";
@@ -279,14 +279,14 @@ public sealed class ReactionLogBuilder
     // example calls affinity 30 "resists bonding", which a coefficient of 0.48 would not
     // suggest on its own.
 
-    private static string AcceptanceVerb(double affinity) => affinity switch
+    private static string CompatibilityVerb(double affinity) => affinity switch
     {
         < 35 => "resists",
         < 65 => "accepts",
         _ => "welcomes",
     };
 
-    private static string ReleaseVerb(double mediumValue) => mediumValue switch
+    private static string TransferStrengthVerb(double mediumValue) => mediumValue switch
     {
         < 30 => "holds tight",
         < 65 => "gives up what it carries",
@@ -295,7 +295,7 @@ public sealed class ReactionLogBuilder
 
     private static int KindOrder(PropertyChangeKind kind) => kind switch
     {
-        PropertyChangeKind.Channel => 0,
+        PropertyChangeKind.OnChannelTransfer => 0,
         PropertyChangeKind.Annihilation => 1,
         PropertyChangeKind.StructuralBlend => 2,
         PropertyChangeKind.Dilution => 3,

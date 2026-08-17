@@ -28,7 +28,7 @@ public sealed class ItemInstance
 
     /// <summary>The genetic profile computed at fabrication (docs/affixes.md §2.1) — stored,
     /// never recomputed (save v6). Null on pre-affix instances and authored starter gear.</summary>
-    public Crafting.Genome? Genome { get; init; }
+    public Crafting.ItemPotential? Potential { get; init; }
 
     /// <summary>Innates + rolled modifiers, in display order: innates first (D-21).</summary>
     public IReadOnlyList<Affixes.RolledAffix> Affixes { get; init; } = Array.Empty<Affixes.RolledAffix>();

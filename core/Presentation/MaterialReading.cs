@@ -7,7 +7,7 @@ namespace Dungeons.Presentation;
 public sealed record LeadingProperty(string Property, PropertyTier Tier);
 
 /// <summary>How readily this material releases under one transfer medium (§7.3), read from the
-/// same medium property the algebra reads (<see cref="ReactionCoefficients.MediumProperty"/>),
+/// same medium property the algebra reads (<see cref="TransferCoefficients.MediumProperty"/>),
 /// so the hint and the engine can never disagree.</summary>
 public sealed record Receptiveness(TransferMedium Medium, PropertyTier Tier);
 
@@ -25,12 +25,12 @@ public sealed record MaterialReading(
     IReadOnlyList<LeadingProperty> Leading,
     PropertyTier Bonding,
     IReadOnlyList<Receptiveness> Receptive,
-    int Integrity,
+    int Workability,
     PropertyTier Expression,
     IReadOnlyList<TraitReading> Traits,
     IReadOnlyList<EssenceReading> Essence,
     PropertyTier Resonance,
-    bool VesselStrained);
+    bool VesselStressed);
 
 public static class MaterialReadings
 {
@@ -41,7 +41,7 @@ public static class MaterialReadings
 
     public static MaterialReading From(
         MaterialDefinition material,
-        MaterialProfile profile,
+        MaterialState profile,
         DataStore<PropertyDefinition> propertyRegistry,
         DataStore<TraitDefinition> traits,
         DataStore<EssenceDefinition> essences)
@@ -66,7 +66,7 @@ public static class MaterialReadings
             .ToList();
 
         var receptive = Media
-            .Select(m => new Receptiveness(m, Tiers.Of(ReactionCoefficients.MediumProperty(m, properties))))
+            .Select(m => new Receptiveness(m, Tiers.Of(TransferCoefficients.MediumProperty(m, properties))))
             .ToList();
 
         var traitReadings = profile.Traits
@@ -93,12 +93,12 @@ public static class MaterialReadings
             leading,
             Tiers.Of(properties.Get(Dungeons.Items.ItemProperties.Affinity)),
             receptive,
-            profile.Integrity,
-            Tiers.Of(profile.Potency),
+            profile.Workability,
+            Tiers.Of(profile.MaterialStrength),
             traitReadings,
             essenceReadings,
             Tiers.Of(resonance),
-            EssenceTuning.Strain(profile.Essence, resonance) > 0);
+            EssenceTuning.Stress(profile.Essence, resonance) > 0);
     }
 
     private static bool LeadsWith(DataStore<PropertyDefinition> registry, string propertyId) =>

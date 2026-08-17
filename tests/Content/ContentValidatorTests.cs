@@ -34,7 +34,7 @@ public class ContentValidatorTests
     {
         Materials = Load<MaterialDefinition>("materials"),
         Properties = Load<PropertyDefinition>("properties"),
-        Processes = Load<ProcessDefinition>("processes"),
+        CraftingActions = Load<CraftingActionDefinition>("processes"),
         Byproducts = Load<ByproductDefinition>("byproducts"),
         Traits = Load<Dungeons.Crafting.TraitDefinition>("traits"),
         Essences = Load<Dungeons.Crafting.EssenceDefinition>("essences"),
@@ -445,13 +445,13 @@ public class ContentValidatorTests
         AssertHasProblem(content, "equipment", "equip.bad");
     }
 
-    // --- Processes (docs/emergent-item-system.md §7) --------------------------
+    // --- CraftingActions (docs/emergent-item-system.md §7) --------------------------
 
     [Fact]
     public void Process_WithUnknownProfession_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(profession: "profession.nope"));
+        content.CraftingActions.Add(Process(profession: "profession.nope"));
         AssertHasProblem(content, "processes", "unknown profession");
     }
 
@@ -459,7 +459,7 @@ public class ContentValidatorTests
     public void Process_WithUnknownChannelProperty_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: Channel("sparkliness", 0.5)));
+        content.CraftingActions.Add(Process(channel: Channel("sparkliness", 0.5)));
         AssertHasProblem(content, "processes", "unknown property 'sparkliness'");
     }
 
@@ -468,7 +468,7 @@ public class ContentValidatorTests
     public void Process_OpeningAResponseProperty_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: Channel("heat_resistance", 0.5)));
+        content.CraftingActions.Add(Process(channel: Channel("heat_resistance", 0.5)));
         AssertHasProblem(content, "processes", "Response property");
     }
 
@@ -477,26 +477,26 @@ public class ContentValidatorTests
     public void Process_OpeningASourcingProperty_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: Channel("harvest_resistance", 0.5)));
+        content.CraftingActions.Add(Process(channel: Channel("harvest_resistance", 0.5)));
         AssertHasProblem(content, "processes", "Sourcing property");
     }
 
     [Fact]
-    public void Process_WithNoChannel_IsReported()
+    public void CraftingAction_WithNoAffectedQualities_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: Array.Empty<ChannelEntry>()));
-        AssertHasProblem(content, "processes", "opens no channel");
+        content.CraftingActions.Add(Process(channel: Array.Empty<AffectedQuality>()));
+        AssertHasProblem(content, "processes", "declares no affected_qualities");
     }
 
     [Fact]
     public void Process_WithDuplicateChannelProperty_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: new[]
+        content.CraftingActions.Add(Process(channel: new[]
         {
-            new ChannelEntry { Property = "heat", Rate = 0.5 },
-            new ChannelEntry { Property = "heat", Rate = 0.3 },
+            new AffectedQuality { Property = "heat", Rate = 0.5 },
+            new AffectedQuality { Property = "heat", Rate = 0.3 },
         }));
         AssertHasProblem(content, "processes", "twice");
     }
@@ -507,17 +507,17 @@ public class ContentValidatorTests
     public void Process_WithChannelRateOutOfRange_IsReported(double rate)
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(channel: Channel("heat", rate)));
+        content.CraftingActions.Add(Process(channel: Channel("heat", rate)));
         AssertHasProblem(content, "processes", "rate");
     }
 
-    /// <summary>§6.1: potency is a weighted mean, so weights that don't sum to 1 would let a
-    /// process inflate potency for free — the exact exploit the mean exists to close.</summary>
+    /// <summary>§6.1: material strength is a weighted mean, so weights that don't sum to 1 would let a
+    /// crafting action inflate material strength for free — the exact exploit the mean exists to close.</summary>
     [Fact]
     public void Process_WithRoleWeightsThatDoNotSumToOne_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
+        content.CraftingActions.Add(Process(
             roleWeights: new RoleWeights { Substrate = 0.9, Reagent = 0.9, Catalyst = 0.0 }));
         AssertHasProblem(content, "processes", "role_weights sum to");
     }
@@ -526,7 +526,7 @@ public class ContentValidatorTests
     public void Process_WithSeverityOutOfRange_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(severity: 1.4));
+        content.CraftingActions.Add(Process(severity: 1.4));
         AssertHasProblem(content, "processes", "severity");
     }
 
@@ -534,8 +534,8 @@ public class ContentValidatorTests
     public void Process_WithUnknownTagFamilyInEffects_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
-            tagEffects: new ProcessTagEffects { Set = new[] { "flavour:zesty" } }));
+        content.CraftingActions.Add(Process(
+            tagEffects: new CraftingActionTagEffects { Set = new[] { "flavour:zesty" } }));
         AssertHasProblem(content, "processes", "unknown family");
     }
 
@@ -543,8 +543,8 @@ public class ContentValidatorTests
     public void Process_WithInvalidClosedTagValue_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
-            tagEffects: new ProcessTagEffects { Set = new[] { "state:molten" } }));
+        content.CraftingActions.Add(Process(
+            tagEffects: new CraftingActionTagEffects { Set = new[] { "state:molten" } }));
         AssertHasProblem(content, "processes", "not a valid 'state' value");
     }
 
@@ -553,8 +553,8 @@ public class ContentValidatorTests
     public void Process_UsingTheFamilyWildcardInSet_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
-            tagEffects: new ProcessTagEffects { Set = new[] { "form:*" } }));
+        content.CraftingActions.Add(Process(
+            tagEffects: new CraftingActionTagEffects { Set = new[] { "form:*" } }));
         AssertHasProblem(content, "processes", "wildcard");
     }
 
@@ -562,8 +562,8 @@ public class ContentValidatorTests
     public void Process_ClearingAWholeFamily_IsAccepted()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
-            tagEffects: new ProcessTagEffects { Set = new[] { "form:powder" }, Clear = new[] { "form:*" } }));
+        content.CraftingActions.Add(Process(
+            tagEffects: new CraftingActionTagEffects { Set = new[] { "form:powder" }, Clear = new[] { "form:*" } }));
         Assert.DoesNotContain(content.Validate(), p => p.Category == "processes");
     }
 
@@ -571,9 +571,9 @@ public class ContentValidatorTests
     public void Process_ThatIsUngatedButRequiresALevel_IsReported()
     {
         var content = ValidBaseline();
-        content.Processes.Add(Process(
+        content.CraftingActions.Add(Process(
             profession: string.Empty,
-            requires: new ProcessRequirements { ProfessionLevel = 5 }));
+            requires: new CraftingActionRequirements { ProfessionLevel = 5 }));
         AssertHasProblem(content, "processes", "ungated");
     }
 
@@ -846,18 +846,18 @@ public class ContentValidatorTests
         Assert.DoesNotContain(content.Validate(), p => p.Message.Contains("move.arcana"));
     }
 
-    private static ChannelEntry[] Channel(string property, double rate) =>
-        new[] { new ChannelEntry { Property = property, Rate = rate } };
+    private static AffectedQuality[] Channel(string property, double rate) =>
+        new[] { new AffectedQuality { Property = property, Rate = rate } };
 
-    /// <summary>A well-formed process; each argument left unset keeps its valid default, so a
+    /// <summary>A well-formed crafting action; each argument left unset keeps its valid default, so a
     /// test breaks exactly one rule.</summary>
-    private static ProcessDefinition Process(
+    private static CraftingActionDefinition Process(
         string profession = "prof.forestry",
         double severity = 0.4,
         RoleWeights? roleWeights = null,
-        IReadOnlyList<ChannelEntry>? channel = null,
-        ProcessRequirements? requires = null,
-        ProcessTagEffects? tagEffects = null) => new()
+        IReadOnlyList<AffectedQuality>? channel = null,
+        CraftingActionRequirements? requires = null,
+        CraftingActionTagEffects? tagEffects = null) => new()
         {
             Id = "process.test",
             Name = "Test",
@@ -865,9 +865,9 @@ public class ContentValidatorTests
             Severity = severity,
             Medium = TransferMedium.Thermal,
             RoleWeights = roleWeights ?? new RoleWeights { Substrate = 0.65, Reagent = 0.30, Catalyst = 0.05 },
-            Channel = channel ?? Channel("heat", 0.5),
-            Requires = requires ?? new ProcessRequirements { ProfessionLevel = 1 },
-            TagEffects = tagEffects ?? new ProcessTagEffects(),
+            AffectedQualities = channel ?? Channel("heat", 0.5),
+            Requires = requires ?? new CraftingActionRequirements { ProfessionLevel = 1 },
+            TagEffects = tagEffects ?? new CraftingActionTagEffects(),
         };
 
     // --- Helpers -------------------------------------------------------------
@@ -901,7 +901,7 @@ public class ContentValidatorTests
         private readonly ContentBundle _bundle = new() { Properties = LoadProperties() };
 
         public DataStore<MaterialDefinition> Materials => _bundle.Materials;
-        public DataStore<ProcessDefinition> Processes => _bundle.Processes;
+        public DataStore<CraftingActionDefinition> CraftingActions => _bundle.CraftingActions;
         public DataStore<ByproductDefinition> Byproducts => _bundle.Byproducts;
         public DataStore<Dungeons.Crafting.TraitDefinition> Traits => _bundle.Traits;
         public DataStore<Dungeons.Crafting.EssenceDefinition> Essences => _bundle.Essences;

@@ -13,7 +13,7 @@ namespace Dungeons.Crafting;
 /// roll)" — it hands you a different, weaker material with its own name and signature,
 /// possibly one nobody has seen. For a discovery game that is strictly the better outcome.</para>
 ///
-/// <para>With <see cref="ReactionAlgebra"/>'s quality multiplier, this is one of only two
+/// <para>With <see cref="MaterialTransformationRules"/>'s quality multiplier, this is one of only two
 /// probabilistic things in the entire system (§12.5), and it draws from an injected
 /// <see cref="IRandomSource"/> so a craft stays reproducible from its seed.</para>
 /// </summary>
@@ -22,17 +22,17 @@ public static class VariancePerturbation
     /// <summary>
     /// Scatters the channel properties of <paramref name="state"/> by up to
     /// <paramref name="varianceMagnitude"/>. High skill drives the magnitude to zero, so a
-    /// master reliably hits the material they were aiming at; low skill or low integrity
+    /// master reliably hits the material they were aiming at; low skill or low workability
     /// scatters across neighbouring buckets and finds things by accident.
     /// </summary>
     public static PropertySet Apply(
         PropertySet state,
-        ProcessDefinition process,
+        CraftingActionDefinition craftingAction,
         double varianceMagnitude,
         IRandomSource random)
     {
         ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
         ArgumentNullException.ThrowIfNull(random);
 
         var spread = Math.Max(0.0, varianceMagnitude) * QuantizationTuning.VarianceScale;
@@ -43,18 +43,18 @@ public static class VariancePerturbation
 
         // Ordered so the draws are consumed in a stable sequence — otherwise the same seed
         // would give different results depending on dictionary iteration order.
-        foreach (var entry in process.Channel.OrderBy(c => c.Property, StringComparer.OrdinalIgnoreCase))
+        foreach (var entry in craftingAction.AffectedQualities.OrderBy(c => c.Property, StringComparer.OrdinalIgnoreCase))
         {
             // Only properties the material actually has are scattered. Perturbing an absent
-            // one would conjure heat into something the process never heated.
+            // one would conjure heat into something the crafting action never heated.
             if (!state.Has(entry.Property))
                 continue;
 
             var offset = (random.NextDouble() * 2.0 - 1.0) * spread;
             scattered[entry.Property] = Math.Clamp(
                 state.Get(entry.Property) + offset,
-                ReactionTuning.MinPropertyValue,
-                ReactionTuning.MaxPropertyValue);
+                MaterialTransformationTuning.MinPropertyValue,
+                MaterialTransformationTuning.MaxPropertyValue);
         }
 
         return new PropertySet(scattered);

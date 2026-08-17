@@ -88,9 +88,9 @@ public partial class GameRoot : Node
     private DiscoverySystem _discoveries = null!;
     private CraftingExperimentSystem _legacyInteractionCrafting = null!;
     private IEmergentRegistry _emergentRegistry = null!;
-    private FabricationEngine _fabrication = null!;
-    private IReactionEngine _reactionEngine = null!;
-    private MaterialProfileResolver _profiles = null!;
+    private EquipmentAssemblyEngine _equipmentAssembly = null!;
+    private IMaterialTransformationEngine _reactionEngine = null!;
+    private MaterialStateResolver _materialStates = null!;
     private PropertyGlossary _glossary = null!;
     private SeededRandom _affixRandom = null!;
     private BuildResolver _buildResolver = null!;
@@ -206,13 +206,13 @@ public partial class GameRoot : Node
         // The emergent crafting engine (docs/emergent-item-system.md P1). It replaces recipe
         // matching entirely; the interaction system above survives only to keep the Healing
         // Salve brewable until fabrication lands in P5c.
-        _profiles = new MaterialProfileResolver(content.Properties);
+        _materialStates = new MaterialStateResolver(content.Properties);
         _glossary = new PropertyGlossary(content.Properties);
         _emergentRegistry = new EmergentRegistry(_materials);
-        _reactionEngine = new ReactionEngine(
+        _reactionEngine = new MaterialTransformationEngine(
             content,
             () => ActiveInventory,
-            _profiles,
+            _materialStates,
             _emergentRegistry,
             new NameGenerator(_materials, content.Properties, content.NameGrammar),
             new TagDeriver(content.Properties),
@@ -222,7 +222,7 @@ public partial class GameRoot : Node
             new SeededRandom(0xC12AF7));
 
         _affixRandom = new SeededRandom(0xD1CE5);
-        _fabrication = new FabricationEngine(content, () => ActiveInventory, _profiles, _instanceIds, _affixRandom);
+        _equipmentAssembly = new EquipmentAssemblyEngine(content, () => ActiveInventory, _materialStates, _instanceIds, _affixRandom);
 
         var combatRandom = new SeededRandom(0x0C0FFEE);
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
@@ -511,13 +511,13 @@ public partial class GameRoot : Node
 
     // --- Emergent crafting ---------------------------------------------------
     //
-    // These are thin forwards. Every rule lives in Core's ReactionEngine; GameRoot only turns
+    // These are thin forwards. Every rule lives in Core's MaterialTransformationEngine; GameRoot only turns
     // an outcome into log lines and change events, so the flagged Application-layer extraction
     // does not get any harder than it already is.
 
-    /// <summary>Every process the player can choose between, gentlest first.</summary>
-    public IReadOnlyList<ProcessDefinition> Processes =>
-        _content.Processes.GetAll().OrderBy(p => p.Severity).ToList();
+    /// <summary>Every crafting action the player can choose between, gentlest first.</summary>
+    public IReadOnlyList<CraftingActionDefinition> CraftingActions =>
+        _content.CraftingActions.GetAll().OrderBy(p => p.Severity).ToList();
 
     /// <summary>
     /// Materials currently on hand, for the crafting pickers. Emergent archetypes appear here
@@ -539,29 +539,29 @@ public partial class GameRoot : Node
             return string.Empty;
 
         var reading = MaterialReadings.From(
-            material, _profiles.Resolve(material), _content.Properties, _content.Traits, _content.Essences);
+            material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences);
         return SemanticFormat.Material(reading, _glossary);
     }
 
     /// <summary>The same inspector in the numeric voice — the §2F Advanced toggle's text.</summary>
     public string MaterialSummaryAdvanced(string materialId) =>
         _materials.TryGetById(materialId, out var material)
-            ? AdvancedFormat.Material(material, _profiles.Resolve(material))
+            ? AdvancedFormat.Material(material, _materialStates.StateOf(material))
             : string.Empty;
 
-    /// <summary>A process picker line in the player language (D30).</summary>
-    public string ProcessLabel(ProcessDefinition process) =>
-        SemanticFormat.Process(process, ProfessionName(process.Profession));
+    /// <summary>A crafting action picker line in the player language (D30).</summary>
+    public string CraftingActionLabel(CraftingActionDefinition craftingAction) =>
+        SemanticFormat.Process(craftingAction, ProfessionName(craftingAction.Profession));
 
-    /// <summary>What a process drives, in words — the channel line under the picker.</summary>
-    public string ProcessChannelLabel(ProcessDefinition process) =>
-        SemanticFormat.Channel(process, _glossary);
+    /// <summary>What a crafting action drives, in words — the channel line under the picker.</summary>
+    public string AffectedQualitiesLabel(CraftingActionDefinition craftingAction) =>
+        SemanticFormat.AffectedQualities(craftingAction, _glossary);
 
     /// <summary>The pre-commit reading (D30): groups, risk band, emergence — built from the
     /// projection's typed movements. The UI styles it; every word comes from Core.</summary>
-    public CraftReading ProjectionReading(CraftProjection projection, string substrateId) =>
+    public CraftReading ProjectionReading(CraftPreview projection, string substrateId) =>
         _materials.TryGetById(substrateId, out var substrate)
-            ? CraftReadings.From(projection, substrate.Name, _profiles.Resolve(substrate), _content)
+            ? CraftReadings.From(projection, substrate.Name, _materialStates.StateOf(substrate), _content)
             : CraftReadings.Failed(CraftFailure.UnknownSubstrate, substrateId);
 
     /// <summary>The reading as typed lines the client colours by kind.</summary>
@@ -569,7 +569,7 @@ public partial class GameRoot : Node
         SemanticFormat.ProjectionLines(reading, _glossary);
 
     /// <summary>The pre-commit panel text in the player language (D30).</summary>
-    public string ProjectionText(CraftProjection projection, string substrateId) =>
+    public string ProjectionText(CraftPreview projection, string substrateId) =>
         SemanticFormat.Projection(ProjectionReading(projection, substrateId), _glossary);
 
     /// <summary>The compact glyph+pips strip for a picker row ("▲●●●●●  !●●●●○").</summary>
@@ -579,27 +579,27 @@ public partial class GameRoot : Node
             return string.Empty;
 
         var reading = MaterialReadings.From(
-            material, _profiles.Resolve(material), _content.Properties, _content.Traits, _content.Essences);
+            material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences);
         return SemanticFormat.MaterialStrip(reading, _glossary);
     }
 
     /// <summary>The pre-commit panel in the numeric voice (§2F Advanced).</summary>
-    public string ProjectionTextAdvanced(CraftProjection projection, string substrateId) =>
+    public string ProjectionTextAdvanced(CraftPreview projection, string substrateId) =>
         AdvancedFormat.Projection(
             projection, _materials.TryGetById(substrateId, out var substrate) ? substrate.Name : substrateId);
 
     /// <summary>
     /// What a craft would cost and risk, <b>before</b> committing to it
-    /// (docs/emergent-item-system.md §6.2c). Integrity 0 destroys the material, so the UI must
+    /// (docs/emergent-item-system.md §6.2c). Workability 0 destroys the material, so the UI must
     /// always show this first.
     /// </summary>
-    public CraftProjection ProjectCraft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null) =>
-        _reactionEngine.Project(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+    public CraftPreview ProjectCraft(string craftingActionId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null) =>
+        _reactionEngine.PreviewCraft(new CraftRequest(craftingActionId, substrateId, reagentIds, catalystId));
 
     /// <summary>Runs a craft and reports it. Order of reagents is the mechanic (§0 Decision 2).</summary>
-    public CraftOutcome Craft(string processId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null)
+    public CraftOutcome Craft(string craftingActionId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null)
     {
-        var outcome = _reactionEngine.Resolve(new CraftRequest(processId, substrateId, reagentIds, catalystId));
+        var outcome = _reactionEngine.RunCraft(new CraftRequest(craftingActionId, substrateId, reagentIds, catalystId));
 
         if (!outcome.Success)
         {
@@ -665,7 +665,7 @@ public partial class GameRoot : Node
     /// <summary>
     /// Debug helper: a spread of materials chosen to make the crafting bench worth playing
     /// with immediately — substrates of different forms, reagents spanning the media (soluble,
-    /// volatile, hard), and enough skill to reach every process.
+    /// volatile, hard), and enough skill to reach every crafting action.
     /// </summary>
     public void GrantCraftTestMaterials()
     {
@@ -687,7 +687,7 @@ public partial class GameRoot : Node
         _professions.GetProgress("profession.herblore").AddXp(ProfessionLeveling.XpForLevel(15));
         _professions.GetProgress("profession.smithing").AddXp(ProfessionLeveling.XpForLevel(15));
 
-        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every process unlocked).");
+        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every craftingAction unlocked).");
         InventoryChanged?.Invoke();
     }
 
@@ -781,7 +781,7 @@ public partial class GameRoot : Node
     // --- Fabrication (C2a) --------------------------------------------------
 
     /// <summary>Forms the player can fabricate into, for the Crafting tab.</summary>
-    public IReadOnlyList<FormTemplateDefinition> Forms =>
+    public IReadOnlyList<EquipmentBlueprintDefinition> Forms =>
         _content.Forms.GetAll().OrderBy(f => f.Name).ToList();
 
     /// <summary>Materials on hand eligible for a form slot (any-of tag gate) — the per-slot
@@ -800,12 +800,12 @@ public partial class GameRoot : Node
 
     /// <summary>Multi-component fabrication (C2b): one material per named slot. Terminal —
     /// materials consumed, an ItemInstance lands in the current bag.</summary>
-    public FabricationOutcome FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
+    public EquipmentAssemblyOutcome FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
     {
         if (!_content.Forms.TryGetById(formId, out var form))
-            return FabricationOutcome.Failed(FabricationFailure.UnknownForm);
+            return EquipmentAssemblyOutcome.Failed(EquipmentAssemblyFailure.UnknownBlueprint);
 
-        var outcome = _fabrication.Fabricate(new FabricationRequest(formId, slotMaterials));
+        var outcome = _equipmentAssembly.Assemble(new EquipmentAssemblyRequest(formId, slotMaterials));
 
         if (!outcome.Success)
         {
@@ -826,11 +826,11 @@ public partial class GameRoot : Node
         _content.Traits.TryGetById(traitId, out var def) ? def.Name : traitId;
 
     /// <summary>The pre-commit fabrication view — same composition, no side effects (R3).</summary>
-    public FabricationProjection ProjectFabrication(string formId, IReadOnlyDictionary<string, string> slotMaterials) =>
-        _fabrication.Project(new FabricationRequest(formId, slotMaterials));
+    public EquipmentAssemblyPreview ProjectFabrication(string formId, IReadOnlyDictionary<string, string> slotMaterials) =>
+        _equipmentAssembly.Preview(new EquipmentAssemblyRequest(formId, slotMaterials));
 
     /// <summary>The fabrication preview card, read through the same seam the minted item uses.
-    /// Promises the deterministic layer (stats, innates) and translates the genome's supported
+    /// Promises the deterministic layer (stats, innates) and translates the item potential's supported
     /// families — the engineering half of the casino (D-21/D29).</summary>
     public string FabricationPreviewText(string formId, IReadOnlyDictionary<string, string> slotMaterials)
     {
@@ -841,7 +841,7 @@ public partial class GameRoot : Node
         var form = _content.Forms.GetById(formId);
         var reading = ItemReadings.From(projection, form, _content);
         return SemanticFormat.Fabrication(
-            projection, reading, ItemReadings.Supports(projection.Genome, _content));
+            projection, reading, ItemReadings.Supports(projection.Potential, _content));
     }
 
     /// <summary>Why a material suits (or doesn't suit) a slot — §2E context at the bench.</summary>
@@ -851,23 +851,23 @@ public partial class GameRoot : Node
             || !_materials.TryGetById(materialId, out var material))
             return string.Empty;
 
-        var reading = SlotReadings.For(form, slotName, material, _profiles.Resolve(material), _content.Traits);
+        var reading = SlotReadings.For(form, slotName, material, _materialStates.StateOf(material), _content.Traits);
         return SemanticFormat.SlotFit(reading, _glossary);
     }
 
     /// <summary>Debug-only: reroll a stash instance's prefixes and suffixes. Innates never
-    /// reroll (U-7 — the genome speaking). The player-facing reroll path is E7's operations;
+    /// reroll (U-7 — the item potential speaking). The player-facing reroll path is E7's operations;
     /// this exists so the casino can be verified without loot faucets.</summary>
     public ItemInstance? DebugRerollAffixes(long instanceId)
     {
         var instance = _stash.GetInstance(instanceId);
-        if (instance?.Genome is not { } genome)
+        if (instance?.Potential is not { } itemPotential)
             return null;
 
         var affixes = new List<RolledAffix>(
-            AffixRoller.Innates(genome, _content.Affixes.GetAll()));
-        affixes.AddRange(AffixRoller.Roll(genome, "prefix", _content.Affixes.GetAll(), _affixRandom));
-        affixes.AddRange(AffixRoller.Roll(genome, "suffix", _content.Affixes.GetAll(), _affixRandom));
+            ModifierGenerator.Innates(itemPotential, _content.Affixes.GetAll()));
+        affixes.AddRange(ModifierGenerator.Roll(itemPotential, "prefix", _content.Affixes.GetAll(), _affixRandom));
+        affixes.AddRange(ModifierGenerator.Roll(itemPotential, "suffix", _content.Affixes.GetAll(), _affixRandom));
 
         var rerolled = new ItemInstance
         {
@@ -879,7 +879,7 @@ public partial class GameRoot : Node
             Properties = instance.Properties,
             Provenance = instance.Provenance,
             Traits = instance.Traits,
-            Genome = instance.Genome,
+            Potential = instance.Potential,
             Affixes = affixes,
         };
 
@@ -1546,7 +1546,7 @@ public partial class GameRoot : Node
         // Prefix's would.
         foreach (var (instance, rolled, definition) in EquippedAffixes())
         {
-            foreach (var rule in AffixGrants.Rules(rolled, definition))
+            foreach (var rule in ModifierGrants.Rules(rolled, definition))
                 _ruleEngine.Attach(rule, $"{definition.Name} ({instance.DisplayName})");
         }
 
@@ -1571,7 +1571,7 @@ public partial class GameRoot : Node
     /// <summary>Stat grants from worn items' affixes, as ordinary scoped contributions.</summary>
     private IEnumerable<ModifierContribution> EquippedAffixContributions() =>
         EquippedAffixes().SelectMany(a =>
-            AffixGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
+            ModifierGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
 
     /// <summary>Tags of everything currently worn, for the <c>equippedTag</c> condition.</summary>
     private IEnumerable<string> EquippedTags() =>

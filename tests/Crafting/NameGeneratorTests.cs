@@ -23,15 +23,15 @@ public class NameGeneratorTests
             TestPaths.LoadStore<PropertyDefinition>("properties"),
             TestPaths.LoadStore<NameWordDefinition>("name_grammar"));
 
-    private static MaterialProfile Profile(
+    private static MaterialState State(
         IDictionary<string, double> properties,
         string root = "material.iron_ingot",
         int generation = 2,
         string signature = "emergent.7f3a91c4") =>
         new(
             PropertySet.FromValues(new Dictionary<string, double>(properties)),
-            Potency: 49,
-            Integrity: 72,
+            MaterialStrength: 49,
+            Workability: 72,
             Lineage: new Lineage(new[] { new RootShare(root, 1.0) }, generation, "process.forge_infusion", new[] { root }),
             Signature: signature);
 
@@ -46,7 +46,7 @@ public class NameGeneratorTests
     public void WorkedExample_NamesTheNaiveCraftWarmedIron()
     {
         var name = Generator().Generate(
-            Profile(new Dictionary<string, double> { ["heat"] = 7, ["hardness"] = 65, ["mass"] = 62 }),
+            State(new Dictionary<string, double> { ["heat"] = 7, ["hardness"] = 65, ["mass"] = 62 }),
             new[] { "form:metal", "form:ingot", "state:extract" });
 
         Assert.Equal("Warmed Iron", name);
@@ -62,7 +62,7 @@ public class NameGeneratorTests
     public void IntensityClimbsTheLadder(double heat, string expected)
     {
         var name = Generator().Generate(
-            Profile(new Dictionary<string, double> { ["heat"] = heat, ["hardness"] = 65, ["mass"] = 62 }),
+            State(new Dictionary<string, double> { ["heat"] = heat, ["hardness"] = 65, ["mass"] = 62 }),
             new[] { "form:metal" });
 
         Assert.Equal(expected, name);
@@ -75,8 +75,8 @@ public class NameGeneratorTests
         var generator = Generator();
         var properties = new Dictionary<string, double> { ["hardness"] = 40, ["mass"] = 30 };
 
-        Assert.Equal("Tempered Iron Dust", generator.Generate(Profile(properties), new[] { "form:powder" }));
-        Assert.Equal("Tempered Iron Tincture", generator.Generate(Profile(properties), new[] { "form:liquid" }));
+        Assert.Equal("Tempered Iron Dust", generator.Generate(State(properties), new[] { "form:powder" }));
+        Assert.Equal("Tempered Iron Tincture", generator.Generate(State(properties), new[] { "form:liquid" }));
     }
 
     /// <summary>What a material <i>does</i> is more interesting than what it is made of, so a
@@ -85,7 +85,7 @@ public class NameGeneratorTests
     public void ReactivePropertiesWinTheAdjectiveSlot()
     {
         var name = Generator().Generate(
-            Profile(new Dictionary<string, double> { ["heat"] = 30, ["hardness"] = 90, ["mass"] = 80 }),
+            State(new Dictionary<string, double> { ["heat"] = 30, ["hardness"] = 90, ["mass"] = 80 }),
             new[] { "form:metal" });
 
         Assert.Equal("Emberlit Iron", name);
@@ -97,7 +97,7 @@ public class NameGeneratorTests
     public void StructuralPropertiesNameAMundaneResult()
     {
         var name = Generator().Generate(
-            Profile(new Dictionary<string, double> { ["hardness"] = 80, ["mass"] = 60 }),
+            State(new Dictionary<string, double> { ["hardness"] = 80, ["mass"] = 60 }),
             new[] { "form:metal" });
 
         Assert.Equal("Adamant Iron", name);
@@ -108,7 +108,7 @@ public class NameGeneratorTests
     public void FormNounIsDropped_WhenTheRootAlreadySaysIt()
     {
         var name = Generator().Generate(
-            Profile(new Dictionary<string, double> { ["charge"] = 40 }, root: "material.stormglass"),
+            State(new Dictionary<string, double> { ["charge"] = 40 }, root: "material.stormglass"),
             new[] { "form:glass" });
 
         Assert.Equal("Livewired Stormglass", name);
@@ -121,8 +121,8 @@ public class NameGeneratorTests
         var generator = Generator();
         var properties = new Dictionary<string, double> { ["heat"] = 30 };
 
-        Assert.Equal("Emberlit Iron", generator.Generate(Profile(properties, root: "material.iron_ingot"), new[] { "form:metal" }));
-        Assert.Equal("Emberlit Oak", generator.Generate(Profile(properties, root: "material.oak_bark"), new[] { "form:metal" }));
+        Assert.Equal("Emberlit Iron", generator.Generate(State(properties, root: "material.iron_ingot"), new[] { "form:metal" }));
+        Assert.Equal("Emberlit Oak", generator.Generate(State(properties, root: "material.oak_bark"), new[] { "form:metal" }));
     }
 
     // ---- §13.4 collisions -----------------------------------------------------------------
@@ -133,17 +133,17 @@ public class NameGeneratorTests
     public void CollisionsResolveToAStableCoinage()
     {
         var generator = Generator();
-        var profile = Profile(new Dictionary<string, double> { ["heat"] = 35 });
+        var state = State(new Dictionary<string, double> { ["heat"] = 35 });
 
-        var free = generator.Generate(profile, new[] { "form:metal" });
-        var collided = generator.Generate(profile, new[] { "form:metal" }, isTaken: n => n == free);
+        var free = generator.Generate(state, new[] { "form:metal" });
+        var collided = generator.Generate(state, new[] { "form:metal" }, isTaken: n => n == free);
 
         Assert.NotEqual(free, collided);
         Assert.EndsWith("Iron", collided);
         Assert.DoesNotContain(collided, char.IsDigit);
 
         // Same signature ⇒ same coinage, every time.
-        Assert.Equal(collided, generator.Generate(profile, new[] { "form:metal" }, isTaken: n => n == free));
+        Assert.Equal(collided, generator.Generate(state, new[] { "form:metal" }, isTaken: n => n == free));
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public class NameGeneratorTests
                 properties["heat"] = heat;
 
             var name = generator.Generate(
-                Profile(properties, root: material.Id, signature: $"emergent.{material.Id.GetHashCode():x8}"),
+                State(properties, root: material.Id, signature: $"emergent.{material.Id.GetHashCode():x8}"),
                 material.Tags);
 
             Assert.False(string.IsNullOrWhiteSpace(name), $"{material.Id} produced an empty name.");
@@ -199,11 +199,11 @@ public class NameGeneratorTests
     [Fact]
     public void NamingIsPure()
     {
-        var profile = Profile(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 });
+        var state = State(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 });
 
         Assert.Equal(
-            Generator().Generate(profile, new[] { "form:metal", "state:alloy" }),
-            Generator().Generate(profile, new[] { "state:alloy", "form:metal" }));
+            Generator().Generate(state, new[] { "form:metal", "state:alloy" }),
+            Generator().Generate(state, new[] { "state:alloy", "form:metal" }));
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public class NameGeneratorTests
         foreach (var (property, value) in new[] { ("heat", 30.0), ("heat", 80.0), ("toxicity", 45.0), ("charge", 70.0) })
         {
             names.Add(generator.Generate(
-                Profile(new Dictionary<string, double> { [property] = value, ["hardness"] = 50 }, root),
+                State(new Dictionary<string, double> { [property] = value, ["hardness"] = 50 }, root),
                 new[] { form }));
         }
 

@@ -42,6 +42,6 @@ public class TierTests
     [InlineData(29, "Fragile")]
     [InlineData(1, "Fragile")]
     [InlineData(0, "Destroyed")]
-    public void IntegrityReadsAsWearWords(int integrity, string expected) =>
-        Assert.Equal(expected, Tiers.WearWord(integrity));
+    public void IntegrityReadsAsWearWords(int workability, string expected) =>
+        Assert.Equal(expected, Tiers.WearWord(workability));
 }

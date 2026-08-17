@@ -18,14 +18,14 @@ public enum RiskBand
 
 public static class Risk
 {
-    public static RiskBand Of(IntegrityProjection integrity)
+    public static RiskBand Of(WorkabilityProjection workability)
     {
-        ArgumentNullException.ThrowIfNull(integrity);
+        ArgumentNullException.ThrowIfNull(workability);
 
-        return integrity.IsCertainDestruction ? RiskBand.Destroys
-            : integrity.IsAtRisk ? RiskBand.Perilous
-            : integrity.ProjectedIntegrity <= PresentationTuning.StrainedIntegrity ? RiskBand.Strained
-            : integrity.ExpectedCost >= PresentationTuning.CostlyCost ? RiskBand.Costly
+        return workability.IsCertainDestruction ? RiskBand.Destroys
+            : workability.IsAtRisk ? RiskBand.Perilous
+            : workability.ProjectedWorkability <= PresentationTuning.StressedWorkability ? RiskBand.Strained
+            : workability.ExpectedCost >= PresentationTuning.CostlyCost ? RiskBand.Costly
             : RiskBand.Safe;
     }
 

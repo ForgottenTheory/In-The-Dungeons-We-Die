@@ -160,7 +160,7 @@ public static class SaveMapper
 
     private static EmergentArchetypeSave ToSave(MaterialDefinition archetype)
     {
-        var profile = archetype.Profile
+        var profile = archetype.State
             ?? throw new InvalidOperationException($"Emergent archetype '{archetype.Id}' has no profile to save.");
 
         return new EmergentArchetypeSave
@@ -169,10 +169,10 @@ public static class SaveMapper
             Name = archetype.Name,
             Tags = archetype.Tags.ToList(),
             Properties = new Dictionary<string, double>(profile.Properties.AsDictionary()),
-            Potency = profile.Potency,
-            Integrity = profile.Integrity,
+            Potency = profile.MaterialStrength,          // save key stays "Potency" (v4+)
+            Integrity = profile.Workability,             // save key stays "Integrity" (v4+)
             Generation = profile.Generation,
-            ProcessId = profile.Lineage.ProcessId,
+            ProcessId = profile.Lineage.CraftingActionId,   // save key stays "ProcessId" (v4+)
             Roots = profile.Lineage.Roots
                 .Select(r => new LineageRootSave { RootId = r.RootId, Weight = r.Weight })
                 .ToList(),
@@ -188,10 +188,10 @@ public static class SaveMapper
         Name = save.Name,
         Tags = save.Tags,
         Properties = new Dictionary<string, double>(save.Properties),
-        Profile = new MaterialProfile(
+        State = new MaterialState(
             Properties: new PropertySet(save.Properties),
-            Potency: save.Potency,
-            Integrity: save.Integrity,
+            MaterialStrength: save.Potency,
+            Workability: save.Integrity,
             Lineage: new Lineage(
                 save.Roots.Select(r => new RootShare(r.RootId, r.Weight)).ToList(),
                 save.Generation,
@@ -217,18 +217,20 @@ public static class SaveMapper
         Properties = new Dictionary<string, double>(instance.Properties.AsDictionary()),
         Provenance = instance.Provenance.ToList(),
         Traits = instance.Traits.ToList(),
-        Genome = instance.Genome is { } genome
+        Genome = instance.Potential is { } potential            // save key stays "Genome" (v6)
             ? new GenomeSave
             {
-                FormId = genome.FormId,
-                Pressure = new Dictionary<string, double>(genome.Pressure.ToDictionary(p => p.Key, p => p.Value)),
-                Essence = new Dictionary<string, double>(genome.Essence.ToDictionary(e => e.Key, e => e.Value)),
-                Expressed = genome.Expressed.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
-                Dormant = genome.Dormant.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
-                Tags = genome.Tags.ToList(),
-                Potency = genome.Potency,
-                GenerationDepth = genome.GenerationDepth,
-                Signatures = genome.Signatures.ToList(),
+                FormId = potential.BlueprintId,                     // save key stays "FormId"
+                Pressure = new Dictionary<string, double>(                // save key stays "Pressure"
+                    potential.MaterialInfluence.ToDictionary(entry => entry.Key, entry => entry.Value)),
+                Essence = new Dictionary<string, double>(
+                    potential.Essence.ToDictionary(entry => entry.Key, entry => entry.Value)),
+                Expressed = potential.Expressed.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
+                Dormant = potential.Dormant.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
+                Tags = potential.Tags.ToList(),
+                Potency = potential.MaterialStrength,               // save key stays "Potency" (v6)
+                GenerationDepth = potential.GenerationDepth,
+                Signatures = potential.Signatures.ToList(),
             }
             : null,
         Affixes = instance.Affixes
@@ -246,17 +248,17 @@ public static class SaveMapper
         Properties = new PropertySet(save.Properties),
         Provenance = save.Provenance,
         Traits = save.Traits,
-        Genome = save.Genome is { } genome
-            ? new Dungeons.Crafting.Genome(
-                genome.FormId,
-                genome.Pressure,
-                genome.Essence,
-                genome.Expressed.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
-                genome.Dormant.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
-                genome.Tags,
-                genome.Potency,
-                genome.GenerationDepth,
-                genome.Signatures)
+        Potential = save.Genome is { } savedPotential
+            ? new Dungeons.Crafting.ItemPotential(
+                savedPotential.FormId,
+                savedPotential.Pressure,
+                savedPotential.Essence,
+                savedPotential.Expressed.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
+                savedPotential.Dormant.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
+                savedPotential.Tags,
+                savedPotential.Potency,
+                savedPotential.GenerationDepth,
+                savedPotential.Signatures)
             : null,
         Affixes = save.Affixes
             .Select(a => new Dungeons.Affixes.RolledAffix(a.AffixId, a.Tier, a.Roll))

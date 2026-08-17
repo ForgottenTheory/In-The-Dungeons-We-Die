@@ -14,7 +14,7 @@ public sealed record RootShare(string RootId, double Weight);
 public sealed record Lineage(
     IReadOnlyList<RootShare> Roots,
     int Generation,
-    string ProcessId,
+    string CraftingActionId,
     IReadOnlyList<string> ParentSignatures)
 {
     /// <summary>Maximum roots retained; anything beyond (or under the trace weight) is dropped.</summary>
@@ -27,7 +27,7 @@ public sealed record Lineage(
     public static Lineage ForBase(string materialId) => new(
         new[] { new RootShare(materialId, 1.0) },
         Generation: 1,
-        ProcessId: string.Empty,
+        CraftingActionId: string.Empty,
         ParentSignatures: Array.Empty<string>());
 
     /// <summary>The heaviest root — what naming, flavour and valuation read (§13.3).</summary>
@@ -37,20 +37,20 @@ public sealed record Lineage(
 
 /// <summary>
 /// The emergent-system state of a material kind: its properties plus the meta fields that
-/// are deliberately <b>not</b> in <see cref="PropertySet"/> — potency, integrity and
+/// are deliberately <b>not</b> in <see cref="PropertySet"/> — material strength, workability and
 /// generation (docs/emergent-item-system.md §6, §18). Keeping them off the property bag is
 /// what stops the reaction algebra treating "how refined is this" as something alloyable.
 ///
 /// <para>Every material kind has one: authored materials get theirs derived by
-/// <see cref="MaterialProfileResolver"/>; emergent archetypes are born with an explicit one
+/// <see cref="MaterialStateResolver"/>; emergent archetypes are born with an explicit one
 /// computed by the reaction engine.</para>
 ///
 /// <para>Essence and traits are P3/P2 and deliberately absent here.</para>
 /// </summary>
-public sealed record MaterialProfile(
+public sealed record MaterialState(
     PropertySet Properties,
-    int Potency,
-    int Integrity,
+    int MaterialStrength,
+    int Workability,
     Lineage Lineage,
     string Signature)
 {
@@ -67,6 +67,6 @@ public sealed record MaterialProfile(
     public IReadOnlyDictionary<string, double> Essence { get; init; } =
         new Dictionary<string, double>();
 
-    /// <summary>An integrity-0 material does not exist — it was destroyed (§6.2c).</summary>
-    public bool IsDestroyed => Integrity <= 0;
+    /// <summary>An workability-0 material does not exist — it was destroyed (§6.2c).</summary>
+    public bool IsDestroyed => Workability <= 0;
 }

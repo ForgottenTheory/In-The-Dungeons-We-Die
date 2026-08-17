@@ -15,9 +15,9 @@ public class C2cAuditTests
 {
     // ---- ValidateForms — per-rule failing content -------------------------------------------
 
-    private static IReadOnlyList<ContentProblem> FormProblems(FormTemplateDefinition broken)
+    private static IReadOnlyList<ContentProblem> FormProblems(EquipmentBlueprintDefinition broken)
     {
-        var forms = new DataStore<FormTemplateDefinition>();
+        var forms = new DataStore<EquipmentBlueprintDefinition>();
         forms.Add(broken);
         var content = new ContentBundle
         {
@@ -31,50 +31,50 @@ public class C2cAuditTests
 
     [Fact]
     public void AFormWithNoSlotsFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition { Id = "form.broken" }),
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition { Id = "form.broken" }),
             p => p.Message.Contains("no slots"));
 
     [Fact]
     public void AZeroTraitCapFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
         {
             Id = "form.broken",
             TraitCap = 0,
-            Slots = { ["face"] = new FormSlot() },
+            Slots = { ["face"] = new BlueprintSlot() },
         }), p => p.Message.Contains("trait_cap"));
 
     [Fact]
     public void AnUnknownApertureCategoryFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
         {
             Id = "form.broken",
-            Slots = { ["face"] = new FormSlot { Aperture = { ["sonic"] = 1.0 } } },
+            Slots = { ["face"] = new BlueprintSlot { TraitExpression = { ["sonic"] = 1.0 } } },
         }), p => p.Message.Contains("unknown category 'sonic'"));
 
     [Fact]
     public void AStatMapReadingAnUnknownPropertyFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
         {
             Id = "form.broken",
-            Slots = { ["face"] = new FormSlot() },
+            Slots = { ["face"] = new BlueprintSlot() },
             StatMap = { ["mass"] = new[] { new StatContribution { Slot = "face", Property = "wobble" } } },
         }), p => p.Message.Contains("unknown property 'wobble'"));
 
     [Fact]
     public void AStatMapReadingAnUnknownSlotFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
         {
             Id = "form.broken",
-            Slots = { ["face"] = new FormSlot() },
+            Slots = { ["face"] = new BlueprintSlot() },
             StatMap = { ["mass"] = new[] { new StatContribution { Slot = "edge", Property = "mass" } } },
         }), p => p.Message.Contains("unknown slot 'edge'"));
 
     [Fact]
     public void AFormGrantingAnUnknownMoveFailsLoudly() =>
-        Assert.Contains(FormProblems(new FormTemplateDefinition
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
         {
             Id = "form.broken",
-            Slots = { ["face"] = new FormSlot() },
+            Slots = { ["face"] = new BlueprintSlot() },
             Moves = new[] { new Dungeons.Combat.MoveGrantSpec { Id = "move.imaginary" } },
         }), p => p.Message.Contains("unknown move"));
 
@@ -88,15 +88,15 @@ public class C2cAuditTests
     {
         var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
         var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
-        var processes = TestPaths.LoadStore<ProcessDefinition>("processes");
-        var forms = TestPaths.LoadStore<FormTemplateDefinition>("forms");
+        var processes = TestPaths.LoadStore<CraftingActionDefinition>("processes");
+        var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms");
 
         // Ore exists as a profession faucet (the P1 pin, restated here for the chain).
         Assert.Contains(actions, a => a.Outputs.Any(o => o.ItemId == "material.iron_ore"));
 
         // Smelt is reachable in the first session and turns ore into metal.
         var smelt = processes.GetById("process.smelt");
-        Assert.True(smelt.Requires.ProfessionLevel <= 1, "Smelt must be a first-session process");
+        Assert.True(smelt.Requires.ProfessionLevel <= 1, "Smelt must be a first-session craftingAction");
         Assert.Contains("form:ore", smelt.Requires.SubstrateTags);
         Assert.Contains("form:metal", smelt.TagEffects.Set);
 

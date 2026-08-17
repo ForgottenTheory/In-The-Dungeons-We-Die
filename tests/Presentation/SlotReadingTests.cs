@@ -17,18 +17,18 @@ public class SlotReadingTests
     private static readonly DataStore<MaterialDefinition> Materials =
         TestPaths.LoadStore<MaterialDefinition>("materials");
 
-    private static readonly DataStore<FormTemplateDefinition> Forms =
-        TestPaths.LoadStore<FormTemplateDefinition>("forms");
+    private static readonly DataStore<EquipmentBlueprintDefinition> Forms =
+        TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms");
 
     private static readonly DataStore<TraitDefinition> Traits =
         TestPaths.LoadStore<TraitDefinition>("traits");
 
     private static SlotReading Read(string formId, string slot, string materialId)
     {
-        var resolver = new MaterialProfileResolver(Properties);
+        var materialStates = new MaterialStateResolver(Properties);
         var material = Materials.GetById(materialId);
 
-        return SlotReadings.For(Forms.GetById(formId), slot, material, resolver.Resolve(material), Traits);
+        return SlotReadings.For(Forms.GetById(formId), slot, material, materialStates.StateOf(material), Traits);
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public class SlotReadingTests
     [Fact]
     public void ApertureBandsFollowTheTuningBoundaries()
     {
-        Assert.Equal(ApertureBand.Full, SlotReadings.ApertureBandOf(1.0));
-        Assert.Equal(ApertureBand.Partial, SlotReadings.ApertureBandOf(0.5));
-        Assert.Equal(ApertureBand.Muted, SlotReadings.ApertureBandOf(0.2));
+        Assert.Equal(TraitExpressionBand.Full, SlotReadings.ApertureBandOf(1.0));
+        Assert.Equal(TraitExpressionBand.Partial, SlotReadings.ApertureBandOf(0.5));
+        Assert.Equal(TraitExpressionBand.Muted, SlotReadings.ApertureBandOf(0.2));
     }
 }

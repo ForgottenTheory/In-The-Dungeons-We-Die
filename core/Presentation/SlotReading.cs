@@ -11,8 +11,8 @@ public enum ReadWeight
     Heavy,
 }
 
-/// <summary>How much of a trait category this slot's aperture lets through.</summary>
-public enum ApertureBand
+/// <summary>How much of a trait category this slot's trait expression lets through.</summary>
+public enum TraitExpressionBand
 {
     Muted,
     Partial,
@@ -28,13 +28,13 @@ public sealed record StatRead(
     PropertyTier MaterialTier,
     bool SharedAcrossSlots);
 
-/// <summary>One trait the candidate material carries, and how this slot's aperture treats it —
-/// the §16.3 expression rule (magnitude × aperture), read ahead of time.</summary>
+/// <summary>One trait the candidate material carries, and how this slot's trait expression treats it —
+/// the §16.3 expression rule (magnitude × trait expression), read ahead of time.</summary>
 public sealed record TraitFit(
     TraitInstance Trait,
     string TraitName,
     string Category,
-    ApertureBand Band);
+    TraitExpressionBand Band);
 
 /// <summary>
 /// §2E contextual meaning for fabrication: why a material appears suitable or unsuitable in a
@@ -55,10 +55,10 @@ public static class SlotReadings
 {
     /// <summary>Reads one candidate material against one slot of a form.</summary>
     public static SlotReading For(
-        FormTemplateDefinition form,
+        EquipmentBlueprintDefinition form,
         string slotName,
         MaterialDefinition material,
-        MaterialProfile profile,
+        MaterialState profile,
         DataStore<TraitDefinition> traits)
     {
         ArgumentNullException.ThrowIfNull(form);
@@ -69,7 +69,7 @@ public static class SlotReadings
         if (!form.Slots.TryGetValue(slotName, out var slot))
             throw new ArgumentException($"Form '{form.Id}' has no slot '{slotName}'.", nameof(slotName));
 
-        // Eligibility mirrors FabricationEngine's any-of tag gate exactly.
+        // Eligibility mirrors EquipmentAssemblyEngine's any-of tag gate exactly.
         var via = slot.RequiresTags.FirstOrDefault(
             t => material.Tags.Contains(t, StringComparer.OrdinalIgnoreCase));
         var eligible = slot.RequiresTags.Count == 0 || via is not null;
@@ -79,7 +79,7 @@ public static class SlotReadings
         {
             foreach (var read in contributions)
             {
-                var shared = read.Slot == FormSlots.AllSlots;
+                var shared = read.Slot == BlueprintSlots.AllSlots;
                 if (!shared && !string.Equals(read.Slot, slotName, StringComparison.Ordinal))
                     continue;
 
@@ -99,7 +99,7 @@ public static class SlotReadings
         foreach (var trait in profile.Traits)
         {
             var category = traits.TryGetById(trait.Id, out var def) ? def.Category : "structural";
-            var gate = slot.Aperture.GetValueOrDefault(category, 1.0);
+            var gate = slot.TraitExpression.GetValueOrDefault(category, 1.0);
 
             fits.Add(new TraitFit(
                 trait,
@@ -125,10 +125,10 @@ public static class SlotReadings
         _ => ReadWeight.Light,
     };
 
-    public static ApertureBand ApertureBandOf(double gate) => gate switch
+    public static TraitExpressionBand ApertureBandOf(double gate) => gate switch
     {
-        >= PresentationTuning.FullApertureFloor => ApertureBand.Full,
-        >= PresentationTuning.PartialApertureFloor => ApertureBand.Partial,
-        _ => ApertureBand.Muted,
+        >= PresentationTuning.FullApertureFloor => TraitExpressionBand.Full,
+        >= PresentationTuning.PartialApertureFloor => TraitExpressionBand.Partial,
+        _ => TraitExpressionBand.Muted,
     };
 }

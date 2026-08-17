@@ -14,14 +14,14 @@ namespace Dungeons.Presentation;
 public static class AdvancedFormat
 {
     /// <summary>The numeric pre-commit summary (formerly <c>CraftFormat.Projection</c>).</summary>
-    public static string Projection(CraftProjection projection, string substrateName)
+    public static string Projection(CraftPreview projection, string substrateName)
     {
         ArgumentNullException.ThrowIfNull(projection);
 
         if (!projection.CanCraft)
             return CraftFormat.Failure(projection.Failure);
 
-        var integrity = projection.Integrity;
+        var workability = projection.Workability;
         var builder = new StringBuilder();
 
         builder.Append("Expect: ").Append(projection.ProjectedName);
@@ -29,12 +29,12 @@ public static class AdvancedFormat
             builder.Append("  (never made before)");
         builder.AppendLine();
 
-        builder.Append("Potency ").Append(projection.ProjectedPotency)
-            .Append("   Integrity → ").Append(integrity.ProjectedIntegrity)
-            .Append("  (cost ").Append(Number(integrity.ExpectedCost));
+        builder.Append("Potency ").Append(projection.ProjectedMaterialStrength)
+            .Append("   Integrity → ").Append(workability.ProjectedWorkability)
+            .Append("  (cost ").Append(Number(workability.ExpectedCost));
 
-        if (integrity.CostSpread > 0.5)
-            builder.Append(" ± ").Append(Number(integrity.CostSpread));
+        if (workability.CostSpread > 0.5)
+            builder.Append(" ± ").Append(Number(workability.CostSpread));
 
         builder.Append(')');
 
@@ -47,39 +47,39 @@ public static class AdvancedFormat
         else if (projection.WarnsOfRisk)
         {
             builder.AppendLine();
-            builder.Append("⚠ ").Append(Percent(integrity.DestructionChance))
+            builder.Append("⚠ ").Append(Percent(workability.DestructionChance))
                 .Append(" chance of destroying the ").Append(substrateName).Append('.');
         }
 
         return builder.ToString();
     }
 
-    /// <summary>The numeric process line (formerly <c>CraftFormat.Process</c>).</summary>
-    public static string Process(ProcessDefinition process, string professionName)
+    /// <summary>The numeric crafting action line (formerly <c>CraftFormat.Process</c>).</summary>
+    public static string Process(CraftingActionDefinition craftingAction, string professionName)
     {
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
 
-        var gate = process.IsUngated
+        var gate = craftingAction.IsUngated
             ? "any skill"
-            : $"{professionName} L{process.Requires.ProfessionLevel}";
+            : $"{professionName} L{craftingAction.Requires.ProfessionLevel}";
 
-        return $"{process.Name}  —  {process.Medium.ToString().ToLowerInvariant()}, "
-            + $"severity {Number(process.Severity)}, {gate}";
+        return $"{craftingAction.Name}  —  {craftingAction.Medium.ToString().ToLowerInvariant()}, "
+            + $"severity {Number(craftingAction.Severity)}, {gate}";
     }
 
     /// <summary>The numeric channel line (formerly <c>CraftFormat.Channel</c>).</summary>
-    public static string Channel(ProcessDefinition process)
+    public static string AffectedQualities(CraftingActionDefinition craftingAction)
     {
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
 
-        return process.Channel.Count == 0
+        return craftingAction.AffectedQualities.Count == 0
             ? "(opens nothing)"
-            : "Opens: " + string.Join(", ", process.Channel.Select(c => $"{c.Property} {Number(c.Rate)}"));
+            : "Opens: " + string.Join(", ", craftingAction.AffectedQualities.Select(c => $"{c.Property} {Number(c.Rate)}"));
     }
 
     /// <summary>The numeric material summary (formerly <c>GameRoot.MaterialSummary</c>): meta
     /// fields, the top properties by value, and raw tags.</summary>
-    public static string Material(MaterialDefinition material, MaterialProfile profile)
+    public static string Material(MaterialDefinition material, MaterialState profile)
     {
         ArgumentNullException.ThrowIfNull(material);
         ArgumentNullException.ThrowIfNull(profile);
@@ -90,7 +90,7 @@ public static class AdvancedFormat
             .Take(5)
             .Select(p => $"{p.Key} {p.Value.ToString("0", CultureInfo.InvariantCulture)}");
 
-        return $"{material.Name} — potency {profile.Potency}, integrity {profile.Integrity}, "
+        return $"{material.Name} — potency {profile.MaterialStrength}, integrity {profile.Workability}, "
             + $"gen {profile.Generation}\n  {string.Join(", ", properties)}\n  {string.Join(" ", material.Tags)}";
     }
 

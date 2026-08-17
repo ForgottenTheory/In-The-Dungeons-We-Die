@@ -1,7 +1,7 @@
 namespace Dungeons.Content;
 
 /// <summary>
-/// What a destroyed material leaves behind (docs/emergent-item-system.md §6.2c). Integrity 0
+/// What a destroyed material leaves behind (docs/emergent-item-system.md §6.2c). Workability 0
 /// is a terminal event, but it must never be total loss: a blown craft is a setback and a
 /// consolation prize, not a zero, or players stop experimenting — which would defeat the
 /// entire design goal.

@@ -268,7 +268,7 @@ public class TriggerRuleEngineTests
         Assert.Empty(harness.Damage.Calls);
     }
 
-    // ---- Vocabulary integrity -----------------------------------------------------------------------
+    // ---- Vocabulary workability -----------------------------------------------------------------------
 
     /// <summary>Every condition kind in the vocabulary must actually evaluate — an entry the
     /// interpreter doesn't handle would pass validation and then throw at runtime.</summary>

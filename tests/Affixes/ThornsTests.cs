@@ -44,7 +44,7 @@ public class ThornsTests
         // The affix's own rule grant, exactly as GameRoot attaches it from worn gear (R4b).
         var bramble = TestPaths.LoadStore<AffixDefinition>("affixes").GetById("affix.bramble");
         var rolled = new RolledAffix("affix.bramble", 2, 4.0);
-        foreach (var rule in AffixGrants.Rules(rolled, bramble))
+        foreach (var rule in ModifierGrants.Rules(rolled, bramble))
             engine.Attach(rule, "Brambled (test vest)");
 
         var player = Player(hp: 200, attrs: Attrs(), stamina: 50);

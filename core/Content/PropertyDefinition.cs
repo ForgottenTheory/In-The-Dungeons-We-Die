@@ -5,7 +5,7 @@ namespace Dungeons.Content;
 /// <summary>
 /// How a property behaves in the (future) reaction engine. Assigned as data, per
 /// docs/emergent-item-system.md §2.3. Only <see cref="Reactive"/> properties transfer
-/// along a process channel; <see cref="Response"/> are derived resistances (never a
+/// along a crafting action channel; <see cref="Response"/> are derived resistances (never a
 /// reaction input); <see cref="Sourcing"/> is inert in crafting (harvest only).
 /// </summary>
 public enum PropertyRole

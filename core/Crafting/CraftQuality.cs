@@ -28,7 +28,7 @@ public static class CraftQuality
     /// <summary>
     /// Normalized execution quality, 0–1.
     /// </summary>
-    /// <param name="professionLevel">Level in the gating profession; 0 for an ungated process.</param>
+    /// <param name="professionLevel">Level in the gating profession; 0 for an ungated crafting action.</param>
     /// <param name="effectiveInstability">The material's instability including wear (§6.2b).</param>
     /// <param name="performance">Active-crafting timing result, 0–1; 0.5 for a passive craft.</param>
     public static double Normalised(int professionLevel, double effectiveInstability, double performance = 0.5)

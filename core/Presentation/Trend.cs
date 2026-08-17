@@ -12,7 +12,7 @@ public enum Trend
     /// <summary>Net movement inside the steady window — nothing worth an arrow.</summary>
     Steady,
 
-    /// <summary>Channel-driven gain — the process is reinforcing it.</summary>
+    /// <summary>Channel-driven gain — the crafting action is reinforcing it.</summary>
     Rising,
 
     /// <summary>Channel-driven loss — converging down toward the reagent.</summary>
@@ -28,7 +28,7 @@ public enum Trend
     Vanishing,
 
     /// <summary>Mutually annihilating against its opposite — strain released.</summary>
-    Opposed,
+    Conflicting,
 
     /// <summary>Newly present — absent before the craft, real after it.</summary>
     Emerging,
@@ -49,14 +49,14 @@ public static class Trends
 {
     /// <summary>
     /// Folds per-step typed changes into one movement per property. Precedence: annihilation
-    /// marks a property <see cref="Trend.Opposed"/> whatever else happened to it; ending at
+    /// marks a property <see cref="Trend.Conflicting"/> whatever else happened to it; ending at
     /// zero reads <see cref="Trend.Vanishing"/>; starting from zero reads
     /// <see cref="Trend.Emerging"/>; net movement inside the steady window reads
     /// <see cref="Trend.Steady"/>; then channel movement wins over dilution over blending.
     /// Derived-resistance drops are bookkeeping (§2.2) and excluded entirely. Ordered by
     /// absolute net movement, largest first, ties by id — deterministic.
     /// </summary>
-    public static IReadOnlyList<PropertyMovement> Aggregate(IReadOnlyList<ReactionStepResult> steps)
+    public static IReadOnlyList<PropertyMovement> Aggregate(IReadOnlyList<TransformationStepResult> steps)
     {
         ArgumentNullException.ThrowIfNull(steps);
 
@@ -87,7 +87,7 @@ public static class Trends
                     case PropertyChangeKind.Annihilation:
                         sawAnnihilation.Add(change.Property);
                         break;
-                    case PropertyChangeKind.Channel:
+                    case PropertyChangeKind.OnChannelTransfer:
                         sawChannel.Add(change.Property);
                         break;
                     case PropertyChangeKind.Dilution:
@@ -105,7 +105,7 @@ public static class Trends
             var final = last[property];
 
             var trend =
-                sawAnnihilation.Contains(property) ? Trend.Opposed
+                sawAnnihilation.Contains(property) ? Trend.Conflicting
                 : initial > 0 && final <= 0 ? Trend.Vanishing
                 : initial <= 0 && final > 0 ? Trend.Emerging
                 : Math.Abs(final - initial) <= PresentationTuning.SteadyWindow ? Trend.Steady

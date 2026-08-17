@@ -57,3 +57,6 @@ Over: shorthand · cleverness · dense abstractions · unnecessary indirection �
 
 ## Guiding question
 "How does this make preparing for, exploring, surviving, mastering, or extracting from a Realm more interesting?" If there's no convincing answer, reconsider the feature.
+
+## Crafting vocabulary (renamed 2026-08-16)
+Design/player words are unchanged; the **C# is plainer**. `Integrity`→`Workability` · `Potency`→`MaterialStrength` · `Process`→`CraftingAction` · `Channel`→`AffectedQualities` · `Form`→`EquipmentBlueprint` · `Aperture`→`TraitExpression` · `Genome`→`ItemPotential` · `Pressure`→`MaterialInfluence` · `ReactionEngine`→`MaterialTransformationEngine` · `ReactionAlgebra`→`MaterialTransformationRules` · `FabricationEngine`→`EquipmentAssemblyEngine` · `AffixRoller`→`ModifierGenerator`. **Player text, save keys (`SaveData.cs` untouched) and content ids (`process.*`, `form.*`, the `form:` tag family) did NOT move.** Full table + the reading path: `docs/crafting-overview.md` §15.

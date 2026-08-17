@@ -26,11 +26,11 @@ public static class ContentLoader
     {
         Materials = LoadDefinitions<MaterialDefinition>($"{dataRoot}/materials"),
         Properties = LoadDefinitions<PropertyDefinition>($"{dataRoot}/properties"),
-        Processes = LoadDefinitions<ProcessDefinition>($"{dataRoot}/processes"),
+        CraftingActions = LoadDefinitions<CraftingActionDefinition>($"{dataRoot}/processes"),
         Byproducts = LoadDefinitions<ByproductDefinition>($"{dataRoot}/byproducts"),
         Traits = LoadDefinitions<TraitDefinition>($"{dataRoot}/traits"),
         Essences = LoadDefinitions<EssenceDefinition>($"{dataRoot}/essences"),
-        Forms = LoadDefinitions<FormTemplateDefinition>($"{dataRoot}/forms"),
+        Forms = LoadDefinitions<EquipmentBlueprintDefinition>($"{dataRoot}/forms"),
         Affixes = LoadDefinitions<Dungeons.Affixes.AffixDefinition>($"{dataRoot}/affixes"),
         NameGrammar = LoadDefinitions<NameWordDefinition>($"{dataRoot}/name_grammar"),
         ModifierKeys = LoadDefinitions<Dungeons.Modifiers.ModifierKeyDefinition>($"{dataRoot}/modifier_keys"),

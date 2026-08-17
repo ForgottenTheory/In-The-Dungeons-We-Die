@@ -18,7 +18,7 @@ public enum ProjectionLineKind
     TraitBirth,
     Nearby,
     Essence,
-    StrainWarning,
+    StressWarning,
     Risk,
     Failure,
 }
@@ -91,8 +91,8 @@ public static class SemanticFormat
             lines.Add(new(ProjectionLineKind.Essence,
                 "Essence: " + string.Join(" · ", reading.Essence.Select(e => $"{e.Name} {Tiers.Word(e.Tier)}"))));
 
-        if (reading.VesselStrained)
-            lines.Add(new(ProjectionLineKind.StrainWarning,
+        if (reading.VesselStressed)
+            lines.Add(new(ProjectionLineKind.StressWarning,
                 "⚠ The vessel is strained — more essence than its resonance can hold"));
 
         foreach (var risk in RiskLine(reading).Split('\n'))
@@ -123,7 +123,7 @@ public static class SemanticFormat
             Trend.Falling => movement.CrossesTier ? "↓↓" : "↓",
             Trend.Fading => "▽",
             Trend.Vanishing => "✕",
-            Trend.Opposed => "⇄",
+            Trend.Conflicting => "⇄",
             Trend.Drifting => "≈",
             _ => "·",
         };
@@ -139,14 +139,14 @@ public static class SemanticFormat
     private static string RiskLine(CraftReading reading)
     {
         var substrate = reading.SubstrateName;
-        var wear = Tiers.WearWord(reading.Integrity.ProjectedIntegrity);
+        var wear = Tiers.WearWord(reading.Workability.ProjectedWorkability);
 
         return reading.Risk switch
         {
             RiskBand.Destroys =>
                 $"Risk: DESTROYS\n⚠ This will DESTROY the {substrate}. You will recover only byproducts.",
             RiskBand.Perilous =>
-                $"Risk: PERILOUS — {Percent(reading.Integrity.DestructionChance)} chance of destroying the {substrate}",
+                $"Risk: PERILOUS — {Percent(reading.Workability.DestructionChance)} chance of destroying the {substrate}",
             RiskBand.Strained =>
                 $"Risk: STRAINED — little budget would remain; the {substrate} would be {wear}",
             RiskBand.Costly =>
@@ -192,7 +192,7 @@ public static class SemanticFormat
             : " · " + string.Join(" · ", receptive.Select(ReceptivenessPhrase)));
 
         builder.AppendLine();
-        builder.Append(Tiers.WearWord(reading.Integrity))
+        builder.Append(Tiers.WearWord(reading.Workability))
             .Append(" · Expression ").Append(Tiers.Word(reading.Expression));
 
         foreach (var trait in reading.Traits)
@@ -208,7 +208,7 @@ public static class SemanticFormat
             builder.AppendLine();
             builder.Append("Essence: ").Append(string.Join(" · ",
                 reading.Essence.Select(e => $"{e.Name} {Tiers.Word(e.Tier)}")));
-            if (reading.VesselStrained)
+            if (reading.VesselStressed)
                 builder.Append(" — the vessel is strained");
         }
 
@@ -268,7 +268,7 @@ public static class SemanticFormat
             lines.Add($"Armour {reading.Armor:0.#}{resist}");
         }
 
-        // §6 hierarchy positions 3–4: innates (the genome speaking, D-21), then rolled mods.
+        // §6 hierarchy positions 3–4: innates (the item potential speaking, D-21), then rolled mods.
         foreach (var innate in reading.Innates)
             lines.Add($"Innate: {innate.Text}{DrawbackSuffix(innate)}");
 
@@ -334,7 +334,7 @@ public static class SemanticFormat
     /// <summary>"crit_chance" → "crit chance" — family slugs as words.</summary>
     public static string FamilyWord(string family) => family.Replace('_', ' ');
 
-    /// <summary>The pre-roll supports line: what this genome can carry, best ceiling first.
+    /// <summary>The pre-roll supports line: what this item potential can carry, best ceiling first.
     /// The engineering half of "engineer the casino, then spin it".</summary>
     public static string Supports(IReadOnlyList<GenomeSupport> supports)
     {
@@ -360,7 +360,7 @@ public static class SemanticFormat
     /// <summary>The pre-commit fabrication card: what would be made, shown through the same
     /// reading the minted item will produce.</summary>
     public static string Fabrication(
-        FabricationProjection projection, ItemReading reading, IReadOnlyList<GenomeSupport>? supports = null)
+        EquipmentAssemblyPreview projection, ItemReading reading, IReadOnlyList<GenomeSupport>? supports = null)
     {
         ArgumentNullException.ThrowIfNull(projection);
         ArgumentNullException.ThrowIfNull(reading);
@@ -379,12 +379,12 @@ public static class SemanticFormat
         return text;
     }
 
-    public static string FabricationFailureText(FabricationFailure failure) => failure switch
+    public static string FabricationFailureText(EquipmentAssemblyFailure failure) => failure switch
     {
-        FabricationFailure.None => string.Empty,
-        FabricationFailure.MissingSlot => "Choose a material for every slot.",
-        FabricationFailure.SlotRejected => "A slot will not take the material chosen for it.",
-        FabricationFailure.MissingInputs => "You do not have the materials.",
+        EquipmentAssemblyFailure.None => string.Empty,
+        EquipmentAssemblyFailure.MissingSlot => "Choose a material for every slot.",
+        EquipmentAssemblyFailure.SlotRejected => "A slot will not take the material chosen for it.",
+        EquipmentAssemblyFailure.MissingInputs => "You do not have the materials.",
         _ => "Unknown form or material.",
     };
 
@@ -428,39 +428,39 @@ public static class SemanticFormat
         _ => "lightly",
     };
 
-    public static string ApertureWord(ApertureBand band) => band switch
+    public static string ApertureWord(TraitExpressionBand band) => band switch
     {
-        ApertureBand.Full => "express fully",
-        ApertureBand.Partial => "express partly",
+        TraitExpressionBand.Full => "express fully",
+        TraitExpressionBand.Partial => "express partly",
         _ => "be muted here",
     };
 
     // ---- Process labels (§3 pickers) ----------------------------------------------------------
 
-    public static string Process(ProcessDefinition process, string professionName)
+    public static string Process(CraftingActionDefinition craftingAction, string professionName)
     {
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
 
-        var gate = process.IsUngated
+        var gate = craftingAction.IsUngated
             ? "any skill"
-            : $"{professionName} L{process.Requires.ProfessionLevel}";
+            : $"{professionName} L{craftingAction.Requires.ProfessionLevel}";
 
-        var works = process.Requires.SubstrateTags.Count == 0
+        var works = craftingAction.Requires.SubstrateTags.Count == 0
             ? "anything"
-            : string.Join(" or ", process.Requires.SubstrateTags.Select(TagWord));
+            : string.Join(" or ", craftingAction.Requires.SubstrateTags.Select(TagWord));
 
-        return $"{process.Name} — {SeverityWord(process.Severity)}; works {works}. {gate}";
+        return $"{craftingAction.Name} — {SeverityWord(craftingAction.Severity)}; works {works}. {gate}";
     }
 
-    public static string Channel(ProcessDefinition process, PropertyGlossary glossary)
+    public static string AffectedQualities(CraftingActionDefinition craftingAction, PropertyGlossary glossary)
     {
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
         ArgumentNullException.ThrowIfNull(glossary);
 
-        if (process.Channel.Count == 0)
+        if (craftingAction.AffectedQualities.Count == 0)
             return "(drives nothing)";
 
-        return "Drives " + string.Join(" · ", process.Channel
+        return "Drives " + string.Join(" · ", craftingAction.AffectedQualities
             .OrderByDescending(c => c.Rate)
             .ThenBy(c => c.Property, StringComparer.Ordinal)
             .Select(c => $"{glossary.Label(c.Property)} {RateWord(c.Rate)}"));

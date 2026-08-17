@@ -10,8 +10,8 @@
   {
     "id": "affix.innate_keen_edge", "name": "Keen Edge", "slot": "innate", "family": "innate_crit",
     "class": "innate", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 55 } ] },
-    "weight": { "base": 0, "scale": [ { "property": "hardness", "per10": 10 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 55 } ] },
+    "chance_weight": { "base": 0, "scale": [ { "property": "hardness", "per_ten_influence": 10 } ] },
     "tiers": [
       { "tier": 3, "requires": { "hardness": 55 }, "range": [0.02, 0.03] },
       { "tier": 2, "requires": { "hardness": 70 }, "range": [0.03, 0.05] },
@@ -23,8 +23,8 @@
   {
     "id": "affix.innate_massive", "name": "Massive", "slot": "innate", "family": "innate_force",
     "class": "innate", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "mass", "min": 55 } ] },
-    "weight": { "base": 0, "scale": [ { "property": "mass", "per10": 9 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "mass", "min": 55 } ] },
+    "chance_weight": { "base": 0, "scale": [ { "property": "mass", "per_ten_influence": 9 } ] },
     "tiers": [
       { "tier": 3, "requires": { "mass": 55 }, "range": [1.0, 2.0] },
       { "tier": 2, "requires": { "mass": 70 }, "range": [2.0, 3.5] },
@@ -36,8 +36,8 @@
   {
     "id": "affix.innate_resonant", "name": "Resonant", "slot": "innate", "family": "innate_mana",
     "class": "innate", "tags": ["character"],
-    "eligibility": { "requires": [ { "property": "resonance", "min": 45 } ] },
-    "weight": { "base": 0, "scale": [ { "property": "resonance", "per10": 10 } ] },
+    "availability": { "requires": [ { "property": "resonance", "min": 45 } ] },
+    "chance_weight": { "base": 0, "scale": [ { "property": "resonance", "per_ten_influence": 10 } ] },
     "tiers": [
       { "tier": 3, "requires": { "resonance": 45 }, "range": [5, 10] },
       { "tier": 2, "requires": { "resonance": 65 }, "range": [10, 18] },
@@ -49,8 +49,8 @@
   {
     "id": "affix.innate_supple", "name": "Supple", "slot": "innate", "family": "innate_stamina",
     "class": "innate", "tags": ["character"],
-    "eligibility": { "requires": [ { "property": "flexibility", "min": 50 } ] },
-    "weight": { "base": 0, "scale": [ { "property": "flexibility", "per10": 9 } ] },
+    "availability": { "requires": [ { "property": "flexibility", "min": 50 } ] },
+    "chance_weight": { "base": 0, "scale": [ { "property": "flexibility", "per_ten_influence": 9 } ] },
     "tiers": [
       { "tier": 3, "requires": { "flexibility": 50 }, "range": [4, 8] },
       { "tier": 2, "requires": { "flexibility": 68 }, "range": [8, 14] },
@@ -62,8 +62,8 @@
   {
     "id": "affix.innate_insulated", "name": "Insulated", "slot": "innate", "family": "innate_charge_resist",
     "class": "innate", "tags": ["defence", "lane:charge"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 45 } ] },
-    "weight": { "base": 0, "scale": [ { "property": "insulation", "per10": 10 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 45 } ] },
+    "chance_weight": { "base": 0, "scale": [ { "property": "insulation", "per_ten_influence": 10 } ] },
     "tiers": [
       { "tier": 3, "requires": { "insulation": 45 }, "range": [0.05, 0.08] },
       { "tier": 2, "requires": { "insulation": 65 }, "range": [0.08, 0.13] },
@@ -77,8 +77,8 @@
   {
     "id": "affix.brutal", "name": "Brutal", "slot": "prefix", "family": "flat_damage",
     "class": "standard", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "mass", "min": 30 } ] },
-    "weight": { "base": 30, "scale": [ { "property": "mass", "per10": 8 }, { "property": "hardness", "per10": 4 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "mass", "min": 30 } ] },
+    "chance_weight": { "base": 30, "scale": [ { "property": "mass", "per_ten_influence": 8 }, { "property": "hardness", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 4, "requires": { "mass": 30 }, "range": [0.5, 1.0] },
       { "tier": 3, "requires": { "mass": 45 }, "range": [1.0, 2.0] },
@@ -91,8 +91,8 @@
   {
     "id": "affix.honed", "name": "Honed", "slot": "prefix", "family": "increased_damage",
     "class": "standard", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 35 } ] },
-    "weight": { "base": 30, "scale": [ { "property": "hardness", "per10": 7 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 35 } ] },
+    "chance_weight": { "base": 30, "scale": [ { "property": "hardness", "per_ten_influence": 7 } ] },
     "tiers": [
       { "tier": 4, "requires": { "hardness": 35 }, "range": [1.04, 1.07] },
       { "tier": 3, "requires": { "hardness": 50 }, "range": [1.07, 1.11] },
@@ -105,8 +105,8 @@
   {
     "id": "affix.keen", "name": "Keen", "slot": "prefix", "family": "crit_chance",
     "class": "standard", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 40 } ] },
-    "weight": { "base": 22, "scale": [ { "property": "hardness", "per10": 6 }, { "property": "instability", "per10": 3 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 40 } ] },
+    "chance_weight": { "base": 22, "scale": [ { "property": "hardness", "per_ten_influence": 6 }, { "property": "instability", "per_ten_influence": 3 } ] },
     "tiers": [
       { "tier": 4, "requires": { "hardness": 40 }, "range": [0.02, 0.04] },
       { "tier": 3, "requires": { "hardness": 55 }, "range": [0.04, 0.06] },
@@ -119,8 +119,8 @@
   {
     "id": "affix.vicious", "name": "Vicious", "slot": "prefix", "family": "crit_damage",
     "class": "standard", "tags": ["offence"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 30 } ] },
-    "weight": { "base": 18, "scale": [ { "property": "instability", "per10": 6 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 30 } ] },
+    "chance_weight": { "base": 18, "scale": [ { "property": "instability", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 3, "requires": { "instability": 30 }, "range": [1.08, 1.15] },
       { "tier": 2, "requires": { "instability": 50 }, "range": [1.15, 1.25] },
@@ -132,8 +132,8 @@
   {
     "id": "affix.swift", "name": "Swift", "slot": "prefix", "family": "attack_speed",
     "class": "standard", "tags": ["offence", "tempo"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "flexibility", "min": 30 } ] },
-    "weight": { "base": 20, "scale": [ { "property": "flexibility", "per10": 7 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "flexibility", "min": 30 } ] },
+    "chance_weight": { "base": 20, "scale": [ { "property": "flexibility", "per_ten_influence": 7 } ] },
     "tiers": [
       { "tier": 3, "requires": { "flexibility": 30 }, "range": [0.96, 0.93] },
       { "tier": 2, "requires": { "flexibility": 50 }, "range": [0.93, 0.89] },
@@ -147,8 +147,8 @@
   {
     "id": "affix.serrated", "name": "Serrated", "slot": "prefix", "family": "bleed_on_hit",
     "class": "trigger", "tags": ["ailment", "lane:physical"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 45 } ] },
-    "weight": { "base": 20, "scale": [ { "property": "hardness", "per10": 5 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 45 } ] },
+    "chance_weight": { "base": 20, "scale": [ { "property": "hardness", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 3, "requires": { "hardness": 45 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "hardness": 62 }, "range": [0.10, 0.16] },
@@ -168,8 +168,8 @@
   {
     "id": "affix.searing", "name": "Searing", "slot": "prefix", "family": "burn_on_hit",
     "class": "trigger", "tags": ["ailment", "lane:heat"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "heat", "min": 35 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "heat", "per10": 8 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "heat", "min": 35 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "heat", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 3, "requires": { "heat": 35 }, "range": [0.05, 0.09] },
       { "tier": 2, "requires": { "heat": 55 }, "range": [0.09, 0.14] },
@@ -189,8 +189,8 @@
   {
     "id": "affix.venomcoat", "name": "Venomcoat", "slot": "prefix", "family": "poison_on_hit",
     "class": "trigger", "tags": ["ailment", "lane:toxin"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "toxicity", "min": 40 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "toxicity", "per10": 8 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "toxicity", "min": 40 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "toxicity", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 3, "requires": { "toxicity": 40 }, "range": [0.07, 0.12] },
       { "tier": 2, "requires": { "toxicity": 58 }, "range": [0.12, 0.18] },
@@ -210,8 +210,8 @@
   {
     "id": "affix.stormlaced", "name": "Stormlaced", "slot": "prefix", "family": "shock_on_hit",
     "class": "trigger", "tags": ["ailment", "lane:charge"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "charge", "min": 40 }, { "property": "conductivity", "min": 30 } ] },
-    "weight": { "base": 14, "scale": [ { "property": "charge", "per10": 7 }, { "property": "conductivity", "per10": 5 }, { "essence": "storm", "per10": 20 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "charge", "min": 40 }, { "property": "conductivity", "min": 30 } ] },
+    "chance_weight": { "base": 14, "scale": [ { "property": "charge", "per_ten_influence": 7 }, { "property": "conductivity", "per_ten_influence": 5 }, { "essence": "storm", "per_ten_influence": 20 } ] },
     "tiers": [
       { "tier": 3, "requires": { "charge": 40 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "charge": 60, "conductivity": 45 }, "range": [0.10, 0.16] },
@@ -231,8 +231,8 @@
   {
     "id": "affix.numbing", "name": "Numbing", "slot": "prefix", "family": "chill_on_hit",
     "class": "trigger", "tags": ["ailment", "lane:cold"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "cold", "min": 40 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "cold", "per10": 8 }, { "essence": "frost", "per10": 20 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "cold", "min": 40 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "cold", "per_ten_influence": 8 }, { "essence": "frost", "per_ten_influence": 20 } ] },
     "tiers": [
       { "tier": 3, "requires": { "cold": 40 }, "range": [0.08, 0.13] },
       { "tier": 2, "requires": { "cold": 60 }, "range": [0.13, 0.20] },
@@ -254,8 +254,8 @@
   {
     "id": "affix.stalwart", "name": "of Stone", "slot": "suffix", "family": "armour",
     "class": "standard", "tags": ["defence"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "hardness", "min": 30 } ] },
-    "weight": { "base": 30, "scale": [ { "property": "hardness", "per10": 7 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "hardness", "min": 30 } ] },
+    "chance_weight": { "base": 30, "scale": [ { "property": "hardness", "per_ten_influence": 7 } ] },
     "tiers": [
       { "tier": 4, "requires": { "hardness": 30 }, "range": [0.3, 0.6] },
       { "tier": 3, "requires": { "hardness": 45 }, "range": [0.6, 1.0] },
@@ -268,8 +268,8 @@
   {
     "id": "affix.warded_heat", "name": "of Embers Turned", "slot": "suffix", "family": "heat_resistance",
     "class": "standard", "tags": ["defence", "lane:heat"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "heat_resistance", "min": 25 } ] },
-    "weight": { "base": 18, "scale": [ { "property": "heat_resistance", "per10": 8 }, { "property": "insulation", "per10": 4 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "heat_resistance", "min": 25 } ] },
+    "chance_weight": { "base": 18, "scale": [ { "property": "heat_resistance", "per_ten_influence": 8 }, { "property": "insulation", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 3, "requires": { "heat_resistance": 25 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "heat_resistance": 45 }, "range": [0.10, 0.15] },
@@ -281,8 +281,8 @@
   {
     "id": "affix.warded_cold", "name": "of the Hearth", "slot": "suffix", "family": "cold_resistance",
     "class": "standard", "tags": ["defence", "lane:cold"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "cold_resistance", "min": 25 } ] },
-    "weight": { "base": 18, "scale": [ { "property": "cold_resistance", "per10": 8 }, { "property": "insulation", "per10": 4 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "cold_resistance", "min": 25 } ] },
+    "chance_weight": { "base": 18, "scale": [ { "property": "cold_resistance", "per_ten_influence": 8 }, { "property": "insulation", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 3, "requires": { "cold_resistance": 25 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "cold_resistance": 45 }, "range": [0.10, 0.15] },
@@ -294,8 +294,8 @@
   {
     "id": "affix.warded_toxin", "name": "of Clean Blood", "slot": "suffix", "family": "toxin_resistance",
     "class": "standard", "tags": ["defence", "lane:toxin"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "toxin_resistance", "min": 25 } ] },
-    "weight": { "base": 18, "scale": [ { "property": "toxin_resistance", "per10": 8 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "toxin_resistance", "min": 25 } ] },
+    "chance_weight": { "base": 18, "scale": [ { "property": "toxin_resistance", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 3, "requires": { "toxin_resistance": 25 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "toxin_resistance": 45 }, "range": [0.10, 0.15] },
@@ -307,8 +307,8 @@
   {
     "id": "affix.warded_charge", "name": "of Grounding", "slot": "suffix", "family": "charge_resistance",
     "class": "standard", "tags": ["defence", "lane:charge"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 35 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "insulation", "per10": 8 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 35 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "insulation", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 3, "requires": { "insulation": 35 }, "range": [0.06, 0.10] },
       { "tier": 2, "requires": { "insulation": 55 }, "range": [0.10, 0.15] },
@@ -320,8 +320,8 @@
   {
     "id": "affix.bulwark", "name": "of the Bulwark", "slot": "suffix", "family": "block_strength",
     "class": "standard", "tags": ["defence"],
-    "eligibility": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 35 }, { "property": "mass", "min": 25 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "hardness", "per10": 5 }, { "property": "mass", "per10": 4 } ] },
+    "availability": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 35 }, { "property": "mass", "min": 25 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "hardness", "per_ten_influence": 5 }, { "property": "mass", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 3, "requires": { "hardness": 35 }, "range": [1.08, 1.14] },
       { "tier": 2, "requires": { "hardness": 55 }, "range": [1.14, 1.22] },
@@ -335,8 +335,8 @@
   {
     "id": "affix.vital", "name": "of Vigour", "slot": "suffix", "family": "max_health",
     "class": "standard", "tags": ["character"],
-    "eligibility": { "requires": [ { "property": "mass", "min": 25 } ] },
-    "weight": { "base": 24, "scale": [ { "property": "mass", "per10": 5 }, { "property": "growth", "per10": 8 } ] },
+    "availability": { "requires": [ { "property": "mass", "min": 25 } ] },
+    "chance_weight": { "base": 24, "scale": [ { "property": "mass", "per_ten_influence": 5 }, { "property": "growth", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 4, "requires": { "mass": 25 }, "range": [4, 8] },
       { "tier": 3, "requires": { "mass": 42 }, "range": [8, 14] },
@@ -349,8 +349,8 @@
   {
     "id": "affix.attuned", "name": "of the Attuned", "slot": "suffix", "family": "max_mana",
     "class": "standard", "tags": ["character", "arcane"],
-    "eligibility": { "requires": [ { "property": "resonance", "min": 35 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "resonance", "per10": 8 }, { "property": "arcane", "per10": 5 } ] },
+    "availability": { "requires": [ { "property": "resonance", "min": 35 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "resonance", "per_ten_influence": 8 }, { "property": "arcane", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 3, "requires": { "resonance": 35 }, "range": [6, 12] },
       { "tier": 2, "requires": { "resonance": 55 }, "range": [12, 20] },
@@ -362,8 +362,8 @@
   {
     "id": "affix.enduring", "name": "of Long Roads", "slot": "suffix", "family": "max_stamina",
     "class": "standard", "tags": ["character"],
-    "eligibility": { "requires": [ { "property": "flexibility", "min": 30 } ] },
-    "weight": { "base": 20, "scale": [ { "property": "flexibility", "per10": 6 } ] },
+    "availability": { "requires": [ { "property": "flexibility", "min": 30 } ] },
+    "chance_weight": { "base": 20, "scale": [ { "property": "flexibility", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 3, "requires": { "flexibility": 30 }, "range": [5, 10] },
       { "tier": 2, "requires": { "flexibility": 50 }, "range": [10, 16] },
@@ -375,8 +375,8 @@
   {
     "id": "affix.brisk", "name": "of Second Wind", "slot": "suffix", "family": "stamina_regen",
     "class": "standard", "tags": ["resource"],
-    "eligibility": { "requires": [ { "property": "growth", "min": 20 } ] },
-    "weight": { "base": 14, "scale": [ { "property": "growth", "per10": 8 } ] },
+    "availability": { "requires": [ { "property": "growth", "min": 20 } ] },
+    "chance_weight": { "base": 14, "scale": [ { "property": "growth", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 2, "requires": { "growth": 20 }, "range": [0.10, 0.20] },
       { "tier": 1, "requires": { "growth": 45 }, "range": [0.20, 0.35] }
@@ -387,8 +387,8 @@
   {
     "id": "affix.clearmind", "name": "of Clear Water", "slot": "suffix", "family": "mana_regen",
     "class": "standard", "tags": ["resource", "arcane"],
-    "eligibility": { "requires": [ { "property": "resonance", "min": 30 } ] },
-    "weight": { "base": 14, "scale": [ { "property": "resonance", "per10": 7 } ] },
+    "availability": { "requires": [ { "property": "resonance", "min": 30 } ] },
+    "chance_weight": { "base": 14, "scale": [ { "property": "resonance", "per_ten_influence": 7 } ] },
     "tiers": [
       { "tier": 2, "requires": { "resonance": 30 }, "range": [0.10, 0.20] },
       { "tier": 1, "requires": { "resonance": 55 }, "range": [0.20, 0.35] }
@@ -399,8 +399,8 @@
   {
     "id": "affix.efficient", "name": "of Light Effort", "slot": "suffix", "family": "cost_reduction",
     "class": "standard", "tags": ["resource"],
-    "eligibility": { "requires": [ { "property": "flexibility", "min": 35 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "flexibility", "per10": 5 }, { "property": "affinity", "per10": 4 } ] },
+    "availability": { "requires": [ { "property": "flexibility", "min": 35 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "flexibility", "per_ten_influence": 5 }, { "property": "affinity", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 2, "requires": { "flexibility": 35 }, "range": [0.95, 0.90] },
       { "tier": 1, "requires": { "flexibility": 60 }, "range": [0.90, 0.84] }
@@ -413,8 +413,8 @@
   {
     "id": "affix.guardsman", "name": "of the Guardsman", "slot": "suffix", "family": "mana_on_block",
     "class": "trigger", "tags": ["resource", "trigger"],
-    "eligibility": { "forms_any": ["shield", "armor"], "requires": [ { "property": "resonance", "min": 25 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "resonance", "per10": 6 } ] },
+    "availability": { "forms_any": ["shield", "armor"], "requires": [ { "property": "resonance", "min": 25 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "resonance", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 2, "requires": { "resonance": 25 }, "range": [2, 4] },
       { "tier": 1, "requires": { "resonance": 50 }, "range": [4, 7] }
@@ -433,8 +433,8 @@
   {
     "id": "affix.executioner", "name": "of the Quiet Field", "slot": "suffix", "family": "heal_on_kill",
     "class": "trigger", "tags": ["recovery", "trigger"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "growth", "min": 25 } ] },
-    "weight": { "base": 10, "scale": [ { "property": "growth", "per10": 8 }, { "property": "decay", "per10": 5 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "growth", "min": 25 } ] },
+    "chance_weight": { "base": 10, "scale": [ { "property": "growth", "per_ten_influence": 8 }, { "property": "decay", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "growth": 25 }, "range": [3, 6] },
       { "tier": 1, "requires": { "growth": 50 }, "range": [6, 10] }
@@ -453,8 +453,8 @@
   {
     "id": "affix.hunters", "name": "of the Hunter", "slot": "suffix", "family": "stamina_on_kill",
     "class": "trigger", "tags": ["resource", "trigger"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "flexibility", "min": 25 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "flexibility", "per10": 5 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "flexibility", "min": 25 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "flexibility", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "flexibility": 25 }, "range": [4, 8] },
       { "tier": 1, "requires": { "flexibility": 50 }, "range": [8, 14] }
@@ -480,8 +480,8 @@
   {
     "id": "affix.bramble", "name": "Brambled", "slot": "suffix", "family": "thorns_flat",
     "class": "trigger", "tags": ["retaliation"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "hardness", "min": 35 } ] },
-    "weight": { "base": 20, "scale": [ { "property": "hardness", "per10": 6 }, { "property": "corrosion", "per10": 4 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "hardness", "min": 35 } ] },
+    "chance_weight": { "base": 20, "scale": [ { "property": "hardness", "per_ten_influence": 6 }, { "property": "corrosion", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 3, "requires": { "hardness": 35 }, "range": [1.5, 3.0] },
       { "tier": 2, "requires": { "hardness": 55 }, "range": [3.0, 5.0] },
@@ -501,8 +501,8 @@
   {
     "id": "affix.bulwark_spines", "name": "of Spines", "slot": "suffix", "family": "thorns_block",
     "class": "trigger", "tags": ["retaliation"],
-    "eligibility": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 45 } ] },
-    "weight": { "base": 16, "scale": [ { "property": "hardness", "per10": 6 } ] },
+    "availability": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 45 } ] },
+    "chance_weight": { "base": 16, "scale": [ { "property": "hardness", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 2, "requires": { "hardness": 45 }, "range": [4.0, 7.0] },
       { "tier": 1, "requires": { "hardness": 68 }, "range": [7.0, 12.0] }
@@ -521,8 +521,8 @@
   {
     "id": "affix.riposte_sting", "name": "of the Sidestep", "slot": "suffix", "family": "thorns_dodge",
     "class": "trigger", "tags": ["retaliation", "tempo"],
-    "eligibility": { "requires": [ { "property": "flexibility", "min": 40 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "flexibility", "per10": 6 } ] },
+    "availability": { "requires": [ { "property": "flexibility", "min": 40 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "flexibility", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 2, "requires": { "flexibility": 40 }, "range": [3.0, 6.0] },
       { "tier": 1, "requires": { "flexibility": 65 }, "range": [6.0, 10.0] }
@@ -541,8 +541,8 @@
   {
     "id": "affix.venom_barbs", "name": "of Barbs", "slot": "suffix", "family": "thorns_status",
     "class": "trigger", "tags": ["retaliation", "ailment", "lane:toxin"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "toxicity", "min": 35 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "toxicity", "per10": 8 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "toxicity", "min": 35 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "toxicity", "per_ten_influence": 8 } ] },
     "tiers": [
       { "tier": 2, "requires": { "toxicity": 35 }, "range": [0.10, 0.18] },
       { "tier": 1, "requires": { "toxicity": 60 }, "range": [0.18, 0.30] }
@@ -563,8 +563,8 @@
   {
     "id": "affix.ghoststep", "name": "of Ghoststep", "slot": "suffix", "family": "evade",
     "class": "standard", "tags": ["avoidance"],
-    "eligibility": { "forms_any": ["armor"], "requires": [ { "property": "flexibility", "min": 45 } ] },
-    "weight": { "base": 10, "scale": [ { "property": "flexibility", "per10": 5 } ] },
+    "availability": { "forms_any": ["armor"], "requires": [ { "property": "flexibility", "min": 45 } ] },
+    "chance_weight": { "base": 10, "scale": [ { "property": "flexibility", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "flexibility": 45 }, "range": [0.03, 0.06] },
       { "tier": 1, "requires": { "flexibility": 70 }, "range": [0.06, 0.10] }
@@ -575,8 +575,8 @@
   {
     "id": "affix.storm_veil", "name": "of the Storm Veil", "slot": "suffix", "family": "charge_avoidance",
     "class": "standard", "tags": ["avoidance", "lane:charge"],
-    "eligibility": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 45 }, { "property": "charge", "min": 25 } ] },
-    "weight": { "base": 8, "scale": [ { "property": "insulation", "per10": 5 }, { "essence": "storm", "per10": 15 } ] },
+    "availability": { "forms_any": ["armor", "shield"], "requires": [ { "property": "insulation", "min": 45 }, { "property": "charge", "min": 25 } ] },
+    "chance_weight": { "base": 8, "scale": [ { "property": "insulation", "per_ten_influence": 5 }, { "essence": "storm", "per_ten_influence": 15 } ] },
     "tiers": [
       { "tier": 2, "requires": { "insulation": 45 }, "range": [0.06, 0.10] },
       { "tier": 1, "requires": { "insulation": 70, "essence.storm": 20 }, "range": [0.10, 0.16] }
@@ -587,8 +587,8 @@
   {
     "id": "affix.rending", "name": "Rending", "slot": "prefix", "family": "penetration",
     "class": "standard", "tags": ["offence", "lane:physical"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 55 } ] },
-    "weight": { "base": 14, "scale": [ { "property": "hardness", "per10": 5 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "hardness", "min": 55 } ] },
+    "chance_weight": { "base": 14, "scale": [ { "property": "hardness", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "hardness": 55 }, "range": [0.08, 0.14] },
       { "tier": 1, "requires": { "hardness": 78 }, "range": [0.14, 0.22] }
@@ -601,8 +601,8 @@
   {
     "id": "affix.predators_eye", "name": "of the Predator", "slot": "suffix", "family": "stamina_on_crit",
     "class": "trigger", "tags": ["resource", "trigger"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 25 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "instability", "per10": 5 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 25 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "instability", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "instability": 25 }, "range": [3, 6] },
       { "tier": 1, "requires": { "instability": 50 }, "range": [6, 10] }
@@ -623,8 +623,8 @@
   {
     "id": "affix.riposte", "name": "of the Riposte", "slot": "suffix", "family": "thorns_parry",
     "class": "trigger", "tags": ["retaliation", "tempo"],
-    "eligibility": { "forms_any": ["parry", "shield"], "requires": [ { "property": "hardness", "min": 40 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "hardness", "per10": 5 }, { "property": "flexibility", "per10": 4 } ] },
+    "availability": { "forms_any": ["parry", "shield"], "requires": [ { "property": "hardness", "min": 40 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "hardness", "per_ten_influence": 5 }, { "property": "flexibility", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 2, "requires": { "hardness": 40 }, "range": [6.0, 10.0] },
       { "tier": 1, "requires": { "hardness": 62 }, "range": [10.0, 16.0] }
@@ -643,8 +643,8 @@
   {
     "id": "affix.reflection", "name": "of Reflection", "slot": "suffix", "family": "thorns_reflect",
     "class": "trigger", "tags": ["retaliation"],
-    "eligibility": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 40 }, { "property": "conductivity", "min": 25 } ] },
-    "weight": { "base": 10, "scale": [ { "property": "conductivity", "per10": 6 } ] },
+    "availability": { "forms_any": ["shield", "armor"], "requires": [ { "property": "hardness", "min": 40 }, { "property": "conductivity", "min": 25 } ] },
+    "chance_weight": { "base": 10, "scale": [ { "property": "conductivity", "per_ten_influence": 6 } ] },
     "tiers": [
       { "tier": 2, "requires": { "conductivity": 25 }, "range": [0.10, 0.18] },
       { "tier": 1, "requires": { "conductivity": 50 }, "range": [0.18, 0.30] }
@@ -663,8 +663,8 @@
   {
     "id": "affix.warded", "name": "of the Ward", "slot": "suffix", "family": "barrier_on_block",
     "class": "trigger", "tags": ["recovery", "trigger"],
-    "eligibility": { "forms_any": ["shield", "armor"], "requires": [ { "property": "growth", "min": 30 }, { "property": "resonance", "min": 25 } ] },
-    "weight": { "base": 10, "scale": [ { "property": "growth", "per10": 7 }, { "property": "resonance", "per10": 5 } ] },
+    "availability": { "forms_any": ["shield", "armor"], "requires": [ { "property": "growth", "min": 30 }, { "property": "resonance", "min": 25 } ] },
+    "chance_weight": { "base": 10, "scale": [ { "property": "growth", "per_ten_influence": 7 }, { "property": "resonance", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "growth": 30 }, "range": [4, 8] },
       { "tier": 1, "requires": { "growth": 55 }, "range": [8, 14] }
@@ -683,8 +683,8 @@
   {
     "id": "affix.lingering", "name": "of Lingering Harm", "slot": "prefix", "family": "status_potency",
     "class": "standard", "tags": ["ailment"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 30 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "instability", "per10": 5 }, { "property": "arcane", "per10": 4 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "instability", "min": 30 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "instability", "per_ten_influence": 5 }, { "property": "arcane", "per_ten_influence": 4 } ] },
     "tiers": [
       { "tier": 2, "requires": { "instability": 30 }, "range": [1.10, 1.20] },
       { "tier": 1, "requires": { "instability": 55 }, "range": [1.20, 1.35] }
@@ -695,8 +695,8 @@
   {
     "id": "affix.brief_suffering", "name": "of Brief Suffering", "slot": "suffix", "family": "status_duration",
     "class": "standard", "tags": ["defence"],
-    "eligibility": { "forms_any": ["armor"], "requires": [ { "property": "growth", "min": 20 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "growth", "per10": 6 }, { "property": "toxin_resistance", "per10": 5 } ] },
+    "availability": { "forms_any": ["armor"], "requires": [ { "property": "growth", "min": 20 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "growth", "per_ten_influence": 6 }, { "property": "toxin_resistance", "per_ten_influence": 5 } ] },
     "tiers": [
       { "tier": 2, "requires": { "growth": 20 }, "range": [0.85, 0.75] },
       { "tier": 1, "requires": { "growth": 45 }, "range": [0.75, 0.60] }
@@ -707,8 +707,8 @@
   {
     "id": "affix.emberbrand", "name": "Emberbrand", "slot": "prefix", "family": "move_heat",
     "class": "standard", "tags": ["offence", "lane:heat", "movemod"],
-    "eligibility": { "forms_any": ["weapon"], "requires": [ { "property": "heat", "min": 45 } ] },
-    "weight": { "base": 12, "scale": [ { "property": "heat", "per10": 7 }, { "essence": "fire", "per10": 15 } ] },
+    "availability": { "forms_any": ["weapon"], "requires": [ { "property": "heat", "min": 45 } ] },
+    "chance_weight": { "base": 12, "scale": [ { "property": "heat", "per_ten_influence": 7 }, { "essence": "fire", "per_ten_influence": 15 } ] },
     "tiers": [
       { "tier": 1, "requires": { "heat": 45 }, "range": [1, 1] }
     ],

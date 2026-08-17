@@ -15,8 +15,8 @@ public static class QuantizationTuning
     /// <summary>Property values are rounded to the nearest multiple of this before hashing.</summary>
     public const double PropertyBucket = 5.0;
 
-    /// <summary>Potency is rounded to the nearest multiple of this before hashing.</summary>
-    public const double PotencyBucket = 5.0;
+    /// <summary>MaterialStrength is rounded to the nearest multiple of this before hashing.</summary>
+    public const double MaterialStrengthBucket = 5.0;
 
     /// <summary>Lineage root weights are rounded to the nearest multiple of this (§12.1).</summary>
     public const double LineageWeightBucket = 0.10;

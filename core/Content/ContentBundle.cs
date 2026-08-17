@@ -18,11 +18,11 @@ public sealed class ContentBundle
 {
     public DataStore<MaterialDefinition> Materials { get; init; } = new();
     public DataStore<PropertyDefinition> Properties { get; init; } = new();
-    public DataStore<ProcessDefinition> Processes { get; init; } = new();
+    public DataStore<CraftingActionDefinition> CraftingActions { get; init; } = new();
     public DataStore<ByproductDefinition> Byproducts { get; init; } = new();
     public DataStore<TraitDefinition> Traits { get; init; } = new();
     public DataStore<EssenceDefinition> Essences { get; init; } = new();
-    public DataStore<FormTemplateDefinition> Forms { get; init; } = new();
+    public DataStore<EquipmentBlueprintDefinition> Forms { get; init; } = new();
     public DataStore<Affixes.AffixDefinition> Affixes { get; init; } = new();
     public DataStore<NameWordDefinition> NameGrammar { get; init; } = new();
     public DataStore<Modifiers.ModifierKeyDefinition> ModifierKeys { get; init; } = new();

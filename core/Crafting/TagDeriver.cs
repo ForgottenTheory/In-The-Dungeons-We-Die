@@ -10,7 +10,7 @@ namespace Dungeons.Crafting;
 /// a generation-5 material forty tags; deriving them keeps the count naturally around 6–9 and
 /// means tags always describe what the thing <i>is now</i>.</para>
 ///
-/// <para>Three sources, in priority order: what the process asserts, what the resulting state
+/// <para>Three sources, in priority order: what the crafting action asserts, what the resulting state
 /// implies, and a narrow lineage carry.</para>
 /// </summary>
 public sealed class TagDeriver
@@ -24,11 +24,11 @@ public sealed class TagDeriver
 
     public IReadOnlyList<string> Derive(
         IReadOnlyList<string> substrateTags,
-        ProcessDefinition process,
+        CraftingActionDefinition craftingAction,
         PropertySet result)
     {
         ArgumentNullException.ThrowIfNull(substrateTags);
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
         ArgumentNullException.ThrowIfNull(result);
 
         var tags = new List<string>(substrateTags);
@@ -38,21 +38,21 @@ public sealed class TagDeriver
         // the material is transformed into something else.
         tags.RemoveAll(t => IsFamily(t, TagFamilies.Part.Name));
 
-        // §4.2 source 1 — the process asserts. Clears run first so `form:*` can wipe the old
+        // §4.2 source 1 — the crafting action asserts. Clears run first so `form:*` can wipe the old
         // form before the new one is set, which is what stops a ground ingot being
         // simultaneously a powder and an ingot.
-        foreach (var clear in process.TagEffects.Clear)
+        foreach (var clear in craftingAction.TagEffects.Clear)
         {
             if (!TagFamilies.TryParse(clear, out var family, out var value))
                 continue;
 
-            if (value == ProcessTagEffects.ClearFamilyWildcard)
+            if (value == CraftingActionTagEffects.ClearFamilyWildcard)
                 tags.RemoveAll(t => IsFamily(t, family));
             else
                 tags.RemoveAll(t => string.Equals(t, clear, StringComparison.OrdinalIgnoreCase));
         }
 
-        tags.AddRange(process.TagEffects.Set);
+        tags.AddRange(craftingAction.TagEffects.Set);
 
         // §4.2 source 2 — state thresholds. Declared on the properties themselves, so a
         // material that ends up genuinely toxic is tagged venomous however it got there.

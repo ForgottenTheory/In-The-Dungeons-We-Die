@@ -4,7 +4,7 @@ using Dungeons.Crafting;
 namespace Dungeons.Presentation;
 
 /// <summary>An opposition pair the craft is fighting through (heat ⇄ cold).</summary>
-public sealed record OppositionReading(PropertyMovement Movement, string Opposite);
+public sealed record QualityConflictReading(PropertyMovement Movement, string Opposite);
 
 /// <summary>A trait the projected state would give birth to, by name.</summary>
 public sealed record TraitBirthReading(string TraitId, string Name, string Drawback);
@@ -12,8 +12,8 @@ public sealed record TraitBirthReading(string TraitId, string Name, string Drawb
 /// <summary>
 /// The pre-commit panel's view model (docs/presentation-architecture.md §3) — everything the
 /// player needs to hypothesize an outcome, grouped by what it means, with no raw values.
-/// Derived one-way from <see cref="CraftProjection"/>; the §6.2c guarantees ride on
-/// <see cref="Risk"/> and <see cref="Integrity"/> exactly as before.
+/// Derived one-way from <see cref="CraftPreview"/>; the §6.2c guarantees ride on
+/// <see cref="Risk"/> and <see cref="Workability"/> exactly as before.
 /// </summary>
 public sealed record CraftReading(
     bool CanCraft,
@@ -26,13 +26,13 @@ public sealed record CraftReading(
     IReadOnlyList<PropertyMovement> Strengthening,
     IReadOnlyList<PropertyMovement> Weakening,
     IReadOnlyList<PropertyMovement> WashingOut,
-    IReadOnlyList<OppositionReading> Opposition,
+    IReadOnlyList<QualityConflictReading> Opposition,
     IReadOnlyList<TraitBirthReading> TraitBirths,
     IReadOnlyList<NearbyTrait> NearbyTraits,
     IReadOnlyList<EssenceReading> Essence,
-    bool VesselStrained,
+    bool VesselStressed,
     RiskBand Risk,
-    IntegrityProjection Integrity);
+    WorkabilityProjection Workability);
 
 public static class CraftReadings
 {
@@ -41,20 +41,20 @@ public static class CraftReadings
         false, failure, substrateName, string.Empty, false,
         PropertyTier.None, 0,
         Array.Empty<PropertyMovement>(), Array.Empty<PropertyMovement>(),
-        Array.Empty<PropertyMovement>(), Array.Empty<OppositionReading>(),
+        Array.Empty<PropertyMovement>(), Array.Empty<QualityConflictReading>(),
         Array.Empty<TraitBirthReading>(), Array.Empty<NearbyTrait>(),
         Array.Empty<EssenceReading>(), false,
-        RiskBand.Safe, new IntegrityProjection(0, 0, 0, 0));
+        RiskBand.Safe, new WorkabilityProjection(0, 0, 0, 0));
 
     /// <summary>
     /// Builds the reading from a projection. <paramref name="substrateProfile"/> supplies the
-    /// before-state (trait diff, potency direction); content supplies names, opposition
+    /// before-state (trait diff, material strength direction); content supplies names, opposition
     /// partners and trait conditions. Pure and deterministic — same projection, same reading.
     /// </summary>
     public static CraftReading From(
-        CraftProjection projection,
+        CraftPreview projection,
         string substrateName,
-        MaterialProfile substrateProfile,
+        MaterialState substrateProfile,
         ContentBundle content)
     {
         ArgumentNullException.ThrowIfNull(projection);
@@ -62,7 +62,7 @@ public static class CraftReadings
         ArgumentNullException.ThrowIfNull(content);
 
         if (!projection.CanCraft)
-            return Failed(projection.Failure, substrateName) with { Integrity = projection.Integrity };
+            return Failed(projection.Failure, substrateName) with { Workability = projection.Workability };
 
         var movements = Trends.Aggregate(projection.StepResults);
         var glossary = new PropertyGlossary(content.Properties);
@@ -71,8 +71,8 @@ public static class CraftReadings
         var weakening = movements.Where(m => m.Trend == Trend.Falling).ToList();
         var washingOut = movements.Where(m => m.Trend is Trend.Fading or Trend.Vanishing).ToList();
         var opposition = movements
-            .Where(m => m.Trend == Trend.Opposed)
-            .Select(m => new OppositionReading(m, glossary.Opposes(m.Property) ?? "its opposite"))
+            .Where(m => m.Trend == Trend.Conflicting)
+            .Select(m => new QualityConflictReading(m, glossary.Opposes(m.Property) ?? "its opposite"))
             .ToList();
 
         var projected = projection.Projected;
@@ -107,7 +107,7 @@ public static class CraftReadings
                 .Select(e => new EssenceReading(e.Key, EssenceName(content, e.Key), Tiers.Of(e.Value)))
                 .ToList();
 
-            strained = EssenceTuning.Strain(
+            strained = EssenceTuning.Stress(
                 projected.Essence,
                 projected.Properties.Get(Dungeons.Items.ItemProperties.Resonance)) > 0;
         }
@@ -118,8 +118,8 @@ public static class CraftReadings
             substrateName,
             projection.ProjectedName,
             projection.WouldBeFirstDiscovery,
-            Tiers.Of(projection.ProjectedPotency),
-            Math.Sign(projection.ProjectedPotency - substrateProfile.Potency),
+            Tiers.Of(projection.ProjectedMaterialStrength),
+            Math.Sign(projection.ProjectedMaterialStrength - substrateProfile.MaterialStrength),
             strengthening,
             weakening,
             washingOut,
@@ -128,8 +128,8 @@ public static class CraftReadings
             nearby,
             essence,
             strained,
-            Risk.Of(projection.Integrity),
-            projection.Integrity);
+            Risk.Of(projection.Workability),
+            projection.Workability);
     }
 
     private static string EssenceName(ContentBundle content, string key)

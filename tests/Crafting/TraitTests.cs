@@ -170,7 +170,7 @@ public class TraitTests
         var lineage = new Lineage(
             new[] { new RootShare("material.iron_ore", 1.0) }, 2, "process.forge_infusion",
             new[] { "material.iron_ingot" });
-        var bare = new MaterialProfile(State(("hardness", 60)), 40, 70, lineage, string.Empty);
+        var bare = new MaterialState(State(("hardness", 60)), 40, 70, lineage, string.Empty);
         var tags = new[] { "form:metal", "state:alloy" };
 
         // Trait-less: the canonical string still carries an empty traits section — P1 ids hold.
@@ -221,7 +221,7 @@ public class TraitTests
         {
             Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
             Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
-            Processes = TestPaths.LoadStore<ProcessDefinition>("processes"),
+            CraftingActions = TestPaths.LoadStore<CraftingActionDefinition>("processes"),
             Byproducts = TestPaths.LoadStore<ByproductDefinition>("byproducts"),
             NameGrammar = TestPaths.LoadStore<NameWordDefinition>("name_grammar"),
             Traits = TestPaths.LoadStore<TraitDefinition>("traits"),
@@ -231,9 +231,9 @@ public class TraitTests
         inventory.Add("material.ember_core", 10);
 
         var registry = new EmergentRegistry(content.Materials);
-        var engine = new ReactionEngine(
+        var engine = new MaterialTransformationEngine(
             content, () => inventory,
-            new MaterialProfileResolver(content.Properties),
+            new MaterialStateResolver(content.Properties),
             registry,
             new NameGenerator(content.Materials, content.Properties, content.NameGrammar),
             new TagDeriver(content.Properties),
@@ -245,22 +245,22 @@ public class TraitTests
         // Convergence pulls heat toward the reagent's a step at a time (34 → 56 → ~70), so
         // three infusions cross Emberveined's heat-60 threshold. Read the trace, not just
         // the asserts — the failure message prints it.
-        var result = engine.Resolve(
+        var result = engine.RunCraft(
             new CraftRequest("process.forge_infusion", "material.iron_ingot", new[] { "material.ember_core" }));
         Assert.True(result.Success, result.Failure.ToString());
         for (var i = 0; i < 2; i++)
         {
-            result = engine.Resolve(
+            result = engine.RunCraft(
                 new CraftRequest("process.forge_infusion", result.ResultItemId!, new[] { "material.ember_core" }));
             Assert.True(result.Success, result.Failure.ToString());
         }
 
         var archetypes = registry.All.ToList();
-        var traited = archetypes.FirstOrDefault(m => m.Profile is { Traits.Count: > 0 });
+        var traited = archetypes.FirstOrDefault(m => m.State is { Traits.Count: > 0 });
 
         Assert.True(traited is not null,
             "expected at least one archetype to carry a trait after stacking heat into iron; " +
             "trace of the last craft:\n" + result.Log);
-        Assert.Contains(traited!.Profile!.Traits, t => t.Id == "trait.emberveined");
+        Assert.Contains(traited!.State!.Traits, t => t.Id == "trait.emberveined");
     }
 }

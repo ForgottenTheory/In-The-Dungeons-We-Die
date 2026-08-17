@@ -691,3 +691,67 @@ lands** (D21).
 | Files, classes and call flow | `docs/code-map.md` §10.4–10.6 |
 | The rest of the game | `docs/game-overview.md` |
 | Why a decision was made, and what was rejected | `DECISIONS.md` — D7, D20, D21, D28, D29, D30 |
+
+---
+
+# 15. Design words vs code names
+
+**The design vocabulary did not change. The code vocabulary did.**
+
+Everything above — and everything in the GDD, the player-facing UI and the Reaction Log — uses
+the *design* words. The C# uses plainer, more literal names, because a developer opening
+`core/Crafting/` should not have to learn the fiction first. When the two differ, this table is
+the bridge.
+
+| Design / player word | C# name | Where |
+|---|---|---|
+| a material's crafting state | `MaterialState` | `core/Content/MaterialState.cs` |
+| the reaction engine | `MaterialTransformationEngine` | `core/Crafting/` |
+| the algebra | `MaterialTransformationRules` | `core/Crafting/` |
+| Process | `CraftingActionDefinition` | `core/Content/` |
+| Channel | `AffectedQualities` | on `CraftingActionDefinition` |
+| Acceptance (from `affinity`) | `Compatibility` | `TransferCoefficients` |
+| Release | `TransferStrength` | `TransferCoefficients` |
+| Opposition | `QualityConflict` | `PropertyChangeKind` |
+| Strain | `ReactionStress` / `Stress(...)` | `EssenceTuning`, step results |
+| **Integrity** | **`Workability`** | `MaterialState`, `WorkabilityCalculator` |
+| **Potency** | **`MaterialStrength`** | `MaterialState`, `MaterialStrengthCalculator` |
+| Fabrication | `EquipmentAssemblyEngine` | `core/Crafting/` |
+| Form | `EquipmentBlueprintDefinition` | `core/Crafting/` |
+| Aperture | `TraitExpression` | on `BlueprintSlot` |
+| **Genome** | **`ItemPotential`** | `core/Crafting/ItemPotential.cs` |
+| Pressure | `MaterialInfluence` | on `ItemPotential` |
+| eligibility | `Availability` / `IsAvailableFor` | `ModifierGenerator` |
+| weight | `ChanceWeight` / `ChanceWeightFor` | `ModifierGenerator` |
+| tier ceiling | `MaximumModifierTier` | `ModifierGenerator` |
+| the affix roller | `ModifierGenerator` | `core/Affixes/` |
+
+**Three things deliberately did *not* move:**
+
+1. **Player-facing text still says Potency, Integrity and process.** The Reaction Log renders
+   `Integrity 90 → 87` and `Potency 40, 70 → 49` exactly as before — changing displayed wording
+   would be a UX change, not a readability one.
+2. **Save keys still say `Potency`, `Integrity`, `Genome`, `Pressure`, `FormId`, `ProcessId`.**
+   `core/Persistence/SaveData.cs` was not touched at all, so every existing save still loads.
+   `SaveMapper` is where old key meets new name, and each such line carries a comment saying so.
+3. **Content ids still say `process.*` and `form.*`**, and the `form:` tag family is untouched —
+   they are referenced across JSON *and* by save data.
+
+Four content **JSON keys** were renamed alongside their C# property, in the same commit:
+`channel` → `affected_qualities`, `aperture` → `trait_expression`, `eligibility` →
+`availability`, `weight` → `chance_weight` (affixes only), `per10` → `per_ten_influence`.
+These live in shipped content files, never in a save.
+
+## The reading path
+
+```
+MaterialState              what a material currently is
+      ↓
+MaterialTransformationEngine   turn it into a different material   (loop — output is a material)
+      ↓
+EquipmentAssemblyEngine        turn materials into an item         (door — terminal)
+      ↓
+ItemPotential                  what that item is capable of
+      ↓
+ModifierGenerator              which modifiers it actually gets
+```

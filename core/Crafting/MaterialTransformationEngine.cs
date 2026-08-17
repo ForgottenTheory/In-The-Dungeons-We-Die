@@ -4,34 +4,36 @@ using Dungeons.Randomness;
 
 namespace Dungeons.Crafting;
 
-/// <summary>Resolves crafts and projects their cost before the player commits (§18).</summary>
-public interface IReactionEngine
+/// <summary>Turns one material into another, and shows the cost before the player commits (§18).</summary>
+public interface IMaterialTransformationEngine
 {
     /// <summary>What the craft would do, without doing it (§6.2c).</summary>
-    CraftProjection Project(CraftRequest request);
+    CraftPreview PreviewCraft(CraftRequest request);
 
     /// <summary>Runs the craft: consumes the inputs, registers the result, deposits it.</summary>
-    CraftOutcome Resolve(CraftRequest request);
+    CraftOutcome RunCraft(CraftRequest request);
 }
 
 /// <summary>
-/// The universal crafting pipeline (docs/emergent-item-system.md §8.7) — the thing that
-/// replaces recipe matching entirely.
+/// Takes a <see cref="MaterialState"/> and a <see cref="CraftingActionDefinition"/> and produces
+/// a new material — the universal pipeline (docs/emergent-item-system.md §8.7) that replaces
+/// recipe matching entirely.
 ///
 /// <para>There are <b>no recipes and no per-combination rules</b>. Every combination of
-/// substrate, reagents and process produces a result, computed the same way every time:
-/// gate → converge → drift → oppose → charge integrity → derive tags → compute potency →
-/// quantize → register → name. Authored content is seven processes and a name grammar.</para>
+/// substrate, reagents and crafting action produces a result, computed the same way every time:
+/// accept the request → for each reagent, apply <see cref="MaterialTransformationRules"/> →
+/// spend workability → apply variance → birth traits → derive tags → compute material strength →
+/// quantize into a signature → register → name it.</para>
 ///
 /// <para>Deterministic apart from the variance perturbation (§12.3), which draws from the
-/// injected <see cref="IRandomSource"/> — so <see cref="Project"/> can run the identical
-/// pipeline with variance switched off and show the player exactly what to expect.</para>
+/// injected <see cref="IRandomSource"/> — so <see cref="PreviewCraft"/> runs the identical
+/// pipeline with variance switched off and shows the player exactly what to expect.</para>
 /// </summary>
-public sealed class ReactionEngine : IReactionEngine
+public sealed class MaterialTransformationEngine : IMaterialTransformationEngine
 {
     private readonly ContentBundle _content;
     private readonly Func<Inventory> _inventory;
-    private readonly MaterialProfileResolver _profiles;
+    private readonly MaterialStateResolver _materialStates;
     private readonly IEmergentRegistry _registry;
     private readonly NameGenerator _names;
     private readonly TagDeriver _tags;
@@ -40,10 +42,10 @@ public sealed class ReactionEngine : IReactionEngine
     private readonly Func<string, int> _professionLevel;
     private readonly IRandomSource _random;
 
-    public ReactionEngine(
+    public MaterialTransformationEngine(
         ContentBundle content,
         Func<Inventory> inventory,
-        MaterialProfileResolver profiles,
+        MaterialStateResolver materialStates,
         IEmergentRegistry registry,
         NameGenerator names,
         TagDeriver tags,
@@ -54,7 +56,7 @@ public sealed class ReactionEngine : IReactionEngine
     {
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
-        _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
+        _materialStates = materialStates ?? throw new ArgumentNullException(nameof(materialStates));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _names = names ?? throw new ArgumentNullException(nameof(names));
         _tags = tags ?? throw new ArgumentNullException(nameof(tags));
@@ -64,28 +66,29 @@ public sealed class ReactionEngine : IReactionEngine
         _random = random ?? throw new ArgumentNullException(nameof(random));
     }
 
-    public CraftProjection Project(CraftRequest request)
+    public CraftPreview PreviewCraft(CraftRequest request)
     {
         var accepted = AcceptRequest(request);
         if (accepted.Failure != CraftFailure.None)
-            return CraftProjection.Failed(accepted.Failure);
+            return CraftPreview.Failed(accepted.Failure);
 
         // Variance off: the projection shows the outcome the player is aiming at, and the
         // spread is reported separately as a destruction chance rather than baked into it.
         var reaction = RunReaction(accepted, applyVariance: false);
 
-        return new CraftProjection(
+        return new CraftPreview(
             CraftFailure.None,
-            IntegrityCalculator.Project(accepted.SubstrateProfile.Integrity, reaction.TotalCost, reaction.VarianceMagnitude),
-            reaction.Potency,
-            _names.Generate(reaction.Profile, reaction.Tags, NameIsTaken),
+            WorkabilityCalculator.ProjectRemaining(
+                accepted.SubstrateState.Workability, reaction.TotalCost, reaction.VarianceMagnitude),
+            reaction.MaterialStrength,
+            _names.Generate(reaction.State, reaction.Tags, NameIsTaken),
             WouldBeFirstDiscovery: !_registry.Contains(reaction.Signature),
             Preview: reaction.Log,
-            Projected: reaction.Profile,
+            Projected: reaction.State,
             Steps: reaction.Steps);
     }
 
-    public CraftOutcome Resolve(CraftRequest request)
+    public CraftOutcome RunCraft(CraftRequest request)
     {
         var accepted = AcceptRequest(request);
         if (accepted.Failure != CraftFailure.None)
@@ -104,7 +107,7 @@ public sealed class ReactionEngine : IReactionEngine
         if (reaction.Destroyed)
         {
             // §6.2c: destruction is terminal, but never total loss.
-            var byproduct = _byproducts.Resolve(reaction.Tags, request.Quantity);
+            var byproduct = _byproducts.ByproductFor(reaction.Tags, request.Quantity);
             var byproducts = new List<ItemStack>();
 
             if (byproduct is not null)
@@ -113,22 +116,25 @@ public sealed class ReactionEngine : IReactionEngine
                 byproducts.Add(byproduct.Value);
             }
 
-            log.Destroyed(accepted.Substrate.Name, byproduct is null ? null : MaterialName(byproduct.Value.ItemId), request.Quantity);
+            log.Destroyed(
+                accepted.Substrate.Name,
+                byproduct is null ? null : MaterialName(byproduct.Value.ItemId),
+                request.Quantity);
 
             return new CraftOutcome(
                 CraftFailure.None, null, accepted.Substrate.Name, 0,
                 IsFirstDiscovery: false, WasDestroyed: true, byproducts, log.Build());
         }
 
-        var name = _names.Generate(reaction.Profile, reaction.Tags, NameIsTaken);
+        var name = _names.Generate(reaction.State, reaction.Tags, NameIsTaken);
         var registration = _registry.GetOrRegister(reaction.Signature, () => new MaterialDefinition
         {
             Id = reaction.Signature,
             Name = name,
             Tags = reaction.Tags,
-            Properties = new Dictionary<string, double>(reaction.Profile.Properties.AsDictionary()),
-            Essence = new Dictionary<string, double>(reaction.Profile.Essence),
-            Profile = reaction.Profile,
+            Properties = new Dictionary<string, double>(reaction.State.Properties.AsDictionary()),
+            Essence = new Dictionary<string, double>(reaction.State.Essence),
+            State = reaction.State,
         });
 
         inventory.Add(registration.Definition.Id, request.Quantity);
@@ -154,8 +160,8 @@ public sealed class ReactionEngine : IReactionEngine
         if (request.Quantity <= 0)
             return AcceptedCraft.Rejected(CraftFailure.InvalidQuantity);
 
-        if (!_content.Processes.TryGetById(request.ProcessId, out var process))
-            return AcceptedCraft.Rejected(CraftFailure.UnknownProcess);
+        if (!_content.CraftingActions.TryGetById(request.CraftingActionId, out var craftingAction))
+            return AcceptedCraft.Rejected(CraftFailure.UnknownCraftingAction);
 
         if (request.ReagentIds.Count == 0)
             return AcceptedCraft.Rejected(CraftFailure.NoReagents);
@@ -179,10 +185,10 @@ public sealed class ReactionEngine : IReactionEngine
             catalyst = found;
         }
 
-        if (!process.IsUngated && _professionLevel(process.Profession) < process.Requires.ProfessionLevel)
+        if (!craftingAction.IsUngated && _professionLevel(craftingAction.Profession) < craftingAction.Requires.ProfessionLevel)
             return AcceptedCraft.Rejected(CraftFailure.ProfessionTooLow);
 
-        foreach (var required in process.Requires.SubstrateTags)
+        foreach (var required in craftingAction.Requires.SubstrateTags)
         {
             if (!substrate.Tags.Contains(required, StringComparer.OrdinalIgnoreCase))
                 return AcceptedCraft.Rejected(CraftFailure.SubstrateRejected);
@@ -192,8 +198,8 @@ public sealed class ReactionEngine : IReactionEngine
             return AcceptedCraft.Rejected(CraftFailure.MissingInputs);
 
         return new AcceptedCraft(
-            CraftFailure.None, request, process, substrate, reagents, catalyst,
-            _profiles.Resolve(substrate));
+            CraftFailure.None, request, craftingAction, substrate, reagents, catalyst,
+            _materialStates.StateOf(substrate));
     }
 
     private bool HasInputs(CraftRequest request, MaterialDefinition? catalyst)
@@ -220,63 +226,64 @@ public sealed class ReactionEngine : IReactionEngine
     private ReactionRun RunReaction(AcceptedCraft accepted, bool applyVariance)
     {
         var request = accepted.Request;
-        var process = accepted.Process;
+        var craftingAction = accepted.Process;
         var log = new ReactionLogBuilder(_content.Properties);
 
-        var materialState = accepted.SubstrateProfile.Properties;
+        var materialState = accepted.SubstrateState.Properties;
         var essence = (IReadOnlyDictionary<string, double>)new Dictionary<string, double>(
-            accepted.SubstrateProfile.Essence, StringComparer.OrdinalIgnoreCase);
-        var integrity = accepted.SubstrateProfile.Integrity;
+            accepted.SubstrateState.Essence, StringComparer.OrdinalIgnoreCase);
+        var workability = accepted.SubstrateState.Workability;
         var totalCost = 0.0;
         var destroyed = false;
         var craftQuality = 0.0;
         var varianceMagnitude = 0.0;
-        var steps = new List<ReactionStepResult>();
+        var steps = new List<TransformationStepResult>();
 
         foreach (var reagent in accepted.Reagents)
         {
-            // Quality is recomputed each step: as integrity falls the material grows less
+            // Quality is recomputed each step: as workability falls the material grows less
             // predictable, so the same crafter has less control over step three than step one.
             // Strained essence (§5.3) feeds the same instability — an overloaded vessel is a
             // wilder vessel, which is the whole "attune first, then infuse" lesson.
-            var effectiveInstability = IntegrityCalculator.EffectiveInstability(
-                materialState.Get(ItemProperties.Instability), integrity,
-                EssenceTuning.Strain(essence, materialState.Get(ItemProperties.Resonance)));
+            var effectiveInstability = WorkabilityCalculator.EffectiveInstability(
+                materialState.Get(ItemProperties.Instability), workability,
+                EssenceTuning.Stress(essence, materialState.Get(ItemProperties.Resonance)));
 
             craftQuality = CraftQuality.Normalised(
-                process.IsUngated ? 0 : _professionLevel(process.Profession),
+                craftingAction.IsUngated ? 0 : _professionLevel(craftingAction.Profession),
                 effectiveInstability,
                 request.Performance);
 
-            varianceMagnitude = IntegrityCalculator.VarianceMagnitude(effectiveInstability, craftQuality, process.Severity);
+            varianceMagnitude = WorkabilityCalculator.VarianceMagnitude(
+                effectiveInstability, craftQuality, craftingAction.Severity);
 
-            var step = ReactionAlgebra.ApplyReagent(
-                materialState, reagent.BaseProperties, process, _content.Properties, integrity,
-                PotencyCalculator.QualityMultiplier(craftQuality),
+            var step = MaterialTransformationRules.ApplyReagent(
+                materialState, reagent.BaseProperties, craftingAction, _content.Properties, workability,
+                MaterialStrengthCalculator.QualityMultiplier(craftQuality),
                 CatalystFactor(accepted.Catalyst));
 
             // Essence rides beside the property algebra (§8.4): additive transfer at the
-            // process's essence_rate, opposition annihilating the overlap into strain.
+            // crafting action's essence_rate, opposition annihilating the overlap into strain.
             var essenceStep = EssenceAlgebra.Apply(
-                essence, _profiles.Resolve(reagent).Essence, process, step.Coefficients, _content.Essences);
+                essence, _materialStates.StateOf(reagent).Essence, craftingAction, step.Coefficients, _content.Essences);
 
-            var cost = IntegrityCalculator.Cost(
-                step.StateDelta, process.Severity,
-                step.StrainReleased + essenceStep.StrainReleased, craftQuality);
-            var integrityAfterStep = IntegrityCalculator.Apply(integrity, cost);
+            var cost = WorkabilityCalculator.Cost(
+                step.StateDelta, craftingAction.Severity,
+                step.StressReleased + essenceStep.StressReleased, craftQuality);
+            var workabilityAfterStep = WorkabilityCalculator.Apply(workability, cost);
 
             log.Step(new ReactionStepContext(
-                process, accepted.Substrate.Name, reagent.Name,
-                materialState, reagent.BaseProperties, step, integrity, integrityAfterStep, cost));
+                craftingAction, accepted.Substrate.Name, reagent.Name,
+                materialState, reagent.BaseProperties, step, workability, workabilityAfterStep, cost));
             log.Essence(essenceStep);
             steps.Add(step);
 
             materialState = step.Properties;
             essence = essenceStep.Essence;
             totalCost += cost;
-            integrity = integrityAfterStep;
+            workability = workabilityAfterStep;
 
-            if (integrity <= 0)
+            if (workability <= 0)
             {
                 destroyed = true;
                 break;
@@ -284,41 +291,41 @@ public sealed class ReactionEngine : IReactionEngine
         }
 
         // §5.3 — the standing warning on the result, not just a step artifact.
-        var finalStrain = EssenceTuning.Strain(essence, materialState.Get(ItemProperties.Resonance));
-        if (!destroyed && finalStrain > 0)
-            log.EssenceStrain(
+        var finalStress = EssenceTuning.Stress(essence, materialState.Get(ItemProperties.Resonance));
+        if (!destroyed && finalStress > 0)
+            log.EssenceStress(
                 essence.Values.Sum(),
                 EssenceTuning.Capacity(materialState.Get(ItemProperties.Resonance)),
                 materialState.Get(ItemProperties.Resonance));
 
         if (applyVariance)
-            materialState = VariancePerturbation.Apply(materialState, process, varianceMagnitude, _random);
+            materialState = VariancePerturbation.Apply(materialState, craftingAction, varianceMagnitude, _random);
 
-        var traitPass = ApplyTraitPass(accepted, materialState, integrity, totalCost, destroyed, log);
+        var traitPass = ApplyTraitPass(accepted, materialState, workability, totalCost, destroyed, log);
         materialState = traitPass.MaterialState;
-        integrity = traitPass.Integrity;
+        workability = traitPass.Workability;
         totalCost = traitPass.TotalCost;
         destroyed = traitPass.Destroyed;
 
         // Tags derive from the post-trait state: a trait's consumption can drop a property
         // back through a grants_tags threshold, and the tag should tell the truth.
-        var tags = _tags.Derive(accepted.Substrate.Tags, process, materialState);
+        var tags = _tags.Derive(accepted.Substrate.Tags, craftingAction, materialState);
 
-        var reagentPotencies = accepted.Reagents.Select(r => _profiles.Resolve(r).Potency).ToList();
-        var potency = PotencyCalculator.Compute(
-            accepted.SubstrateProfile.Potency,
+        var reagentPotencies = accepted.Reagents.Select(r => _materialStates.StateOf(r).MaterialStrength).ToList();
+        var materialStrength = MaterialStrengthCalculator.Compute(
+            accepted.SubstrateState.MaterialStrength,
             reagentPotencies,
-            accepted.Catalyst is null ? null : _profiles.Resolve(accepted.Catalyst).Potency,
-            process.RoleWeights,
-            PotencyCalculator.QualityMultiplier(craftQuality),
+            accepted.Catalyst is null ? null : _materialStates.StateOf(accepted.Catalyst).MaterialStrength,
+            craftingAction.RoleWeights,
+            MaterialStrengthCalculator.QualityMultiplier(craftQuality),
             craftQuality);
 
         if (!destroyed)
-            log.Potency(accepted.SubstrateProfile.Potency, reagentPotencies, potency);
+            log.MaterialStrength(accepted.SubstrateState.MaterialStrength, reagentPotencies, materialStrength);
 
-        var profile = new MaterialProfile(
-            materialState, potency, integrity,
-            MergeLineage(accepted, process),
+        var profile = new MaterialState(
+            materialState, materialStrength, workability,
+            MergeLineage(accepted, craftingAction),
             Signature: string.Empty)
         {
             Traits = traitPass.Resolution.Traits,
@@ -328,7 +335,7 @@ public sealed class ReactionEngine : IReactionEngine
         var signature = MaterialSignature.Compute(profile, tags);
 
         return new ReactionRun(
-            profile with { Signature = signature }, tags, signature, potency,
+            profile with { Signature = signature }, tags, signature, materialStrength,
             totalCost, varianceMagnitude, destroyed, log, steps);
     }
 
@@ -336,7 +343,7 @@ public sealed class ReactionEngine : IReactionEngine
     /// The §10 trait pass, run once the property state has settled (variance included, so a
     /// lucky or unlucky roll can cross a threshold): birth → supersede → cap.
     ///
-    /// <para>Births eat properties and charge integrity (§6.2a: <c>traits_created × 4</c>), which
+    /// <para>Births eat properties and charge workability (§6.2a: <c>traits_created × 4</c>), which
     /// can itself destroy the material — the best traits live in high-variance states, and
     /// reaching for them is a genuine gamble. Skipped entirely when the reagent loop already
     /// destroyed the material.</para>
@@ -344,7 +351,7 @@ public sealed class ReactionEngine : IReactionEngine
     private TraitPass ApplyTraitPass(
         AcceptedCraft accepted,
         PropertySet materialState,
-        int integrity,
+        int workability,
         double totalCost,
         bool destroyed,
         ReactionLogBuilder log)
@@ -352,32 +359,32 @@ public sealed class ReactionEngine : IReactionEngine
         if (destroyed)
         {
             var unchanged = new TraitResolution(
-                accepted.SubstrateProfile.Traits, materialState,
+                accepted.SubstrateState.Traits, materialState,
                 Array.Empty<TraitInstance>(),
                 Array.Empty<(TraitInstance, TraitInstance, TraitInstance)>(),
                 Array.Empty<TraitInstance>());
-            return new TraitPass(unchanged, materialState, integrity, totalCost, Destroyed: true);
+            return new TraitPass(unchanged, materialState, workability, totalCost, Destroyed: true);
         }
 
-        var resolution = _traitResolver.Apply(materialState, accepted.SubstrateProfile.Traits);
+        var resolution = _traitResolver.Apply(materialState, accepted.SubstrateState.Traits);
         log.Traits(resolution, _traitResolver.TraitName);
 
         if (resolution.TraitsCreated == 0)
-            return new TraitPass(resolution, resolution.Properties, integrity, totalCost, Destroyed: false);
+            return new TraitPass(resolution, resolution.Properties, workability, totalCost, Destroyed: false);
 
         var traitCost = resolution.TraitsCreated * RefinementTuning.TraitCost;
-        var integrityAfterTraits = IntegrityCalculator.Apply(integrity, traitCost);
+        var workabilityAfterTraits = WorkabilityCalculator.Apply(workability, traitCost);
 
         return new TraitPass(
-            resolution, resolution.Properties, integrityAfterTraits, totalCost + traitCost,
-            Destroyed: integrityAfterTraits <= 0);
+            resolution, resolution.Properties, workabilityAfterTraits, totalCost + traitCost,
+            Destroyed: workabilityAfterTraits <= 0);
     }
 
     /// <summary>What the trait pass produced, plus the running totals it changed.</summary>
     private sealed record TraitPass(
         TraitResolution Resolution,
         PropertySet MaterialState,
-        int Integrity,
+        int Workability,
         double TotalCost,
         bool Destroyed);
 
@@ -386,7 +393,7 @@ public sealed class ReactionEngine : IReactionEngine
     /// dropped. Parent links stay one level deep; the full tree is walked through the registry
     /// rather than embedded, which is the whole answer to "lineage without becoming enormous".
     /// </summary>
-    private Lineage MergeLineage(AcceptedCraft accepted, ProcessDefinition process)
+    private Lineage MergeLineage(AcceptedCraft accepted, CraftingActionDefinition craftingAction)
     {
         var weights = new Dictionary<string, double>(StringComparer.Ordinal);
 
@@ -396,13 +403,13 @@ public sealed class ReactionEngine : IReactionEngine
                 weights[root.RootId] = weights.GetValueOrDefault(root.RootId) + root.Weight * share;
         }
 
-        Contribute(accepted.SubstrateProfile.Lineage, process.RoleWeights.Substrate);
+        Contribute(accepted.SubstrateState.Lineage, craftingAction.RoleWeights.Substrate);
 
         var perReagent = accepted.Reagents.Count == 0
             ? 0.0
-            : process.RoleWeights.Reagent / accepted.Reagents.Count;
+            : craftingAction.RoleWeights.Reagent / accepted.Reagents.Count;
         foreach (var reagent in accepted.Reagents)
-            Contribute(_profiles.Resolve(reagent).Lineage, perReagent);
+            Contribute(_materialStates.StateOf(reagent).Lineage, perReagent);
 
         var total = weights.Values.Sum();
         var roots = weights
@@ -419,13 +426,13 @@ public sealed class ReactionEngine : IReactionEngine
         if (kept > 0)
             roots = roots.Select(r => r with { Weight = r.Weight / kept }).ToList();
 
-        var parents = new List<string> { accepted.SubstrateProfile.Signature };
-        parents.AddRange(accepted.Reagents.Select(r => _profiles.Resolve(r).Signature));
+        var parents = new List<string> { accepted.SubstrateState.Signature };
+        parents.AddRange(accepted.Reagents.Select(r => _materialStates.StateOf(r).Signature));
 
         return new Lineage(
             roots,
-            accepted.SubstrateProfile.Generation + 1,
-            process.Id,
+            accepted.SubstrateState.Generation + 1,
+            craftingAction.Id,
             parents.Distinct(StringComparer.Ordinal).Take(4).ToList());
     }
 
@@ -433,9 +440,9 @@ public sealed class ReactionEngine : IReactionEngine
     /// is what makes it a good one, so that is what it lends.</summary>
     private double CatalystFactor(MaterialDefinition? catalyst) =>
         catalyst is null
-            ? ReactionTuning.NoCatalyst
-            : ReactionTuning.NoCatalyst
-              + (catalyst.GetProperty(ItemProperties.Affinity) / 100.0 * ReactionTuning.CatalystAffinityBonus);
+            ? MaterialTransformationTuning.NoCatalyst
+            : MaterialTransformationTuning.NoCatalyst
+              + (catalyst.GetProperty(ItemProperties.Affinity) / 100.0 * MaterialTransformationTuning.CatalystAffinityBonus);
 
     private bool NameIsTaken(string name) =>
         _registry.All.Any(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -446,26 +453,26 @@ public sealed class ReactionEngine : IReactionEngine
     private sealed record AcceptedCraft(
         CraftFailure Failure,
         CraftRequest Request,
-        ProcessDefinition Process,
+        CraftingActionDefinition Process,
         MaterialDefinition Substrate,
         IReadOnlyList<MaterialDefinition> Reagents,
         MaterialDefinition? Catalyst,
-        MaterialProfile SubstrateProfile)
+        MaterialState SubstrateState)
     {
         public static AcceptedCraft Rejected(CraftFailure failure) =>
             new(failure, null!, null!, null!, Array.Empty<MaterialDefinition>(), null, null!);
     }
 
     private sealed record ReactionRun(
-        MaterialProfile Profile,
+        MaterialState State,
         IReadOnlyList<string> Tags,
         string Signature,
-        int Potency,
+        int MaterialStrength,
         double TotalCost,
         double VarianceMagnitude,
         bool Destroyed,
         ReactionLogBuilder LogBuilder,
-        IReadOnlyList<ReactionStepResult> Steps)
+        IReadOnlyList<TransformationStepResult> Steps)
     {
         public ReactionLog Log => LogBuilder.Build();
     }

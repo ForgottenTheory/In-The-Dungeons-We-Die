@@ -1511,7 +1511,7 @@ public sealed class CombatEncounter
         if (Statuses is null)
             return ControlOutcome.Ungated;
 
-        // R4c-2 — the status depth keys. Potency scales the applier's magnitude; duration
+        // R4c-2 — the status depth keys. MaterialStrength scales the applier's magnitude; duration
         // scales on the receiver (defensive "shorter suffering"). Both scoped by status id,
         // both no-ops at their defaults, so nothing changes without a source.
         var applier = Find(sourceId);

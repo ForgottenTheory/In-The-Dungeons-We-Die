@@ -11,7 +11,7 @@ namespace Dungeons.Tests.Crafting;
 ///
 /// <para>What is worth testing here is not the exact wording but the <b>explanatory
 /// content</b>: that the log names the cause of every movement, quotes the property that
-/// drove each coefficient, and shows the arithmetic behind the integrity charge. A log that
+/// drove each coefficient, and shows the arithmetic behind the workability charge. A log that
 /// prints numbers without their reasons would pass a naive test and fail the player.</para>
 /// </summary>
 public class ReactionLogTests
@@ -22,30 +22,30 @@ public class ReactionLogTests
     private static DataStore<MaterialDefinition> Materials() =>
         TestPaths.LoadStore<MaterialDefinition>("materials");
 
-    private static DataStore<ProcessDefinition> Processes() =>
-        TestPaths.LoadStore<ProcessDefinition>("processes");
+    private static DataStore<CraftingActionDefinition> CraftingActions() =>
+        TestPaths.LoadStore<CraftingActionDefinition>("processes");
 
     /// <summary>Runs §19 attempt 2 and logs it — the craft §15.3's sample trace depicts.</summary>
     private static (ReactionLog Log, string Text) WorkedExample(double craftQuality = 1.0)
     {
         var properties = Properties();
         var materials = Materials();
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
         var substrate = materials.GetById("material.iron_ingot");
         var reagent = materials.GetById("material.ember_core");
 
-        var step = ReactionAlgebra.ApplyReagent(
-            substrate.BaseProperties, reagent.BaseProperties, process, properties,
-            substrateIntegrity: 90, qualityMultiplier: 1.05);
+        var step = MaterialTransformationRules.ApplyReagent(
+            substrate.BaseProperties, reagent.BaseProperties, craftingAction, properties,
+            substrateWorkability: 90, qualityMultiplier: 1.05);
 
-        var cost = IntegrityCalculator.Cost(step.StateDelta, process.Severity, step.StrainReleased, craftQuality);
-        var after = IntegrityCalculator.Apply(90, cost);
+        var cost = WorkabilityCalculator.Cost(step.StateDelta, craftingAction.Severity, step.StressReleased, craftQuality);
+        var after = WorkabilityCalculator.Apply(90, cost);
 
         var log = new ReactionLogBuilder(properties)
             .Step(new ReactionStepContext(
-                process, substrate.Name, reagent.Name,
+                craftingAction, substrate.Name, reagent.Name,
                 substrate.BaseProperties, reagent.BaseProperties, step, 90, after, cost))
-            .Potency(40, new[] { 70 }, 49)
+            .MaterialStrength(40, new[] { 70 }, 49)
             .Result("Emberlit Iron", 1, isFirstDiscovery: true)
             .Build();
 
@@ -64,7 +64,7 @@ public class ReactionLogTests
     /// <summary>
     /// §15.3's example is "Acceptance 0.48 (iron resists bonding: affinity 30)". The
     /// parenthetical is the whole value of the line: it teaches the player to check affinity
-    /// before choosing a process, which a bare coefficient never would.
+    /// before choosing a crafting action, which a bare coefficient never would.
     /// </summary>
     [Fact]
     public void CoefficientsAreExplainedByThePropertyThatDroveThem()
@@ -85,16 +85,16 @@ public class ReactionLogTests
     {
         var properties = Properties();
         var materials = Materials();
-        var process = Processes().GetById("process.steep");
+        var craftingAction = CraftingActions().GetById("process.steep");
         var substrate = materials.GetById("material.iron_ingot");
         var reagent = materials.GetById("material.ember_sap");
 
-        var step = ReactionAlgebra.ApplyReagent(
-            substrate.BaseProperties, reagent.BaseProperties, process, properties, 90);
+        var step = MaterialTransformationRules.ApplyReagent(
+            substrate.BaseProperties, reagent.BaseProperties, craftingAction, properties, 90);
 
         var text = new ReactionLogBuilder(properties)
             .Step(new ReactionStepContext(
-                process, substrate.Name, reagent.Name,
+                craftingAction, substrate.Name, reagent.Name,
                 substrate.BaseProperties, reagent.BaseProperties, step, 90, 87, 3))
             .Build()
             .ToText();
@@ -118,19 +118,19 @@ public class ReactionLogTests
     public void DilutionPruningAndAnnihilationAreNamedPlainly()
     {
         var properties = Properties();
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
 
-        var step = ReactionAlgebra.ApplyReagent(
+        var step = MaterialTransformationRules.ApplyReagent(
             PropertySet.FromValues(new Dictionary<string, double>
             {
                 ["cold"] = 60, ["toxicity"] = 40, ["corrosion"] = 3, ["affinity"] = 100, ["mass"] = 50,
             }),
             PropertySet.FromValues(new Dictionary<string, double> { ["heat"] = 100, ["instability"] = 100 }),
-            process, properties, 100, qualityMultiplier: 1.12);
+            craftingAction, properties, 100, qualityMultiplier: 1.12);
 
         var text = new ReactionLogBuilder(properties)
             .Step(new ReactionStepContext(
-                process, "Test Substrate", "Test Reagent",
+                craftingAction, "Test Substrate", "Test Reagent",
                 PropertySet.Empty, PropertySet.Empty, step, 100, 80, 20))
             .Build()
             .ToText();
@@ -140,7 +140,7 @@ public class ReactionLogTests
         Assert.Contains("pruned below floor 5", text);
     }
 
-    /// <summary>§15.3 shows the integrity arithmetic, not just the result — this is the line
+    /// <summary>§15.3 shows the workability arithmetic, not just the result — this is the line
     /// that teaches "gentle steps cost less", which is the main skill axis (§6.2a).</summary>
     [Fact]
     public void TheIntegrityLineShowsItsArithmetic()
@@ -152,7 +152,7 @@ public class ReactionLogTests
         Assert.Contains("severity 0.55", text);
     }
 
-    /// <summary>"Potency 40, 70 → 53": potency being a mean is only learnable if the player can
+    /// <summary>"Potency 40, 70 → 53": material strength being a mean is only learnable if the player can
     /// see what it averaged (§6.1).</summary>
     [Fact]
     public void ThePotencyLineShowsItsInputs()
@@ -214,8 +214,8 @@ public class ReactionLogTests
         Assert.Equal(0.0, heat.Before);
         Assert.Equal(35.0, heat.After!.Value, 0);
 
-        Assert.Contains(log.Entries, e => e.Kind == ReactionLogKind.Integrity);
-        Assert.Contains(log.Entries, e => e.Kind == ReactionLogKind.Potency);
+        Assert.Contains(log.Entries, e => e.Kind == ReactionLogKind.Workability);
+        Assert.Contains(log.Entries, e => e.Kind == ReactionLogKind.MaterialStrength);
         Assert.Contains(log.Entries, e => e.Kind == ReactionLogKind.Result);
     }
 

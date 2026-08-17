@@ -7,10 +7,10 @@ namespace Dungeons.Tests.Crafting;
 
 /// <summary>
 /// C2a — the fabrication boundary (§16): single-slot forms, the 0–100 → combat-unit
-/// calibration (pinned by iron-sword parity), aperture-gated traits with dormancy, terminal
+/// calibration (pinned by iron-sword parity), trait expression-gated traits with dormancy, terminal
 /// consumption, signature dedup, and derived definitions surviving a save round-trip.
 /// </summary>
-public class FabricationTests
+public class EquipmentAssemblyTests
 {
     private sealed class Harness
     {
@@ -21,33 +21,33 @@ public class FabricationTests
                 Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
                 Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
                 Traits = TestPaths.LoadStore<TraitDefinition>("traits"),
-                Forms = TestPaths.LoadStore<FormTemplateDefinition>("forms"),
+                Forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms"),
                 Equipment = TestPaths.LoadStore<EquipmentDefinition>("equipment"),
                 Moves = TestPaths.LoadStore<Dungeons.Combat.MoveDefinition>("moves"),
             };
             Inventory = new Inventory();
             InstanceIds = new InstanceIdSource();
-            Engine = new FabricationEngine(
-                Content, () => Inventory, new MaterialProfileResolver(Content.Properties), InstanceIds);
+            Engine = new EquipmentAssemblyEngine(
+                Content, () => Inventory, new MaterialStateResolver(Content.Properties), InstanceIds);
         }
 
         public ContentBundle Content { get; }
         public Inventory Inventory { get; }
         public InstanceIdSource InstanceIds { get; }
-        public FabricationEngine Engine { get; }
+        public EquipmentAssemblyEngine Engine { get; }
 
-        public FabricationOutcome Fabricate(string form, string material)
+        public EquipmentAssemblyOutcome Assemble(string form, string material)
         {
             var template = Content.Forms.GetById(form);
-            return Engine.Fabricate(new FabricationRequest(
+            return Engine.Assemble(new EquipmentAssemblyRequest(
                 form, template.Slots.Keys.ToDictionary(s => s, _ => material)));
         }
 
-        public FabricationOutcome Fabricate(string form, params (string Slot, string Material)[] slots) =>
-            Engine.Fabricate(new FabricationRequest(form, slots.ToDictionary(s => s.Slot, s => s.Material)));
+        public EquipmentAssemblyOutcome Assemble(string form, params (string Slot, string Material)[] slots) =>
+            Engine.Assemble(new EquipmentAssemblyRequest(form, slots.ToDictionary(s => s.Slot, s => s.Material)));
 
-        public FabricationOutcome Longsword(string edge, string core = "material.iron_ingot", string binding = "material.leather") =>
-            Fabricate("form.longsword", ("edge", edge), ("core", core), ("binding", binding));
+        public EquipmentAssemblyOutcome Longsword(string edge, string core = "material.iron_ingot", string binding = "material.leather") =>
+            Assemble("form.longsword", ("edge", edge), ("core", core), ("binding", binding));
     }
 
     /// <summary>THE reconciliation pin: a plain iron-ingot longsword must land within a hair
@@ -107,7 +107,7 @@ public class FabricationTests
         harness.Inventory.Add("material.sageleaf", 1);
         harness.Inventory.Add("material.iron_ingot", 2);
         harness.Inventory.Add("material.leather", 1);
-        Assert.Equal(FabricationFailure.SlotRejected,
+        Assert.Equal(EquipmentAssemblyFailure.SlotRejected,
             harness.Longsword("material.sageleaf").Failure); // herbs make poor edges
     }
 
@@ -119,7 +119,7 @@ public class FabricationTests
         var harness = new Harness();
         harness.Inventory.Add("material.iron_ingot", 1); // heat_resistance 60, cold_resistance 60
 
-        var outcome = harness.Fabricate("form.buckler", "material.iron_ingot");
+        var outcome = harness.Assemble("form.buckler", "material.iron_ingot");
         Assert.True(outcome.Success, outcome.Failure.ToString());
 
         var definition = harness.Content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
@@ -128,7 +128,7 @@ public class FabricationTests
         Assert.Contains("shield", definition.Tags);                   // Shield Bash becomes reachable
     }
 
-    /// <summary>§16.3 steps 3–4: expression = magnitude × aperture[category]; the cap keeps
+    /// <summary>§16.3 steps 3–4: expression = magnitude × trait expression[category]; the cap keeps
     /// the top by expressed value and the rest go dormant on the definition.</summary>
     [Fact]
     public void TraitsExpressThroughTheApertureAndTheRestGoDormant()
@@ -139,7 +139,7 @@ public class FabricationTests
             Id = "material.test_traited", Name = "Traited Iron",
             Tags = new[] { "form:metal", "state:alloy", "rarity:common", "comp:inorganic", "origin:mineral" },
             Properties = new() { ["hardness"] = 65, ["mass"] = 62 },
-            Profile = new MaterialProfile(
+            State = new MaterialState(
                 new PropertySet(new Dictionary<string, double> { ["hardness"] = 65, ["mass"] = 62 }),
                 50, 60, Lineage.ForBase("material.test_traited"), "material.test_traited")
             {
@@ -158,17 +158,17 @@ public class FabricationTests
         var onEdge = harness.Longsword(traited.Id);
         Assert.True(onEdge.Success, onEdge.Failure.ToString());
 
-        // Edge aperture: emberveined ×1.0 → 60, verdant ×0.2 → 16.
+        // Edge trait expression: emberveined ×1.0 → 60, verdant ×0.2 → 16.
         Assert.Equal("trait.emberveined", onEdge.Expressed[0].Id);
         Assert.Equal(60, onEdge.Expressed[0].Magnitude);
         Assert.Equal(16, onEdge.Expressed.Single(t => t.Id == "trait.verdant").Magnitude);
         Assert.StartsWith("Emberveined Traited Longsword", onEdge.Name); // §16.5 naming
 
         // Placement matters (§16.2): the same material as the CORE gates emberveined to
-        // 60×0.3 → 18 while verdant's 80×0.3 → 24 now DOMINATES — the core's aperture
+        // 60×0.3 → 18 while verdant's 80×0.3 → 24 now DOMINATES — the core's trait expression
         // reorders which trait defines the weapon, computed, never authored. §16.5's
         // exception holds too: the non-primary component names the item.
-        var onCore = harness.Fabricate("form.longsword",
+        var onCore = harness.Assemble("form.longsword",
             ("edge", "material.iron_ingot"), ("core", traited.Id), ("binding", "material.leather"));
         Assert.True(onCore.Success, onCore.Failure.ToString());
         Assert.Equal(18, onCore.Expressed.Single(t => t.Id == "trait.emberveined").Magnitude);
@@ -224,7 +224,7 @@ public class FabricationTests
         harness.Inventory.Add("material.iron_ingot", 4);
         harness.Inventory.Add("material.leather", 2);
 
-        var request = new FabricationRequest("form.longsword", new Dictionary<string, string>
+        var request = new EquipmentAssemblyRequest("form.longsword", new Dictionary<string, string>
         {
             ["edge"] = "material.iron_ingot",
             ["core"] = "material.iron_ingot",
@@ -232,7 +232,7 @@ public class FabricationTests
         });
 
         var equipmentBefore = harness.Content.Equipment.Count;
-        var projection = harness.Engine.Project(request);
+        var projection = harness.Engine.Preview(request);
 
         Assert.True(projection.CanFabricate, projection.Failure.ToString());
         Assert.True(projection.WouldBeFirstOfItsKind);
@@ -240,7 +240,7 @@ public class FabricationTests
         Assert.Equal(equipmentBefore, harness.Content.Equipment.Count);          // nothing registered
         Assert.Equal(("edge", "Iron Ingot"), projection.ComponentNames[0]);      // identity slot leads
 
-        var outcome = harness.Engine.Fabricate(request);
+        var outcome = harness.Engine.Assemble(request);
         Assert.True(outcome.Success);
         Assert.Equal(projection.Name, outcome.Name);
         Assert.Equal(
@@ -254,20 +254,20 @@ public class FabricationTests
     {
         var harness = new Harness(); // empty inventory
 
-        var missing = harness.Engine.Project(new FabricationRequest("form.longsword", new Dictionary<string, string>
+        var missing = harness.Engine.Preview(new EquipmentAssemblyRequest("form.longsword", new Dictionary<string, string>
         {
             ["edge"] = "material.iron_ingot",
             ["core"] = "material.iron_ingot",
             ["binding"] = "material.leather",
         }));
-        Assert.Equal(FabricationFailure.MissingInputs, missing.Failure);
+        Assert.Equal(EquipmentAssemblyFailure.MissingInputs, missing.Failure);
 
-        var rejected = harness.Engine.Project(new FabricationRequest("form.longsword", new Dictionary<string, string>
+        var rejected = harness.Engine.Preview(new EquipmentAssemblyRequest("form.longsword", new Dictionary<string, string>
         {
             ["edge"] = "material.leather",
             ["core"] = "material.iron_ingot",
             ["binding"] = "material.leather",
         }));
-        Assert.Equal(FabricationFailure.SlotRejected, rejected.Failure);
+        Assert.Equal(EquipmentAssemblyFailure.SlotRejected, rejected.Failure);
     }
 }

@@ -6,7 +6,7 @@ using Dungeons.Items;
 namespace Dungeons.Crafting;
 
 /// <summary>Slot-name conventions shared by form templates and everything that reads them.</summary>
-public static class FormSlots
+public static class BlueprintSlots
 {
     /// <summary>
     /// The wildcard slot name. A stat-map read against it takes the mass-share-weighted total
@@ -17,7 +17,7 @@ public static class FormSlots
 
 /// <summary>One component slot of a form (§16.2): what it accepts, how much of the item it
 /// is, and how much of each trait category it lets express.</summary>
-public sealed class FormSlot
+public sealed class BlueprintSlot
 {
     /// <summary>Any-of tag gate — <c>["form:metal", "form:crystal"]</c> means either works.</summary>
     [JsonPropertyName("requires_tags")]
@@ -28,14 +28,15 @@ public sealed class FormSlot
 
     /// <summary>Per-trait-category expression gate, 0–1. An Emberveined edge expresses at 1.0;
     /// the same material as a binding at 0.2. Whatever the gate holds back goes dormant.</summary>
-    public Dictionary<string, double> Aperture { get; init; } = new();
+    [JsonPropertyName("trait_expression")]
+    public Dictionary<string, double> TraitExpression { get; init; } = new();
 }
 
 /// <summary>One weighted read in a stat map: this slot's property, at this weight.
-/// Slot <see cref="FormSlots.AllSlots"/> means the mass-share-weighted total across all slots.</summary>
+/// Slot <see cref="BlueprintSlots.AllSlots"/> means the mass-share-weighted total across all slots.</summary>
 public sealed class StatContribution
 {
-    public string Slot { get; init; } = FormSlots.AllSlots;
+    public string Slot { get; init; } = BlueprintSlots.AllSlots;
     public string Property { get; init; } = string.Empty;
     /// <summary>How strongly this read contributes to the stat, relative to the other reads.</summary>
     public double Weight { get; init; } = 1.0;
@@ -47,7 +48,7 @@ public sealed class StatContribution
 /// decision; the same material is excellent in one form and useless in another, which is what
 /// stops a single "best material" existing.
 /// </summary>
-public sealed class FormTemplateDefinition : IDefinition
+public sealed class EquipmentBlueprintDefinition : IDefinition
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
@@ -55,11 +56,11 @@ public sealed class FormTemplateDefinition : IDefinition
 
     public EquipmentSlot Type { get; init; } = EquipmentSlot.Weapon;
 
-    public Dictionary<string, FormSlot> Slots { get; init; } = new();
+    public Dictionary<string, BlueprintSlot> Slots { get; init; } = new();
 
     /// <summary>Stat name → weighted property reads. Values land on the fabricated instance
     /// in <b>combat units</b> (the 0–100 → ~0–5 reconciliation lives in
-    /// <see cref="FabricationTuning.CombatUnitScale"/>), so the existing
+    /// <see cref="EquipmentAssemblyTuning.CombatUnitScale"/>), so the existing
     /// <c>EquipmentResolver</c> seam consumes fabricated gear unchanged.</summary>
     [JsonPropertyName("stat_map")]
     public Dictionary<string, IReadOnlyList<StatContribution>> StatMap { get; init; } = new();
@@ -77,7 +78,7 @@ public sealed class FormTemplateDefinition : IDefinition
 }
 
 /// <summary>The 0–100 ↔ combat-unit reconciliation, in one place (C2a; itemization.md §2).</summary>
-public static class FabricationTuning
+public static class EquipmentAssemblyTuning
 {
     /// <summary>A stat_map read of weight 1.0 on a property at 100 lands at this many combat
     /// units — chosen so a plain iron-ingot longsword matches the authored Iron Sword

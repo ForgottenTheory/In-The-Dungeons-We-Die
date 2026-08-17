@@ -6,19 +6,19 @@ namespace Dungeons.Crafting;
 /// place rather than scattered through the algebra. Changing a value here changes the
 /// physics of every craft in the game — there are no per-combination overrides anywhere.
 /// </summary>
-public static class ReactionTuning
+public static class MaterialTransformationTuning
 {
-    // ---- §8.1 acceptance / release / integrity -----------------------------------------
+    // ---- §8.1 acceptance / release / workability -----------------------------------------
     //
     // All three share the shape `base + scale × (property / 100)`: even a wholly unwilling
     // substrate accepts a little, so no craft is ever a total no-op.
 
-    public const double AcceptanceBase = 0.25;
-    public const double AcceptanceScale = 0.75;
-    public const double ReleaseBase = 0.25;
-    public const double ReleaseScale = 0.75;
-    public const double IntegrityFactorBase = 0.50;
-    public const double IntegrityFactorScale = 0.50;
+    public const double CompatibilityBase = 0.25;
+    public const double CompatibilityScale = 0.75;
+    public const double TransferStrengthBase = 0.25;
+    public const double TransferStrengthScale = 0.75;
+    public const double WorkabilityFactorBase = 0.50;
+    public const double WorkabilityFactorScale = 0.50;
 
     /// <summary>Catalyst factor when no catalyst is slotted (§8.1).</summary>
     public const double NoCatalyst = 1.0;
@@ -56,7 +56,7 @@ public static class ReactionTuning
 
     /// <summary>Fraction of an opposed overlap that mutually annihilates. Only the asymmetry
     /// survives, so opposites cannot be stockpiled.</summary>
-    public const double AnnihilationRate = 0.9;
+    public const double ConflictAnnihilationRate = 0.9;
 
     // ---- Scale ---------------------------------------------------------------------------
 

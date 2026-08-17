@@ -113,14 +113,14 @@ public class SaveMapperTests
             Name = "Emberveined Iron",
             Tags = new[] { "form:metal", "state:alloy" },
             Properties = new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 },
-            Profile = new MaterialProfile(
+            State = new MaterialState(
                 new PropertySet(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 }),
-                Potency: 49,
-                Integrity: 72,
+                MaterialStrength: 49,
+                Workability: 72,
                 Lineage: new Lineage(
                     new[] { new RootShare("material.iron_ingot", 1.0) },
                     Generation: 2,
-                    ProcessId: "process.forge_infusion",
+                    CraftingActionId: "process.forge_infusion",
                     ParentSignatures: new[] { "material.iron_ingot" }),
                 Signature: signature),
         });
@@ -150,13 +150,13 @@ public class SaveMapperTests
 
         var restored = freshMaterials.GetById(signature);
         Assert.Equal("Emberveined Iron", restored.Name);
-        Assert.Equal(49, restored.Profile!.Potency);
-        Assert.Equal(72, restored.Profile.Integrity);
-        Assert.Equal(2, restored.Profile.Generation);
-        Assert.Equal(35, restored.Profile.Properties.Get("heat"));
-        Assert.Equal("process.forge_infusion", restored.Profile.Lineage.ProcessId);
-        Assert.Equal("material.iron_ingot", restored.Profile.Lineage.DominantRoot?.RootId);
-        Assert.Contains("material.iron_ingot", restored.Profile.Lineage.ParentSignatures);
+        Assert.Equal(49, restored.State!.MaterialStrength);
+        Assert.Equal(72, restored.State.Workability);
+        Assert.Equal(2, restored.State.Generation);
+        Assert.Equal(35, restored.State.Properties.Get("heat"));
+        Assert.Equal("process.forge_infusion", restored.State.Lineage.CraftingActionId);
+        Assert.Equal("material.iron_ingot", restored.State.Lineage.DominantRoot?.RootId);
+        Assert.Contains("material.iron_ingot", restored.State.Lineage.ParentSignatures);
     }
 
     /// <summary>v3 saves predate emergent archetypes and must still load — the new field simply

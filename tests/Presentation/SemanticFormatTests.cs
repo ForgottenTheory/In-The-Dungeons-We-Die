@@ -26,7 +26,7 @@ public class SemanticFormatTests
         bool firstDiscovery = false,
         IReadOnlyList<PropertyMovement>? strengthening = null,
         IReadOnlyList<PropertyMovement>? weakening = null,
-        IReadOnlyList<OppositionReading>? opposition = null,
+        IReadOnlyList<QualityConflictReading>? opposition = null,
         IReadOnlyList<TraitBirthReading>? births = null) =>
         new(
             CanCraft: true,
@@ -39,13 +39,13 @@ public class SemanticFormatTests
             Strengthening: strengthening ?? Array.Empty<PropertyMovement>(),
             Weakening: weakening ?? Array.Empty<PropertyMovement>(),
             WashingOut: Array.Empty<PropertyMovement>(),
-            Opposition: opposition ?? Array.Empty<OppositionReading>(),
+            Opposition: opposition ?? Array.Empty<QualityConflictReading>(),
             TraitBirths: births ?? Array.Empty<TraitBirthReading>(),
             NearbyTraits: Array.Empty<NearbyTrait>(),
             Essence: Array.Empty<EssenceReading>(),
-            VesselStrained: false,
+            VesselStressed: false,
             Risk: risk,
-            Integrity: new IntegrityProjection(cost, spread, projected, chance));
+            Workability: new WorkabilityProjection(cost, spread, projected, chance));
 
     // ---- The §6.2c guarantees, in the new voice ----------------------------------------------
 
@@ -113,7 +113,7 @@ public class SemanticFormatTests
             Reading(
                 opposition: new[]
                 {
-                    new OppositionReading(new PropertyMovement("heat", 30, 22, Trend.Opposed), "cold"),
+                    new QualityConflictReading(new PropertyMovement("heat", 30, 22, Trend.Conflicting), "cold"),
                 },
                 births: new[] { new TraitBirthReading("trait.emberveined", "Emberveined", "brittle when cold") }),
             Glossary);
@@ -167,7 +167,7 @@ public class SemanticFormatTests
         var iron = materials.GetById("material.iron_ingot");
 
         var reading = MaterialReadings.From(
-            iron, new MaterialProfileResolver(properties).Resolve(iron), properties,
+            iron, new MaterialStateResolver(properties).StateOf(iron), properties,
             TestPaths.LoadStore<TraitDefinition>("traits"),
             TestPaths.LoadStore<EssenceDefinition>("essences"));
 
@@ -185,11 +185,11 @@ public class SemanticFormatTests
     {
         var properties = TestPaths.LoadStore<PropertyDefinition>("properties");
         var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
-        var resolver = new MaterialProfileResolver(properties);
+        var materialStates = new MaterialStateResolver(properties);
         var iron = materials.GetById("material.iron_ingot");
 
         var reading = MaterialReadings.From(
-            iron, resolver.Resolve(iron), properties,
+            iron, materialStates.StateOf(iron), properties,
             TestPaths.LoadStore<TraitDefinition>("traits"),
             TestPaths.LoadStore<EssenceDefinition>("essences"));
         var text = SemanticFormat.Material(reading, Glossary);
@@ -206,7 +206,7 @@ public class SemanticFormatTests
     [Fact]
     public void ProcessLabelsSpeakSeverityAndSubstrateInWords()
     {
-        var processes = TestPaths.LoadStore<ProcessDefinition>("processes");
+        var processes = TestPaths.LoadStore<CraftingActionDefinition>("processes");
 
         var forge = SemanticFormat.Process(processes.GetById("process.forge_infusion"), "Smithing");
         Assert.Contains("Forge Infusion", forge);
@@ -222,8 +222,8 @@ public class SemanticFormatTests
     [Fact]
     public void TheChannelSpeaksInGlyphsAndRateWordsNotRates()
     {
-        var channel = SemanticFormat.Channel(
-            TestPaths.LoadStore<ProcessDefinition>("processes").GetById("process.forge_infusion"),
+        var channel = SemanticFormat.AffectedQualities(
+            TestPaths.LoadStore<CraftingActionDefinition>("processes").GetById("process.forge_infusion"),
             Glossary);
 
         Assert.Contains("▲ Heat hard", channel);

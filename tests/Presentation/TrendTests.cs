@@ -11,19 +11,19 @@ namespace Dungeons.Tests.Presentation;
 /// </summary>
 public class TrendTests
 {
-    private static ReactionStepResult Step(params PropertyChange[] changes) => new(
+    private static TransformationStepResult Step(params PropertyChange[] changes) => new(
         new PropertySet(new Dictionary<string, double>()),
-        new ReactionCoefficients(1, 1, 1, 1, 1),
-        StrainReleased: 0,
+        new TransferCoefficients(1, 1, 1, 1, 1),
+        StressReleased: 0,
         Changes: changes);
 
-    private static PropertyMovement One(params ReactionStepResult[] steps) =>
+    private static PropertyMovement One(params TransformationStepResult[] steps) =>
         Assert.Single(Trends.Aggregate(steps));
 
     [Fact]
     public void AChannelGainReadsRising()
     {
-        var movement = One(Step(new PropertyChange("heat", 20, 45, PropertyChangeKind.Channel)));
+        var movement = One(Step(new PropertyChange("heat", 20, 45, PropertyChangeKind.OnChannelTransfer)));
 
         Assert.Equal(Trend.Rising, movement.Trend);
         Assert.True(movement.CrossesTier); // Low → Moderate
@@ -31,11 +31,11 @@ public class TrendTests
 
     [Fact]
     public void AChannelLossReadsFalling() =>
-        Assert.Equal(Trend.Falling, One(Step(new PropertyChange("hardness", 65, 50, PropertyChangeKind.Channel))).Trend);
+        Assert.Equal(Trend.Falling, One(Step(new PropertyChange("hardness", 65, 50, PropertyChangeKind.OnChannelTransfer))).Trend);
 
     [Fact]
     public void StartingFromNothingReadsEmerging() =>
-        Assert.Equal(Trend.Emerging, One(Step(new PropertyChange("heat", 0, 36, PropertyChangeKind.Channel))).Trend);
+        Assert.Equal(Trend.Emerging, One(Step(new PropertyChange("heat", 0, 36, PropertyChangeKind.OnChannelTransfer))).Trend);
 
     [Fact]
     public void EndingAtNothingReadsVanishing() =>
@@ -45,10 +45,10 @@ public class TrendTests
     public void AnnihilationWinsOverEverythingElse()
     {
         var movement = One(Step(
-            new PropertyChange("heat", 30, 40, PropertyChangeKind.Channel),
+            new PropertyChange("heat", 30, 40, PropertyChangeKind.OnChannelTransfer),
             new PropertyChange("heat", 40, 22, PropertyChangeKind.Annihilation)));
 
-        Assert.Equal(Trend.Opposed, movement.Trend);
+        Assert.Equal(Trend.Conflicting, movement.Trend);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class TrendTests
 
     [Fact]
     public void TinyNetMovementReadsSteady() =>
-        Assert.Equal(Trend.Steady, One(Step(new PropertyChange("mass", 50, 51, PropertyChangeKind.Channel))).Trend);
+        Assert.Equal(Trend.Steady, One(Step(new PropertyChange("mass", 50, 51, PropertyChangeKind.OnChannelTransfer))).Trend);
 
     [Fact]
     public void StructuralBlendsReadDrifting() =>
@@ -68,8 +68,8 @@ public class TrendTests
     public void StepsFoldFirstToLast()
     {
         var movement = One(
-            Step(new PropertyChange("heat", 10, 30, PropertyChangeKind.Channel)),
-            Step(new PropertyChange("heat", 30, 55, PropertyChangeKind.Channel)));
+            Step(new PropertyChange("heat", 10, 30, PropertyChangeKind.OnChannelTransfer)),
+            Step(new PropertyChange("heat", 30, 55, PropertyChangeKind.OnChannelTransfer)));
 
         Assert.Equal(10, movement.Initial);
         Assert.Equal(55, movement.Final);
@@ -93,8 +93,8 @@ public class TrendTests
         var movements = Trends.Aggregate(new[]
         {
             Step(
-                new PropertyChange("mass", 50, 55, PropertyChangeKind.Channel),
-                new PropertyChange("heat", 0, 40, PropertyChangeKind.Channel),
+                new PropertyChange("mass", 50, 55, PropertyChangeKind.OnChannelTransfer),
+                new PropertyChange("heat", 0, 40, PropertyChangeKind.OnChannelTransfer),
                 new PropertyChange("cold", 40, 0, PropertyChangeKind.Pruned)),
         });
 

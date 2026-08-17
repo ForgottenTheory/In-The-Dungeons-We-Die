@@ -12,7 +12,7 @@ namespace Dungeons.Tests.Presentation;
 /// </summary>
 public class AdvancedFormatTests
 {
-    private static CraftProjection Projection(
+    private static CraftPreview Projection(
         double cost = 12,
         double spread = 0,
         int remaining = 78,
@@ -21,8 +21,8 @@ public class AdvancedFormatTests
         bool firstDiscovery = false) =>
         new(
             CraftFailure.None,
-            new IntegrityProjection(cost, spread, remaining, destructionChance),
-            ProjectedPotency: 49,
+            new WorkabilityProjection(cost, spread, remaining, destructionChance),
+            ProjectedMaterialStrength: 49,
             ProjectedName: name,
             WouldBeFirstDiscovery: firstDiscovery,
             Preview: ReactionLog.Empty);
@@ -64,13 +64,13 @@ public class AdvancedFormatTests
     [Fact]
     public void ProcessAndChannelKeepTheirNumbers()
     {
-        var processes = TestPaths.LoadStore<ProcessDefinition>("processes");
+        var processes = TestPaths.LoadStore<CraftingActionDefinition>("processes");
 
         var forge = AdvancedFormat.Process(processes.GetById("process.forge_infusion"), "Smithing");
         Assert.Contains("severity 0.55", forge);
         Assert.Contains("Smithing L15", forge);
 
-        var channel = AdvancedFormat.Channel(processes.GetById("process.forge_infusion"));
+        var channel = AdvancedFormat.AffectedQualities(processes.GetById("process.forge_infusion"));
         Assert.Contains("heat 0.8", channel);
     }
 
@@ -81,7 +81,7 @@ public class AdvancedFormatTests
         var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
         var iron = materials.GetById("material.iron_ingot");
 
-        var text = AdvancedFormat.Material(iron, new MaterialProfileResolver(properties).Resolve(iron));
+        var text = AdvancedFormat.Material(iron, new MaterialStateResolver(properties).StateOf(iron));
 
         Assert.Contains("potency", text);
         Assert.Contains("integrity", text);

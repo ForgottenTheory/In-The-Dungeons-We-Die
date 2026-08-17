@@ -41,7 +41,7 @@ public interface IConditionWorld
 ///
 /// <para>The rule engine is constructed before the encounter is, because the build's hooks must
 /// be attached from the first frame. Rather than reorder composition — or leave the engine
-/// worldless and have every stateful condition silently fail for the life of the process — the
+/// worldless and have every stateful condition silently fail for the life of the crafting action — the
 /// engine takes this, and it resolves the real provider on each call.</para>
 /// </summary>
 public sealed class DeferredConditionWorld : IConditionWorld

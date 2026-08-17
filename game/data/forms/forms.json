@@ -12,17 +12,17 @@
       "edge": {
         "requires_tags": ["form:metal", "form:crystal"],
         "mass_share": 0.60,
-        "aperture": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
       },
       "core": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 0.25,
-        "aperture": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 }
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 }
       },
       "binding": {
         "requires_tags": ["form:hide", "form:fiber"],
         "mass_share": 0.15,
-        "aperture": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 }
+        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 }
       }
     },
     "stat_map": {
@@ -42,7 +42,7 @@
       "face": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 1.0,
-        "aperture": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 }
+        "trait_expression": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 }
       }
     },
     "stat_map": {
@@ -61,7 +61,7 @@
       "shell": {
         "requires_tags": ["form:hide", "form:fiber", "form:metal"],
         "mass_share": 1.0,
-        "aperture": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 1.0 }
+        "trait_expression": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 1.0 }
       }
     },
     "stat_map": {

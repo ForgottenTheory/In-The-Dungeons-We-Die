@@ -9,18 +9,18 @@ namespace Dungeons.Tests.Presentation;
 
 /// <summary>
 /// End to end: a real projection through the real engine, translated into the reading the
-/// pre-commit panel renders. Pins the D30 seam — <see cref="CraftProjection"/> now exposes its
+/// pre-commit panel renders. Pins the D30 seam — <see cref="CraftPreview"/> now exposes its
 /// typed movements and projected profile, and the semantic layer only ever translates them.
 /// </summary>
 public class CraftReadingTests
 {
-    private static (ReactionEngine Engine, ContentBundle Content, MaterialProfileResolver Profiles, Inventory Inventory) Harness()
+    private static (MaterialTransformationEngine Engine, ContentBundle Content, MaterialStateResolver Profiles, Inventory Inventory) Harness()
     {
         var content = new ContentBundle
         {
             Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
             Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
-            Processes = TestPaths.LoadStore<ProcessDefinition>("processes"),
+            CraftingActions = TestPaths.LoadStore<CraftingActionDefinition>("processes"),
             Byproducts = TestPaths.LoadStore<ByproductDefinition>("byproducts"),
             NameGrammar = TestPaths.LoadStore<NameWordDefinition>("name_grammar"),
             Traits = TestPaths.LoadStore<TraitDefinition>("traits"),
@@ -28,12 +28,12 @@ public class CraftReadingTests
         };
 
         var inventory = new Inventory();
-        var profiles = new MaterialProfileResolver(content.Properties);
+        var materialStates = new MaterialStateResolver(content.Properties);
 
-        var engine = new ReactionEngine(
+        var engine = new MaterialTransformationEngine(
             content,
             () => inventory,
-            profiles,
+            materialStates,
             new EmergentRegistry(content.Materials),
             new NameGenerator(content.Materials, content.Properties, content.NameGrammar),
             new TagDeriver(content.Properties),
@@ -42,17 +42,17 @@ public class CraftReadingTests
             _ => 99,
             new SeededRandom(12345));
 
-        return (engine, content, profiles, inventory);
+        return (engine, content, materialStates, inventory);
     }
 
     [Fact]
     public void AProjectionExposesTypedMovementsAndTheReadingTranslatesThem()
     {
-        var (engine, content, profiles, inventory) = Harness();
+        var (engine, content, materialStates, inventory) = Harness();
         inventory.Add("material.iron_ingot", 10);
         inventory.Add("material.ember_core", 10);
 
-        var projection = engine.Project(new CraftRequest(
+        var projection = engine.PreviewCraft(new CraftRequest(
             "process.forge_infusion", "material.iron_ingot", new[] { "material.ember_core" }));
 
         Assert.True(projection.CanCraft, projection.Failure.ToString());
@@ -60,11 +60,11 @@ public class CraftReadingTests
         Assert.NotNull(projection.Projected);
 
         var iron = content.Materials.GetById("material.iron_ingot");
-        var reading = CraftReadings.From(projection, iron.Name, profiles.Resolve(iron), content);
+        var reading = CraftReadings.From(projection, iron.Name, materialStates.StateOf(iron), content);
 
         // Forge infusion drives heat into cold iron — the reading must say so without numbers.
         Assert.Contains(reading.Strengthening, m => m.Property == "heat" && m.Trend is Trend.Rising or Trend.Emerging);
-        Assert.Equal(Risk.Of(projection.Integrity), reading.Risk);
+        Assert.Equal(Risk.Of(projection.Workability), reading.Risk);
 
         var glossary = new PropertyGlossary(content.Properties);
         var text = SemanticFormat.Projection(reading, glossary);
@@ -78,7 +78,7 @@ public class CraftReadingTests
     [Fact]
     public void TheReadingIsDeterministic()
     {
-        var (engine, content, profiles, inventory) = Harness();
+        var (engine, content, materialStates, inventory) = Harness();
         inventory.Add("material.iron_ingot", 10);
         inventory.Add("material.ember_core", 10);
 
@@ -88,7 +88,7 @@ public class CraftReadingTests
         var glossary = new PropertyGlossary(content.Properties);
 
         string Render() => SemanticFormat.Projection(
-            CraftReadings.From(engine.Project(request), iron.Name, profiles.Resolve(iron), content),
+            CraftReadings.From(engine.PreviewCraft(request), iron.Name, materialStates.StateOf(iron), content),
             glossary);
 
         Assert.Equal(Render(), Render());
@@ -97,12 +97,12 @@ public class CraftReadingTests
     [Fact]
     public void AFailedProjectionReadsAsItsFailure()
     {
-        var (engine, content, profiles, _) = Harness();
+        var (engine, content, materialStates, _) = Harness();
         var iron = content.Materials.GetById("material.iron_ingot");
 
-        var projection = engine.Project(new CraftRequest(
+        var projection = engine.PreviewCraft(new CraftRequest(
             "process.steep", "material.iron_ingot", new[] { "material.ember_core" }, Quantity: 0));
-        var reading = CraftReadings.From(projection, iron.Name, profiles.Resolve(iron), content);
+        var reading = CraftReadings.From(projection, iron.Name, materialStates.StateOf(iron), content);
 
         Assert.False(reading.CanCraft);
         Assert.Empty(reading.Strengthening);

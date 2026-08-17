@@ -102,7 +102,7 @@ public class MovesetTests
         Assert.True(resolved.HasTag("mech:chain"));
 
         // The second modifier matches against the SOURCE definition, so within one resolution
-        // pass it does not see the added tag — chained eligibility lands on the next rebuild.
+        // pass it does not see the added tag — chained availability lands on the next rebuild.
         // That is the cached-resolution bargain (§3.3), pinned here so it is a decision, not a bug.
         var chainer = new MoveModifierDefinition
         {

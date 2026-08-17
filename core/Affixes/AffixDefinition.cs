@@ -4,21 +4,21 @@ using Dungeons.Rules;
 
 namespace Dungeons.Affixes;
 
-/// <summary>One property-pressure requirement: the genome must carry at least this much.</summary>
-public sealed class PressureRequirement
+/// <summary>One property-material influence requirement: the item potential must carry at least this much.</summary>
+public sealed class MaterialInfluenceRequirement
 {
     public string Property { get; init; } = string.Empty;
     public double Min { get; init; }
 }
 
-/// <summary>§3.2 eligibility — the hard gate. All conditions must pass.</summary>
-public sealed class AffixEligibility
+/// <summary>§3.2 availability — the hard gate. All conditions must pass.</summary>
+public sealed class ModifierAvailability
 {
-    /// <summary>Any-of match against the genome's form id or its tags. Empty = any form.</summary>
+    /// <summary>Any-of match against the item potential's form id or its tags. Empty = any form.</summary>
     [JsonPropertyName("forms_any")]
     public IReadOnlyList<string> FormsAny { get; init; } = Array.Empty<string>();
 
-    public IReadOnlyList<PressureRequirement> Requires { get; init; } = Array.Empty<PressureRequirement>();
+    public IReadOnlyList<MaterialInfluenceRequirement> Requires { get; init; } = Array.Empty<MaterialInfluenceRequirement>();
 
     [JsonPropertyName("requires_any_essence")]
     public IReadOnlyList<string> RequiresAnyEssence { get; init; } = Array.Empty<string>();
@@ -27,26 +27,27 @@ public sealed class AffixEligibility
     public IReadOnlyList<string> ExcludesFamily { get; init; } = Array.Empty<string>();
 }
 
-/// <summary>One term of the weight formula: <c>base + Σ pressure/10 × per10</c>.</summary>
-public sealed class WeightScale
+/// <summary>One term of the weight formula: <c>base + Σ material influence/10 × per10</c>.</summary>
+public sealed class ChanceWeightScale
 {
     public string? Property { get; init; }
     public string? Essence { get; init; }
-    public double Per10 { get; init; }
+    [JsonPropertyName("per_ten_influence")]
+    public double PerTenInfluence { get; init; }
 }
 
-public sealed class AffixWeight
+public sealed class ModifierChanceWeight
 {
     public double Base { get; init; } = 10;
-    public IReadOnlyList<WeightScale> Scale { get; init; } = Array.Empty<WeightScale>();
+    public IReadOnlyList<ChanceWeightScale> Scale { get; init; } = Array.Empty<ChanceWeightScale>();
 }
 
-/// <summary>One tier: its genome requirements and its value range. T1 is best (§3.2).</summary>
+/// <summary>One tier: its item potential requirements and its value range. T1 is best (§3.2).</summary>
 public sealed class AffixTier
 {
     public int Tier { get; init; }
 
-    /// <summary>Property name → min pressure, or <c>essence.X</c> → min essence.</summary>
+    /// <summary>Property name → min material influence, or <c>essence.X</c> → min essence.</summary>
     public Dictionary<string, double> Requires { get; init; } = new();
 
     /// <summary>[lo, hi] in mechanical units (fractions for chances/mults, flats for flats).</summary>
@@ -102,8 +103,10 @@ public sealed class AffixDefinition : IDefinition
 
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 
-    public AffixEligibility Eligibility { get; init; } = new();
-    public AffixWeight Weight { get; init; } = new();
+    [JsonPropertyName("availability")]
+    public ModifierAvailability Availability { get; init; } = new();
+    [JsonPropertyName("chance_weight")]
+    public ModifierChanceWeight ChanceWeight { get; init; } = new();
     public IReadOnlyList<AffixTier> Tiers { get; init; } = Array.Empty<AffixTier>();
     public IReadOnlyList<AffixGrant> Grants { get; init; } = Array.Empty<AffixGrant>();
 

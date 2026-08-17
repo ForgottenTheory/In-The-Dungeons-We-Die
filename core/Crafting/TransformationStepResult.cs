@@ -6,8 +6,8 @@ namespace Dungeons.Crafting;
 /// (§15.3) explains a craft in.</summary>
 public enum PropertyChangeKind
 {
-    /// <summary>Converged toward the reagent because the process opened it (§8.2).</summary>
-    Channel,
+    /// <summary>Converged toward the reagent because the crafting action opened it (§8.2).</summary>
+    OnChannelTransfer,
 
     /// <summary>Blended toward the mass-weighted mixture while off-channel (§8.3).</summary>
     StructuralBlend,
@@ -33,23 +33,23 @@ public sealed record PropertyChange(string Property, double Before, double After
 
 /// <summary>
 /// The outcome of applying one reagent to a substrate (docs/emergent-item-system.md §8.7
-/// steps 2–6). Potency, integrity, tags, quantization and naming are computed by later
+/// steps 2–6). MaterialStrength, workability, tags, quantization and naming are computed by later
 /// stages from this — the algebra itself only moves properties.
 /// </summary>
-public sealed record ReactionStepResult(
+public sealed record TransformationStepResult(
     PropertySet Properties,
-    ReactionCoefficients Coefficients,
-    double StrainReleased,
+    TransferCoefficients Coefficients,
+    double StressReleased,
     IReadOnlyList<PropertyChange> Changes)
 {
     /// <summary>
     /// Total absolute movement across the vector, normalized — the <c>Δstate</c> that
-    /// integrity is charged against (§6.2a). Change is what costs, so a gentle step that
+    /// workability is charged against (§6.2a). Change is what costs, so a gentle step that
     /// achieves its goal precisely costs little and a brute-force one costs a lot.
     ///
     /// <para>Dropped resistances are excluded: they are a bookkeeping consequence of
     /// resistances being derived rather than carried (§2.2), not a transformation the player
-    /// caused, and charging integrity for one would make the first craft on any
+    /// caused, and charging workability for one would make the first craft on any
     /// resistance-authored material inexplicably expensive.</para>
     /// </summary>
     public double StateDelta => Changes

@@ -48,9 +48,9 @@ public static class Tiers
         return new string('●', filled) + new string('○', 5 - filled);
     }
 
-    /// <summary>Integrity as a wear word — Fresh · Sturdy · Worn · Fragile. The number stays
+    /// <summary>Workability as a wear word — Fresh · Sturdy · Worn · Fragile. The number stays
     /// in Advanced; the player reasons in wear, not arithmetic.</summary>
-    public static string WearWord(int integrity) => integrity switch
+    public static string WearWord(int workability) => workability switch
     {
         >= PresentationTuning.FreshFloor => "Fresh",
         >= PresentationTuning.SturdyFloor => "Sturdy",

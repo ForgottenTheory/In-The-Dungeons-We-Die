@@ -21,18 +21,18 @@ public static class PresentationTuning
     /// preview full of ±0.4 arrows would be noise pretending to be information.</summary>
     public const double SteadyWindow = 1.5;
 
-    // ---- Integrity wear words (the player never sees the number outside Advanced) -----------
+    // ---- Workability wear words (the player never sees the number outside Advanced) -----------
     public const int FreshFloor = 90;
     public const int SturdyFloor = 60;
     public const int WornFloor = 30;
 
     // ---- RiskBand boundaries (§3: SAFE · COSTLY · STRAINED · PERILOUS · DESTROYS) -----------
-    /// <summary>Expected integrity cost at or above this reads COSTLY even with no risk.</summary>
+    /// <summary>Expected workability cost at or above this reads COSTLY even with no risk.</summary>
     public const double CostlyCost = 10.0;
 
-    /// <summary>Projected integrity at or under this reads STRAINED — the §6.2c "below ~25 the
+    /// <summary>Projected workability at or under this reads STRAINED — the §6.2c "below ~25 the
     /// projection widens into a chance" band, named before the chance turns nonzero.</summary>
-    public const int StrainedIntegrity = 25;
+    public const int StressedWorkability = 25;
 
     // ---- Trait proximity (the §2E "something unusual is close" hint) -------------------------
     /// <summary>A trait reads as nearby only while at most this many conditions are unmet…</summary>
@@ -45,11 +45,11 @@ public static class PresentationTuning
     public const double HeavyReadWeight = 0.6;
     public const double ModerateReadWeight = 0.3;
 
-    // ---- aperture bands (trait expression preview) --------------------------------------------
+    // ---- trait expression bands (trait expression preview) --------------------------------------------
     public const double FullApertureFloor = 0.8;
     public const double PartialApertureFloor = 0.4;
 
-    // ---- process severity bands ---------------------------------------------------------------
+    // ---- crafting action severity bands ---------------------------------------------------------------
     public const double GentleSeverity = 0.30;
     public const double FirmSeverity = 0.45;
     public const double ForcefulSeverity = 0.60;

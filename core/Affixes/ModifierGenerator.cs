@@ -8,7 +8,7 @@ namespace Dungeons.Affixes;
 
 public static class AffixTuning
 {
-    /// <summary>Innate cap (§3.1: 1–3, the genome speaking directly).</summary>
+    /// <summary>Innate cap (§3.1: 1–3, the item potential speaking directly).</summary>
     public const int MaxInnates = 3;
 
     public const int MaxPrefixes = 3;
@@ -17,50 +17,59 @@ public static class AffixTuning
     /// <summary>Weights for rolling 1/2/3 affixes per slot side. Provisional until C2c.</summary>
     public static readonly double[] CountWeights = { 0.35, 0.40, 0.25 };
 
-    /// <summary>±band around the potency-positioned roll (§3.3's "± variance").</summary>
+    /// <summary>±band around the material strength-positioned roll (§3.3's "± variance").</summary>
     public const double RollVariance = 0.10;
 
-    /// <summary>An innate must clear this weight to exist — trace pressure earns nothing.</summary>
-    public const double InnateWeightFloor = 25.0;
+    /// <summary>An innate must clear this weight to exist — trace material influence earns nothing.</summary>
+    public const double InnateChanceWeightFloor = 25.0;
 
     /// <summary>
-    /// Where in a tier's [lo, hi] range a potency-0 item lands. A floor rather than zero, so a
-    /// low-potency item still gets a usable modifier — potency is roll <i>quality</i>, not a gate.
+    /// Where in a tier's [lo, hi] range an item of zero material strength lands. A floor rather
+    /// than zero, so a weak item still gets a usable modifier — material strength is roll
+    /// <i>quality</i>, never a gate.
     /// </summary>
     public const double MinRollPosition = 0.35;
 
-    /// <summary>How much of the tier range potency buys, on top of <see cref="MinRollPosition"/>.
-    /// The two sum to 1.0, so potency 100 reaches the top of the tier.</summary>
-    public const double PotencyRollSpan = 0.65;
+    /// <summary>How much of the tier range material strength buys, on top of
+    /// <see cref="MinRollPosition"/>. The two sum to 1.0, so material strength 100 reaches the
+    /// top of the tier.</summary>
+    public const double MaterialStrengthRollSpan = 0.65;
 }
 
 /// <summary>
-/// The §4 rolling pipeline and the §3.1 innate computation. Deterministic given the seed;
-/// pure apart from the injected <see cref="IRandomSource"/>. Exotic, signature and anomalous
-/// classes never enter these pools (R4 decision — they arrive with E7/P4).
+/// Rolls the modifiers an assembled item gets, reading nothing but its
+/// <see cref="ItemPotential"/> (§4 rolling, §3.1 innates).
+///
+/// <para>Four questions, four pure functions: <see cref="IsAvailableFor"/> (can it roll at all),
+/// <see cref="ChanceWeightFor"/> (how likely), <see cref="MaximumModifierTier"/> (how strong it
+/// may get) and <see cref="RollPositionFor"/> (where in that tier the value lands).</para>
+///
+/// <para>Deterministic given the seed; pure apart from the injected
+/// <see cref="IRandomSource"/>. Exotic, signature and anomalous classes never enter these pools
+/// (R4 decision — they arrive with E7/P4).</para>
 /// </summary>
-public static class AffixRoller
+public static class ModifierGenerator
 {
     private static readonly IReadOnlySet<string> RollableClasses =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "standard", "trigger" };
 
-    /// <summary>Innates: eligibility → weight rank → top ≤3, potency-positioned value with
-    /// zero variance, never rerollable (U-7). The floor keeps trace pressure from mattering.</summary>
-    public static IReadOnlyList<RolledAffix> Innates(Genome genome, IEnumerable<AffixDefinition> definitions)
+    /// <summary>Innates: availability → weight rank → top ≤3, material strength-positioned value with
+    /// zero variance, never rerollable (U-7). The floor keeps trace material influence from mattering.</summary>
+    public static IReadOnlyList<RolledAffix> Innates(ItemPotential itemPotential, IEnumerable<AffixDefinition> definitions)
     {
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
         ArgumentNullException.ThrowIfNull(definitions);
 
         return definitions
             .Where(affix => string.Equals(affix.Slot, "innate", StringComparison.OrdinalIgnoreCase))
-            .Where(affix => IsEligible(affix, genome, Array.Empty<string>()))
-            .Select(affix => (Definition: affix, Weight: WeightOf(affix, genome)))
-            .Where(candidate => candidate.Weight >= AffixTuning.InnateWeightFloor)
+            .Where(affix => IsAvailableFor(affix, itemPotential, Array.Empty<string>()))
+            .Select(affix => (Definition: affix, Weight: ChanceWeightFor(affix, itemPotential)))
+            .Where(candidate => candidate.Weight >= AffixTuning.InnateChanceWeightFloor)
             .OrderByDescending(candidate => candidate.Weight)
             .ThenBy(candidate => candidate.Definition.Id, StringComparer.Ordinal)
             .Take(AffixTuning.MaxInnates)
             .Select(candidate => RollValue(
-                candidate.Definition, genome, positionInTierRange: PotencyPosition(genome.Potency)))
+                candidate.Definition, itemPotential, positionInTierRange: RollPositionFor(itemPotential.MaterialStrength)))
             .Where(rolled => rolled is not null)
             .Select(rolled => rolled!)
             .ToList();
@@ -68,9 +77,9 @@ public static class AffixRoller
 
     /// <summary>The §4 pipeline for one slot side ("prefix"/"suffix"), rolling count then picks.</summary>
     public static IReadOnlyList<RolledAffix> Roll(
-        Genome genome, string slot, IEnumerable<AffixDefinition> definitions, IRandomSource random)
+        ItemPotential itemPotential, string slot, IEnumerable<AffixDefinition> definitions, IRandomSource random)
     {
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
         ArgumentNullException.ThrowIfNull(definitions);
         ArgumentNullException.ThrowIfNull(random);
 
@@ -84,13 +93,13 @@ public static class AffixRoller
 
         for (var i = 0; i < affixCount; i++)
         {
-            // Step 1 — the pool: slot matches, eligibility passes, family not already present.
+            // Step 1 — the pool: slot matches, availability passes, family not already present.
             var pool = definitions
                 .Where(affix => string.Equals(affix.Slot, slot, StringComparison.OrdinalIgnoreCase))
                 .Where(affix => RollableClasses.Contains(affix.Class))
                 .Where(affix => !familiesAlreadyRolled.Contains(affix.Family, StringComparer.OrdinalIgnoreCase))
-                .Where(affix => IsEligible(affix, genome, familiesAlreadyRolled))
-                .Select(affix => (Definition: affix, Weight: WeightOf(affix, genome)))
+                .Where(affix => IsAvailableFor(affix, itemPotential, familiesAlreadyRolled))
+                .Select(affix => (Definition: affix, Weight: ChanceWeightFor(affix, itemPotential)))
                 .Where(candidate => candidate.Weight > 0)
                 .OrderBy(candidate => candidate.Definition.Id, StringComparer.Ordinal)
                 .ToList();
@@ -112,9 +121,9 @@ public static class AffixRoller
                 }
             }
 
-            // Steps 4–5 — tier ceiling by genome, value by potency ± variance.
+            // Steps 4–5 — tier ceiling by item potential, value by material strength ± variance.
             var variance = ((random.NextDouble() * 2.0) - 1.0) * AffixTuning.RollVariance;
-            var affixRoll = RollValue(chosen, genome, PotencyPosition(genome.Potency) + variance);
+            var affixRoll = RollValue(chosen, itemPotential, RollPositionFor(itemPotential.MaterialStrength) + variance);
             if (affixRoll is null)
                 break;
 
@@ -127,77 +136,80 @@ public static class AffixRoller
 
     // ---- The three genetic levers (§3.3) -------------------------------------------------------
 
-    public static bool IsEligible(AffixDefinition affix, Genome genome, IReadOnlyList<string> presentFamilies)
+    public static bool IsAvailableFor(
+        AffixDefinition affix,
+        ItemPotential itemPotential,
+        IReadOnlyList<string> familiesAlreadyPresent)
     {
         ArgumentNullException.ThrowIfNull(affix);
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
 
-        var eligibility = affix.Eligibility;
+        var availability = affix.Availability;
 
-        if (eligibility.FormsAny.Count > 0
-            && !eligibility.FormsAny.Any(f =>
-                string.Equals(f, genome.FormId, StringComparison.OrdinalIgnoreCase)
-                || genome.Tags.Contains(f, StringComparer.OrdinalIgnoreCase)))
+        if (availability.FormsAny.Count > 0
+            && !availability.FormsAny.Any(f =>
+                string.Equals(f, itemPotential.BlueprintId, StringComparison.OrdinalIgnoreCase)
+                || itemPotential.Tags.Contains(f, StringComparer.OrdinalIgnoreCase)))
             return false;
 
-        if (eligibility.Requires.Any(r => genome.PressureOf(r.Property) < r.Min))
+        if (availability.Requires.Any(r => itemPotential.InfluenceOf(r.Property) < r.Min))
             return false;
 
-        if (eligibility.RequiresAnyEssence.Count > 0
-            && !eligibility.RequiresAnyEssence.Any(e => genome.EssenceOf(e) > 0))
+        if (availability.RequiresAnyEssence.Count > 0
+            && !availability.RequiresAnyEssence.Any(e => itemPotential.EssenceOf(e) > 0))
             return false;
 
-        if (eligibility.ExcludesFamily.Any(f => presentFamilies.Contains(f, StringComparer.OrdinalIgnoreCase)))
+        if (availability.ExcludesFamily.Any(f => familiesAlreadyPresent.Contains(f, StringComparer.OrdinalIgnoreCase)))
             return false;
 
         return true;
     }
 
-    public static double WeightOf(AffixDefinition affix, Genome genome)
+    public static double ChanceWeightFor(AffixDefinition affix, ItemPotential itemPotential)
     {
         ArgumentNullException.ThrowIfNull(affix);
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
 
-        var weight = affix.Weight.Base;
-        foreach (var scale in affix.Weight.Scale)
+        var weight = affix.ChanceWeight.Base;
+        foreach (var scale in affix.ChanceWeight.Scale)
         {
             if (scale.Property is { Length: > 0 } property)
-                weight += genome.PressureOf(property) / 10.0 * scale.Per10;
+                weight += itemPotential.InfluenceOf(property) / 10.0 * scale.PerTenInfluence;
             if (scale.Essence is { Length: > 0 } essence)
-                weight += genome.EssenceOf(essence) / 10.0 * scale.Per10;
+                weight += itemPotential.EssenceOf(essence) / 10.0 * scale.PerTenInfluence;
         }
 
         return Math.Max(0, weight);
     }
 
-    /// <summary>The highest tier (lowest number) whose requirements the genome meets; null when
+    /// <summary>The highest tier (lowest number) whose requirements the item potential meets; null when
     /// even the lowest tier is out of reach.</summary>
-    public static AffixTier? TierFor(AffixDefinition affix, Genome genome)
+    public static AffixTier? MaximumModifierTier(AffixDefinition affix, ItemPotential itemPotential)
     {
         ArgumentNullException.ThrowIfNull(affix);
-        ArgumentNullException.ThrowIfNull(genome);
+        ArgumentNullException.ThrowIfNull(itemPotential);
 
         return affix.Tiers
-            .Where(t => MeetsTier(t, genome))
+            .Where(t => ItemPotentialMeetsTier(t, itemPotential))
             .OrderBy(t => t.Tier)
             .FirstOrDefault();
     }
 
-    private static bool MeetsTier(AffixTier tier, Genome genome) =>
+    private static bool ItemPotentialMeetsTier(AffixTier tier, ItemPotential itemPotential) =>
         tier.Requires.All(req =>
             req.Key.StartsWith("essence.", StringComparison.OrdinalIgnoreCase)
-                ? genome.EssenceOf(req.Key["essence.".Length..]) >= req.Value
-                : genome.PressureOf(req.Key) >= req.Value);
+                ? itemPotential.EssenceOf(req.Key["essence.".Length..]) >= req.Value
+                : itemPotential.InfluenceOf(req.Key) >= req.Value);
 
     /// <summary>
-    /// Turns a definition into a concrete rolled affix: pick the best tier the genome qualifies
+    /// Turns a definition into a concrete rolled affix: pick the best tier the item potential qualifies
     /// for, then land the value at <paramref name="positionInTierRange"/> within that tier's
-    /// [lo, hi]. Null when even the lowest tier is out of the genome's reach.
+    /// [lo, hi]. Null when even the lowest tier is out of the item potential's reach.
     /// </summary>
     /// <param name="positionInTierRange">0 = the bottom of the tier, 1 = the top. Clamped.</param>
-    private static RolledAffix? RollValue(AffixDefinition affix, Genome genome, double positionInTierRange)
+    private static RolledAffix? RollValue(AffixDefinition affix, ItemPotential itemPotential, double positionInTierRange)
     {
-        var tier = TierFor(affix, genome);
+        var tier = MaximumModifierTier(affix, itemPotential);
         if (tier is null || tier.Range.Count < 2)
             return null;
 
@@ -206,10 +218,10 @@ public static class AffixRoller
         return new RolledAffix(affix.Id, tier.Tier, Math.Round(value, 4));
     }
 
-    /// <summary>§3.3's roll-quality lever: potency decides where in the tier the value lands.</summary>
-    public static double PotencyPosition(int potency) =>
+    /// <summary>§3.3's roll-quality lever: material strength decides where in the tier the value lands.</summary>
+    public static double RollPositionFor(int materialStrength) =>
         AffixTuning.MinRollPosition
-        + (AffixTuning.PotencyRollSpan * Math.Clamp(potency, 0, 100) / 100.0);
+        + (AffixTuning.MaterialStrengthRollSpan * Math.Clamp(materialStrength, 0, 100) / 100.0);
 
     /// <summary>How many affixes this slot side rolls, drawn from <see cref="AffixTuning.CountWeights"/>.</summary>
     private static int RollAffixCount(IRandomSource random)
@@ -228,7 +240,7 @@ public static class AffixRoller
 
 /// <summary>Turns rolled affixes back into live grants and player text — the one place `$roll`
 /// is substituted, so the tooltip and the mechanics can never drift (§8's parity rule).</summary>
-public static class AffixGrants
+public static class ModifierGrants
 {
     public static IEnumerable<ModifierContribution> Contributions(
         RolledAffix rolled, AffixDefinition definition, string source)

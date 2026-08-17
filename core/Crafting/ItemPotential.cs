@@ -4,22 +4,25 @@ using Dungeons.Items;
 namespace Dungeons.Crafting;
 
 /// <summary>
-/// The item's genetic profile (docs/affixes.md §2.1) — computed once at fabrication, stored on
-/// the instance, never recomputed. Everything the affix system decides (eligibility, weight,
-/// tier ceiling) it decides by reading this.
+/// What a finished item is <i>capable of</i> (docs/affixes.md §2.1, "the Genome") — computed
+/// once when the item is assembled, stored on the instance, and never recomputed.
+///
+/// <para>This is the sole input to <see cref="Dungeons.Affixes.ModifierGenerator"/>: which
+/// modifiers are available, how likely each one is, and the strongest tier it may reach are all
+/// pure functions of this record.</para>
 /// </summary>
-public sealed record Genome(
-    string FormId,
-    IReadOnlyDictionary<string, double> Pressure,
+public sealed record ItemPotential(
+    string BlueprintId,
+    IReadOnlyDictionary<string, double> MaterialInfluence,
     IReadOnlyDictionary<string, double> Essence,
     IReadOnlyList<TraitInstance> Expressed,
     IReadOnlyList<TraitInstance> Dormant,
     IReadOnlyList<string> Tags,
-    int Potency,
+    int MaterialStrength,
     int GenerationDepth,
     IReadOnlyList<string> Signatures)
 {
-    public static readonly Genome Empty = new(
+    public static readonly ItemPotential Empty = new(
         string.Empty,
         new Dictionary<string, double>(),
         new Dictionary<string, double>(),
@@ -28,28 +31,29 @@ public sealed record Genome(
         Array.Empty<string>(),
         0, 0, Array.Empty<string>());
 
-    public double PressureOf(string property) => Pressure.GetValueOrDefault(property);
+    public double InfluenceOf(string property) => MaterialInfluence.GetValueOrDefault(property);
     public double EssenceOf(string key) => Essence.GetValueOrDefault(key);
 }
 
-public static class GenomeCalculator
+public static class ItemPotentialCalculator
 {
     /// <summary>
-    /// Pressure below this is trace and is dropped, so the genome lists only properties that
-    /// actually reach the item rather than every rounding artefact a deep material carries.
+    /// Influence below this is trace and is dropped, so an item potential lists only the
+    /// properties that actually reach the item, not every rounding artefact a deep material
+    /// carries.
     /// </summary>
-    public const double PressureFloor = 0.5;
+    public const double MaterialInfluenceFloor = 0.5;
 
     /// <summary>
-    /// §2.2 — pressure is the <b>stat-map-weighted</b> property value: how much of the property
-    /// actually reaches the parts of the item that matter. Relevance is the form's stat_map
+    /// §2.2 — a property's influence is its <b>stat-map-weighted</b> value: how much of it
+    /// actually reaches the parts of the item that matter. Relevance is the blueprint's stat_map
     /// weight for that (slot, property), renormalised per property; slots the stat_map never
     /// mentions for a property fall back to their mass share. Same materials, different form,
-    /// different genome — which is what stops one globally-best material existing.
+    /// different item potential — which is what stops one globally-best material existing.
     /// </summary>
-    public static IReadOnlyDictionary<string, double> Pressure(
-        FormTemplateDefinition form,
-        IReadOnlyDictionary<string, (MaterialDefinition Material, MaterialProfile Profile)> components)
+    public static IReadOnlyDictionary<string, double> MaterialInfluence(
+        EquipmentBlueprintDefinition form,
+        IReadOnlyDictionary<string, (MaterialDefinition Material, MaterialState State)> components)
     {
         ArgumentNullException.ThrowIfNull(form);
         ArgumentNullException.ThrowIfNull(components);
@@ -65,7 +69,7 @@ public static class GenomeCalculator
                     weightPerSlotByProperty[contribution.Property] =
                         weightPerSlot = new Dictionary<string, double>(StringComparer.Ordinal);
 
-                if (contribution.Slot == FormSlots.AllSlots)
+                if (contribution.Slot == BlueprintSlots.AllSlots)
                 {
                     foreach (var (slotName, slot) in form.Slots)
                         weightPerSlot[slotName] =
@@ -79,37 +83,37 @@ public static class GenomeCalculator
             }
         }
 
-        // Every property any component carries gets a pressure; absent = 0 and is omitted.
-        var pressure = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        // Every property any component carries gets a materialInfluence; absent = 0 and is omitted.
+        var materialInfluence = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var properties = components.Values
-            .SelectMany(c => c.Profile.Properties.AsDictionary().Keys)
+            .SelectMany(c => c.State.Properties.AsDictionary().Keys)
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
         foreach (var property in properties)
         {
-            double propertyPressure;
+            double propertyInfluence;
             if (weightPerSlotByProperty.TryGetValue(property, out var weightPerSlot)
                 && weightPerSlot.Values.Sum() > 0)
             {
                 var totalWeight = weightPerSlot.Values.Sum();
-                propertyPressure = weightPerSlot.Sum(entry =>
+                propertyInfluence = weightPerSlot.Sum(entry =>
                     components.TryGetValue(entry.Key, out var component)
-                        ? component.Profile.Properties.Get(property) * (entry.Value / totalWeight)
+                        ? component.State.Properties.Get(property) * (entry.Value / totalWeight)
                         : 0.0);
             }
             else
             {
                 // The stat_map never reads it — mass share is the honest fallback.
-                propertyPressure = form.Slots.Sum(slot =>
+                propertyInfluence = form.Slots.Sum(slot =>
                     components.TryGetValue(slot.Key, out var component)
-                        ? component.Profile.Properties.Get(property) * slot.Value.MassShare
+                        ? component.State.Properties.Get(property) * slot.Value.MassShare
                         : 0.0);
             }
 
-            if (propertyPressure > PressureFloor)
-                pressure[property] = Math.Round(propertyPressure, 1);
+            if (propertyInfluence > MaterialInfluenceFloor)
+                materialInfluence[property] = Math.Round(propertyInfluence, 1);
         }
 
-        return pressure;
+        return materialInfluence;
     }
 }

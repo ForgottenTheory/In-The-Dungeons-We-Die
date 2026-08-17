@@ -40,7 +40,7 @@ public enum GaugeBehaviour
     /// <summary>Maintain; grows while held, breaks when dropped.</summary>
     SustainRamp,
 
-    /// <summary>Starts full, drains under pressure, refunded by skill.</summary>
+    /// <summary>Starts full, drains under material influence, refunded by skill.</summary>
     DepleteRecover,
 
     /// <summary>Borrow now, pay later.</summary>

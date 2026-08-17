@@ -16,7 +16,7 @@ namespace Dungeons.Tests.Crafting;
 /// <para>The rest are the invariants §17 lists as the counters to specific exploits. Those
 /// must hold for <i>all</i> inputs, not just the worked example.</para>
 /// </summary>
-public class ReactionAlgebraTests
+public class MaterialTransformationRulesTests
 {
     private static DataStore<PropertyDefinition> Properties() =>
         TestPaths.LoadStore<PropertyDefinition>("properties");
@@ -24,8 +24,8 @@ public class ReactionAlgebraTests
     private static DataStore<MaterialDefinition> Materials() =>
         TestPaths.LoadStore<MaterialDefinition>("materials");
 
-    private static DataStore<ProcessDefinition> Processes() =>
-        TestPaths.LoadStore<ProcessDefinition>("processes");
+    private static DataStore<CraftingActionDefinition> CraftingActions() =>
+        TestPaths.LoadStore<CraftingActionDefinition>("processes");
 
     private static PropertySet Props(params (string Key, double Value)[] values) =>
         PropertySet.FromValues(values.ToDictionary(v => v.Key, v => v.Value));
@@ -37,7 +37,7 @@ public class ReactionAlgebraTests
     public void Acceptance_MatchesTheWorkedExample()
     {
         var iron = Materials().GetById("material.iron_ingot").BaseProperties;
-        Assert.Equal(0.475, ReactionCoefficients.ComputeAcceptance(iron), 3);
+        Assert.Equal(0.475, TransferCoefficients.ComputeAcceptance(iron), 3);
     }
 
     /// <summary>§19: sap dissolves willingly under a solvent (0.663); ember core gives freely
@@ -48,15 +48,15 @@ public class ReactionAlgebraTests
     public void Release_MatchesTheWorkedExample(string materialId, TransferMedium medium, double expected)
     {
         var reagent = Materials().GetById(materialId).BaseProperties;
-        Assert.Equal(expected, ReactionCoefficients.ComputeRelease(medium, reagent), 3);
+        Assert.Equal(expected, TransferCoefficients.ComputeRelease(medium, reagent), 3);
     }
 
     /// <summary>§7.3: soft things grind readily, hard things resist the mill.</summary>
     [Fact]
     public void Release_UnderAMechanicalMedium_IsInverseHardness()
     {
-        var soft = ReactionCoefficients.ComputeRelease(TransferMedium.Mechanical, Props(("hardness", 10)));
-        var hard = ReactionCoefficients.ComputeRelease(TransferMedium.Mechanical, Props(("hardness", 90)));
+        var soft = TransferCoefficients.ComputeRelease(TransferMedium.Mechanical, Props(("hardness", 10)));
+        var hard = TransferCoefficients.ComputeRelease(TransferMedium.Mechanical, Props(("hardness", 90)));
 
         Assert.True(soft > hard, $"soft {soft:0.###} should release more readily than hard {hard:0.###}");
         Assert.Equal(0.925, soft, 3);
@@ -65,7 +65,7 @@ public class ReactionAlgebraTests
     [Fact]
     public void IntegrityFactor_MatchesTheWorkedExample()
     {
-        Assert.Equal(0.950, ReactionCoefficients.ComputeIntegrityFactor(90), 3);
+        Assert.Equal(0.950, TransferCoefficients.ComputeWorkabilityFactor(90), 3);
     }
 
     /// <summary>§8.1's shared shape: even a wholly unwilling substrate accepts a little, so no
@@ -73,9 +73,9 @@ public class ReactionAlgebraTests
     [Fact]
     public void Coefficients_NeverReachZero_EvenForTheWorstInputs()
     {
-        Assert.Equal(0.25, ReactionCoefficients.ComputeAcceptance(PropertySet.Empty), 3);
-        Assert.Equal(0.25, ReactionCoefficients.ComputeRelease(TransferMedium.Solvent, PropertySet.Empty), 3);
-        Assert.Equal(0.50, ReactionCoefficients.ComputeIntegrityFactor(0), 3);
+        Assert.Equal(0.25, TransferCoefficients.ComputeAcceptance(PropertySet.Empty), 3);
+        Assert.Equal(0.25, TransferCoefficients.ComputeRelease(TransferMedium.Solvent, PropertySet.Empty), 3);
+        Assert.Equal(0.50, TransferCoefficients.ComputeWorkabilityFactor(0), 3);
     }
 
     // ---- §19 attempt 1: the naive craft ---------------------------------------------------
@@ -87,16 +87,16 @@ public class ReactionAlgebraTests
     [Fact]
     public void WorkedExample_SteepingIronInEmberSap_BarelyMovesHeat()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Materials().GetById("material.iron_ingot").BaseProperties,
             Materials().GetById("material.ember_sap").BaseProperties,
-            Processes().GetById("process.steep"),
+            CraftingActions().GetById("process.steep"),
             Properties(),
-            substrateIntegrity: 90);
+            substrateWorkability: 90);
 
-        Assert.Equal(0.475, result.Coefficients.Acceptance, 3);
-        Assert.Equal(0.663, result.Coefficients.Release, 3);
-        Assert.Equal(0.950, result.Coefficients.IntegrityFactor, 3);
+        Assert.Equal(0.475, result.Coefficients.Compatibility, 3);
+        Assert.Equal(0.663, result.Coefficients.TransferStrength, 3);
+        Assert.Equal(0.950, result.Coefficients.WorkabilityFactor, 3);
         Assert.Equal(7.0, result.Properties.Get("heat"), 0);
     }
 
@@ -109,22 +109,22 @@ public class ReactionAlgebraTests
     [Fact]
     public void WorkedExample_ForgeInfusingIronWithEmberCore_MatchesStatedResults()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Materials().GetById("material.iron_ingot").BaseProperties,
             Materials().GetById("material.ember_core").BaseProperties,
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             Properties(),
-            substrateIntegrity: 90,
+            substrateWorkability: 90,
             qualityMultiplier: 1.05);
 
-        Assert.Equal(0.925, result.Coefficients.Release, 3);
+        Assert.Equal(0.925, result.Coefficients.TransferStrength, 3);
         Assert.Equal(35.0, result.Properties.Get("heat"), 0);
         Assert.Equal(62.0, result.Properties.Get("hardness"), 0);
     }
 
     /// <summary>
     /// The same pair through a solvent versus a forge must produce genuinely different
-    /// materials — that is §7.2's entire claim, and what makes process choice a real decision.
+    /// materials — that is §7.2's entire claim, and what makes crafting action choice a real decision.
     /// </summary>
     [Fact]
     public void ProcessChoice_ChangesTheOutcomeForTheSameInputs()
@@ -132,10 +132,10 @@ public class ReactionAlgebraTests
         var iron = Materials().GetById("material.iron_ingot").BaseProperties;
         var core = Materials().GetById("material.ember_core").BaseProperties;
 
-        var steeped = ReactionAlgebra.ApplyReagent(
-            iron, core, Processes().GetById("process.steep"), Properties(), 90);
-        var forged = ReactionAlgebra.ApplyReagent(
-            iron, core, Processes().GetById("process.forge_infusion"), Properties(), 90);
+        var steeped = MaterialTransformationRules.ApplyReagent(
+            iron, core, CraftingActions().GetById("process.steep"), Properties(), 90);
+        var forged = MaterialTransformationRules.ApplyReagent(
+            iron, core, CraftingActions().GetById("process.forge_infusion"), Properties(), 90);
 
         Assert.True(forged.Properties.Get("heat") > steeped.Properties.Get("heat") * 2,
             "the forge should drive far more heat into metal than a steep does.");
@@ -155,7 +155,7 @@ public class ReactionAlgebraTests
         foreach (var rate in new[] { 0.05, 0.5, 1.0 })
         foreach (var product in new[] { 0.1, 0.5, 1.0, 2.0 })
         {
-            var after = ReactionAlgebra.Converge(before, target, rate, product);
+            var after = MaterialTransformationRules.Converge(before, target, rate, product);
 
             Assert.InRange(after, Math.Min(before, target), Math.Max(before, target));
         }
@@ -166,8 +166,8 @@ public class ReactionAlgebraTests
     [Fact]
     public void Convergence_LeavesSomeGapEvenAtAbsurdRates()
     {
-        var after = ReactionAlgebra.Converge(before: 0, target: 100, rate: 1.0, coefficientProduct: 10.0);
-        Assert.Equal(ReactionTuning.MaxConvergence * 100.0, after, 6);
+        var after = MaterialTransformationRules.Converge(before: 0, target: 100, rate: 1.0, coefficientProduct: 10.0);
+        Assert.Equal(MaterialTransformationTuning.MaxConvergence * 100.0, after, 6);
     }
 
     /// <summary>Repeatedly applying the same reagent must converge toward it and stop, never
@@ -176,13 +176,13 @@ public class ReactionAlgebraTests
     public void RepeatedApplication_ConvergesAndNeverOvershoots()
     {
         var properties = Properties();
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
         var reagent = Props(("heat", 80), ("instability", 90), ("affinity", 50));
         var state = Props(("affinity", 60), ("hardness", 50), ("mass", 50));
 
         for (var step = 0; step < 40; step++)
         {
-            state = ReactionAlgebra.ApplyReagent(state, reagent, process, properties, 100).Properties;
+            state = MaterialTransformationRules.ApplyReagent(state, reagent, craftingAction, properties, 100).Properties;
             Assert.True(state.Get("heat") <= 80.0001, $"heat overshot the reagent at step {step}.");
         }
 
@@ -196,12 +196,12 @@ public class ReactionAlgebraTests
     [Fact]
     public void OffChannelReactiveProperties_DiluteAndReceiveNothing()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Props(("toxicity", 60), ("affinity", 50)),
             Props(("toxicity", 100), ("instability", 80)),
-            Processes().GetById("process.forge_infusion"), // channel: heat/hardness/affinity
+            CraftingActions().GetById("process.forge_infusion"), // channel: heat/hardness/affinity
             Properties(),
-            substrateIntegrity: 100);
+            substrateWorkability: 100);
 
         Assert.True(result.Properties.Get("toxicity") < 60, "off-channel toxicity should have diluted.");
         Assert.True(result.Properties.Get("toxicity") > 50, "dilution is gentle, not a wipe.");
@@ -212,14 +212,14 @@ public class ReactionAlgebraTests
     public void OffChannelStructuralProperties_BlendTowardTheMassWeightedMixture()
     {
         var properties = Properties();
-        var quench = Processes().GetById("process.quench"); // conductivity is off-channel
+        var quench = CraftingActions().GetById("process.quench"); // conductivity is off-channel
 
-        var withConductor = ReactionAlgebra.ApplyReagent(
+        var withConductor = MaterialTransformationRules.ApplyReagent(
             Props(("conductivity", 20), ("mass", 50), ("affinity", 50)),
             Props(("conductivity", 100), ("mass", 50)),
             quench, properties, 100);
 
-        var withInsulator = ReactionAlgebra.ApplyReagent(
+        var withInsulator = MaterialTransformationRules.ApplyReagent(
             Props(("conductivity", 20), ("mass", 50), ("affinity", 50)),
             Props(("conductivity", 0), ("mass", 50)),
             quench, properties, 100);
@@ -236,7 +236,7 @@ public class ReactionAlgebraTests
     public void ALongVariedChain_DoesNotAccumulateAMuddyVector()
     {
         var properties = Properties();
-        var processes = Processes();
+        var processes = CraftingActions();
         var materials = Materials();
         var reagents = new[]
         {
@@ -248,12 +248,12 @@ public class ReactionAlgebraTests
         var state = materials.GetById("material.iron_ingot").BaseProperties;
         for (var step = 0; step < 12; step++)
         {
-            state = ReactionAlgebra.ApplyReagent(
+            state = MaterialTransformationRules.ApplyReagent(
                 state,
                 materials.GetById(reagents[step % reagents.Length]).BaseProperties,
                 processes.GetById(order[step % order.Length]),
                 properties,
-                substrateIntegrity: 100).Properties;
+                substrateWorkability: 100).Properties;
         }
 
         Assert.True(state.Count <= 12, $"a generation-12 material carries {state.Count} properties: {string.Join(", ", state.Keys)}");
@@ -263,12 +263,12 @@ public class ReactionAlgebraTests
     [Fact]
     public void PropertiesBelowTheirFloor_ArePrunedToZero()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Props(("toxicity", 3), ("affinity", 50), ("mass", 40)),
             Props(("instability", 50)),
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             Properties(),
-            substrateIntegrity: 100);
+            substrateWorkability: 100);
 
         Assert.False(result.Properties.Has("toxicity"));
         Assert.Contains(result.Changes, c => c.Kind == PropertyChangeKind.Pruned && c.Property == "toxicity");
@@ -280,34 +280,34 @@ public class ReactionAlgebraTests
     [Fact]
     public void OpposedProperties_AnnihilateLeavingOnlyTheAsymmetry()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Props(("cold", 60), ("affinity", 100), ("instability", 100)),
             Props(("heat", 100), ("instability", 100)),
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             Properties(),
-            substrateIntegrity: 100,
+            substrateWorkability: 100,
             qualityMultiplier: 1.12);
 
         var heat = result.Properties.Get("heat");
         var cold = result.Properties.Get("cold");
 
         Assert.True(Math.Min(heat, cold) < 6, $"heat {heat:0.#} and cold {cold:0.#} should not coexist.");
-        Assert.True(result.StrainReleased > 0, "annihilation must release strain.");
+        Assert.True(result.StressReleased > 0, "annihilation must release strain.");
     }
 
-    /// <summary>The released energy is what integrity is later charged for (§6.2a), so it has
+    /// <summary>The released energy is what workability is later charged for (§6.2a), so it has
     /// to be reported rather than silently discarded.</summary>
     [Fact]
     public void StrainReleased_IsZero_WhenNothingOpposes()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Props(("affinity", 50), ("mass", 50)),
             Props(("heat", 80), ("instability", 60)),
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             Properties(),
-            substrateIntegrity: 100);
+            substrateWorkability: 100);
 
-        Assert.Equal(0.0, result.StrainReleased);
+        Assert.Equal(0.0, result.StressReleased);
     }
 
     // ---- Roles (§2.2, §2.3) -----------------------------------------------------------------
@@ -317,12 +317,12 @@ public class ReactionAlgebraTests
     [Fact]
     public void SourcingProperties_PassThroughUntouched()
     {
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Props(("harvest_resistance", 90), ("affinity", 50), ("mass", 50)),
             Props(("harvest_resistance", 10), ("instability", 50), ("heat", 90)),
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             Properties(),
-            substrateIntegrity: 100);
+            substrateWorkability: 100);
 
         Assert.Equal(90.0, result.Properties.Get("harvest_resistance"), 6);
     }
@@ -336,12 +336,12 @@ public class ReactionAlgebraTests
     public void ResponseProperties_AreDroppedSoResistanceStaysDerived()
     {
         var properties = Properties();
-        var result = ReactionAlgebra.ApplyReagent(
+        var result = MaterialTransformationRules.ApplyReagent(
             Materials().GetById("material.iron_ingot").BaseProperties, // authored heat_resistance 60
             Materials().GetById("material.ember_core").BaseProperties,
-            Processes().GetById("process.forge_infusion"),
+            CraftingActions().GetById("process.forge_infusion"),
             properties,
-            substrateIntegrity: 90);
+            substrateWorkability: 90);
 
         Assert.False(result.Properties.Has("heat_resistance"));
         Assert.Contains(result.Changes, c => c.Kind == PropertyChangeKind.DerivedResistance);
@@ -351,20 +351,20 @@ public class ReactionAlgebraTests
     }
 
     /// <summary>Dropping a derived resistance is bookkeeping, not a transformation the player
-    /// caused, so it must not inflate the integrity charged for the step.</summary>
+    /// caused, so it must not inflate the workability charged for the step.</summary>
     [Fact]
     public void DroppedResistances_DoNotCountTowardStateDelta()
     {
         var properties = Properties();
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
         var reagent = Materials().GetById("material.ember_core").BaseProperties;
 
-        var withResistance = ReactionAlgebra.ApplyReagent(
+        var withResistance = MaterialTransformationRules.ApplyReagent(
             Props(("affinity", 30), ("mass", 62), ("hardness", 65), ("heat_resistance", 60)),
-            reagent, process, properties, 90);
-        var without = ReactionAlgebra.ApplyReagent(
+            reagent, craftingAction, properties, 90);
+        var without = MaterialTransformationRules.ApplyReagent(
             Props(("affinity", 30), ("mass", 62), ("hardness", 65)),
-            reagent, process, properties, 90);
+            reagent, craftingAction, properties, 90);
 
         Assert.Equal(without.StateDelta, withResistance.StateDelta, 6);
     }
@@ -379,13 +379,13 @@ public class ReactionAlgebraTests
         var properties = Properties();
         var iron = Materials().GetById("material.iron_ingot").BaseProperties;
         var core = Materials().GetById("material.ember_core").BaseProperties;
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
 
-        var first = ReactionAlgebra.ApplyReagent(iron, core, process, properties, 90, 1.05);
-        var second = ReactionAlgebra.ApplyReagent(iron, core, process, properties, 90, 1.05);
+        var first = MaterialTransformationRules.ApplyReagent(iron, core, craftingAction, properties, 90, 1.05);
+        var second = MaterialTransformationRules.ApplyReagent(iron, core, craftingAction, properties, 90, 1.05);
 
         Assert.Equal(first.Properties.AsDictionary(), second.Properties.AsDictionary());
-        Assert.Equal(first.StrainReleased, second.StrainReleased);
+        Assert.Equal(first.StressReleased, second.StressReleased);
 
         // The substrate it was handed must be untouched.
         Assert.Equal(65.0, iron.Get("hardness"));
@@ -400,17 +400,17 @@ public class ReactionAlgebraTests
     public void ReagentOrderChangesTheOutcome_WithNothingAuthoredToSaySo()
     {
         var properties = Properties();
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
         var substrate = Materials().GetById("material.iron_ingot").BaseProperties;
         var a = Materials().GetById("material.ember_core").BaseProperties;
         var b = Materials().GetById("material.stormglass").BaseProperties;
 
-        var ab = ReactionAlgebra.ApplyReagent(
-            ReactionAlgebra.ApplyReagent(substrate, a, process, properties, 90).Properties,
-            b, process, properties, 80).Properties;
-        var ba = ReactionAlgebra.ApplyReagent(
-            ReactionAlgebra.ApplyReagent(substrate, b, process, properties, 90).Properties,
-            a, process, properties, 80).Properties;
+        var ab = MaterialTransformationRules.ApplyReagent(
+            MaterialTransformationRules.ApplyReagent(substrate, a, craftingAction, properties, 90).Properties,
+            b, craftingAction, properties, 80).Properties;
+        var ba = MaterialTransformationRules.ApplyReagent(
+            MaterialTransformationRules.ApplyReagent(substrate, b, craftingAction, properties, 90).Properties,
+            a, craftingAction, properties, 80).Properties;
 
         Assert.NotEqual(ab.Get("heat"), ba.Get("heat"));
     }
@@ -422,17 +422,17 @@ public class ReactionAlgebraTests
     {
         var properties = Properties();
         var materials = Materials().GetAll().Take(60).ToList();
-        var processes = Processes().GetAll();
+        var processes = CraftingActions().GetAll();
 
-        foreach (var process in processes)
+        foreach (var craftingAction in processes)
         foreach (var substrate in materials.Take(12))
         foreach (var reagent in materials.TakeLast(12))
         {
-            var result = ReactionAlgebra.ApplyReagent(
-                substrate.BaseProperties, reagent.BaseProperties, process, properties, 100);
+            var result = MaterialTransformationRules.ApplyReagent(
+                substrate.BaseProperties, reagent.BaseProperties, craftingAction, properties, 100);
 
             Assert.All(result.Properties.AsDictionary().Values, v => Assert.InRange(v, 0.0, 100.0));
-            Assert.True(result.StrainReleased >= 0.0);
+            Assert.True(result.StressReleased >= 0.0);
             Assert.True(result.StateDelta >= 0.0);
         }
     }

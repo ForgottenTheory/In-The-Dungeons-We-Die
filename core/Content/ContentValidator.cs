@@ -26,14 +26,14 @@ public static class ContentValidator
     public const double MinPropertyValue = 0.0;
     public const double MaxPropertyValue = 100.0;
 
-    /// <summary>Valid range for the optional authored potency/integrity overrides
-    /// (docs/emergent-item-system.md §6). Integrity 0 means destroyed, so it is not authorable.</summary>
-    public const int MinPotency = 1;
-    public const int MaxPotency = 100;
-    public const int MinIntegrity = 1;
-    public const int MaxIntegrity = 100;
+    /// <summary>Valid range for the optional authored material strength/workability overrides
+    /// (docs/emergent-item-system.md §6). Workability 0 means destroyed, so it is not authorable.</summary>
+    public const int MinMaterialStrength = 1;
+    public const int MaxMaterialStrength = 100;
+    public const int MinWorkability = 1;
+    public const int MaxWorkability = 100;
 
-    /// <summary>Valid ranges for a <see cref="ProcessDefinition"/> (docs/emergent-item-system.md §7).
+    /// <summary>Valid ranges for a <see cref="CraftingActionDefinition"/> (docs/emergent-item-system.md §7).
     /// A channel rate above 1 would mean a single step overshoots the reagent it is converging
     /// toward, which §8.2 exists to make impossible.</summary>
     public const double MinSeverity = 0.0;
@@ -72,7 +72,7 @@ public static class ContentValidator
 
         ValidateMaterials(content.Materials, knownProperties, problems);
         ValidateMaterialTags(content.Materials, problems);
-        ValidateProcesses(content.Processes, content.Properties, content.Professions, problems);
+        ValidateProcesses(content.CraftingActions, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateTraits(content.Traits, knownProperties, problems);
         ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
@@ -98,7 +98,7 @@ public static class ContentValidator
 
     /// <summary>The docs/affixes.md §8 rules R4b can enforce at load: every grant resolves,
     /// tiers are monotonic with sane ranges, $roll parity holds, ids avoid the D-17 collision,
-    /// slots/classes are known, and eligibility names real properties. (Reachability and the
+    /// slots/classes are known, and availability names real properties. (Reachability and the
     /// distribution guarantees live in the seeded test suite; family-≥2 waits for catalog
     /// breadth.)</summary>
     private static void ValidateAffixes(ContentBundle content, HashSet<string> knownProperties, List<ContentProblem> problems)
@@ -122,13 +122,13 @@ public static class ContentValidator
             if (string.IsNullOrWhiteSpace(affix.Family))
                 Problem("family is required — it is the anti-stacking unit (§3.5)");
 
-            foreach (var requirement in affix.Eligibility.Requires)
+            foreach (var requirement in affix.Availability.Requires)
             {
                 if (!knownProperties.Contains(requirement.Property))
-                    Problem($"eligibility names unknown property '{requirement.Property}'");
+                    Problem($"availability names unknown property '{requirement.Property}'");
             }
 
-            foreach (var scale in affix.Weight.Scale)
+            foreach (var scale in affix.ChanceWeight.Scale)
             {
                 if (scale.Property is { Length: > 0 } p && !knownProperties.Contains(p))
                     Problem($"weight scales on unknown property '{p}'");
@@ -222,48 +222,48 @@ public static class ContentValidator
 
             // Optional emergent-system overrides (docs/emergent-item-system.md §6); normally
             // unset, so a value out of range is a typo rather than a deliberate choice.
-            if (material.Potency is { } potency && (potency < MinPotency || potency > MaxPotency))
-                problems.Add(new("materials", $"{material.Id} potency override {potency} is outside the {MinPotency}–{MaxPotency} range."));
+            if (material.MaterialStrength is { } materialStrength && (materialStrength < MinMaterialStrength || materialStrength > MaxMaterialStrength))
+                problems.Add(new("materials", $"{material.Id} potency override {materialStrength} is outside the {MinMaterialStrength}–{MaxMaterialStrength} range."));
 
-            if (material.Integrity is { } integrity && (integrity < MinIntegrity || integrity > MaxIntegrity))
-                problems.Add(new("materials", $"{material.Id} integrity override {integrity} is outside the {MinIntegrity}–{MaxIntegrity} range."));
+            if (material.Workability is { } workability && (workability < MinWorkability || workability > MaxWorkability))
+                problems.Add(new("materials", $"{material.Id} integrity override {workability} is outside the {MinWorkability}–{MaxWorkability} range."));
         }
     }
 
     /// <summary>
-    /// Validates crafting processes (docs/emergent-item-system.md §7). Processes are the only
+    /// Validates crafting processes (docs/emergent-item-system.md §7). CraftingActions are the only
     /// authored content the reaction engine needs, so a typo here silently changes the physics
     /// of the whole game rather than breaking one recipe — hence the thorough checks.
     /// </summary>
     private static void ValidateProcesses(
-        DataStore<ProcessDefinition> processes,
+        DataStore<CraftingActionDefinition> processes,
         DataStore<PropertyDefinition> properties,
         DataStore<ProfessionDefinition> professions,
         List<ContentProblem> problems)
     {
-        foreach (var process in processes.GetAll())
+        foreach (var craftingAction in processes.GetAll())
         {
-            if (!process.IsUngated && !professions.Contains(process.Profession))
-                problems.Add(new("processes", $"{process.Id} requires unknown profession '{process.Profession}'."));
+            if (!craftingAction.IsUngated && !professions.Contains(craftingAction.Profession))
+                problems.Add(new("processes", $"{craftingAction.Id} requires unknown profession '{craftingAction.Profession}'."));
 
-            if (process.Severity is < MinSeverity or > MaxSeverity)
-                problems.Add(new("processes", $"{process.Id} severity {process.Severity:0.##} is outside the {MinSeverity:0}–{MaxSeverity:0} range."));
+            if (craftingAction.Severity is < MinSeverity or > MaxSeverity)
+                problems.Add(new("processes", $"{craftingAction.Id} severity {craftingAction.Severity:0.##} is outside the {MinSeverity:0}–{MaxSeverity:0} range."));
 
-            if (process.EssenceRate is < 0.0 or > 1.0)
-                problems.Add(new("processes", $"{process.Id} essence_rate {process.EssenceRate:0.##} is outside the 0–1 range."));
+            if (craftingAction.EssenceRate is < 0.0 or > 1.0)
+                problems.Add(new("processes", $"{craftingAction.Id} essence_rate {craftingAction.EssenceRate:0.##} is outside the 0–1 range."));
 
-            ValidateRoleWeights(process, problems);
-            ValidateChannel(process, properties, problems);
-            ValidateProcessTagEffects(process, problems);
+            ValidateRoleWeights(craftingAction, problems);
+            ValidateChannel(craftingAction, properties, problems);
+            ValidateProcessTagEffects(craftingAction, problems);
 
-            foreach (var tag in process.Requires.SubstrateTags)
-                ValidateProcessTag(process, tag, "requires.substrate_tags", allowWildcard: false, problems);
+            foreach (var tag in craftingAction.Requires.SubstrateTags)
+                ValidateProcessTag(craftingAction, tag, "requires.substrate_tags", allowWildcard: false, problems);
 
-            if (process.Requires.ProfessionLevel < 0)
-                problems.Add(new("processes", $"{process.Id} requires a negative profession level."));
+            if (craftingAction.Requires.ProfessionLevel < 0)
+                problems.Add(new("processes", $"{craftingAction.Id} requires a negative profession level."));
 
-            if (process.IsUngated && process.Requires.ProfessionLevel > 0)
-                problems.Add(new("processes", $"{process.Id} is ungated but requires profession level {process.Requires.ProfessionLevel}, which can never be met."));
+            if (craftingAction.IsUngated && craftingAction.Requires.ProfessionLevel > 0)
+                problems.Add(new("processes", $"{craftingAction.Id} is ungated but requires profession level {craftingAction.Requires.ProfessionLevel}, which can never be met."));
         }
     }
 
@@ -622,69 +622,69 @@ public static class ContentValidator
             problems.Add(new("rules", $"{context} has a negative cooldown."));
     }
 
-    private static void ValidateRoleWeights(ProcessDefinition process, List<ContentProblem> problems)
+    private static void ValidateRoleWeights(CraftingActionDefinition craftingAction, List<ContentProblem> problems)
     {
-        var weights = process.RoleWeights;
+        var weights = craftingAction.RoleWeights;
 
         if (weights.Substrate < 0.0 || weights.Reagent < 0.0 || weights.Catalyst < 0.0)
-            problems.Add(new("processes", $"{process.Id} has a negative role weight."));
+            problems.Add(new("processes", $"{craftingAction.Id} has a negative role weight."));
 
-        // Potency is a weighted mean (§6.1); weights that don't sum to 1 would let a process
-        // inflate or deflate potency for free, which is the exploit the mean exists to close.
+        // MaterialStrength is a weighted mean (§6.1); weights that don't sum to 1 would let a crafting action
+        // inflate or deflate material strength for free, which is the exploit the mean exists to close.
         if (Math.Abs(weights.Total - 1.0) > RoleWeightTolerance)
-            problems.Add(new("processes", $"{process.Id} role_weights sum to {weights.Total:0.###}, not 1.0."));
+            problems.Add(new("processes", $"{craftingAction.Id} role_weights sum to {weights.Total:0.###}, not 1.0."));
     }
 
     private static void ValidateChannel(
-        ProcessDefinition process,
+        CraftingActionDefinition craftingAction,
         DataStore<PropertyDefinition> properties,
         List<ContentProblem> problems)
     {
-        if (process.Channel.Count == 0)
+        if (craftingAction.AffectedQualities.Count == 0)
         {
-            problems.Add(new("processes", $"{process.Id} opens no channel, so it could never change anything."));
+            problems.Add(new("processes", $"{craftingAction.Id} declares no affected_qualities, so it could never change anything."));
             return;
         }
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var entry in process.Channel)
+        foreach (var entry in craftingAction.AffectedQualities)
         {
             if (!seen.Add(entry.Property))
-                problems.Add(new("processes", $"{process.Id} lists channel property '{entry.Property}' twice."));
+                problems.Add(new("processes", $"{craftingAction.Id} lists channel property '{entry.Property}' twice."));
 
             if (entry.Rate is <= 0.0 or > MaxChannelRate)
-                problems.Add(new("processes", $"{process.Id} channel '{entry.Property}' rate {entry.Rate:0.##} is outside the 0–{MaxChannelRate:0} range (exclusive of 0)."));
+                problems.Add(new("processes", $"{craftingAction.Id} channel '{entry.Property}' rate {entry.Rate:0.##} is outside the 0–{MaxChannelRate:0} range (exclusive of 0)."));
 
             if (!properties.TryGetById(entry.Property, out var property))
             {
-                problems.Add(new("processes", $"{process.Id} opens unknown property '{entry.Property}' (typo, or add it to game/data/properties/)."));
+                problems.Add(new("processes", $"{craftingAction.Id} opens unknown property '{entry.Property}' (typo, or add it to game/data/properties/)."));
                 continue;
             }
 
             // §2.3: Response properties are derived outputs and Sourcing describes how hard the
             // material was to obtain — neither may ever be a reaction input.
             if (property.Role is PropertyRole.Response or PropertyRole.Sourcing)
-                problems.Add(new("processes", $"{process.Id} opens '{entry.Property}', which is a {property.Role} property and can never be a reaction input."));
+                problems.Add(new("processes", $"{craftingAction.Id} opens '{entry.Property}', which is a {property.Role} property and can never be a reaction input."));
         }
     }
 
-    private static void ValidateProcessTagEffects(ProcessDefinition process, List<ContentProblem> problems)
+    private static void ValidateProcessTagEffects(CraftingActionDefinition craftingAction, List<ContentProblem> problems)
     {
-        foreach (var tag in process.TagEffects.Set)
-            ValidateProcessTag(process, tag, "tag_effects.set", allowWildcard: false, problems);
+        foreach (var tag in craftingAction.TagEffects.Set)
+            ValidateProcessTag(craftingAction, tag, "tag_effects.set", allowWildcard: false, problems);
 
-        foreach (var tag in process.TagEffects.Clear)
-            ValidateProcessTag(process, tag, "tag_effects.clear", allowWildcard: true, problems);
+        foreach (var tag in craftingAction.TagEffects.Clear)
+            ValidateProcessTag(craftingAction, tag, "tag_effects.clear", allowWildcard: true, problems);
 
         // Setting and clearing the same exact tag is always an authoring mistake; a family
         // wildcard clear alongside a set in that family is the normal "replace" idiom.
-        foreach (var tag in process.TagEffects.Set.Intersect(process.TagEffects.Clear, StringComparer.Ordinal))
-            problems.Add(new("processes", $"{process.Id} both sets and clears tag '{tag}'."));
+        foreach (var tag in craftingAction.TagEffects.Set.Intersect(craftingAction.TagEffects.Clear, StringComparer.Ordinal))
+            problems.Add(new("processes", $"{craftingAction.Id} both sets and clears tag '{tag}'."));
     }
 
     private static void ValidateProcessTag(
-        ProcessDefinition process,
+        CraftingActionDefinition craftingAction,
         string tag,
         string field,
         bool allowWildcard,
@@ -692,25 +692,25 @@ public static class ContentValidator
     {
         if (!TagFamilies.TryParse(tag, out var family, out var value))
         {
-            problems.Add(new("processes", $"{process.Id} {field} has un-namespaced tag '{tag}' (expected family:value)."));
+            problems.Add(new("processes", $"{craftingAction.Id} {field} has un-namespaced tag '{tag}' (expected family:value)."));
             return;
         }
 
         if (!TagFamilies.TryGet(family, out var def))
         {
-            problems.Add(new("processes", $"{process.Id} {field} tag '{tag}' uses unknown family '{family}'."));
+            problems.Add(new("processes", $"{craftingAction.Id} {field} tag '{tag}' uses unknown family '{family}'."));
             return;
         }
 
-        if (value == ProcessTagEffects.ClearFamilyWildcard)
+        if (value == CraftingActionTagEffects.ClearFamilyWildcard)
         {
             if (!allowWildcard)
-                problems.Add(new("processes", $"{process.Id} {field} may not use the '{family}:*' wildcard."));
+                problems.Add(new("processes", $"{craftingAction.Id} {field} may not use the '{family}:*' wildcard."));
             return;
         }
 
         if (def.ClosedValues is not null && !def.ClosedValues.Contains(value))
-            problems.Add(new("processes", $"{process.Id} {field} tag '{tag}' is not a valid '{family}' value."));
+            problems.Add(new("processes", $"{craftingAction.Id} {field} tag '{tag}' is not a valid '{family}' value."));
     }
 
     /// <summary>
@@ -961,16 +961,16 @@ public static class ContentValidator
                 problems.Add(new("traits",
                     $"{trait.Id} has no condition and is no merge's target — unreachable content."));
 
-            if (!Dungeons.Crafting.FabricationTuning.TraitCategories.Contains(trait.Category))
+            if (!Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories.Contains(trait.Category))
                 problems.Add(new("traits",
-                    $"{trait.Id} has unknown category '{trait.Category}'. Valid: {string.Join(", ", Dungeons.Crafting.FabricationTuning.TraitCategories)}."));
+                    $"{trait.Id} has unknown category '{trait.Category}'. Valid: {string.Join(", ", Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories)}."));
         }
     }
 
     /// <summary>§16.2 forms (C2a): apertures gate known categories, stat maps read known
     /// properties from real slots, and granted moves resolve.</summary>
     private static void ValidateForms(
-        DataStore<Dungeons.Crafting.FormTemplateDefinition> forms,
+        DataStore<Dungeons.Crafting.EquipmentBlueprintDefinition> forms,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
         IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
@@ -983,9 +983,9 @@ public static class ContentValidator
                 problems.Add(new("forms", $"{form.Id} trait_cap must be at least 1."));
 
             foreach (var (slotName, slot) in form.Slots)
-                foreach (var category in slot.Aperture.Keys)
-                    if (!Dungeons.Crafting.FabricationTuning.TraitCategories.Contains(category))
-                        problems.Add(new("forms", $"{form.Id} slot '{slotName}' aperture gates unknown category '{category}'."));
+                foreach (var category in slot.TraitExpression.Keys)
+                    if (!Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories.Contains(category))
+                        problems.Add(new("forms", $"{form.Id} slot '{slotName}' traitExpression gates unknown category '{category}'."));
 
             foreach (var (stat, reads) in form.StatMap)
                 foreach (var read in reads)

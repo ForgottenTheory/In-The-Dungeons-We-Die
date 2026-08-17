@@ -17,12 +17,12 @@ namespace Dungeons.Crafting;
 ///
 /// <para>The hash must be stable across processes and machines, so it is SHA-256 over a
 /// canonical string rather than <see cref="object.GetHashCode"/>, which .NET randomizes per
-/// process. Numbers are formatted invariantly for the same reason.</para>
+/// crafting action. Numbers are formatted invariantly for the same reason.</para>
 /// </summary>
 public static class MaterialSignature
 {
     /// <summary>The canonical archetype id for a finalized result state.</summary>
-    public static string Compute(MaterialProfile profile, IReadOnlyList<string> tags)
+    public static string Compute(MaterialState profile, IReadOnlyList<string> tags)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(tags);
@@ -34,7 +34,7 @@ public static class MaterialSignature
     /// The exact string that gets hashed. Exposed because a signature is otherwise opaque:
     /// when two crafts unexpectedly do or don't collide, this is the only way to see why.
     /// </summary>
-    public static string Canonical(MaterialProfile profile, IReadOnlyList<string> tags)
+    public static string Canonical(MaterialState profile, IReadOnlyList<string> tags)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(tags);
@@ -42,7 +42,7 @@ public static class MaterialSignature
         var builder = new StringBuilder();
 
         builder.Append("g=").Append(profile.Generation.ToString(CultureInfo.InvariantCulture));
-        builder.Append("|pot=").Append(Bucketed(profile.Potency, QuantizationTuning.PotencyBucket));
+        builder.Append("|pot=").Append(Bucketed(profile.MaterialStrength, QuantizationTuning.MaterialStrengthBucket));
         builder.Append("|form=").Append(TagValues(tags, TagFamilies.Form.Name));
         builder.Append("|state=").Append(TagValues(tags, TagFamilies.State.Name));
         builder.Append("|roots=").Append(Roots(profile.Lineage));

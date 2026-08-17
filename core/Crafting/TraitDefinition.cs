@@ -38,7 +38,7 @@ public sealed class TraitDefinition : IDefinition
     public string Drawback { get; init; } = string.Empty;
 
     /// <summary>§16.3 expression category — the axis form apertures gate
-    /// (<see cref="FabricationTuning.TraitCategories"/>). Validated.</summary>
+    /// (<see cref="EquipmentAssemblyTuning.TraitCategories"/>). Validated.</summary>
     public string Category { get; init; } = "structural";
 
     /// <summary>

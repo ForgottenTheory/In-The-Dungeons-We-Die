@@ -42,11 +42,11 @@ public sealed class EquipmentDefinition : IItemDefinition
 
     public ArmorStats? Armor { get; init; }
 
-    /// <summary>Traits expressed through the fabrication aperture (C2a §16.3). Empty on
+    /// <summary>Traits expressed through the fabrication trait expression (C2a §16.3). Empty on
     /// authored gear.</summary>
     public IReadOnlyList<Crafting.TraitInstance> ExpressedTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
 
-    /// <summary>Traits the aperture or cap held back — kept for value, flavour, and future
+    /// <summary>Traits the trait expression or cap held back — kept for value, flavour, and future
     /// refabrication (§16.2's dormancy rule).</summary>
     public IReadOnlyList<Crafting.TraitInstance> DormantTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
 

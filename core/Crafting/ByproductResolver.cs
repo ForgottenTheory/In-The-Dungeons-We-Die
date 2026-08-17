@@ -23,7 +23,7 @@ public sealed class ByproductResolver
     /// an iron ingot (<c>form:metal</c>, <c>form:ingot</c>) yields slag without either tag
     /// being special-cased.
     /// </summary>
-    public ItemStack? Resolve(IReadOnlyList<string> tags, int quantity = 1)
+    public ItemStack? ByproductFor(IReadOnlyList<string> tags, int quantity = 1)
     {
         ArgumentNullException.ThrowIfNull(tags);
         if (quantity <= 0)

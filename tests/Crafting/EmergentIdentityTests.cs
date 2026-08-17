@@ -19,13 +19,13 @@ public class EmergentIdentityTests
     private static DataStore<MaterialDefinition> Materials() =>
         TestPaths.LoadStore<MaterialDefinition>("materials");
 
-    private static DataStore<ProcessDefinition> Processes() =>
-        TestPaths.LoadStore<ProcessDefinition>("processes");
+    private static DataStore<CraftingActionDefinition> CraftingActions() =>
+        TestPaths.LoadStore<CraftingActionDefinition>("processes");
 
-    private static MaterialProfile Profile(
+    private static MaterialState State(
         double heat = 35,
-        int potency = 49,
-        int integrity = 72,
+        int materialStrength = 49,
+        int workability = 72,
         int generation = 2,
         string root = "material.iron_ingot") =>
         new(
@@ -33,8 +33,8 @@ public class EmergentIdentityTests
             {
                 ["heat"] = heat, ["hardness"] = 62, ["mass"] = 58,
             }),
-            Potency: potency,
-            Integrity: integrity,
+            MaterialStrength: materialStrength,
+            Workability: workability,
             Lineage: new Lineage(
                 new[] { new RootShare(root, 1.0) }, generation, "process.forge_infusion",
                 new[] { "material.iron_ingot" }),
@@ -47,7 +47,7 @@ public class EmergentIdentityTests
     [Fact]
     public void Signature_HasTheDocumentedShape()
     {
-        var signature = MaterialSignature.Compute(Profile(), IronTags);
+        var signature = MaterialSignature.Compute(State(), IronTags);
 
         Assert.StartsWith("emergent.", signature);
         Assert.Equal("emergent.".Length + 8, signature.Length);
@@ -55,15 +55,15 @@ public class EmergentIdentityTests
 
     /// <summary>
     /// §12.2, and the reason discovery is worth talking about: "Same state ⇒ same signature ⇒
-    /// same id ⇒ same name, for every player, forever." A per-process hash seed would break
+    /// same id ⇒ same name, for every player, forever." A per-crafting action hash seed would break
     /// this silently across restarts, so it is worth asserting the value itself is stable.
     /// </summary>
     [Fact]
     public void Signature_IsStableForTheSameState()
     {
         Assert.Equal(
-            MaterialSignature.Compute(Profile(), IronTags),
-            MaterialSignature.Compute(Profile(), Enumerable.Reverse(IronTags).ToArray()));
+            MaterialSignature.Compute(State(), IronTags),
+            MaterialSignature.Compute(State(), Enumerable.Reverse(IronTags).ToArray()));
     }
 
     /// <summary>Quantization is what collapses near-identical results, so the registry fills
@@ -72,16 +72,16 @@ public class EmergentIdentityTests
     public void Signature_CollapsesResultsWithinTheSameBucket()
     {
         Assert.Equal(
-            MaterialSignature.Compute(Profile(heat: 34.2), IronTags),
-            MaterialSignature.Compute(Profile(heat: 35.8), IronTags));
+            MaterialSignature.Compute(State(heat: 34.2), IronTags),
+            MaterialSignature.Compute(State(heat: 35.8), IronTags));
     }
 
     [Fact]
     public void Signature_SeparatesResultsInDifferentBuckets()
     {
         Assert.NotEqual(
-            MaterialSignature.Compute(Profile(heat: 35), IronTags),
-            MaterialSignature.Compute(Profile(heat: 55), IronTags));
+            MaterialSignature.Compute(State(heat: 35), IronTags),
+            MaterialSignature.Compute(State(heat: 55), IronTags));
     }
 
     /// <summary>Each component of §12.1's hash must actually participate, or two genuinely
@@ -89,24 +89,24 @@ public class EmergentIdentityTests
     [Fact]
     public void Signature_RespondsToEveryComponentOfTheState()
     {
-        var baseline = MaterialSignature.Compute(Profile(), IronTags);
+        var baseline = MaterialSignature.Compute(State(), IronTags);
 
-        Assert.NotEqual(baseline, MaterialSignature.Compute(Profile(potency: 70), IronTags));
-        Assert.NotEqual(baseline, MaterialSignature.Compute(Profile(generation: 3), IronTags));
-        Assert.NotEqual(baseline, MaterialSignature.Compute(Profile(root: "material.copper_ore"), IronTags));
-        Assert.NotEqual(baseline, MaterialSignature.Compute(Profile(), new[] { "form:powder", "state:alloy" }));
-        Assert.NotEqual(baseline, MaterialSignature.Compute(Profile(), new[] { "form:metal", "state:refined" }));
+        Assert.NotEqual(baseline, MaterialSignature.Compute(State(materialStrength: 70), IronTags));
+        Assert.NotEqual(baseline, MaterialSignature.Compute(State(generation: 3), IronTags));
+        Assert.NotEqual(baseline, MaterialSignature.Compute(State(root: "material.copper_ore"), IronTags));
+        Assert.NotEqual(baseline, MaterialSignature.Compute(State(), new[] { "form:powder", "state:alloy" }));
+        Assert.NotEqual(baseline, MaterialSignature.Compute(State(), new[] { "form:metal", "state:refined" }));
     }
 
-    /// <summary>Integrity is deliberately absent from identity: how much budget a material has
+    /// <summary>Workability is deliberately absent from identity: how much budget a material has
     /// left is its condition, not what it <i>is</i>. Two units of the same alloy must stack
     /// even if one has been worked harder.</summary>
     [Fact]
     public void Signature_IgnoresIntegrity()
     {
         Assert.Equal(
-            MaterialSignature.Compute(Profile(integrity: 72), IronTags),
-            MaterialSignature.Compute(Profile(integrity: 20), IronTags));
+            MaterialSignature.Compute(State(workability: 72), IronTags),
+            MaterialSignature.Compute(State(workability: 20), IronTags));
     }
 
     /// <summary>A trace the floor left behind and an absent property are the same material —
@@ -114,10 +114,10 @@ public class EmergentIdentityTests
     [Fact]
     public void Signature_TreatsSubBucketTracesAsAbsent()
     {
-        var withTrace = new MaterialProfile(
+        var withTrace = new MaterialState(
             PropertySet.FromValues(new Dictionary<string, double> { ["hardness"] = 60, ["heat"] = 1 }),
             50, 80, Lineage.ForBase("material.iron_ingot"), string.Empty);
-        var without = new MaterialProfile(
+        var without = new MaterialState(
             PropertySet.FromValues(new Dictionary<string, double> { ["hardness"] = 60 }),
             50, 80, Lineage.ForBase("material.iron_ingot"), string.Empty);
 
@@ -131,7 +131,7 @@ public class EmergentIdentityTests
     [Fact]
     public void Canonical_ReservesSlotsForTraitsAndEssence()
     {
-        var canonical = MaterialSignature.Canonical(Profile(), IronTags);
+        var canonical = MaterialSignature.Canonical(State(), IronTags);
 
         Assert.Contains("|traits=", canonical);
         Assert.Contains("|essence=", canonical);
@@ -144,7 +144,7 @@ public class EmergentIdentityTests
     {
         var state = PropertySet.FromValues(new Dictionary<string, double> { ["heat"] = 35 });
         var scattered = VariancePerturbation.Apply(
-            state, Processes().GetById("process.forge_infusion"), varianceMagnitude: 0, new SeededRandom(1));
+            state, CraftingActions().GetById("process.forge_infusion"), varianceMagnitude: 0, new SeededRandom(1));
 
         Assert.Same(state, scattered);
     }
@@ -155,10 +155,10 @@ public class EmergentIdentityTests
     public void Variance_IsReproducibleFromItsSeed()
     {
         var state = PropertySet.FromValues(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 });
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
 
-        var first = VariancePerturbation.Apply(state, process, 40, new SeededRandom(1234));
-        var second = VariancePerturbation.Apply(state, process, 40, new SeededRandom(1234));
+        var first = VariancePerturbation.Apply(state, craftingAction, 40, new SeededRandom(1234));
+        var second = VariancePerturbation.Apply(state, craftingAction, 40, new SeededRandom(1234));
 
         Assert.Equal(first.AsDictionary(), second.AsDictionary());
     }
@@ -173,7 +173,7 @@ public class EmergentIdentityTests
         });
 
         var scattered = VariancePerturbation.Apply(
-            state, Processes().GetById("process.forge_infusion"), 60, new SeededRandom(7));
+            state, CraftingActions().GetById("process.forge_infusion"), 60, new SeededRandom(7));
 
         Assert.NotEqual(35.0, scattered.Get("heat"));
         Assert.Equal(40.0, scattered.Get("toxicity"));
@@ -187,7 +187,7 @@ public class EmergentIdentityTests
     [Fact]
     public void Variance_ProducesDifferentMaterials_NotRandomStatsOnOne()
     {
-        var process = Processes().GetById("process.forge_infusion");
+        var craftingAction = CraftingActions().GetById("process.forge_infusion");
         var state = PropertySet.FromValues(new Dictionary<string, double>
         {
             ["heat"] = 40, ["hardness"] = 60, ["affinity"] = 30,
@@ -198,15 +198,15 @@ public class EmergentIdentityTests
 
         for (var seed = 0; seed < 25; seed++)
         {
-            scattered.Add(SignatureOf(VariancePerturbation.Apply(state, process, 80, new SeededRandom(seed))));
-            precise.Add(SignatureOf(VariancePerturbation.Apply(state, process, 0, new SeededRandom(seed))));
+            scattered.Add(SignatureOf(VariancePerturbation.Apply(state, craftingAction, 80, new SeededRandom(seed))));
+            precise.Add(SignatureOf(VariancePerturbation.Apply(state, craftingAction, 0, new SeededRandom(seed))));
         }
 
         Assert.True(scattered.Count > 1, "an unskilled crafter should land on more than one material.");
         Assert.Single(precise);
 
         static string SignatureOf(PropertySet properties) => MaterialSignature.Compute(
-            new MaterialProfile(properties, 50, 80, Lineage.ForBase("material.iron_ingot"), string.Empty),
+            new MaterialState(properties, 50, 80, Lineage.ForBase("material.iron_ingot"), string.Empty),
             IronTags);
     }
 
@@ -217,7 +217,7 @@ public class EmergentIdentityTests
     {
         var materials = Materials();
         var registry = new EmergentRegistry(materials);
-        var signature = MaterialSignature.Compute(Profile(), IronTags);
+        var signature = MaterialSignature.Compute(State(), IronTags);
 
         var first = registry.GetOrRegister(signature, () => Archetype(signature));
         var second = registry.GetOrRegister(signature, () => throw new InvalidOperationException("must not recreate"));
@@ -238,7 +238,7 @@ public class EmergentIdentityTests
     {
         var materials = Materials();
         var registry = new EmergentRegistry(materials);
-        var signature = MaterialSignature.Compute(Profile(), IronTags);
+        var signature = MaterialSignature.Compute(State(), IronTags);
         registry.GetOrRegister(signature, () => Archetype(signature));
 
         Assert.True(materials.Contains(signature));
@@ -266,7 +266,7 @@ public class EmergentIdentityTests
     {
         var materials = Materials();
         var registry = new EmergentRegistry(materials);
-        var signature = MaterialSignature.Compute(Profile(), IronTags);
+        var signature = MaterialSignature.Compute(State(), IronTags);
         var archetype = Archetype(signature);
 
         registry.Restore(new[] { archetype });
@@ -280,7 +280,7 @@ public class EmergentIdentityTests
         Id = signature,
         Name = "Emberveined Iron",
         Tags = IronTags,
-        Properties = new Dictionary<string, double>(Profile().Properties.AsDictionary()),
-        Profile = Profile() with { Signature = signature },
+        Properties = new Dictionary<string, double>(State().Properties.AsDictionary()),
+        State = State() with { Signature = signature },
     };
 }

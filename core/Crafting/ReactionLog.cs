@@ -9,17 +9,17 @@ public enum ReactionLogKind
     /// <summary>"Forge Infusion — Iron Ingot ← Ember Core".</summary>
     Step,
 
-    /// <summary>An acceptance/release/integrity coefficient and why it is what it is.</summary>
+    /// <summary>An acceptance/release/workability coefficient and why it is what it is.</summary>
     Coefficient,
 
     /// <summary>One property moving, with the reason it moved.</summary>
     Property,
 
-    /// <summary>The integrity charged, and the arithmetic behind it.</summary>
-    Integrity,
+    /// <summary>The workability charged, and the arithmetic behind it.</summary>
+    Workability,
 
-    /// <summary>The potency inputs and the resulting potency.</summary>
-    Potency,
+    /// <summary>The material strength inputs and the resulting material strength.</summary>
+    MaterialStrength,
 
     /// <summary>A trait born, displaced, or superseded (§10; C1a).</summary>
     Trait,
@@ -54,7 +54,7 @@ public sealed record ReactionLogEntry(
 ///
 /// <para>The valuable part is not the numbers — it is the <i>because</i>. "Acceptance 0.48"
 /// teaches nothing; "Acceptance 0.48 — iron resists bonding (affinity 30)" teaches the player
-/// to look at affinity before choosing a process.</para>
+/// to look at affinity before choosing a crafting action.</para>
 /// </summary>
 public sealed class ReactionLog
 {

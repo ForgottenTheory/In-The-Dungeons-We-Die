@@ -10,11 +10,11 @@ namespace Dungeons.Tests.Crafting;
 /// The whole §8.7 pipeline, end to end (docs/emergent-item-system.md).
 ///
 /// <para>§20's claim is that <b>P1 alone is a playable, genuinely emergent system</b> — "if
-/// pure convergence + integrity + naming + stacking isn't already interesting to play with,
+/// pure convergence + workability + naming + stacking isn't already interesting to play with,
 /// adding traits and signatures will not save it." These tests are where that claim is
 /// checked: real content, real inventory, no authored recipes anywhere.</para>
 /// </summary>
-public class ReactionEngineTests
+public class MaterialTransformationEngineTests
 {
     private sealed class Harness
     {
@@ -24,16 +24,16 @@ public class ReactionEngineTests
             {
                 Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
                 Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
-                Processes = TestPaths.LoadStore<ProcessDefinition>("processes"),
+                CraftingActions = TestPaths.LoadStore<CraftingActionDefinition>("processes"),
                 Byproducts = TestPaths.LoadStore<ByproductDefinition>("byproducts"),
                 NameGrammar = TestPaths.LoadStore<NameWordDefinition>("name_grammar"),
             };
 
             Inventory = new Inventory();
-            Profiles = new MaterialProfileResolver(Content.Properties);
+            Profiles = new MaterialStateResolver(Content.Properties);
             Registry = new EmergentRegistry(Content.Materials);
 
-            Engine = new ReactionEngine(
+            Engine = new MaterialTransformationEngine(
                 Content,
                 () => Inventory,
                 Profiles,
@@ -48,9 +48,9 @@ public class ReactionEngineTests
 
         public ContentBundle Content { get; }
         public Inventory Inventory { get; }
-        public MaterialProfileResolver Profiles { get; }
+        public MaterialStateResolver Profiles { get; }
         public EmergentRegistry Registry { get; }
-        public ReactionEngine Engine { get; }
+        public MaterialTransformationEngine Engine { get; }
 
         public Harness With(params string[] materialIds)
         {
@@ -59,8 +59,8 @@ public class ReactionEngineTests
             return this;
         }
 
-        public CraftOutcome Craft(string process, string substrate, params string[] reagents) =>
-            Engine.Resolve(new CraftRequest(process, substrate, reagents));
+        public CraftOutcome Craft(string craftingAction, string substrate, params string[] reagents) =>
+            Engine.RunCraft(new CraftRequest(craftingAction, substrate, reagents));
     }
 
     // ---- A craft actually works ---------------------------------------------------------
@@ -113,7 +113,7 @@ public class ReactionEngineTests
         Assert.True(second.Success, second.Failure.ToString());
         Assert.NotEqual(first.ResultItemId, second.ResultItemId);
 
-        var profile = harness.Content.Materials.GetById(second.ResultItemId!).Profile!;
+        var profile = harness.Content.Materials.GetById(second.ResultItemId!).State!;
         Assert.Equal(3, profile.Generation);
         Assert.Contains(first.ResultItemId, profile.Lineage.ParentSignatures);
         Assert.Equal("material.iron_ingot", profile.Lineage.DominantRoot?.RootId);
@@ -122,11 +122,11 @@ public class ReactionEngineTests
     // ---- The gate (§8.7 step 1) ------------------------------------------------------------
 
     [Theory]
-    [InlineData("process.nope", "material.iron_ingot", CraftFailure.UnknownProcess)]
+    [InlineData("process.nope", "material.iron_ingot", CraftFailure.UnknownCraftingAction)]
     [InlineData("process.forge_infusion", "material.nope", CraftFailure.UnknownSubstrate)]
-    public void UnknownContentIsRejected(string process, string substrate, CraftFailure expected)
+    public void UnknownContentIsRejected(string craftingAction, string substrate, CraftFailure expected)
     {
-        Assert.Equal(expected, new Harness().Craft(process, substrate, "material.ember_core").Failure);
+        Assert.Equal(expected, new Harness().Craft(craftingAction, substrate, "material.ember_core").Failure);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class ReactionEngineTests
     // ---- Order is the mechanic (§0 Decision 2) ------------------------------------------------
 
     /// <summary>
-    /// Two reagents in either order, through the same process, must produce genuinely
+    /// Two reagents in either order, through the same crafting action, must produce genuinely
     /// different materials — with nothing authored anywhere to say so.
     /// </summary>
     [Fact]
@@ -189,7 +189,7 @@ public class ReactionEngineTests
         Assert.NotEqual(forward.ResultItemId, reverse.ResultItemId);
     }
 
-    /// <summary>§7.2's claim: the process choice is a first-class player decision.</summary>
+    /// <summary>§7.2's claim: the crafting action choice is a first-class player decision.</summary>
     [Fact]
     public void ProcessChoiceProducesDifferentMaterials()
     {
@@ -244,14 +244,14 @@ public class ReactionEngineTests
             harness.Inventory.Add(current, 5);
             result = harness.Content.Materials.GetById(current);
 
-            var toxicity = result.Profile!.Properties.Get("toxicity");
+            var toxicity = result.State!.Properties.Get("toxicity");
             Assert.Equal(toxicity >= 55, result.Tags.Contains("class:venomous"));
 
             if (toxicity >= 55)
                 return;
         }
 
-        Assert.Fail($"steeping in venom never became venomous (reached {result?.Profile!.Properties.Get("toxicity"):0}).");
+        Assert.Fail($"steeping in venom never became venomous (reached {result?.State!.Properties.Get("toxicity"):0}).");
     }
 
     /// <summary>§4.2: tag count stays bounded — the reason tags are derived, not inherited.</summary>
@@ -283,13 +283,13 @@ public class ReactionEngineTests
     {
         var harness = new Harness().With("material.iron_ingot", "material.ember_core");
 
-        var projection = harness.Engine.Project(
+        var projection = harness.Engine.PreviewCraft(
             new CraftRequest("process.forge_infusion", "material.iron_ingot", new[] { "material.ember_core" }));
 
         Assert.True(projection.CanCraft);
         Assert.True(projection.WouldBeFirstDiscovery);
         Assert.False(projection.WarnsOfDestruction);
-        Assert.True(projection.ProjectedIntegrity() < 90, "a craft has to cost something.");
+        Assert.True(projection.ProjectedWorkability() < 90, "a craft has to cost something.");
 
         // Projecting must not consume, register, or otherwise change anything.
         Assert.Equal(10, harness.Inventory.GetQuantity("material.iron_ingot"));
@@ -302,7 +302,7 @@ public class ReactionEngineTests
     [Fact]
     public void TheProjectionReportsWhyACraftCannotProceed()
     {
-        var projection = new Harness().Engine.Project(
+        var projection = new Harness().Engine.PreviewCraft(
             new CraftRequest("process.forge_infusion", "material.sageleaf", new[] { "material.ember_core" }));
 
         Assert.False(projection.CanCraft);
@@ -310,7 +310,7 @@ public class ReactionEngineTests
     }
 
     /// <summary>
-    /// §6.2c end to end: push a material until integrity runs out. It must be destroyed rather
+    /// §6.2c end to end: push a material until workability runs out. It must be destroyed rather
     /// than lingering at zero, and it must leave byproducts — a blown craft is a setback and a
     /// consolation prize, not a zero.
     /// </summary>
@@ -381,11 +381,11 @@ public class ReactionEngineTests
         var names = new HashSet<string>(StringComparer.Ordinal);
         var crafted = 0;
 
-        foreach (var process in harness.Content.Processes.GetAll())
+        foreach (var craftingAction in harness.Content.CraftingActions.GetAll())
         foreach (var substrate in substrates)
         foreach (var reagent in reagents)
         {
-            var outcome = harness.Craft(process.Id, substrate, reagent);
+            var outcome = harness.Craft(craftingAction.Id, substrate, reagent);
             if (!outcome.Success)
             {
                 // The only acceptable refusals are the authored gates.
@@ -413,5 +413,5 @@ public class ReactionEngineTests
 
 internal static class ProjectionExtensions
 {
-    public static int ProjectedIntegrity(this CraftProjection projection) => projection.Integrity.ProjectedIntegrity;
+    public static int ProjectedWorkability(this CraftPreview projection) => projection.Workability.ProjectedWorkability;
 }

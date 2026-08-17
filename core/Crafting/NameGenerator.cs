@@ -52,7 +52,7 @@ public sealed class NameGenerator
     /// Names a finalized result. <paramref name="isTaken"/> reports whether another archetype
     /// already uses a name, so collisions resolve deterministically (§13.4).
     /// </summary>
-    public string Generate(MaterialProfile profile, IReadOnlyList<string> tags, Func<string, bool>? isTaken = null)
+    public string Generate(MaterialState profile, IReadOnlyList<string> tags, Func<string, bool>? isTaken = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(tags);
@@ -76,7 +76,7 @@ public sealed class NameGenerator
     /// falls away in later generations the name shifts with it, which §13.3 calls out as a
     /// rare and satisfying moment.
     /// </summary>
-    private string RootNoun(MaterialProfile profile)
+    private string RootNoun(MaterialState profile)
     {
         var root = profile.Lineage.DominantRoot;
         if (root is null)

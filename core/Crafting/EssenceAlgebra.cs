@@ -6,29 +6,29 @@ namespace Dungeons.Crafting;
 public sealed record EssenceStepResult(
     IReadOnlyDictionary<string, double> Essence,
     IReadOnlyList<(string Key, double Before, double After)> Changes,
-    double StrainReleased);
+    double StressReleased);
 
 /// <summary>
 /// The §8.4/§8.5 essence algebra, run beside the property algebra each reagent step.
 ///
 /// <para>Transfer is <b>additive</b>: <c>gain = reagent.essence × essence_rate × A × S ×
-/// quality</c>, with a bonus when the process channel moves the essence's anchor. Essence
+/// quality</c>, with a bonus when the crafting action channel moves the essence's anchor. Essence
 /// never converges toward zero on its own — it must be diluted deliberately or annihilated by
 /// opposition, which cancels the overlap at §8.5's rate and releases it as strain the
-/// integrity cost feels. Only the asymmetry survives: you cannot stockpile opposites.</para>
+/// workability cost feels. Only the asymmetry survives: you cannot stockpile opposites.</para>
 /// </summary>
 public static class EssenceAlgebra
 {
     public static EssenceStepResult Apply(
         IReadOnlyDictionary<string, double> substrate,
         IReadOnlyDictionary<string, double> reagent,
-        ProcessDefinition process,
-        ReactionCoefficients coefficients,
+        CraftingActionDefinition craftingAction,
+        TransferCoefficients coefficients,
         DataStore<EssenceDefinition> essences)
     {
         ArgumentNullException.ThrowIfNull(substrate);
         ArgumentNullException.ThrowIfNull(reagent);
-        ArgumentNullException.ThrowIfNull(process);
+        ArgumentNullException.ThrowIfNull(craftingAction);
         ArgumentNullException.ThrowIfNull(coefficients);
         ArgumentNullException.ThrowIfNull(essences);
 
@@ -42,13 +42,13 @@ public static class EssenceAlgebra
             if (incoming <= 0)
                 continue;
 
-            var anchorInChannel = process.Channel.Any(c =>
+            var anchorInChannel = craftingAction.AffectedQualities.Any(c =>
                 string.Equals(c.Property, definition.Anchor, StringComparison.OrdinalIgnoreCase));
 
             var gain = incoming
-                * process.EssenceRate
-                * coefficients.Acceptance
-                * coefficients.Release
+                * craftingAction.EssenceRate
+                * coefficients.Compatibility
+                * coefficients.TransferStrength
                 * coefficients.QualityMultiplier
                 * (anchorInChannel ? 1.0 + EssenceTuning.AnchorChannelBonus : 1.0);
 
@@ -82,7 +82,7 @@ public static class EssenceAlgebra
             if (overlap <= 0)
                 continue;
 
-            var cancelled = overlap * ReactionTuning.AnnihilationRate;
+            var cancelled = overlap * MaterialTransformationTuning.ConflictAnnihilationRate;
             Record(result, changes, aKey, a, a - cancelled);
             Record(result, changes, bKey, b, b - cancelled);
             released += cancelled;
