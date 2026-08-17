@@ -429,12 +429,16 @@ other.** Active play must earn its advantage through better decisions — never 
 > specification in `docs/damage-and-defense.md`.
 >
 > **BUILT:** packets and lanes, the ordered traced pipeline (the Hit Log), diminishing armour
-> (`armour/(armour + packet)`, D-27), per-lane resistance with cap/floor, enemy vulnerability
-> multipliers, timed block/dodge stances, **Perfect Block**, crit, the INCREASED stage reading
-> real modifiers, damage-taken and block-strength modifiers, Barrier-as-status.
-> **PLANNED (arrives with its source, mostly E5 affixes):** parry, evade, lane avoidance,
-> exposure/inversion/penetration, thorns, ailment application chances, the two-number
-> `capped / raw` resistance display.
+> (`armour/(armour + packet)`, D-27), per-lane resistance with cap/floor **plus
+> `combat.resist.<lane>` contributions (R4a — D-07 executed)**, enemy vulnerability
+> multipliers, timed block/dodge stances, **Perfect Block**, **Parry (gear-granted, R4c-2)**,
+> **Evade** (untelegraphed only) and **lane avoidance**, **flat lane penetration after the
+> cap**, crit, the INCREASED stage reading real modifiers, damage-taken and block-strength
+> modifiers, **Barrier absorption** (`BarrierBroken` live), **thorns/retaliation as triggered
+> rules**, **ailment application chances (affix-sourced, R4b)**, status potency/duration keys,
+> and the `capped / raw` display on the armour summary.
+> **PLANNED (E7/Exotic tier):** exposure-as-debuff content, inversion, ignore-fraction,
+> stored retaliation; the full `capped / raw` character sheet and preparation screen.
 
 **A hit is a list of packets**, each carrying exactly one **damage type**
 (*Slashing · Crushing · Piercing · Magic*) and zero-or-one **aspect**
@@ -873,7 +877,18 @@ grants Iron Slash and Heavy Strike), and re-equipping reconfigures the moveset �
 identity, working today. Material properties still barely reach combat: only mass →
 damage/speed (applied to the move's packets) and hardness → armour.
 
-## 10.2a Modifiers, genetics and the casino — **PLANNED** (designed in full, not built)
+## 10.2a Modifiers, genetics and the casino — **front half BUILT (R4b/R4c, 2026-08-16)**
+
+> **BUILT:** the Genome (stat-map-weighted pressure, persisted — save v6), `AffixDefinition`
+> with the three genetic levers + potency as roll-quality, §4 rolling on the seeded source,
+> **innates as a deterministic affix class** (never rerollable, U-7), 43 representative
+> affixes across offence/character/defence/resource/ailment/retaliation/avoidance/
+> penetration/trigger/status/move-mod families, equip-lifecycle grants (scoped contributions
+> + attached rules + move-modifier grants), the §8 validator rules, seeded distribution
+> tests, the pre-roll genome translation on the fabrication preview, and a debug reroll.
+> **STILL PLANNED:** operations + Overreach + Anomalous (E7), Exotic rare-roll, Signature
+> affixes (P4), the full 150–250 catalog, the §2.3 full Genome Readout panel with Advanced
+> pressures (the semantic supports-line ships; the numeric panel is the roll inspector).
 
 > **Settled by D-21 – D-23.** Full specification in `docs/affixes.md` and
 > `docs/profession-tools.md`. Slices E5 (modifiers/affixes), E6 (tools), E7 (operations +
@@ -1150,6 +1165,12 @@ Load), a tabbed body, and an always-visible event log. Dark, code-only theme; no
 > moveset readout / `CombatUseMove` command. All presentation-only; a single visual pass in
 > Godot covers them.
 
+> ⚠ **Being re-voiced (D30, slices R0–R4):** the bench, projection, fabrication and item
+> surfaces below currently speak simulation numbers as their primary language. The corrected
+> presentation architecture — the three-languages rule, the hybrid semantic grammar, the item
+> reveal hierarchy — is specified in `docs/presentation-architecture.md` and supersedes the
+> raw-number presentation described here wherever they conflict.
+
 Two are genuinely designed rather than debug scaffolding:
 
 **The Crafting Bench** — process picker (showing medium, severity, gate and the channel it
@@ -1198,6 +1219,12 @@ These recur across systems and have each been argued for explicitly:
 8. **Move requirements are physical and conditional, never identity checks (D25).** Equipped
    tags, costs and statuses gate moves; attributes, resources and modifiers do the specializing.
    A class-check condition kind may never be added to the rule vocabulary.
+9. **Three languages, one direction (D30).** Simulation (0–100 values, rates, weights) →
+   player crafting language (icon + qualitative state + intensity + direction + context) →
+   gameplay payoff (damage, Crit, Thorns, Shock…). Raw simulation values never lead a normal
+   play surface; the semantic layer is a one-way, unit-tested read-model in Core; a
+   player-facing modifier ships only when its mechanic resolves. Complexity belongs
+   underneath; clarity belongs in the player's hands. `docs/presentation-architecture.md`.
 
 ---
 
@@ -1254,6 +1281,8 @@ Built, tested, and runnable today. 654 passing tests, zero build warnings.
 |---|---|
 | **Crafting traits + essence (C1)** | 16-trait library (birth/cap/displacement/supersession, `id:tier` identity), seven typed essences with anchors/opposition, resonance capacity → strain → instability, Attune |
 | **Fabrication (C2a+C2b)** | Form templates (3-slot Longsword, Buckler, Vest), aperture-gated trait expression with dormancy, derived equipment archetypes persisted, 0–100 → combat-unit reconciliation pinned by iron-sword parity, per-slot component UI |
+| **The semantic layer (R0–R3, D30)** | `Dungeons.Presentation`: tiers/pips/wear words, trends from typed change kinds, risk bands, slot-fit readings, material readings, the typed projection lines, item cards/strips — the only path from simulation state to player-facing text; raw values behind Advanced. Bench, preview, fabrication and reveal all speak it |
+| **Affixes + Genome (R4, E5 front half)** | Genome persisted (save v6), eligibility/weight/tier + potency roll-quality, deterministic innates, seeded rolling, 43 affixes with live grants (contributions/rules/move-mods), lane-key alignment (D-07 executed), thorns/parry/evade/avoidance/penetration/barrier/status-depth mechanics, §8 validation + distribution tests |
 
 | System | What's real |
 |---|---|

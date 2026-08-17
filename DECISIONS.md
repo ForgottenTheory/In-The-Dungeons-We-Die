@@ -122,3 +122,44 @@ Ids are namespaced by type: `material.*`, `equip.*`, `ability.*`, `actor.*`, `pr
 **Why:** the pre-framework path already had lane resistances, D-02 vulnerabilities, weighted AI and shared movesets — but every actor was a standalone blob, AI rules were id-bound (unshareable), and `FromActor` hardcoded armour to 0 (enemy armour was structurally unusable — found and fixed here). The framework is composition over those existing systems; no parallel engines were built.
 
 **Proved by:** three shipped goblins (~8 data lines each). The Hexer is the acceptance test — ranged/spell/status behaviour from pure configuration over universal library moves. **Constraints:** no class/enemy-name branches; no `equippedTag` moves granted to enemies (validated — they carry no equipment); vulnerability stays keyed by damage type in D-02's [0.50, 1.50]; the lanes stay the established eight. **Rejected:** per-enemy bespoke classes; duplicated full definitions for variants; a separate resistance stat per physical damage type (the D-02 collapse stands).
+
+## Itemization & the loot loop
+
+### D28 — Gear comes from the bench; realms drop inputs
+*(Adopted 2026-08-16, first "how it plays" design session. D27 is deliberately skipped so this can never be confused with the effect-foundation package's D-27.)*
+
+**The model:** fabrication is the **primary** source of equipment; realm loot is predominantly **inputs** — anatomy materials (GDD §12.4 ecology), salvage, rare property-profile materials, essence-bearing parts, technique items, catalysts. The loop statement to preserve: **extraction converts risk into materials; fabrication converts materials into permanence.** Unsecured loot is inputs; the forged answer to them is safe by default (D10) — that asymmetry is what makes the risk model legible.
+
+**Four sub-rulings:**
+1. **Relic materials are the chase-item design.** Boss/elite chase drops are *materials* with impossible property profiles, pre-attuned essence, or traits nothing else can birth — uniques as inputs. They feed the genome/affix machinery (E5) instead of bypassing it. Content is post-slice.
+2. **Rare authored unique gear exists** — the one sanctioned exception, fenced so it can never undermine pillar 1: a unique is a **rule-breaker with a drawback, never a generically better stat-stick**; it is **sealed** (no genome, no affix rolls, no operations, no Overreach — what drops is what it is); it sits **below relic materials in drop frequency** (the rarest class); and its end-of-life is **Fracture** (E7) into components including a relic-grade material — so even the exception terminates at the bench. *(The sealed/Fracture fencing is the session's proposal riding on the user's "primary + rare uniques" call; relax it deliberately, never by drift.)*
+3. **Enemy-wielded equipment drops as salvage materials**, never as equippable gear — the Brute's crude blade arrives as scrap metal and rawhide. At M6 scale salvage maps onto existing materials; bespoke salvage materials can come later.
+4. **Consumables are crafted-primary** (Cooking/Alchemy); found consumables are rare and situational, same logic.
+
+**Consequences:** M6 loot tables (the three goblins) carry anatomy + salvage + technique items — no finished-gear entries. Authored basic equipment survives only as the D10 starter floor. Future vendors trade materials, techniques and services, never competitive gear. Item valuation stays genome-computed; uniques carry authored value.
+
+**Why:** the design's centre of gravity already pointed here — E5 affixes hang entirely off fabricated genomes, §12.4 bans "Enemy Loot", valuation is defined in crafted-item terms, and every found sword worth equipping is an argument against visiting the bench. Bench-primacy also gives the Fighter ("only as good as their gear") and the Artificer ("consumes crafted gear more than anyone") real teeth.
+
+**Rejected:** strict bench-only (the session recommendation; the user kept the unique crack open deliberately — the fencing above is the price of the crack); found-gear-as-salvage-only as the chase design (shredding loot you can't use is a weaker jackpot than a great material dropping directly).
+
+### D29 — The crafting arc: affixes always roll, forms are acquired, essence is the realm's export
+*(Adopted 2026-08-16, same session as D28. The full arc these rules pace: `docs/how-it-plays.md` ch. 1.)*
+
+Three pacing rules for how the crafting layers enter a playthrough:
+
+1. **Every fabricated item rolls its affixes from the very first craft.** There is no "affixes unlock later" mode switch — the total-function philosophy extends to the modifier layer, and pacing is emergent: weak early genomes roll 0–1 minor modifiers. **Assay gates legibility, never capability** — before the player can Assay, a rolled modifier renders as an unreadable mark (the standing advertisement for the knowledge layer). Assay is one skill action with two surfaces: material proximity hints (`emergent-item-system.md` §15.4) and the fabricated-item Genome Readout (`affixes.md` §2.3), hint depth scaling by profession level. **Rejected:** a threshold that switches the modifier layer on (adds a mode to a total-function system; makes early items retroactively "wrong").
+
+2. **Forms are acquired, not free.** A starter set is always known (the shipped Longsword/Buckler/Vest are the natural candidates); most forms sit on profession-level ladders (Melvor-consistent); a few exotic forms arrive as **schematics — a knowledge loot class symmetric with techniques** (techniques teach moves, schematics teach forms). D28-consistent: knowledge is an input, not gear. Supersedes the current ungated `forms.json`; needs an acquisition field, a persisted known-forms list and a validator rule when it lands (natural home: M6, alongside loot tables, on the learned-list precedent). **Rejected:** all-free forever (removes forms as a progression carrot); ladder-only (realm loot loses its knowledge class).
+
+3. **Essence is the realm's export — professions may only ever yield trace amounts.** Hideout professions can produce essence-bearing material as a *rare outcome*, but **"trace profession essence must never compete economically with Realm extraction"** (user's phrasing — a standing authoring/tuning constraint, not a numbers suggestion). The first meaningful essence craft is therefore a post-extraction milestone by construction; extraction keeps its practical monopoly on the supernatural tier. **Consequence:** the 38 essence-authored materials need a source audit against this rule (which are realm-gathered vs profession-produced), filed for the C2c/M6 window.
+
+## Presentation
+
+### D30 — The three languages: presentation is a one-way semantic layer
+*(Adopted 2026-08-16 from a user design directive; full specification in `docs/presentation-architecture.md` — that document is source of truth.)*
+
+**The rule:** simulation language (0–100 properties, rates, severities, coefficients) → player crafting language (icon + qualitative tier + intensity + direction + context) → gameplay/item language (damage, Armour, Crit, Thorns, statuses, triggers, Move modification). Raw simulation values never appear on normal play surfaces — Advanced/Assay/labs only. The semantic layer lives in Core (`Dungeons.Presentation`), reads simulation state through one seam, never writes back, and is deterministic and unit-tested. Display tiers never touch identity quantization (`QuantizationTuning` unread by presentation, forever). Items speak gameplay language; material properties are causes, shown as influence. **A player-facing modifier ships only when its mechanic resolves in play** — D23's visibly-inert rule covers internal content, never player-offered content. Display metadata (glyphs, glosses) is data on `PropertyDefinition`, never code switches.
+
+**Why:** "Charge 72" is simulation data, not a reward — the game was presenting causes as payoffs. Complexity belongs underneath; clarity belongs in the player's hands. The audit (`presentation-architecture.md` §1) found the algebra already computes every fact the player language needs (typed `PropertyChange` kinds, integrity projections, trait conditions, `stat_map`/apertures) — so this is a translation architecture, not a simulation change.
+
+**Consequences:** slices R0–R4 precede the C2c playtest (moved, user call 2026-08-16); R4 absorbs E5's front half (genome/eligibility/innates/rolling + representative affix families, each paired with its combat mechanic + the modifier-key lane-alignment pass — which is also D-07's natural execution moment). `ItemFormat.InstanceLabel` retires from player surfaces (labs/debug keep it). **Rejected:** icons-as-numbers ("⚡⚡⚡⚡ is the same problem wearing a hat" — the directive's phrase); a second player-facing simulation (the semantic layer may only translate, never recompute); gating the grammar behind knowledge (D29: Assay deepens precision, never switches features on).

@@ -36,20 +36,58 @@ coherent run.
    (3-slot Longsword, Buckler, Vest), aperture-gated traits with dormancy, derived equipment
    archetypes persisted, iron-sword parity pinning the 0–100 → combat-unit calibration,
    per-slot component UI.
-3. 🔄 **C2c — the mandatory playtest checkpoint** *(user-driven, NEXT)*. Play the full loop
-   (mine → smelt → infuse → attune → fabricate → fight); land the whole parked balance backlog
-   in one pass: Fireball one-shots, Bastion damage, the casting-speed decision (GDD §18 #16),
-   profession interval/XP, fabrication calibration constants. Also close the small gap: per-rule
-   failing-content tests for `ValidateForms`.
-4. ⬜ **E5 — Item modifiers (affixes)**. Genome → eligibility/weight/tier → rolling; innates;
-   Genome Readout; ailment application chances finally get their source; move-modifier pools get
-   their author (incl. chains for `mech:chain` moves). Item Lab.
-4. ⬜ **M6 — Loop closers**. Loot tables on the three goblins per §12.4 ecology (technique items
-   join them — they are debug-granted today), character XP/levels + a minimal build-selection
-   screen (the build is debug-cycled today). Makes the slice self-sustaining end to end.
-5. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
+3. 🔄 **R0–R4 — the presentation correction (D30)** *(absorbs E5)*. The three-languages
+   architecture (`docs/presentation-architecture.md`): raw simulation numbers off normal play
+   surfaces, a semantic crafting grammar, items that pay off in gameplay language.
+   **R0 ✅** audit + doc. **R1 ✅** the Core semantic layer (tiers/trends/risk bands/slot-fit;
+   glyph+gloss on `PropertyDefinition`; typed changes on `CraftProjection`). **R2 ✅** bench UX
+   (grouped preview panel, glyph strips, Advanced toggle). **R3 ✅** fabrication `Project` +
+   slot-fit lines + the §6 reveal (`InstanceLabel` retired from player surfaces). **R4a ✅**
+   the lane alignment (`combat.resist.physical` + six aspect keys wired into the pipeline with
+   cap/floor; **D-07 executed** — evade.chance + avoid.lane, dodge.chance retired). **R4b ✅**
+   the Genome (persisted, **save v6**) → eligibility/weight/tier → seeded rolling; innates as
+   the deterministic layer; 28 representative affixes over already-resolving families —
+   **ailment application chances finally have their source**; triggered + stat grants through
+   the existing rule/modifier seams; preview genome translation ("Supports: …"); affix
+   validator rules + seeded distribution tests; debug reroll. **R4c-1 ✅** the retaliation
+   family as pure content over the rule engine (when-hit / on-block / after-dodge / poison
+   barbs, e2e-pinned — thorns needed **zero** new combat machinery); Evade live (untelegraphed
+   only, D-07) + lane avoidance (per-packet negation) + flat lane penetration after the cap
+   (overcap-vs-exposure semantics pinned); capped/raw on the armour summary (D-05a minimal);
+   the on-crit trigger family (CriticalLanded existed all along). 37 affixes shipped.
+   **R4c-2 ✅** Parry (gear-granted per D-26 — `parry` tag on the Buckler form, 3-tick window,
+   negation + heavy stagger + the `Parried` event; UI button appears only when gear grants
+   it), **Barrier absorption** (the HitPipeline debt closed — soaks before Health,
+   `BarrierBroken` on shatter), status potency/duration keys wired at the encounter seam,
+   the `DamageMitigated` event + reflect-% retaliation, move-modifier affix grants (the
+   11-op system's third grantor — Emberbrand ships as the first data move-mod), and the
+   parry/reflect/ward/potency/duration/emberbrand affixes — **43 affixes total**. Stored
+   retaliation + inversion/ignore stay with E7 (Exotic tier).
+4a. 🔄 **C2c — the playtest checkpoint**: the machine half is **done** (per-rule
+   `ValidateForms` failing-content tests; the D28/D29 first-session sufficiency audit —
+   which caught and then confirmed the boar-hide bonus faucet closes the binding chain; the
+   D29.3 essence source audit — overlap pinned to the shock-eel rung, flagged for the
+   noncompete check). **The playtest half is the user's by standing decision**: play the
+   full loop in the new language (mine → smelt → infuse → attune → fabricate → roll → fight
+   with thorns/ailments/parry live), then land the whole balance backlog in one pass —
+   Fireball, Bastion, casting-speed (§18 #16), profession interval/XP, fabrication
+   constants, affix-roll odds and counts, the eel-rung essence rates. Save is **v6**;
+   delete `user://save.json` first.
+4. ⬜ **C2c — the playtest checkpoint** *(user-driven; moved after R4, user call 2026-08-16)*.
+   Play the full loop in the new language (mine → smelt → infuse → attune → fabricate → fight);
+   land the whole parked balance backlog in one pass: Fireball one-shots, Bastion damage, the
+   casting-speed decision (GDD §18 #16), profession interval/XP, fabrication calibration
+   constants, affix-roll odds. Also close the small gap: per-rule failing-content tests for
+   `ValidateForms`. Plus the D28/D29 audits: first-session sufficiency, essence sources.
+5. ⬜ **M6 — Loop closers**. Loot tables on the three goblins per §12.4 ecology and **D28**
+   (inputs only — anatomy/salvage/techniques, never finished gear; technique items are
+   debug-granted today). **Form acquisition lands here too (D29):** starter set + profession
+   ladder + schematics as a new knowledge loot class, `forms.json` gains an acquisition field on
+   the learned-list precedent. Character XP/levels + a minimal build-selection screen (the build
+   is debug-cycled today). Makes the slice self-sustaining end to end.
+6. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
    Yield Log ("mostly free once scoped modifiers exist" — they do).
-6. ⬜ **E7 — Crafting operations + Overreach**. Anneal/Etch/Scour/Reforge/Bind/Temper/Fracture +
+7. ⬜ **E7 — Crafting operations + Overreach**. Anneal/Etch/Scour/Reforge/Bind/Temper/Fracture +
    the escalating-Ruin casino and Anomalous modifiers. Caps the crafting fantasy.
 
 ## After the slice (unordered)
