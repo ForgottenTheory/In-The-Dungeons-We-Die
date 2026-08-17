@@ -1,0 +1,7 @@
+{
+  "id": "profession.thieving",
+  "name": "Thieving",
+  "category": "Utility",
+  "primaryAttributes": ["Dexterity", "Luck"],
+  "description": "Marks, not nodes. Every attempt can miss, and the good tables are the ones that notice you."
+}

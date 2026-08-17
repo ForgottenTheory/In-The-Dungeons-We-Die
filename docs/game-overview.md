@@ -7,7 +7,8 @@
 > docs (`docs/GDD.md` and the per-system docs). Nothing here overrides them. Not an
 > implementation document either — for code, see `docs/code-map.md`.
 >
-> Last synced with the repo: **2026-08-16** (765 tests, 0 build warnings).
+> Last synced with the repo: **2026-08-16** (847 tests, 0 build warnings), after the
+> 20-profession expansion pass.
 
 ## Status marks used throughout
 
@@ -155,8 +156,8 @@ Progression runs on **multiple independent tracks**. There is deliberately no si
 | Track | Persistent? | Lost on death? | Status |
 |---|---|---|---|
 | Profession levels & XP | Yes | No | ✅ |
-| Per-action Mastery | Yes | No | 🟡 tracked, **nothing reads it** |
-| Realm Knowledge (per realm) | Yes | No | 🟡 counts up, **unlocks nothing** |
+| Per-action Mastery | Yes | No | ✅ shortens intervals, raises bonus + opportunity chance, talks risk down |
+| Realm Knowledge (per realm) | Yes | No | 🟡 Cartography now feeds it; it still **unlocks nothing** |
 | Crafting discoveries | Yes | No | ✅ |
 | Equipment owned | Yes | Gear is safe by default | ✅ |
 | Character level & attributes | Yes | No | 📐 growth weights exist; **nothing awards XP** |
@@ -170,38 +171,61 @@ extraction → better materials → better crafting → deeper Realms → new pr
 
 **Active vs passive is a standing rule everywhere:** passive is automatic, reliable, lower yield,
 lower ceiling, fewer rare outcomes. Active rewards real performance, never merely "clicking
-Active Mode".
+Active Mode" — which is why active play carries the Discover → Pursue decision (§5) and passive
+structurally cannot roll for one.
 
-📐 Designed, not built: interval reduction · preservation · doubling · mastery unlocks ·
-cross-skill bonuses · global passives · offline progress.
+📐 Designed, not built: preservation · doubling · mastery unlocks · cross-skill bonuses ·
+global passives.
 
 ---
 
-# 5. Professions & gathering ✅ BUILT (8 of a designed 19)
+# 5. Professions & gathering ✅ BUILT (all 20)
 
-**Built:** Mining · Forestry · Fishing · Herblore · Smithing · Alchemy · Cooking · Beast Lore —
-**26 actions**, active and passive, XP/levels, level-gated ladders.
+**Full detail: `docs/professions.md`.** The short version:
 
-Interconnection is the point. Professions must never run a fake isolated economy:
+**Gathering (7)** Mining · Forestry · Fishing · Farming · Hunting · Beast Lore · Salvaging
+**Processing (9)** Smithing · Herblore · Alchemy · Cooking · Leatherworking · Tailoring ·
+Fletching · Artifice · Runecrafting
+**Utility (4)** Thieving · Agility · Cartography · Assay
+
+**194 actions · 32 opportunities · 12 course obstacles.** XP/levels, per-action mastery,
+level-gated ladders, and one execute path behind all twenty.
+
+**Three modes, and the difference between them is structural, not a number:**
+
+- **Passive** — automatic, reliable, lower yield, and it *never rolls for opportunities*.
+- **Offline** — a first-class path, not a courtesy. Whatever passive action is running when you
+  close the game keeps running, at the same rate, through the same execute path. **Levelling
+  never requires being at the keyboard.** Capped at 12h.
+- **Active** — a timing score, plus **Discover → Pursue / Ignore**: an active attempt can
+  surface an offer (a rich vein, a shape under the boat, an unattended satchel, an unmarked side
+  path). Pursuing costs real time on the shared tick engine and can be lost to risk. Declining
+  costs nothing. One mechanism, twenty flavours, all of it content.
+
+Two professions earned a system of their own: **Farming** (parallel Hideout plots that grow
+while the game is closed) and **Agility** (a five-slot training course whose configuration *is*
+your standing travel/hazard/extraction loadout).
+
+Interconnection is enforced by test, not intent: every Processing profession consumes another's
+output; no profession is a dead end; Hunting produces carcasses and only Beast Lore opens them;
+only Cartography teaches Realm Knowledge; every seed has a wild source.
 
 ```
-Forestry  →  Oak Bark
-Herblore  →  understands its properties
-Smithing  →  infuses iron with treated bark
-          →  Barkbound Iron
+Mining → Smithing → ingots → Artifice → lenses → Assay reads deeper
+Hunting → carcass → Beast Lore → hide → Leatherworking → fabrication
+Cartography → survey chart → Salvaging finds the ruin worth digging
+Assay → property dossier → the three deepest crafting actions require one
 ```
 
-A test pins that the professions cross-feed in at least four chains, and another pins that some
-action produces iron ore (the startup stash seed was deleted; Mining is the only source).
-
-📐 Not built: profession **tools** (two worn slots, fabricated from the same forms system) ·
-offline progress · the other 11 professions.
+📐 Not built: profession **tools** (two worn slots — Artifice and Smithing make the components
+now, the slots are E6) · bow/projectile forms · Cooking's consumers (consumable forms) · course
+bonuses are declared and displayed but nothing reads them yet.
 
 ---
 
 # 6. Materials — the ingredient set ✅ BUILT
 
-**480 material definitions** on a **0–100 property scale**.
+**559 material definitions** on a **0–100 property scale**.
 
 - Authored biome-by-biome as a *design lens* — there is deliberately **no biome field**.
 - **Mundane-majority** (oak, iron, salt, spring water), so the rare things stand out by their
@@ -794,7 +818,7 @@ at startup, never mid-play.
 
 | Authored as data | Count |
 |---|---|
-| Materials | 480 |
+| Materials | 559 |
 | Properties (with glyph + gloss) | 21 |
 | Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 3 |
 | Modifiers (affixes) | 44 |
@@ -802,7 +826,8 @@ at startup, never mid-play.
 | Statuses | 28 |
 | Modifier keys | 51 |
 | Bases / Prefixes / Suffixes / Species / Name formats | 15 / 25 / 50 / 3 / 9 |
-| Professions / Profession actions | 8 / 26 |
+| Professions / Profession actions / Opportunities | 20 / 194 / 32 |
+| Training obstacles (the Agility course) | 12 |
 | Enemy families / roles / AI profiles / actors | 1 / 3 / 3 / 3 |
 | Realms / Equipment / Consumables | 1 / 4 / 1 |
 

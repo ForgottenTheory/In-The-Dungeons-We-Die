@@ -1,0 +1,7 @@
+{
+  "id": "profession.runecrafting",
+  "name": "Runecrafting",
+  "category": "Processing",
+  "primaryAttributes": ["Intelligence", "Wisdom"],
+  "description": "Cutting blanks and binding essence into them. Runes are catalysts and inputs, never a second currency."
+}

@@ -1,0 +1,76 @@
+[
+  // Agility's main XP faucet is the Hideout training course (training_obstacles/), not these.
+  // What these four are is the *other* half of the profession's identity: reach. High Agility
+  // is what gets you to material nobody else can stand next to — the nesting ledge, the cave
+  // ceiling, the far side of the chasm, the bottom of the shaft. None of it is exclusive
+  // material; it is ordinary material behind a traversal gate (docs/professions.md §18).
+  {
+    "id": "action.scale_the_cliff_face",
+    "professionId": "profession.agility",
+    "name": "Scale the Cliff Face",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 22,
+    "outputs": [ { "itemId": "material.peak_crystal", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.griffin_feather", "chance": 0.15, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_nesting_ledge",
+        "name": "The Nesting Ledge",
+        "prompt": "There is a ledge above you with a nest on it. Going up is a committed climb — coming back down is the part to think about.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.40,
+        "outputs": [ { "itemId": "material.griffin_feather", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.bird_egg", "chance": 0.4, "quantity": 1 } ],
+        "experience": 70
+      }
+    ]
+  },
+  {
+    "id": "action.crawl_the_cave_ceiling",
+    "professionId": "profession.agility",
+    "name": "Crawl the Cave Ceiling",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 170,
+    "experience": 32,
+    "outputs": [ { "itemId": "material.bat_wing", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.luminous_cap", "chance": 0.25, "quantity": 1 },
+      { "itemId": "material.bat_fang", "chance": 0.2, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.cross_the_chasm",
+    "professionId": "profession.agility",
+    "name": "Cross the Chasm",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 200,
+    "experience": 50,
+    "outputs": [ { "itemId": "material.cloudstone", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.stormglass", "chance": 0.15, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_far_ledge",
+        "name": "The Far Ledge",
+        "prompt": "Something is wedged in the rock on the far side, well past where you meant to stop.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 280,
+        "riskWeight": 0.45,
+        "outputs": [ { "itemId": "material.stormglass", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.skyiron_ore", "chance": 0.25, "quantity": 1 } ],
+        "experience": 105
+      }
+    ]
+  },
+  {
+    "id": "action.descend_the_shaft",
+    "professionId": "profession.agility",
+    "name": "Descend the Shaft",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 230,
+    "experience": 72,
+    "outputs": [ { "itemId": "material.deepcrystal", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.gravemarrow", "chance": 0.15, "quantity": 1 } ]
+  }
+]

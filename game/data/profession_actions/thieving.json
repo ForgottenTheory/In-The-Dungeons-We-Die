@@ -1,0 +1,137 @@
+[
+  // Thieving. Melvor-style target selection: each mark has a level requirement, an interval, a
+  // success chance and its own common/unique table. This is the second profession with a
+  // `successChance` below 1 — the mark notices — and it drops fastest as the marks get better.
+  //
+  // No currency is invented here. There is no economy yet, and a coin item that nothing spends
+  // would be exactly the fake profession-specific resource the design forbids. What a thief
+  // actually walks off with is precious metal, gems, a key, or somebody's paperwork — all of
+  // which already exist and all of which other professions consume.
+  {
+    "id": "action.pickpocket_drunk_mercenary",
+    "professionId": "profession.thieving",
+    "name": "Pickpocket a Drunk Mercenary",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 12,
+    "successChance": 0.8,
+    "outputs": [ { "itemId": "material.native_copper", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.iron_key", "chance": 0.08, "quantity": 1 } ]
+  },
+  {
+    "id": "action.lift_from_a_market_stall",
+    "professionId": "profession.thieving",
+    "name": "Lift from a Market Stall",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 115,
+    "experience": 18,
+    "successChance": 0.75,
+    "outputs": [ { "itemId": "material.sea_salt", "quantity": 2 } ],
+    "bonusOutputs": [
+      { "itemId": "material.native_copper", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.mintleaf", "chance": 0.25, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.rob_a_merchant_caravan",
+    "professionId": "profession.thieving",
+    "name": "Rob a Merchant Caravan",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 150,
+    "experience": 30,
+    "successChance": 0.65,
+    "outputs": [ { "itemId": "material.electrum", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.cipher_note", "chance": 0.2, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_strongbox",
+        "name": "The Strongbox",
+        "prompt": "There is a bolted box under the driver's seat. Going back for it means being here when they finish counting.",
+        "discoveryChance": 0.14,
+        "extraIntervalTicks": 240,
+        "riskWeight": 0.45,
+        "outputs": [ { "itemId": "material.native_gold", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.iron_key", "chance": 0.4, "quantity": 1 } ],
+        "experience": 80
+      }
+    ]
+  },
+  {
+    "id": "action.burgle_an_alchemists_shelf",
+    "professionId": "profession.thieving",
+    "name": "Burgle an Alchemist's Shelf",
+    "requiredLevel": 26,
+    "baseIntervalTicks": 165,
+    "experience": 40,
+    "successChance": 0.6,
+    "outputs": [ { "itemId": "material.weak_tincture", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.arcane_dust", "chance": 0.25, "quantity": 1 },
+      { "itemId": "material.alum", "chance": 0.35, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.rifle_the_goblin_quartermaster",
+    "professionId": "profession.thieving",
+    "name": "Rifle the Goblin Quartermaster",
+    "requiredLevel": 34,
+    "baseIntervalTicks": 185,
+    "experience": 52,
+    "successChance": 0.55,
+    "outputs": [ { "itemId": "material.goblin_scrap", "quantity": 2 } ],
+    "bonusOutputs": [
+      { "itemId": "material.iron_key", "chance": 0.25, "quantity": 1 },
+      { "itemId": "material.schematic_fragment", "chance": 0.15, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.steal_from_a_dungeon_clerk",
+    "professionId": "profession.thieving",
+    "name": "Steal from a Dungeon Clerk",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 205,
+    "experience": 68,
+    "successChance": 0.5,
+    "outputs": [ { "itemId": "material.cipher_note", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.stolen_schematic", "chance": 0.2, "quantity": 1 } ]
+  },
+  {
+    "id": "action.cut_a_cultists_purse",
+    "professionId": "profession.thieving",
+    "name": "Cut a Cultist's Purse",
+    "requiredLevel": 58,
+    "baseIntervalTicks": 230,
+    "experience": 88,
+    "successChance": 0.42,
+    "outputs": [ { "itemId": "material.native_gold", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.soul_gem", "chance": 0.1, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_reliquary",
+        "name": "The Reliquary",
+        "prompt": "They are all facing the other way, and the box on the altar is not locked. This is the worst idea you have had all week.",
+        "discoveryChance": 0.10,
+        "extraIntervalTicks": 300,
+        "riskWeight": 0.60,
+        "outputs": [ { "itemId": "material.soul_gem", "quantity": 1 } ],
+        "bonusOutputs": [
+          { "itemId": "material.black_opal", "chance": 0.25, "quantity": 1 },
+          { "itemId": "material.stolen_schematic", "chance": 0.3, "quantity": 1 }
+        ],
+        "experience": 160
+      }
+    ]
+  },
+  {
+    "id": "action.crack_a_warded_strongbox",
+    "professionId": "profession.thieving",
+    "name": "Crack a Warded Strongbox",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 260,
+    "experience": 115,
+    "successChance": 0.35,
+    "inputs": [ { "itemId": "material.iron_key", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.stolen_schematic", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.black_opal", "chance": 0.12, "quantity": 1 } ]
+  }
+]

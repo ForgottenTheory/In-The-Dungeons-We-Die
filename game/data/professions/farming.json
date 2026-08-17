@@ -1,0 +1,7 @@
+{
+  "id": "profession.farming",
+  "name": "Farming",
+  "category": "Gathering",
+  "primaryAttributes": ["Wisdom", "Constitution"],
+  "description": "Plants and fungi, wild or planted. Hideout plots grow while you are elsewhere."
+}

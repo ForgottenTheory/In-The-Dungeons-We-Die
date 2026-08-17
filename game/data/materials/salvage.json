@@ -1,0 +1,12 @@
+[
+  // Salvaging's recoveries. `material.salvage_pile` is the one raw input: worked in a Realm it
+  // is searched on the spot, hauled home it is picked over safely and slowly. Everything else
+  // here feeds Smithing or Artifice — salvage is the loop that turns a cleared ruin into
+  // tomorrow's tools rather than a pile of vendor trash.
+  { "id": "material.salvage_pile", "name": "Salvage Pile", "tags": ["state:raw", "form:debris", "origin:synthetic", "rarity:common", "comp:inorganic"], "properties": { "hardness": 35, "mass": 60, "affinity": 20, "harvest_resistance": 30, "corrosion": 20, "decay": 15 } },
+  { "id": "material.scrap_iron", "name": "Scrap Iron", "tags": ["state:raw", "form:metal", "origin:synthetic", "rarity:common", "comp:inorganic"], "properties": { "hardness": 46, "mass": 58, "affinity": 32, "conductivity": 50, "insulation": 10, "harvest_resistance": 25, "corrosion": 35 } },
+  { "id": "material.tattered_cloth", "name": "Tattered Cloth", "tags": ["state:raw", "form:cloth", "origin:synthetic", "rarity:common", "comp:organic"], "properties": { "hardness": 4, "mass": 8, "flexibility": 70, "affinity": 45, "insulation": 35, "harvest_resistance": 10, "decay": 30 } },
+  { "id": "material.broken_mechanism", "name": "Broken Mechanism", "tags": ["state:raw", "form:mechanism", "origin:synthetic", "rarity:uncommon", "comp:inorganic", "class:component"], "properties": { "hardness": 52, "mass": 40, "flexibility": 8, "affinity": 30, "conductivity": 55, "harvest_resistance": 35, "corrosion": 25 } },
+  { "id": "material.schematic_fragment", "name": "Schematic Fragment", "tags": ["state:raw", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 4, "flexibility": 45, "affinity": 35, "solubility": 30, "decay": 25, "arcane": 10 } },
+  { "id": "material.relic_shard", "name": "Relic Shard", "tags": ["state:raw", "form:relic", "origin:synthetic", "origin:arcane", "rarity:rare", "class:magical", "comp:inorganic"], "properties": { "hardness": 60, "mass": 44, "flexibility": 3, "affinity": 48, "resonance": 40, "insulation": 40, "harvest_resistance": 55, "instability": 30, "arcane": 45 } }
+]

@@ -135,22 +135,83 @@ public class C2cAuditTests
         var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
         var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
 
-        // The complete audited list (2026-08-16): the shock-eel fishing rung, skin + gland —
-        // both storm-trace, both flagged for C2c's economic-noncompete check. Anything new
-        // appearing here must be argued through D29.3, not slipped in.
+        // The complete audited list. Anything new appearing here must be argued through D29.3,
+        // not slipped in — which is exactly what this test caught when the 20-profession pass
+        // landed, and why the entries below carry their level gate.
+        //
+        // 2026-08-16, the original two: the shock-eel fishing rung, skin + gland — both
+        // storm-trace, both flagged for C2c's economic-noncompete check.
+        //
+        // The 20-profession pass added nine more, every one of them behind a deep gate. The
+        // argument is that a level-45-plus rung is not competing with Realm extraction for the
+        // same player at the same time: a miner who can work an emberite seam has already been
+        // extracting for a long while. All nine are still provisional and belong to the same
+        // C2c noncompete check as the eel rung.
         var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "material.eel_skin",
-            "material.shock_eel_gland",
+            "material.eel_skin",            // Fishing 20 — the original audited rung
+            "material.shock_eel_gland",     // Fishing 20 — ditto, as a bonus output
+            "material.static_charge",       // Fishing 34, 12% bonus off storm kelp
+            "material.cinder_shard",        // Mining 45, 18% bonus off emberite
+            "material.rime_shard",          // Mining 45, 18% bonus off frostiron
+            "material.ember_core",          // Mining 45, 20% inside a 45%-risk opportunity
+            "material.emberwood_log",       // Forestry 50
+            "material.emberbark",           // Forestry 50, 25% bonus
+            "material.livingbark_log",      // Forestry 62
+            "material.spiritwood_log",      // Forestry 62, inside a 25%-risk opportunity
+            "material.soul_gem",            // Thieving 58, 10% bonus and an opportunity payout
         };
 
+        // Opportunity payloads are profession faucets too — the whole point of one is that it
+        // pays better than the action that surfaced it, so leaving them out of this audit would
+        // have been a hole big enough to drive the entire active path through.
         var essenceOutputs = actions
-            .SelectMany(a => a.Outputs.Select(o => o.ItemId).Concat(a.BonusOutputs.Select(o => o.ItemId)))
+            .SelectMany(a => a.Outputs.Select(o => o.ItemId)
+                .Concat(a.BonusOutputs.Select(o => o.ItemId))
+                .Concat(a.Opportunities.SelectMany(op => op.Outputs.Select(o => o.ItemId)))
+                .Concat(a.Opportunities.SelectMany(op => op.BonusOutputs.Select(o => o.ItemId))))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(id => materials.TryGetById(id, out var m) && m.Essence.Count > 0)
             .ToList();
 
         foreach (var id in essenceOutputs)
             Assert.Contains(id, allowed);
+    }
+
+    /// <summary>
+    /// The other half of the same fence: an essence faucet may be deep, but it must not be
+    /// <em>early</em>. Everything past the two originally audited eel rungs sits at level 30 or
+    /// better, so no first-session player can farm trace essence instead of extracting for it.
+    /// </summary>
+    [Fact]
+    public void NewEssenceFaucetsSitBehindDeepLevelGates()
+    {
+        var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
+        var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
+
+        const int deepGate = 30;
+        var originallyAudited = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "material.eel_skin",
+            "material.shock_eel_gland",
+        };
+
+        bool CarriesEssence(string id) =>
+            materials.TryGetById(id, out var material)
+            && material.Essence.Count > 0
+            && !originallyAudited.Contains(id);
+
+        var early = actions
+            .Where(action => action.RequiredLevel < deepGate)
+            .Where(action => action.Outputs.Select(o => o.ItemId)
+                .Concat(action.BonusOutputs.Select(o => o.ItemId))
+                .Concat(action.Opportunities.SelectMany(op => op.Outputs.Select(o => o.ItemId)))
+                .Concat(action.Opportunities.SelectMany(op => op.BonusOutputs.Select(o => o.ItemId)))
+                .Any(CarriesEssence))
+            .Select(action => $"{action.Id} (level {action.RequiredLevel})")
+            .ToList();
+
+        Assert.True(early.Count == 0,
+            "essence faucets must sit at level " + deepGate + " or deeper: " + string.Join(", ", early));
     }
 }

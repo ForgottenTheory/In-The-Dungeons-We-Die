@@ -1,15 +1,26 @@
 [
-  // Alchemy (P3): the ingredient shelf for the reaction engine. Fish oil arrives from
-  // Fishing, tallow from the fauna chain — cross-feeding on purpose (GDD §7.2).
+  // Alchemy transforms. Where Herblore hands you a drier version of what you gave it, Alchemy
+  // hands back something none of the inputs were — a solvent, a catalyst, iron out of bog mud.
+  //
+  // These are the *stable known chains* only: the deliberate work (substrate + reagents +
+  // catalyst + process, previewed before commit) is the material transformation engine at the
+  // bench, and Alchemy level is what gates its processes. Nothing here duplicates the algebra.
   {
-    "id": "action.grind_herb_powder",
+    // Alchemy's ground floor. Grind Herb Powder used to sit here; it moved to Herblore in the
+    // 20-profession pass, because grinding a leaf is preparation, not transformation. Leaching
+    // lye out of ash is the opposite — nothing that went in was caustic — and it gives lye a
+    // source, which it did not have before.
+    "id": "action.leach_lye",
     "professionId": "profession.alchemy",
-    "name": "Grind Herb Powder",
+    "name": "Leach Lye",
     "requiredLevel": 1,
-    "baseIntervalTicks": 100,
+    "baseIntervalTicks": 110,
     "experience": 11,
-    "inputs": [ { "itemId": "material.nettle", "quantity": 2 } ],
-    "outputs": [ { "itemId": "material.herb_powder", "quantity": 1 } ]
+    "inputs": [
+      { "itemId": "material.wood_ash", "quantity": 2 },
+      { "itemId": "material.rainwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.lye", "quantity": 1 } ]
   },
   {
     "id": "action.brew_weak_tincture",
@@ -36,5 +47,97 @@
       { "itemId": "material.tallow", "quantity": 1 }
     ],
     "outputs": [ { "itemId": "material.refined_oil", "quantity": 1 } ]
+  },
+  {
+    "id": "action.distil_spirit",
+    "professionId": "profession.alchemy",
+    "name": "Distil Spirit",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 170,
+    "experience": 25,
+    "inputs": [
+      { "itemId": "material.pressed_aloe", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.distilled_spirit", "quantity": 2 } ]
+  },
+  {
+    "id": "action.compound_stabilizer",
+    "professionId": "profession.alchemy",
+    "name": "Compound a Stabilizer",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 180,
+    "experience": 30,
+    "inputs": [
+      { "itemId": "material.quicklime", "quantity": 1 },
+      { "itemId": "material.alum", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.stabilizing_agent", "quantity": 1 } ]
+  },
+  {
+    "id": "action.concentrate_extract",
+    "professionId": "profession.alchemy",
+    "name": "Concentrate an Extract",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 200,
+    "experience": 38,
+    "inputs": [
+      { "itemId": "material.steeped_kingsfoil", "quantity": 1 },
+      { "itemId": "material.distilled_spirit", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.concentrated_extract", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_run_holds",
+        "name": "The Run Holds",
+        "prompt": "The still is behaving. Push it further and you get a second draw — push it too far and you get nothing but heat.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 200,
+        "riskWeight": 0.30,
+        "outputs": [ { "itemId": "material.concentrated_extract", "quantity": 2 } ],
+        "experience": 65
+      }
+    ]
+  },
+  {
+    "id": "action.fuse_catalytic_salt",
+    "professionId": "profession.alchemy",
+    "name": "Fuse Catalytic Salt",
+    "requiredLevel": 32,
+    "baseIntervalTicks": 210,
+    "experience": 46,
+    "inputs": [
+      { "itemId": "material.saltpeter", "quantity": 1 },
+      { "itemId": "material.potash", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.catalytic_salt", "quantity": 1 } ]
+  },
+  {
+    "id": "action.transmute_bog_iron",
+    "professionId": "profession.alchemy",
+    "name": "Transmute Bog Iron",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 240,
+    "experience": 60,
+    "inputs": [
+      { "itemId": "material.bog_iron", "quantity": 2 },
+      { "itemId": "material.catalytic_salt", "quantity": 1 },
+      { "itemId": "material.property_dossier", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.iron_ore", "quantity": 3 } ]
+  },
+  {
+    "id": "action.distil_arcane_solvent",
+    "professionId": "profession.alchemy",
+    "name": "Distil Arcane Solvent",
+    "requiredLevel": 48,
+    "baseIntervalTicks": 260,
+    "experience": 78,
+    "inputs": [
+      { "itemId": "material.arcane_dust", "quantity": 1 },
+      { "itemId": "material.distilled_spirit", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.arcane_solvent", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.residue", "chance": 0.3, "quantity": 1 } ]
   }
 ]

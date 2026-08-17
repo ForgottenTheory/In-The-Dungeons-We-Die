@@ -63,7 +63,7 @@ project file does not let it. That is deliberately stronger than a folder conven
 | `core/Modifiers/` | `Dungeons.Modifiers` | The modifier key vocabulary, scopes, resolution |
 | `core/Persistence/` | `Dungeons.Persistence` | Save DTOs, serializer, mapper |
 | `core/Presentation/` | `Dungeons.Presentation` | The semantic read-model (D30) |
-| `core/Professions/` | `Dungeons.Professions` | Profession definitions, progress, execution |
+| `core/Professions/` | `Dungeons.Professions` | Profession definitions, progress, execution, offline payout, Farming plots, the Agility course |
 | `core/Randomness/` | `Dungeons.Randomness` | The seeded RNG abstraction |
 | `core/Realms/` | `Dungeons.Realms` | Realm graph, run state, extraction |
 | `core/Rules/` | `Dungeons.Rules` | Trigger rules, conditions, effects, proc safety |
@@ -92,7 +92,7 @@ _Ready()
  ├─ build the character services               (RuleRegistry, CharacterComposer, BuildResolver)
  ├─ construct the TriggerRuleEngine over the event bus
  ├─ RebuildCharacter()  +  EquipStarterLoadout()
- ├─ build professions   (ProfessionSystem, PassiveProfessionRunner) on the shared TickEngine
+ ├─ build professions   (ProfessionSystem, PassiveProfessionRunner, FarmingPlots, TrainingCourse) on the shared TickEngine
  ├─ build crafting      (MaterialStateResolver, EmergentRegistry, MaterialTransformationEngine,
  │                       EquipmentAssemblyEngine, PropertyGlossary)
  ├─ build combat        (StatusController, CombatantModifiers, HitPipeline, CombatEncounter)
@@ -990,36 +990,66 @@ A new *brain* is one `ai_profiles` entry. **No class or enemy-name branches anyw
 
 ## 10.14 Professions
 
-**PURPOSE** — Persistent skill progression and the gathering/processing economy.
+**PURPOSE** — Persistent skill progression and the gathering/processing economy. **20
+professions**; the design lives in `docs/professions.md`.
 
 **IMPORTANT FILES** — `ProfessionDefinition.cs`, `ProfessionActionDefinition.cs`,
-`ProfessionProgress.cs`, `ProfessionLeveling.cs`, `ProfessionTuning.cs`, `ActionResolver.cs`,
-`ProfessionSystem.cs`, `PassiveProfessionRunner.cs`
+`ProfessionOpportunityDefinition.cs`, `ProfessionProgress.cs`, `ProfessionLeveling.cs`,
+`ProfessionTuning.cs`, `ActionResolver.cs`, `ProfessionSystem.cs`,
+`PassiveProfessionRunner.cs`, `OfflineProgressCalculator.cs`, `FarmingPlots.cs`,
+`TrainingCourse.cs` · plus `Presentation/AssayLens.cs`.
 
-**DATA** — `professions/` (8) · `profession_actions/` (26).
+**DATA** — `professions/` (20) · `profession_actions/` (194 actions, 32 nested opportunities) ·
+`training_obstacles/` (12).
 
 **RUNTIME FLOW**
 ```
 ProfessionSystem.Execute(actionId, performance, isActive)      ← the ONE execute path
    ├─ CheckExecutable  (profession level, inputs on hand)
-   ├─ ActionResolver   → ResolvedYield (guaranteed outputs + rolled bonus outputs)
+   ├─ ActionResolver   → ResolvedYield
+   │     ├─ success roll (SuccessChance < 1 only for Hunting and Thieving)
+   │     ├─ guaranteed outputs + rolled bonus outputs
+   │     └─ opportunity discovery  ← ACTIVE ONLY, by construction
    ├─ consume inputs, deposit outputs into the provider's Inventory (ActiveInventory)
-   ├─ award XP (active gets a timing-performance bonus) → maybe LeveledUp
+   ├─ award XP (active gets a timing bonus; a miss pays MissedAttemptXpFraction)
    └─ ActionOutcome  →  ActionCompleted event
 
-PassiveProfessionRunner: schedules the action's effective interval on the TickEngine and
-                         re-schedules on completion; stops (Stalled) when it cannot proceed.
+ProfessionSystem.PursueOpportunity(actionId, opportunityId)     ← the player said yes
+   └─ risk roll (mastery talks it down) → payoff or nothing, either way XP
+
+PassiveProfessionRunner: schedules the effective interval on the TickEngine, re-schedules on
+                         completion; stops (Stalled) when it cannot proceed.
+
+OfflineProgressCalculator.Apply(system, actionId, elapsedRealSeconds)
+   └─ loops the SAME Execute at performance 0 — so offline can never drift from live passive.
+      Bounded by MaxOfflineTicks (12h) and MaxOfflineCompletions.
 ```
 
-**Active and passive share one path.** There is deliberately no hidden "+x% active" bonus —
-active earns its advantage through timing performance only.
+**Active and passive share one path.** Passive's "fewer rare outcomes" is structural, not a
+tuning number: only the active path rolls for opportunities at all.
+
+**WHO OWNS THE CLOCK.** Core resolves an opportunity's gamble instantly and deterministically;
+*when* the result arrives is the client's business — `GameRoot.PursuePendingOpportunity`
+schedules the `extraIntervalTicks` on the shared `TickEngine`. Keep it that way: putting the
+scheduling in Core would drag `TickEngine` into every profession test.
+
+**THE TWO BESPOKE SYSTEMS** (nothing else needed one)
+- `FarmingPlots` — the only profession that runs in parallel with itself. Plant takes the seed;
+  harvest is **prepaid** (`ProfessionSystem.CompletePrepaidAction`) so it does not charge twice.
+  Growth is absolute ticks, so crops finish while the game is closed;
+  `GameRoot.RebasePlantedCrops` moves remaining grow time onto the new session's clock on load.
+- `TrainingCourse` — Agility. Five slots, one obstacle each; `ActiveBonuses()` is what the rest
+  of the game reads (`CourseBonusKeys`). Nothing consumes those bonuses yet.
 
 **DEPENDENCIES** — Content, Items (`Inventory` provider), Simulation, Randomness.
 
-**OUTPUT** — `ActionOutcome`, XP, deposited items, `ActionCompleted` / `LeveledUp` events.
+**OUTPUT** — `ActionOutcome` (now carrying `AttemptMissed`, `DiscoveredOpportunity`,
+`RealmKnowledgeGained`), `OpportunityOutcome`, `OfflineProgressReport`, XP, deposited items,
+`ActionCompleted` / `OpportunityResolved` / `LeveledUp` events.
 
-**EXTENSION POINTS** — A new action is one JSON entry (profession, level gate, interval, inputs,
-outputs, bonus outputs, XP). A new profession is one entry plus its actions.
+**EXTENSION POINTS** — A new action is one JSON entry. A new opportunity is a nested entry on an
+action. A new profession is one entry plus its action file — and it must cross-feed, because
+`ProfessionEcosystemTests` fails a profession that consumes nothing or feeds nothing.
 
 **ENTRY POINT** — `ProfessionSystem.Execute`.
 
@@ -1162,8 +1192,10 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add a Status** | One entry in `game/data/statuses/*.json`: category, stack policy, duration, `magnitude` (basis + coefficient), `while_active` modifiers, hooks. **No C# class** |
 | **Add an enemy** | `game/data/actors/<name>.json`: `family`, `role`, `moves`, per-key tweaks, loot. Reuse an `ai_profile` or add inline rules. Never write a C# class |
 | **Add an enemy family / role / AI brain** | One entry in `enemy_families/`, `enemy_roles/`, `ai_profiles/`. Roles are **deltas** and must stay family-agnostic |
-| **Add a profession action** | One entry in `game/data/profession_actions/<profession>.json`: profession, level gate, interval, inputs, outputs, bonus outputs (`ItemChance`), XP |
-| **Add a profession** | One entry in `professions/` plus its action file. Make it cross-feed another profession — a test asserts ≥4 chains |
+| **Add a profession action** | One entry in `game/data/profession_actions/<profession>.json`: profession, level gate, interval, inputs, outputs, bonus outputs (`ItemChance`), XP. Optional: `successChance` (Hunting/Thieving only), `realmKnowledgeGain` (Cartography only) |
+| **Add an active opportunity** | A nested entry in an action's `opportunities[]`: unique id, `prompt` (the offer text *is* the decision), `discoveryChance`, `extraIntervalTicks`, `riskWeight`, payoff. It must out-pay its own action — a test checks |
+| **Add a training obstacle** | One entry in `game/data/training_obstacles/`: `slot` (one of the five), level, interval, XP, and `bonuses` keyed by `CourseBonusKeys`. An unknown key fails validation |
+| **Add a profession** | One entry in `professions/` (id, name, category, primary attributes, a one-line description) plus its action file. It must both consume another profession's output and produce something something else wants — `ProfessionEcosystemTests` fails a dead end |
 | **Add a Base / Prefix / Suffix** | One entry in `classes/`, `prefixes/`, `suffixes/`. Bases must spend exactly the 4.0 growth budget. **A Prefix may never name a Base.** An expressed Suffix needs one expression per channel |
 | **Add a technique item** | One entry in `techniques/` naming the move it teaches |
 | **Add a realm or location** | One entry in `realms/`. Edges must be symmetric and content refs must resolve — both validated |
@@ -1205,6 +1237,9 @@ Some names are data, not code. Renaming them silently corrupts saves or breaks c
 | Every property of `SaveData` and every `*Save` class in `core/Persistence/SaveData.cs` | These **are** the JSON keys in `user://save.json` |
 | The four `CharacterBuild` id properties | Positional **and** persisted |
 | `EquipmentSlot`, `ItemType`, `ItemQuality` enum **member names** | Serialized as strings in the save |
+| `TrainingSlot` enum **member names** | Written as strings into `SaveData.TrainingCourse` |
+| Action ids (`action.*`) | Per-action **mastery** is keyed by action id in every save |
+| `CourseBonusKeys` **values** | Keys in `training_obstacles/` content, and validated against |
 | `SaveData.CurrentSchemaVersion` semantics | Bump it; never repurpose a version |
 | The `emergent.<hash>` / `equip.emergent.<hash>` scheme, and anything feeding `MaterialSignature` or the fabrication signature | Changing what is hashed re-identifies every stored archetype |
 

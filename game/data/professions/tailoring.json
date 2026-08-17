@@ -1,0 +1,7 @@
+{
+  "id": "profession.tailoring",
+  "name": "Tailoring",
+  "category": "Processing",
+  "primaryAttributes": ["Dexterity", "Intelligence"],
+  "description": "Fibre to thread to cloth. Source fibre decides whether the result insulates, resonates or simply holds."
+}

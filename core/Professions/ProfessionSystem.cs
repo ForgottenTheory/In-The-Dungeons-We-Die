@@ -56,6 +56,9 @@ public sealed class ProfessionSystem
     /// <summary>Raised after any action attempt (success or failure).</summary>
     public event Action<ActionOutcome>? ActionCompleted;
 
+    /// <summary>Raised after any pursued opportunity resolves.</summary>
+    public event Action<OpportunityOutcome>? OpportunityResolved;
+
     /// <summary>Raised when an action pushes its profession to a new level.</summary>
     public event Action<ProfessionLevelUp>? LeveledUp;
 
@@ -93,24 +96,61 @@ public sealed class ProfessionSystem
 
     public ActionFailure CheckExecutable(string actionId)
     {
-        if (!_actions.TryGetById(actionId, out var action))
-            return ActionFailure.UnknownAction;
-        if (GetProgress(action.ProfessionId).Level < action.RequiredLevel)
-            return ActionFailure.LevelTooLow;
+        var gate = CheckKnownAndUnlocked(actionId);
+        if (gate != ActionFailure.None)
+            return gate;
+
+        var action = _actions.GetById(actionId);
         if (action.Inputs.Count > 0 && !_inventoryProvider().CanRemoveAll(action.Inputs))
             return ActionFailure.MissingInputs;
         return ActionFailure.None;
     }
 
+    /// <summary>The half of the gate that does not depend on the bag: the action exists and
+    /// the profession is high enough. Split out because a prepaid completion has already
+    /// spent its inputs and must not be blocked for no longer holding them.</summary>
+    private ActionFailure CheckKnownAndUnlocked(string actionId)
+    {
+        if (!_actions.TryGetById(actionId, out var action))
+            return ActionFailure.UnknownAction;
+        if (GetProgress(action.ProfessionId).Level < action.RequiredLevel)
+            return ActionFailure.LevelTooLow;
+        return ActionFailure.None;
+    }
+
     public bool CanExecute(string actionId) => CheckExecutable(actionId) == ActionFailure.None;
+
+    /// <summary>Whether an execution still owes the action's inputs.</summary>
+    private enum InputHandling
+    {
+        /// <summary>The normal case: take the inputs as part of this completion.</summary>
+        ConsumeNow,
+
+        /// <summary>The inputs were taken when the work was started — a Farming plot pays for
+        /// its seed at planting time and the crop arrives much later.</summary>
+        AlreadyPaid,
+    }
 
     /// <summary>
     /// Attempts one completion of <paramref name="actionId"/>. <paramref name="performance"/>
     /// is the active-play score in [0, 1] (0 for passive). Returns the authoritative outcome.
     /// </summary>
-    public ActionOutcome Execute(string actionId, double performance = 0.0, bool isActive = false)
+    public ActionOutcome Execute(string actionId, double performance = 0.0, bool isActive = false) =>
+        Execute(actionId, performance, isActive, InputHandling.ConsumeNow);
+
+    /// <summary>
+    /// Completes an action whose inputs were already consumed when it was started. Used by
+    /// Farming, where planting takes the seed and harvesting — much later — produces the crop.
+    /// Everything else about the completion is identical, so the two can never drift.
+    /// </summary>
+    public ActionOutcome CompletePrepaidAction(string actionId) =>
+        Execute(actionId, performance: 0.0, isActive: false, InputHandling.AlreadyPaid);
+
+    private ActionOutcome Execute(string actionId, double performance, bool isActive, InputHandling inputHandling)
     {
-        var failure = CheckExecutable(actionId);
+        var failure = inputHandling == InputHandling.AlreadyPaid
+            ? CheckKnownAndUnlocked(actionId)
+            : CheckExecutable(actionId);
         if (failure != ActionFailure.None)
             return ActionOutcome.Failed(actionId, failure);
 
@@ -118,32 +158,107 @@ public sealed class ProfessionSystem
         var progress = GetProgress(action.ProfessionId);
 
         var bag = _inventoryProvider();
-        if (action.Inputs.Count > 0)
+        if (inputHandling == InputHandling.ConsumeNow && action.Inputs.Count > 0)
             bag.TryRemoveAll(action.Inputs); // guaranteed by CheckExecutable above
 
         var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.Resolve(action, mastery, performance, _random);
+        var yield = ActionResolver.Resolve(action, mastery, performance, _random, isActive);
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 
+        // A missed attempt still teaches the hand, but it does not deepen the craft.
+        var masteryGained = yield.Landed ? ProfessionTuning.MasteryPerAction : 0;
+
         var oldLevel = progress.Level;
         progress.AddXp(yield.Xp);
-        progress.AddMastery(actionId, ProfessionTuning.MasteryPerAction);
+        progress.AddMastery(actionId, masteryGained);
         var newLevel = progress.Level;
 
         var outcome = new ActionOutcome
         {
             ActionId = actionId,
             Success = true,
-            Consumed = action.Inputs,
+            AttemptMissed = !yield.Landed,
+            Consumed = inputHandling == InputHandling.ConsumeNow ? action.Inputs : Array.Empty<ItemStack>(),
             Produced = yield.Produced,
             XpGained = yield.Xp,
-            MasteryGained = ProfessionTuning.MasteryPerAction,
+            MasteryGained = masteryGained,
             Performance = performance,
             WasActive = isActive,
+            RealmKnowledgeGained = yield.Landed ? action.RealmKnowledgeGain : null,
+            DiscoveredOpportunity = yield.Discovered,
         };
 
         ActionCompleted?.Invoke(outcome);
+        if (newLevel > oldLevel)
+            LeveledUp?.Invoke(new ProfessionLevelUp(action.ProfessionId, oldLevel, newLevel));
+
+        return outcome;
+    }
+
+    /// <summary>
+    /// Looks up an opportunity by id on the action that could surface it. Returns false for
+    /// an unknown pair, so the client can validate a pending offer before showing it.
+    /// </summary>
+    public bool TryGetOpportunity(string actionId, string opportunityId, out ProfessionOpportunityDefinition opportunity)
+    {
+        opportunity = null!;
+        if (!_actions.TryGetById(actionId, out var action))
+            return false;
+
+        foreach (var candidate in action.Opportunities)
+        {
+            if (!string.Equals(candidate.Id, opportunityId, StringComparison.Ordinal))
+                continue;
+            opportunity = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Takes a discovered opportunity: consumes any extra inputs, rolls its risk, and banks
+    /// the payoff. The <em>time</em> it costs is the client's to spend — Core resolves the
+    /// gamble, the client decides when the result arrives (docs/code-map.md §10.14).
+    /// Declining is simply never calling this.
+    /// </summary>
+    public OpportunityOutcome PursueOpportunity(string actionId, string opportunityId)
+    {
+        if (!_actions.TryGetById(actionId, out var action))
+            return OpportunityOutcome.Failed(actionId, opportunityId, OpportunityFailure.UnknownAction);
+        if (!TryGetOpportunity(actionId, opportunityId, out var opportunity))
+            return OpportunityOutcome.Failed(actionId, opportunityId, OpportunityFailure.UnknownOpportunity);
+
+        var bag = _inventoryProvider();
+        if (opportunity.Inputs.Count > 0 && !bag.CanRemoveAll(opportunity.Inputs))
+            return OpportunityOutcome.Failed(actionId, opportunityId, OpportunityFailure.MissingInputs);
+
+        if (opportunity.Inputs.Count > 0)
+            bag.TryRemoveAll(opportunity.Inputs);
+
+        var progress = GetProgress(action.ProfessionId);
+        var mastery = progress.GetMastery(actionId);
+        var yield = ActionResolver.ResolvePursuit(opportunity, mastery, _random);
+        foreach (var stack in yield.Produced)
+            bag.Add(stack);
+
+        var oldLevel = progress.Level;
+        progress.AddXp(yield.Xp);
+        var newLevel = progress.Level;
+
+        var outcome = new OpportunityOutcome
+        {
+            ActionId = actionId,
+            OpportunityId = opportunityId,
+            Success = yield.Landed,
+            Failure = yield.Landed ? OpportunityFailure.None : OpportunityFailure.RiskRealised,
+            Consumed = opportunity.Inputs,
+            Produced = yield.Produced,
+            XpGained = yield.Xp,
+        };
+
+        OpportunityResolved?.Invoke(outcome);
         if (newLevel > oldLevel)
             LeveledUp?.Invoke(new ProfessionLevelUp(action.ProfessionId, oldLevel, newLevel));
 

@@ -1,34 +1,167 @@
 [
-  // Beast Lore (P3): tracking and field-dressing — the fauna faucet that feeds Cooking and
-  // Alchemy until creature loot tables land (M6).
+  // Beast Lore reads the animal. Every action here consumes a carcass and returns parts that
+  // already exist in fauna.json — the profession adds no new material, only access to them.
+  //
+  // The quick/full pairs are the point. A field dressing is fast and takes the obvious part; a
+  // full harvest takes three or four times as long and strips the animal properly. Inside a
+  // Realm that difference is time not spent extracting, which is exactly the decision the
+  // design asks for (docs/professions.md §6). Level is what makes the deeper anatomy legible
+  // at all — the tusk, the gland, the marrow are gated, not merely rarer.
   {
-    "id": "action.track_boar",
+    "id": "action.dress_rabbit",
     "professionId": "profession.beast_lore",
-    "name": "Track Boar",
+    "name": "Dress Rabbit",
     "requiredLevel": 1,
-    "baseIntervalTicks": 130,
-    "experience": 12,
+    "baseIntervalTicks": 70,
+    "experience": 9,
+    "inputs": [ { "itemId": "material.rabbit_carcass", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.rabbit_meat", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.rabbit_fur", "chance": 0.5, "quantity": 1 } ]
+  },
+  {
+    "id": "action.dress_fowl",
+    "professionId": "profession.beast_lore",
+    "name": "Dress Fowl",
+    "requiredLevel": 3,
+    "baseIntervalTicks": 70,
+    "experience": 10,
+    "inputs": [ { "itemId": "material.fowl_carcass", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.fowl_meat", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.feather", "chance": 0.6, "quantity": 3 } ]
+  },
+  {
+    "id": "action.dress_boar",
+    "professionId": "profession.beast_lore",
+    "name": "Dress Boar",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 100,
+    "experience": 16,
+    "inputs": [ { "itemId": "material.boar_carcass", "quantity": 1 } ],
     "outputs": [ { "itemId": "material.boar_meat", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.boar_hide", "chance": 0.3, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.boar_hide", "chance": 0.5, "quantity": 1 } ]
   },
   {
-    "id": "action.track_deer",
+    "id": "action.dress_deer",
     "professionId": "profession.beast_lore",
-    "name": "Track Deer",
-    "requiredLevel": 10,
-    "baseIntervalTicks": 150,
-    "experience": 18,
+    "name": "Dress Deer",
+    "requiredLevel": 16,
+    "baseIntervalTicks": 115,
+    "experience": 22,
+    "inputs": [ { "itemId": "material.deer_carcass", "quantity": 1 } ],
     "outputs": [ { "itemId": "material.venison", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.deer_sinew", "chance": 0.25, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.deer_hide", "chance": 0.5, "quantity": 1 } ]
   },
   {
-    "id": "action.harvest_wolf_kill",
+    "id": "action.full_harvest_boar",
     "professionId": "profession.beast_lore",
-    "name": "Harvest a Wolf Kill",
+    "name": "Boar — Full Harvest",
     "requiredLevel": 20,
-    "baseIntervalTicks": 170,
-    "experience": 24,
-    "outputs": [ { "itemId": "material.wolf_hide", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.wolf_fang", "chance": 0.2, "quantity": 1 } ]
+    "baseIntervalTicks": 340,
+    "experience": 48,
+    "inputs": [ { "itemId": "material.boar_carcass", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.boar_meat", "quantity": 2 },
+      { "itemId": "material.boar_hide", "quantity": 1 }
+    ],
+    "bonusOutputs": [
+      { "itemId": "material.boar_tusk", "chance": 0.4, "quantity": 1 },
+      { "itemId": "material.boar_blood", "chance": 0.5, "quantity": 1 },
+      { "itemId": "material.animal_bone", "chance": 0.45, "quantity": 2 }
+    ]
+  },
+  {
+    "id": "action.dress_wolf",
+    "professionId": "profession.beast_lore",
+    "name": "Dress Wolf",
+    "requiredLevel": 26,
+    "baseIntervalTicks": 125,
+    "experience": 32,
+    "inputs": [ { "itemId": "material.wolf_carcass", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.wolf_meat", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.wolf_hide", "chance": 0.5, "quantity": 1 } ]
+  },
+  {
+    "id": "action.full_harvest_deer",
+    "professionId": "profession.beast_lore",
+    "name": "Deer — Full Harvest",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 380,
+    "experience": 62,
+    "inputs": [ { "itemId": "material.deer_carcass", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.venison", "quantity": 2 },
+      { "itemId": "material.deer_hide", "quantity": 1 }
+    ],
+    "bonusOutputs": [
+      { "itemId": "material.deer_sinew", "chance": 0.5, "quantity": 1 },
+      { "itemId": "material.deer_antler", "chance": 0.35, "quantity": 1 },
+      { "itemId": "material.animal_bone", "chance": 0.45, "quantity": 2 }
+    ]
+  },
+  {
+    "id": "action.full_harvest_wolf",
+    "professionId": "profession.beast_lore",
+    "name": "Wolf — Full Harvest",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 420,
+    "experience": 88,
+    "inputs": [ { "itemId": "material.wolf_carcass", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.wolf_meat", "quantity": 1 },
+      { "itemId": "material.wolf_hide", "quantity": 1 },
+      { "itemId": "material.wolf_fur", "quantity": 1 }
+    ],
+    "bonusOutputs": [
+      { "itemId": "material.wolf_fang", "chance": 0.4, "quantity": 1 },
+      { "itemId": "material.musk_gland", "chance": 0.3, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_bear",
+    "professionId": "profession.beast_lore",
+    "name": "Bear — Full Harvest",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 460,
+    "experience": 105,
+    "inputs": [ { "itemId": "material.bear_carcass", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.bear_meat", "quantity": 2 },
+      { "itemId": "material.bear_hide", "quantity": 1 }
+    ],
+    "bonusOutputs": [
+      { "itemId": "material.bear_claw", "chance": 0.4, "quantity": 1 },
+      { "itemId": "material.bear_fat", "chance": 0.6, "quantity": 2 },
+      { "itemId": "material.beast_heart", "chance": 0.2, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_thunderhorn",
+    "professionId": "profession.beast_lore",
+    "name": "Thunderhorn — Full Harvest",
+    "requiredLevel": 58,
+    "baseIntervalTicks": 520,
+    "experience": 145,
+    "inputs": [ { "itemId": "material.thunderhorn_carcass", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.thunderhorn_hide", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.thunderhorn_horn", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.storm_gland", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.charged_blood", "chance": 0.4, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_drake",
+    "professionId": "profession.beast_lore",
+    "name": "Drake — Full Harvest",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 580,
+    "experience": 190,
+    "inputs": [ { "itemId": "material.drake_carcass", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.drake_hide", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.drake_scale", "chance": 0.5, "quantity": 2 },
+      { "itemId": "material.drake_bone", "chance": 0.35, "quantity": 1 },
+      { "itemId": "material.flame_gland", "chance": 0.25, "quantity": 1 }
+    ]
   }
 ]

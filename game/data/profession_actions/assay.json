@@ -1,0 +1,125 @@
+[
+  // Assay pays in comprehension, never in power. Its level drives AssayLens, which decides how
+  // much of a material's reading is legible — at level 1 you get "Hot Metal" and four lines of
+  // ???, and by 85 you are reading essence load and potential. The underlying reading is
+  // computed identically at every level; Assay only removes redaction (docs/professions.md §20).
+  //
+  // Its material output is the property dossier, and the reason that is not a dead-end trophy
+  // is that the three deepest crafting actions in the game require one: Alchemy's
+  // transmutation, Runecrafting's resonance catalyst and Artifice's clockwork core. You cannot
+  // do the hard work on a compound you have not bothered to understand.
+  {
+    "id": "action.take_reference_sample",
+    "professionId": "profession.assay",
+    "name": "Take a Reference Sample",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 11,
+    "inputs": [ { "itemId": "material.granite", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.reference_sample", "quantity": 2 } ]
+  },
+  {
+    "id": "action.assay_mineral_sample",
+    "professionId": "profession.assay",
+    "name": "Assay a Mineral Sample",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 18,
+    "inputs": [
+      { "itemId": "material.iron_ore", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 1 } ]
+  },
+  {
+    "id": "action.assay_organic_sample",
+    "professionId": "profession.assay",
+    "name": "Assay an Organic Sample",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 150,
+    "experience": 24,
+    "inputs": [
+      { "itemId": "material.herb_powder", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 1 } ]
+  },
+  {
+    "id": "action.assay_reactive_behaviour",
+    "professionId": "profession.assay",
+    "name": "Assay Reactive Behaviour",
+    "requiredLevel": 22,
+    "baseIntervalTicks": 175,
+    "experience": 34,
+    "inputs": [
+      { "itemId": "material.distilled_spirit", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 2 } ]
+  },
+  {
+    "id": "action.examine_under_lens",
+    "professionId": "profession.assay",
+    "name": "Examine Under the Lens",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 195,
+    "experience": 46,
+    "inputs": [
+      { "itemId": "material.ground_lens", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 3 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.unfamiliar_inclusion",
+        "name": "An Unfamiliar Inclusion",
+        "prompt": "There is something in the sample you do not recognise. Chasing it down properly will take the rest of the session.",
+        "discoveryChance": 0.16,
+        "extraIntervalTicks": 280,
+        "riskWeight": 0.0,
+        "outputs": [ { "itemId": "material.property_dossier", "quantity": 3 } ],
+        "bonusOutputs": [ { "itemId": "material.arcane_dust", "chance": 0.2, "quantity": 1 } ],
+        "experience": 110
+      }
+    ]
+  },
+  {
+    "id": "action.assay_trait_proximity",
+    "professionId": "profession.assay",
+    "name": "Assay Trait Proximity",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 215,
+    "experience": 64,
+    "inputs": [
+      { "itemId": "material.concentrated_extract", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 3 } ]
+  },
+  {
+    "id": "action.assay_essence_load",
+    "professionId": "profession.assay",
+    "name": "Assay Essence Load",
+    "requiredLevel": 55,
+    "baseIntervalTicks": 235,
+    "experience": 82,
+    "inputs": [
+      { "itemId": "material.arcane_dust", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 4 } ]
+  },
+  {
+    "id": "action.chart_modifier_weighting",
+    "professionId": "profession.assay",
+    "name": "Chart Modifier Weighting",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 265,
+    "experience": 110,
+    "inputs": [
+      { "itemId": "material.mana_crystal", "quantity": 1 },
+      { "itemId": "material.reference_sample", "quantity": 3 }
+    ],
+    "outputs": [ { "itemId": "material.property_dossier", "quantity": 5 } ]
+  }
+]

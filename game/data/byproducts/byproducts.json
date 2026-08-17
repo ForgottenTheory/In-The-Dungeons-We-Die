@@ -1,11 +1,20 @@
 [
+  // What destruction leaves behind, keyed by the material's `form:` tag. Every form the
+  // library uses must map here explicitly — the fallback exists for emergent forms, not as
+  // cover for an unfinished table, and the validator enforces that.
+  //
+  // The 20-profession pass added twenty-one forms; each was filed by what the thing actually
+  // is, not by which profession made it. A tool head and a rune blank burn down to slag
+  // because they are stone and metal; a bowstring and a fletching vane go to dross because
+  // they are sinew and feather.
   {
     "id": "byproduct.slag",
     "name": "Slag",
     "material": "material.slag",
     "forms": [
       "metal", "ore", "ingot", "stone", "crystal", "gem", "glass",
-      "earth", "sand", "coal", "salt", "core"
+      "earth", "sand", "coal", "salt", "core",
+      "mechanism", "lens", "head", "key", "rune", "relic", "debris", "sample"
     ]
   },
 
@@ -15,7 +24,8 @@
     "material": "material.cinders",
     "forms": [
       "wood", "bark", "fiber", "herb", "root", "flower", "seed", "fruit",
-      "vine", "moss", "fungus", "mold", "resin", "powder", "ash"
+      "vine", "moss", "fungus", "mold", "resin", "powder", "ash",
+      "shaft", "stave", "haft", "thread", "cloth", "record", "leaf", "reagent", "spawn"
     ]
   },
 
@@ -25,7 +35,8 @@
     "material": "material.dross",
     "forms": [
       "hide", "fur", "bone", "chitin", "horn", "tooth", "claw",
-      "meat", "organ", "gland", "egg", "blood", "slime", "meal"
+      "meat", "organ", "gland", "egg", "blood", "slime", "meal",
+      "carcass", "leather", "binding", "vane"
     ]
   },
 

@@ -2,5 +2,6 @@
   "id": "profession.fishing",
   "name": "Fishing",
   "category": "Gathering",
-  "primaryAttributes": ["Dexterity", "Wisdom"]
+  "primaryAttributes": ["Dexterity", "Wisdom"],
+  "description": "Waters and their catch tables: food, oils, scales, and whatever else is down there."
 }

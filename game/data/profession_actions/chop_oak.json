@@ -1,4 +1,6 @@
 {
+  // Kept in its own file, and kept its id, since the vertical slice: the Dark Forest's Old
+  // Grove points at this action.
   "id": "action.chop_oak",
   "professionId": "profession.forestry",
   "name": "Chop Oak",
@@ -10,5 +12,18 @@
   ],
   "bonusOutputs": [
     { "itemId": "material.oak_bark", "chance": 0.25, "quantity": 1 }
+  ],
+  "opportunities": [
+    {
+      "id": "opportunity.oak_burl",
+      "name": "A Burl on the Trunk",
+      "prompt": "There is a knotted growth low on the trunk. Cutting it out cleanly takes patience; hacking it out ruins it.",
+      "discoveryChance": 0.12,
+      "extraIntervalTicks": 200,
+      "riskWeight": 0.15,
+      "outputs": [ { "itemId": "material.oak_log", "quantity": 2 } ],
+      "bonusOutputs": [ { "itemId": "material.oak_bark", "chance": 0.6, "quantity": 2 } ],
+      "experience": 30
+    }
   ]
 }

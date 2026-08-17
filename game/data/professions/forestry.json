@@ -2,5 +2,6 @@
   "id": "profession.forestry",
   "name": "Forestry",
   "category": "Gathering",
-  "primaryAttributes": ["Strength", "Dexterity"]
+  "primaryAttributes": ["Strength", "Dexterity"],
+  "description": "Wood, bark, sap and the things growing on them. One tree yields several useful parts."
 }

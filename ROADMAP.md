@@ -24,6 +24,11 @@ system detail in `PROJECT_STATE.md`/`SYSTEM_INDEX.md`, status in `docs/GDD.md` �
   the Hexer.
 - ✅ **P1–P3 — professions to the §7.1 slice target**: 8 professions / 26 actions, Mining kills
   the iron-ore seed, cross-feeding pinned by test, prepared materials for Cooking/Alchemy.
+- ✅ **P4 — the 20-profession expansion pass** (`docs/professions.md`): the roster to **20 /
+  194 actions**, the **Discover → Pursue/Ignore** active layer (32 opportunities), **offline
+  progression** as a first-class path (save **v7**), success chance for Hunting/Thieving,
+  Farming plots, the Agility training course, Cartography → Realm Knowledge, and the Assay
+  reveal ladder. 79 new materials; ecosystem enforced by test.
 
 ## The plan to the full-fantasy slice
 Target: prepare → enter → fight *as your build* → extract → **fabricate gear from what you
@@ -71,8 +76,9 @@ coherent run.
    full loop in the new language (mine → smelt → infuse → attune → fabricate → roll → fight
    with thorns/ailments/parry live), then land the whole balance backlog in one pass —
    Fireball, Bastion, casting-speed (§18 #16), profession interval/XP, fabrication
-   constants, affix-roll odds and counts, the eel-rung essence rates. Save is **v6**;
-   delete `user://save.json` first.
+   constants, affix-roll odds and counts, the eel-rung essence rates — plus, after P4,
+   profession intervals/XP across all twenty, opportunity odds/risk/cost, offline caps, plot
+   grow times and the course's bonus magnitudes. Save is **v7** (a v6 save still loads).
 4. ⬜ **C2c — the playtest checkpoint** *(user-driven; moved after R4, user call 2026-08-16)*.
    Play the full loop in the new language (mine → smelt → infuse → attune → fabricate → fight);
    land the whole parked balance backlog in one pass: Fireball one-shots, Bastion damage, the
@@ -86,17 +92,20 @@ coherent run.
    the learned-list precedent. Character XP/levels + a minimal build-selection screen (the build
    is debug-cycled today). Makes the slice self-sustaining end to end.
 6. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
-   Yield Log ("mostly free once scoped modifiers exist" — they do).
+   Yield Log ("mostly free once scoped modifiers exist" — they do). **P4 already ships the
+   components** (Smithing's tool head, Artifice's haft/mechanisms/lenses) and the Agility
+   course's `CourseBonusKeys`, which nothing reads yet — E6 is where both get consumed.
 7. ⬜ **E7 — Crafting operations + Overreach**. Anneal/Etch/Scour/Reforge/Bind/Temper/Fracture +
    the escalating-Ruin casino and Anomalous modifiers. Caps the crafting fantasy.
 
 ## After the slice (unordered)
 Realm breadth (affixes, tiers, location types, preparation screen) · enemy roster to 8–10 + the
 elite/boss variant layer (the D26 fold seam exists) · auto-combat (player on the AI-profile
-machinery) · offline progress · economy/vendors (NEEDS DESIGN) · Hideout · species roster ·
+machinery) · economy/vendors (NEEDS DESIGN — Thieving deliberately ships no currency) · Hideout ·
+species roster ·
 remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · crafting P4/P6 ·
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (626 now) and the build at 0 warnings. Content is data; never author a
-combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.
+Keep `dotnet test` green (**847** now) and the build at 0 warnings. Content is data; never author
+a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

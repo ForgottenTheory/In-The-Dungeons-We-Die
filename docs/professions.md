@@ -1,367 +1,238 @@
 # Professions
 
-## 1. Vision
+The 20-profession pass. This document describes what **ships**, not what is planned; where
+something is designed but not built it says so.
 
-Professions provide persistent Melvor-inspired progression.
-
-Players can train professions:
-
-- Passively
-- Actively
-- Inside the Hideout
-- Inside Realms where appropriate
-
-Profession systems ultimately support Realm preparation, survival, exploration, crafting, or extraction.
+**Where things live:** definitions in `game/data/professions/` (one file each) · action ladders
+in `game/data/profession_actions/` (one file each) · the Agility course in
+`game/data/training_obstacles/` · the code in `core/Professions/`.
 
 ---
 
-# 2. Universal Profession Concepts
+## 1. The shape of a profession
 
-Each profession may track:
+Every profession has the same anatomy, and there is exactly one code path behind all twenty:
 
-- Level
-- XP
-- Action Interval
-- Mastery
-- Unlocks
+| Piece | Where |
+|---|---|
+| XP → level (1–99) | `ProfessionLeveling` — 100·L per level, shared by all |
+| Level, XP, per-action mastery | `ProfessionProgress` (runtime, persisted) |
+| An action ladder | `ProfessionActionDefinition` — level gate, interval, inputs, outputs, bonus outputs, XP |
+| Passive + active execution | `ProfessionSystem.Execute` — **one** path, so the two can never drift |
+| Offline payout | `OfflineProgressCalculator` — the *same* execute path |
+| Balance constants | `ProfessionTuning` |
 
-Individual activities may also have Mastery.
-
-Example:
-
-Forestry Level: 45
-
-Oak Mastery: 72
-
-Petrified Tree Mastery: 18
+Two professions add a system of their own, because their loop genuinely is not a repeating
+action: **Farming** (`FarmingPlots` — parallel, asynchronous) and **Agility** (`TrainingCourse`
+— a configuration, not an activity). Nothing else needed one.
 
 ---
 
-# 3. Passive Training
+## 2. Passive, active, and offline
 
-Passive training emphasizes convenience.
+The rule the design turns on: **active mode must never mean clicking the same button more
+often.**
 
-Typical characteristics:
+**Passive** is automatic, reliable, lower-yield, and structurally free of rare outcomes — it
+never rolls for opportunities at all. That is enforced by construction, not by a tuning number:
+the discovery roll only happens on the active path (`ActionResolver.Resolve`, `isActive`).
 
-- Automatic
-- Reliable
-- Lower yield
-- Lower quality ceiling
-- Reduced rare outcome chance
+**Offline is a first-class parallel path, not a courtesy.** Whatever passive action is running
+when the game closes keeps running while it is closed, at exactly the same rate as live passive
+play, because it runs through the same `Execute`. Levelling never requires being at the
+keyboard. Bounded at both ends: `MaxOfflineTicks` (12h) and `MaxOfflineCompletions`. Mastery
+earned partway through an absence shortens the completions still to come, exactly as a live
+passive runner does when it re-reads the interval each cycle.
 
----
+**Active** adds a timing score *and* the layer that actually makes it a different activity:
 
-# 4. Active Training
+### Discover → Pursue / Ignore
 
-Active training adds player interaction.
+An action may carry `opportunities[]`. An active attempt rolls for one (chance scaled by mastery
+and performance); on a hit the attempt returns an **offer**, not a payout. The player reads the
+prompt and decides.
 
-Potential rewards:
+```json
+{ "id": "opportunity.rich_iron_vein", "name": "Rich Vein",
+  "prompt": "The seam widens into denser ore. Following it means standing here a good deal longer.",
+  "discoveryChance": 0.12, "extraIntervalTicks": 260, "riskWeight": 0.10,
+  "outputs": [ { "itemId": "material.iron_ore", "quantity": 4 } ], "experience": 45 }
+```
 
-- Increased yield
-- Faster effective actions
-- Better quality
-- Rare materials
-- Masterwork outcomes
-- Discovery opportunities
+Pursuing costs real time on the shared `TickEngine` — inside a Realm that is time not spent
+heading for the portal — and `riskWeight` can lose it. Declining is simply never pursuing;
+the attempt's own yield already landed.
 
-Active play should reward actual performance rather than simply clicking "Active Mode."
+This is **one mechanism, twenty flavours**. Twenty minigames would have been twenty balance
+surfaces and twenty UIs; the same three fields read completely differently because the prompt,
+the cost and the payoff are content — the rich vein, the shape under the boat, the unattended
+satchel, the unmarked side path, the ledge you have to commit to.
 
----
+Core resolves the gamble instantly and deterministically; *when* the result arrives is the
+client's business (`GameRoot.PursuePendingOpportunity`). That is why the time cost lives in the
+client and the odds live in Core.
 
-# 5. Gathering Professions
+### Success chance
 
-## Mining
-
-Produces:
-
-- Ore
-- Gems
-- Runic stone
-- Rare minerals
-
-Supports:
-
-- Smithing
-- Jewelcrafting
-- Enchanting
-
-## Forestry
-
-Produces:
-
-- Logs
-- Bark
-- Resin
-- Heartwood
-- Petrified wood
-
-Supports:
-
-- Fletching
-- Smithing handles
-- Cooking
-- Campcraft
-- Infusions
-
-## Fishing
-
-Produces:
-
-- Food
-- Oils
-- Scales
-- Rare curiosities
-
-Supports:
-
-- Cooking
-- Alchemy
-- Crafting
-
-## Herblore
-
-Produces and identifies:
-
-- Herbs
-- Roots
-- Bark
-- Fungi
-- Toxins
-
-Supports:
-
-- Alchemy
-- Medicine
-- Cooking
-- Material infusion
-
-## Farming
-
-Produces controlled renewable resources at the Hideout.
-
-Supports:
-
-- Cooking
-- Herblore
-- Alchemy
+Two professions can miss outright — `successChance` below 1: **Hunting** (prey bolts) and
+**Thieving** (the mark looks up). A miss still consumes inputs and still pays
+`MissedAttemptXpFraction` of the XP, so a bad streak is slow rather than punishing, and it grants
+no mastery. Everywhere else a swung pickaxe always produces ore; rolling for that would be
+noise, not tension. A test pins that only those two can miss.
 
 ---
 
-# 6. Crafting Professions
+## 3. The roster
 
-## Smithing
+**Gathering (7)**
 
-Creates:
+| Profession | What it does | Feeds |
+|---|---|---|
+| **Mining** | Ore, stone, crystal, salts, fuel | Smithing, Runecrafting, Artifice |
+| **Forestry** | Logs, bark, sap, resin, fungi | Fletching, Artifice, Smithing, Leatherworking |
+| **Fishing** | Location catch tables: food, oils, scales, skins | Cooking, Alchemy |
+| **Farming** | Plants and fungi, wild *and* Hideout plots | Herblore, Cooking, Alchemy |
+| **Hunting** | Finds and takes creatures → **a carcass** | Beast Lore |
+| **Beast Lore** | Reads the carcass → meat, hide, bone, glands | Cooking, Leatherworking, Herblore |
+| **Salvaging** | Wrecks, scrap heaps, ruins, ancient machinery | Smithing, Artifice, Tailoring |
 
-- Ingots
-- Weapons
-- Armor
-- Metal components
+**Processing (9)**
 
-## Alchemy
+| Profession | What it does | Feeds |
+|---|---|---|
+| **Smithing** | Ore and scrap → ingots; the forged tool head | Artifice, Fletching, fabrication |
+| **Herblore** | *Prepares* organics — dry, press, grind, steep, render | Alchemy, Cooking, Runecrafting |
+| **Alchemy** | *Transforms* — leach, distil, concentrate, catalyse, transmute | Assay, Artifice, the bench |
+| **Cooking** | Meals as configurations, not recipes | *(the player — awaiting consumables)* |
+| **Leatherworking** | Hide → leather, **per creature** | fabrication, Fletching |
+| **Tailoring** | Fibre → thread → cloth | fabrication, Fletching |
+| **Fletching** | Shafts, staves, strings, heads, vanes | fabrication |
+| **Artifice** | Glass, parchment, mortar, lenses, mechanisms | Cartography, Assay, fabrication |
+| **Runecrafting** | Blanks → one rune per essence, plus the resonance catalyst | Artifice, the bench, Attune |
 
-Creates:
+**Utility (4)**
 
-- Potions
-- Elixirs
-- Oils
-- Extracts
+| Profession | What it does | Feeds |
+|---|---|---|
+| **Thieving** | Marks with awareness, difficulty and unique tables | metals, keys, schematics |
+| **Agility** | A configurable course; reach-gated gathering | standing utility bonuses |
+| **Cartography** | Surveys and charts → **Realm Knowledge** | Salvaging, Realm preparation |
+| **Assay** | Understanding, never power | gates the deepest crafts |
 
-## Cooking
+### The distinctions that must stay clear
 
-Creates:
-
-- Meals
-- Rations
-- Buff food
-- Realm supplies
-
-## Enchanting
-
-Creates:
-
-- Runes
-- Magical modifications
-- Affix manipulation
-
-## Fletching
-
-Creates:
-
-- Bows
-- Crossbows
-- Arrows
-- Bolts
-
-## Tailoring
-
-Creates:
-
-- Cloth armor
-- Leather armor
-- Bags
-- Utility equipment
-
-## Medicine
-
-Creates:
-
-- Bandages
-- Antidotes
-- Splints
-- Advanced recovery supplies
+- **Hunting** finds and takes the creature · **Beast Lore** reads what can be recovered from it.
+- **Herblore** prepares organic material without changing what it is · **Alchemy** changes it.
+- **Cartography** understands Realms · **Assay** understands materials and items.
 
 ---
 
-# 7. Utility Professions
+## 4. The four professions worth reading twice
 
-## Beast Lore
+### Farming — the only parallel profession
 
-Provides:
+Plots are the reason it needs `FarmingPlots` rather than a row in the passive runner. Plot count
+unlocks with level (`FarmingTuning.PlotUnlockLevels`). A planting is an ordinary action whose
+inputs are the seed and whose interval is the grow time; **the seed is taken at planting and the
+harvest is prepaid** (`ProfessionSystem.CompletePrepaidAction`), so XP, mastery and bonus outputs
+behave exactly as everywhere else. Every bed returns its own seed, so an established plot
+sustains itself — the scarce resource is plot-time, not seeds. Growth runs on the world clock,
+so crops finish while the game is closed; on load, remaining grow time is rebased onto the new
+session's clock (`GameRoot.RebasePlantedCrops`).
 
-- Creature information
-- Tracking
-- Harvesting
-- Beast interactions
+### Beast Lore — the quick/full decision
 
-## Sleight of Hand
+Each carcass has a fast dressing and a long full harvest. Boar: dress at L8 for 100 ticks and the
+meat, or full-harvest at L20 for 340 ticks and the meat, the hide, the tusk, the blood and the
+bone. Inside a Realm that difference is time not spent extracting. Level is what makes the deeper
+anatomy legible at all — the gland and the marrow are gated, not merely rarer. A test pins that
+the thorough option always costs more time, returns more, and sits at a higher level.
 
-Provides:
+### Agility — the course *is* the decision
 
-- Lockpicking
-- Trap bypass
-- Event options
-- Opportunistic interactions
+Five slots (Balance · Climbing · Endurance · Recovery · Advanced), one obstacle each. Running a
+lap grants XP; the obstacles you fitted grant `CourseBonusKeys` — travel speed, gathering speed,
+extraction speed, hazard avoidance, opportunity safety — for as long as they stay fitted.
+Choosing the climbing wall over the endurance run is choosing gathering speed over travel speed
+and living with it. A different *shape* of decision from Discover → Pursue: made once, not
+moment to moment. Agility's four actions are reach-gated gathering — material nobody else can
+stand next to.
 
-## Agility
+### Assay — comprehension, never power
 
-Improves:
+Assay level drives `AssayLens`, which decides how much of a material's reading is legible:
 
-- Movement efficiency
-- Hazard response
-- Realm traversal
+| Level | Depth | What opens |
+|---|---|---|
+| 1 | Superficial | name and descriptor — "Hot Metal", then `???` |
+| 10 | Composition | the leading-property strip |
+| 25 | Reactive | bonding, receptiveness, wear |
+| 45 | Traits | traits and their drawbacks |
+| 65 | Essence | essence load, resonance, vessel strain |
+| 85 | Potential | potential pressure, slot fit, modifier eligibility |
 
-## Campcraft
+The underlying reading is computed identically at every level — a test pins that. A high-Assay
+player is not holding a better material, they are finally reading the one they had. At full depth
+the lens defers to `SemanticFormat.Material` outright so the two voices cannot drift.
 
-Improves:
-
-- Campsite duration
-- Campsite recipes
-- Recovery
-- Field preparation
-
-## Wayfinding
-
-Improves:
-
-- Realm targeting
-- Realm information
-- Affix manipulation
-- Navigation
-- Hidden-route discovery
-
-## Devotion
-
-Provides:
-
-- Faith mechanics
-- Sacrifice systems
-- Toggleable buffs
-
-## Summoning
-
-Uses:
-
-- Essences
-- Crafted components
-
-to create temporary companions.
+Its material output is the **property dossier**, and it is not a trophy: Alchemy's transmutation,
+Runecrafting's resonance catalyst and Artifice's clockwork core all require one. You cannot do
+the hard work on a compound you have not bothered to understand.
 
 ---
 
-# 8. Profession Interactions
+## 5. Interconnection
 
-Professions should NOT exist in isolation.
+`Gather → Process → Manufacture → Prepare → Realm → Extract → Progress`
 
-Example:
+The ecosystem is enforced by test, not by intent (`ProfessionEcosystemTests`):
 
-Forestry
-→ Oak Bark
+- every **Processing** profession consumes something another profession makes;
+- no profession is a **dead end** — its output is wanted by another action, the crafting bench,
+  or a fabrication slot;
+- Hunting produces carcasses and **only** Beast Lore opens them;
+- **only** Cartography teaches Realm Knowledge;
+- every plantable seed has a wild source, and every bed reseeds itself;
+- every opportunity out-pays the action that surfaced it.
 
-Herblore
-→ Understands Oak Bark properties
+Named chains that exist today:
 
-Smithing
-→ Infuses Iron with treated Oak Bark
+```
+Mining → Smithing → ingots → Artifice/Fletching → fabrication
+Forestry → Fletching (staves, shafts) · Artifice (hafts) · Leatherworking (bark tanning)
+Hunting → Beast Lore → Cooking · Leatherworking · Herblore
+Farming → Herblore → Alchemy → Assay
+Salvaging → Smithing (scrap) · Artifice (broken mechanisms come back working)
+Cartography → survey chart → Salvaging finds the ruin worth digging
+Assay → property dossier → Alchemy · Runecrafting · Artifice
+Runecrafting → rune → Artifice's clockwork core, and the bench as a reagent
+Artifice → glass, parchment, lenses → Cartography and Assay
+```
 
-Result:
-Barkbound Iron
-
-This principle should appear throughout the game.
-
----
-
-# 9. Mastery
-
-Individual activities gain Mastery.
-
-Mastery may provide:
-
-- Interval reduction
-- Increased yield
-- Reduced costs
-- Rare material chance
-- Active interaction improvements
-
-Mastery level target:
-
-1-99
-
-subject to balancing.
+**No fake resources.** Profession outputs use the existing material library wherever one fits.
+Thieving deliberately produces no currency: there is no economy yet, and a coin nothing spends
+would be exactly the invented resource the design forbids — so a thief walks off with precious
+metal, gems, a key, or somebody's paperwork.
 
 ---
 
-# 10. Offline Progress
+## 6. Content counts
 
-Passive professions support offline progress.
-
-Conceptually:
-
-CompletedActions =
-floor(ElapsedTime / EffectiveInterval)
-
-Apply:
-
-- Resource constraints
-- Inventory constraints
-- Action caps where necessary
-
-Offline simulation should aggregate rather than replay every tick.
+**20 professions · 194 actions · 32 opportunities · 12 obstacles · 559 materials** (79 added by
+this pass). Save schema **v7**. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins
+these, so the numbers in this table cannot quietly drift.
 
 ---
 
-# 11. Realm Professions
+## 7. Known gaps
 
-Some profession activities occur during Realm Runs.
-
-Examples:
-
-Mining rare ore.
-
-Harvesting Realm herbs.
-
-Fishing dangerous waters.
-
-These activities create risk because time passes and encounters/hazards may occur.
-
----
-
-# 12. Profession Goal
-
-Profession progression should produce the feeling:
-
-"I spent time mastering this skill, and now I can prepare for this Realm in ways I couldn't before."
-
-Not merely:
-
-"My number is 73 now."
+- **Cooking is the one documented dead end.** A meal's consumer is the player, through consumable
+  forms that have not shipped. Named explicitly in `ProfessionEcosystemTests` rather than hidden.
+- **Profession tools** (two worn slots) are E6. Artifice and Smithing make the *components*
+  now — deliberately ahead of the slots.
+- **Bow and projectile forms** land with form acquisition; Fletching makes the parts today.
+- **Course bonuses are declared, not consumed.** `CourseBonusKeys` values are aggregated and
+  displayed, but Realm travel, hazards and extraction do not read them yet.
+- **Cartography's knowledge gains are all `realm.dark_forest`** — the only realm that exists.
+- **Everything here is breadth, not balance.** Intervals, XP, chances and level gates are
+  provisional and belong to the balance pass.

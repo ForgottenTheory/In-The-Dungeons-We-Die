@@ -1,0 +1,7 @@
+{
+  "id": "profession.fletching",
+  "name": "Fletching",
+  "category": "Processing",
+  "primaryAttributes": ["Dexterity", "Intelligence"],
+  "description": "Shafts, staves, strings and heads — the parts a ranged weapon or a projectile is assembled from."
+}

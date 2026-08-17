@@ -1,0 +1,113 @@
+[
+  // Fletching makes *parts*: shafts, staves, strings, heads, vanes. The finished bow or the
+  // finished projectile is assembled by the fabrication forms system from these components, so
+  // the interesting differences come from which materials went in — exactly as they do for a
+  // sword. There is deliberately no second combat-stat crafting path here
+  // (docs/professions.md §14). Bow and projectile forms land with the form-acquisition pass.
+  {
+    "id": "action.cut_wooden_shafts",
+    "professionId": "profession.fletching",
+    "name": "Cut Wooden Shafts",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 95,
+    "experience": 10,
+    "inputs": [ { "itemId": "material.oak_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.wooden_shaft", "quantity": 4 } ]
+  },
+  {
+    "id": "action.trim_fletching_vanes",
+    "professionId": "profession.fletching",
+    "name": "Trim Fletching Vanes",
+    "requiredLevel": 3,
+    "baseIntervalTicks": 85,
+    "experience": 11,
+    "inputs": [ { "itemId": "material.feather", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.fletching_vane", "quantity": 3 } ]
+  },
+  {
+    "id": "action.knap_flint_arrowheads",
+    "professionId": "profession.fletching",
+    "name": "Knap Flint Arrowheads",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 105,
+    "experience": 14,
+    "inputs": [ { "itemId": "material.flint", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.flint_arrowhead", "quantity": 4 } ]
+  },
+  {
+    "id": "action.twist_bowstring",
+    "professionId": "profession.fletching",
+    "name": "Twist a Bowstring",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 120,
+    "experience": 17,
+    "inputs": [ { "itemId": "material.deer_sinew", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.bowstring", "quantity": 2 } ]
+  },
+  {
+    "id": "action.shape_bow_stave",
+    "professionId": "profession.fletching",
+    "name": "Shape a Bow Stave",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 175,
+    "experience": 26,
+    "inputs": [ { "itemId": "material.yew_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.bow_stave", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_grain_runs_true",
+        "name": "The Grain Runs True",
+        "prompt": "The stave is splitting along a perfect line. Follow it slowly and there are two good limbs in this log.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 210,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.bow_stave", "quantity": 2 } ],
+        "experience": 50
+      }
+    ]
+  },
+  {
+    "id": "action.forge_iron_arrowheads",
+    "professionId": "profession.fletching",
+    "name": "Forge Iron Arrowheads",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 155,
+    "experience": 32,
+    "inputs": [ { "itemId": "material.iron_ingot", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.iron_arrowhead", "quantity": 5 } ]
+  },
+  {
+    "id": "action.string_bowstring_silk",
+    "professionId": "profession.fletching",
+    "name": "String Silkvine Cord",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 145,
+    "experience": 42,
+    "inputs": [ { "itemId": "material.silkvine_thread", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.bowstring", "quantity": 3 } ]
+  },
+  {
+    "id": "action.cut_ironwood_shafts",
+    "professionId": "profession.fletching",
+    "name": "Cut Ironwood Shafts",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 190,
+    "experience": 50,
+    "inputs": [ { "itemId": "material.ironwood_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.ironwood_shaft", "quantity": 4 } ]
+  },
+  {
+    "id": "action.shape_ironwood_stave",
+    "professionId": "profession.fletching",
+    "name": "Shape an Ironwood Stave",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 230,
+    "experience": 66,
+    "inputs": [
+      { "itemId": "material.ironwood_log", "quantity": 1 },
+      { "itemId": "material.refined_resin", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.bow_stave", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.ironwood_shaft", "chance": 0.4, "quantity": 2 } ]
+  }
+]

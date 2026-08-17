@@ -1,6 +1,11 @@
 [
-  // Cooking (P3): meals are materials for now — `growth` is what will make them healing
-  // consumables later. Every input is another profession's output (GDD §7.2).
+  // Cooking. Each meal is a *configuration* rather than an arbitrary recipe — protein,
+  // vegetable, seasoning, liquid — and the ingredients decide what the meal carries: the
+  // warming broth is warm because dried emberleaf went into it, not because a recipe said so.
+  // `growth` is the recovery property that will make these healing consumables once the
+  // consumable forms land; until then the reaction engine can eat them.
+  //
+  // Every input is another profession's output, which is the point (GDD §7.2).
   {
     "id": "action.roast_boar",
     "professionId": "profession.cooking",
@@ -25,6 +30,20 @@
     "outputs": [ { "itemId": "material.fish_stew", "quantity": 1 } ]
   },
   {
+    "id": "action.bake_travel_ration",
+    "professionId": "profession.cooking",
+    "name": "Bake Travel Rations",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 145,
+    "experience": 18,
+    "inputs": [
+      { "itemId": "material.fowl_meat", "quantity": 1 },
+      { "itemId": "material.herb_powder", "quantity": 1 },
+      { "itemId": "material.rock_salt", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.travel_ration", "quantity": 2 } ]
+  },
+  {
     "id": "action.cook_foragers_pot",
     "professionId": "profession.cooking",
     "name": "Cook a Forager's Pot",
@@ -37,5 +56,88 @@
       { "itemId": "material.springwater", "quantity": 1 }
     ],
     "outputs": [ { "itemId": "material.foragers_pot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cook_hearty_stew",
+    "professionId": "profession.cooking",
+    "name": "Cook a Hearty Stew",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 175,
+    "experience": 28,
+    "inputs": [
+      { "itemId": "material.boar_meat", "quantity": 1 },
+      { "itemId": "material.marsh_root", "quantity": 1 },
+      { "itemId": "material.sea_salt", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.hearty_stew", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_pot_takes",
+        "name": "The Pot Takes",
+        "prompt": "It has come together better than it should have. Let it sit another hour and it will feed twice as many.",
+        "discoveryChance": 0.15,
+        "extraIntervalTicks": 180,
+        "riskWeight": 0.10,
+        "outputs": [ { "itemId": "material.hearty_stew", "quantity": 2 } ],
+        "experience": 45
+      }
+    ]
+  },
+  {
+    "id": "action.smoke_wolf_meat",
+    "professionId": "profession.cooking",
+    "name": "Smoke Wolf Meat",
+    "requiredLevel": 22,
+    "baseIntervalTicks": 185,
+    "experience": 33,
+    "inputs": [
+      { "itemId": "material.wolf_meat", "quantity": 1 },
+      { "itemId": "material.charcoal", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.travel_ration", "quantity": 2 } ]
+  },
+  {
+    "id": "action.cook_spiced_venison",
+    "professionId": "profession.cooking",
+    "name": "Cook Spiced Venison",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 200,
+    "experience": 42,
+    "inputs": [
+      { "itemId": "material.venison", "quantity": 1 },
+      { "itemId": "material.mintleaf", "quantity": 1 },
+      { "itemId": "material.dried_emberleaf", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.spiced_venison", "quantity": 1 } ]
+  },
+  {
+    "id": "action.simmer_warming_broth",
+    "professionId": "profession.cooking",
+    "name": "Simmer a Warming Broth",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 215,
+    "experience": 52,
+    "inputs": [
+      { "itemId": "material.rabbit_meat", "quantity": 1 },
+      { "itemId": "material.dried_emberleaf", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.warming_broth", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cook_bear_roast",
+    "professionId": "profession.cooking",
+    "name": "Cook a Bear Roast",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 235,
+    "experience": 66,
+    "inputs": [
+      { "itemId": "material.bear_meat", "quantity": 2 },
+      { "itemId": "material.king_bolete", "quantity": 1 },
+      { "itemId": "material.sea_salt", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.hearty_stew", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.travel_ration", "chance": 0.4, "quantity": 2 } ]
   }
 ]

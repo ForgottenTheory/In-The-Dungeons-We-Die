@@ -25,7 +25,11 @@ public static class SaveMapper
         InstanceIdSource? instanceIds = null,
         IEmergentRegistry? emergentRegistry = null,
         LearnedMoves? learnedMoves = null,
-        IEnumerable<Items.EquipmentDefinition>? emergentEquipment = null)
+        IEnumerable<Items.EquipmentDefinition>? emergentEquipment = null,
+        FarmingPlots? farmingPlots = null,
+        TrainingCourse? trainingCourse = null,
+        string? passiveActionId = null,
+        long savedAtUnixSeconds = 0)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -35,6 +39,29 @@ public static class SaveMapper
         return new SaveData
         {
             SavedAtTick = savedAtTick,
+            SavedAtUnixSeconds = savedAtUnixSeconds,
+            PassiveActionId = passiveActionId,
+            FarmingPlots = farmingPlots is null
+                ? new List<FarmingPlotSave>()
+                : farmingPlots.Plots
+                    .Where(plot => !plot.IsEmpty)
+                    .Select(plot => new FarmingPlotSave
+                    {
+                        Index = plot.Index,
+                        ActionId = plot.PlantedActionId!,
+                        ReadyAtTick = plot.ReadyAtTick,
+                    })
+                    .ToList(),
+            TrainingCourse = trainingCourse is null
+                ? new List<TrainingCourseSlotSave>()
+                : trainingCourse.Fitted
+                    .OrderBy(pair => pair.Key)
+                    .Select(pair => new TrainingCourseSlotSave
+                    {
+                        Slot = pair.Key.ToString(),
+                        ObstacleId = pair.Value,
+                    })
+                    .ToList(),
             Build = build,
             Stash = stash.Snapshot().ToList(),
             StashInstances = stash.Instances.Select(ToSave).ToList(),
@@ -105,7 +132,9 @@ public static class SaveMapper
         InstanceIdSource? instanceIds = null,
         IEmergentRegistry? emergentRegistry = null,
         LearnedMoves? learnedMoves = null,
-        DataStore<Items.EquipmentDefinition>? equipmentStore = null)
+        DataStore<Items.EquipmentDefinition>? equipmentStore = null,
+        FarmingPlots? farmingPlots = null,
+        TrainingCourse? trainingCourse = null)
     {
         ArgumentNullException.ThrowIfNull(save);
 
@@ -140,6 +169,12 @@ public static class SaveMapper
             realmKnowledge[pair.Key] = pair.Value;
 
         learnedMoves?.Restore(save.LearnedMoves);
+
+        farmingPlots?.Restore(save.FarmingPlots.Select(plot => (plot.Index, plot.ActionId, plot.ReadyAtTick)));
+
+        trainingCourse?.Restore(save.TrainingCourse
+            .Where(slot => Enum.TryParse<TrainingSlot>(slot.Slot, out _))
+            .Select(slot => (Enum.Parse<TrainingSlot>(slot.Slot), slot.ObstacleId)));
 
         // Fabrication-derived gear (C2a) — restored before anything resolves the stash's
         // instances, exactly like emergent material archetypes.

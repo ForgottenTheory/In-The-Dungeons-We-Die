@@ -1,0 +1,129 @@
+[
+  // Hunting finds and takes the creature. It produces a *carcass* and almost nothing else —
+  // which parts come off that carcass is Beast Lore's question, and keeping the two separate is
+  // the whole reason both professions exist (docs/professions.md §5-6).
+  //
+  // This is one of the two professions with a `successChance` below 1: prey bolts. A missed
+  // attempt still costs the interval and still pays a quarter of the XP, so a bad streak is
+  // slow rather than punishing.
+  {
+    "id": "action.snare_rabbit",
+    "professionId": "profession.hunting",
+    "name": "Snare Rabbit",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 110,
+    "experience": 11,
+    "successChance": 0.85,
+    "outputs": [ { "itemId": "material.rabbit_carcass", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.rabbit_fur", "chance": 0.2, "quantity": 1 } ]
+  },
+  {
+    "id": "action.net_wildfowl",
+    "professionId": "profession.hunting",
+    "name": "Net Wildfowl",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 125,
+    "experience": 14,
+    "successChance": 0.8,
+    "outputs": [ { "itemId": "material.fowl_carcass", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.feather", "chance": 0.45, "quantity": 2 } ]
+  },
+  {
+    "id": "action.hunt_boar",
+    "professionId": "profession.hunting",
+    "name": "Hunt Boar",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 20,
+    "successChance": 0.75,
+    "outputs": [ { "itemId": "material.boar_carcass", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.boar_wallow",
+        "name": "A Fresh Wallow",
+        "prompt": "The mud is still settling — the sounder is close. Following it takes you further from the path.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 220,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.boar_carcass", "quantity": 2 } ],
+        "experience": 55
+      }
+    ]
+  },
+  {
+    "id": "action.stalk_deer",
+    "professionId": "profession.hunting",
+    "name": "Stalk Deer",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 170,
+    "experience": 28,
+    "successChance": 0.7,
+    "outputs": [ { "itemId": "material.deer_carcass", "quantity": 1 } ]
+  },
+  {
+    "id": "action.hunt_wolf_pack",
+    "professionId": "profession.hunting",
+    "name": "Hunt the Wolf Pack",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 195,
+    "experience": 40,
+    "successChance": 0.62,
+    "outputs": [ { "itemId": "material.wolf_carcass", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_alpha",
+        "name": "The Alpha",
+        "prompt": "The big one has not run with the rest. Taking it means letting it come to you.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.35,
+        "outputs": [ { "itemId": "material.wolf_carcass", "quantity": 1 } ],
+        "bonusOutputs": [ { "itemId": "material.direwolf_pelt", "chance": 0.3, "quantity": 1 } ],
+        "experience": 85
+      }
+    ]
+  },
+  {
+    "id": "action.trap_bear",
+    "professionId": "profession.hunting",
+    "name": "Trap Bear",
+    "requiredLevel": 38,
+    "baseIntervalTicks": 230,
+    "experience": 56,
+    "successChance": 0.55,
+    "outputs": [ { "itemId": "material.bear_carcass", "quantity": 1 } ]
+  },
+  {
+    "id": "action.hunt_thunderhorn",
+    "professionId": "profession.hunting",
+    "name": "Hunt Thunderhorn",
+    "requiredLevel": 52,
+    "baseIntervalTicks": 265,
+    "experience": 78,
+    "successChance": 0.45,
+    "outputs": [ { "itemId": "material.thunderhorn_carcass", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.storm_charged_bull",
+        "name": "A Charged Bull",
+        "prompt": "This one is carrying the storm — the air around it is standing on end. Worth far more. Considerably harder to bring down.",
+        "discoveryChance": 0.11,
+        "extraIntervalTicks": 340,
+        "riskWeight": 0.50,
+        "outputs": [ { "itemId": "material.thunderhorn_carcass", "quantity": 1 } ],
+        "bonusOutputs": [ { "itemId": "material.storm_gland", "chance": 0.5, "quantity": 1 } ],
+        "experience": 150
+      }
+    ]
+  },
+  {
+    "id": "action.hunt_drake",
+    "professionId": "profession.hunting",
+    "name": "Hunt Drake",
+    "requiredLevel": 65,
+    "baseIntervalTicks": 300,
+    "experience": 105,
+    "successChance": 0.35,
+    "outputs": [ { "itemId": "material.drake_carcass", "quantity": 1 } ]
+  }
+]

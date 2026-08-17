@@ -1,0 +1,146 @@
+[
+  // Runecrafting. One rune per essence in essences/essences.json, and each rune's properties
+  // sit on that essence's anchor property — so a Fire Rune fed to the bench pushes `heat`
+  // exactly the way any fire-bearing material would. That is what keeps runes *inputs to the
+  // systems we already have* (infusion, Attune, fabrication) instead of a parallel magical
+  // currency (docs/professions.md §16).
+  //
+  // Level is what makes handling essence safe: the higher rungs are the volatile ones.
+  {
+    "id": "action.cut_rune_blanks",
+    "professionId": "profession.runecrafting",
+    "name": "Cut Rune Blanks",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 110,
+    "experience": 12,
+    "inputs": [ { "itemId": "material.slate", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.rune_blank", "quantity": 2 } ]
+  },
+  {
+    "id": "action.inscribe_fire_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Fire Rune",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 24,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.fire_mote", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.fire_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.inscribe_frost_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Frost Rune",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 150,
+    "experience": 24,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.frost_mote", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.frost_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.inscribe_storm_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Storm Rune",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 165,
+    "experience": 32,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.storm_mote", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.storm_rune", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_charge_holds",
+        "name": "The Charge Holds",
+        "prompt": "The blank is taking the charge without bleeding it. Keep feeding it and you get a second rune — or you lose the first.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 200,
+        "riskWeight": 0.35,
+        "outputs": [ { "itemId": "material.storm_rune", "quantity": 2 } ],
+        "experience": 70
+      }
+    ]
+  },
+  {
+    "id": "action.inscribe_nature_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Nature Rune",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 165,
+    "experience": 32,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.bloom_spore", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.nature_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cut_crystal_blanks",
+    "professionId": "profession.runecrafting",
+    "name": "Cut Crystal Blanks",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 150,
+    "experience": 36,
+    "inputs": [ { "itemId": "material.quartz", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.rune_blank", "quantity": 3 } ]
+  },
+  {
+    "id": "action.inscribe_necrotic_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Necrotic Rune",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 190,
+    "experience": 48,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.death_mote", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.necrotic_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.inscribe_radiant_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe a Radiant Rune",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 190,
+    "experience": 48,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.radiant_mote", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.radiant_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.inscribe_abyssal_rune",
+    "professionId": "profession.runecrafting",
+    "name": "Inscribe an Abyssal Rune",
+    "requiredLevel": 42,
+    "baseIntervalTicks": 215,
+    "experience": 64,
+    "inputs": [
+      { "itemId": "material.rune_blank", "quantity": 1 },
+      { "itemId": "material.void_shard", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.abyssal_rune", "quantity": 1 } ]
+  },
+  {
+    "id": "action.grind_resonance_catalyst",
+    "professionId": "profession.runecrafting",
+    "name": "Grind a Resonance Catalyst",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 250,
+    "experience": 85,
+    "inputs": [
+      { "itemId": "material.mana_crystal", "quantity": 1 },
+      { "itemId": "material.arcane_dust", "quantity": 2 },
+      { "itemId": "material.property_dossier", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.resonance_catalyst", "quantity": 1 } ]
+  }
+]

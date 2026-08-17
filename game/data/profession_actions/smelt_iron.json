@@ -1,4 +1,5 @@
 {
+  // Kept in its own file, and kept its id, since the vertical slice.
   "id": "action.smelt_iron",
   "professionId": "profession.smithing",
   "name": "Smelt Iron Ingot",
@@ -10,5 +11,18 @@
   ],
   "outputs": [
     { "itemId": "material.iron_ingot", "quantity": 1 }
+  ],
+  "opportunities": [
+    {
+      "id": "opportunity.clean_bloom",
+      "name": "A Clean Bloom",
+      "prompt": "The bloom has come out unusually clean. Work it again while it is still hot and there is a second ingot in it.",
+      "discoveryChance": 0.12,
+      "extraIntervalTicks": 150,
+      "riskWeight": 0.20,
+      "outputs": [ { "itemId": "material.iron_ingot", "quantity": 1 } ],
+      "bonusOutputs": [ { "itemId": "material.slag", "chance": 0.4, "quantity": 1 } ],
+      "experience": 35
+    }
   ]
 }

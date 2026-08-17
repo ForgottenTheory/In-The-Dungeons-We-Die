@@ -63,6 +63,7 @@ public partial class GameRoot : Node
     private DataStore<MaterialDefinition> _materials = new();
     private DataStore<ProfessionDefinition> _professionStore = new();
     private DataStore<ProfessionActionDefinition> _actionStore = new();
+    private DataStore<TrainingObstacleDefinition> _obstacleStore = new();
 
     private DataStore<CraftingInteractionDefinition> _interactions = new();
     private DataStore<MoveDefinition> _moves = new();
@@ -85,6 +86,17 @@ public partial class GameRoot : Node
     private CharacterComposer _composer = null!;
     private ProfessionSystem _professions = null!;
     private PassiveProfessionRunner _passiveRunner = null!;
+    private FarmingPlots _farmingPlots = null!;
+    private TrainingCourse _trainingCourse = null!;
+
+    /// <summary>The offer waiting on the player's pursue/ignore decision, if any. One at a
+    /// time: a second discovery while one is pending would turn a decision into a queue.</summary>
+    private PendingOpportunity? _pendingOpportunity;
+
+    /// <summary>The in-flight pursuit's scheduled resolution, so the UI can show a bar.</summary>
+    private ScheduledAction? _pursuitInProgress;
+    private long _pursuitStartTick;
+    private long _pursuitEndTick;
     private DiscoverySystem _discoveries = null!;
     private CraftingExperimentSystem _legacyInteractionCrafting = null!;
     private IEmergentRegistry _emergentRegistry = null!;
@@ -140,6 +152,10 @@ public partial class GameRoot : Node
     public event Action? CombatChanged;
     public event Action? RealmChanged;
 
+    /// <summary>An opportunity is waiting on a pursue/ignore decision, or null once it is
+    /// resolved either way.</summary>
+    public event Action<PendingOpportunity?>? OpportunityOffered;
+
     public long CurrentTick => _tick.CurrentTick;
     public bool IsRunning => _running;
     public Character? Character { get; private set; }
@@ -153,6 +169,7 @@ public partial class GameRoot : Node
         _materials = content.Materials;
         _professionStore = content.Professions;
         _actionStore = content.Actions;
+        _obstacleStore = content.TrainingObstacles;
         _interactions = content.Interactions;
         _moves = content.Moves;
         _moveModifierStore = content.MoveModifiers;
@@ -190,8 +207,14 @@ public partial class GameRoot : Node
         _professions = new ProfessionSystem(_actionStore, () => ActiveInventory, new SeededRandom(20260814));
         _passiveRunner = new PassiveProfessionRunner(_tick, _professions);
         _professions.ActionCompleted += OnActionCompleted;
+        _professions.OpportunityResolved += OnOpportunityResolved;
         _professions.LeveledUp += OnLeveledUp;
         _passiveRunner.Stalled += OnPassiveStalled;
+
+        // Farming's plots always grow into the Stash: a crop is tended at the Hideout, not
+        // carried through a Realm, so it is never at risk from a death.
+        _farmingPlots = new FarmingPlots(_actionStore, _professions, () => _stash);
+        _trainingCourse = new TrainingCourse(_obstacleStore, _professions);
         _stash.Changed += () => InventoryChanged?.Invoke();
         _playerEquipment.Changed += () => CharacterChanged?.Invoke();
 
@@ -466,20 +489,258 @@ public partial class GameRoot : Node
             return;
         }
 
-        Emit($"[Active] {ActionName(actionId)} (timing {performance:P0}) → {DescribeProduced(outcome)} (xp +{outcome.XpGained}).");
+        if (outcome.AttemptMissed)
+            Emit($"[Active] {ActionName(actionId)} — it got away (xp +{outcome.XpGained}).");
+        else
+            Emit($"[Active] {ActionName(actionId)} (timing {performance:P0}) → {DescribeProduced(outcome)} (xp +{outcome.XpGained}).");
+
+        if (outcome.RealmKnowledgeGained is { } knowledge)
+        {
+            AddKnowledge(knowledge.RealmId, knowledge.Amount);
+            Emit($"[Survey] Realm Knowledge +{knowledge.Amount} ({Knowledge(knowledge.RealmId)} total).");
+        }
+
+        OfferOpportunity(actionId, outcome.DiscoveredOpportunity);
+    }
+
+    // --- The active layer: Discover → Pursue / Ignore ------------------------
+    //
+    // Core resolves the gamble instantly and deterministically; *when* the result arrives is
+    // the client's business, which is why the time cost lives here on the TickEngine rather
+    // than in ProfessionSystem (docs/code-map.md §10.14).
+
+    /// <summary>An offer waiting on the player, and the action that surfaced it.</summary>
+    public sealed record PendingOpportunity(string ActionId, ProfessionOpportunityDefinition Offer);
+
+    public PendingOpportunity? PendingOffer => _pendingOpportunity;
+
+    public bool IsPursuingOpportunity => _pursuitInProgress is not null;
+
+    /// <summary>Progress through an in-flight pursuit in [0, 1], for the UI bar.</summary>
+    public double PursuitProgress()
+    {
+        if (_pursuitInProgress is null)
+            return 0.0;
+        var span = _pursuitEndTick - _pursuitStartTick;
+        return span <= 0 ? 0.0 : Math.Clamp((double)(_tick.CurrentTick - _pursuitStartTick) / span, 0.0, 1.0);
+    }
+
+    private void OfferOpportunity(string actionId, ProfessionOpportunityDefinition? offer)
+    {
+        if (offer is null)
+            return;
+
+        _pendingOpportunity = new PendingOpportunity(actionId, offer);
+        Emit($"[Opportunity] {offer.Name} — {offer.Prompt}");
+        OpportunityOffered?.Invoke(_pendingOpportunity);
+    }
+
+    /// <summary>Takes the pending offer. The extra time is spent on the shared tick engine, so
+    /// inside a Realm it is genuinely time not spent heading for the portal.</summary>
+    public void PursuePendingOpportunity()
+    {
+        if (_pendingOpportunity is null || _pursuitInProgress is not null)
+            return;
+
+        var pending = _pendingOpportunity;
+        _pendingOpportunity = null;
+
+        _pursuitStartTick = _tick.CurrentTick;
+        _pursuitEndTick = _tick.CurrentTick + pending.Offer.ExtraIntervalTicks;
+        // The card is dismissed below, when the pursuit starts — deliberately not again here.
+        // Another attempt may have surfaced a fresh offer in the meantime, and hiding it when
+        // this pursuit lands would throw away a decision the player has not made yet.
+        _pursuitInProgress = _tick.Schedule(pending.Offer.ExtraIntervalTicks, () =>
+        {
+            _pursuitInProgress = null;
+            _professions.PursueOpportunity(pending.ActionId, pending.Offer.Id); // logs via OnOpportunityResolved
+        });
+
+        Emit($"[Opportunity] Pursuing {pending.Offer.Name}…");
+        SetRunning(true); // the pursuit only resolves while the sim runs
+        OpportunityOffered?.Invoke(null);
+    }
+
+    /// <summary>Walks away. Costs nothing — the attempt's own yield already landed.</summary>
+    public void DeclinePendingOpportunity()
+    {
+        if (_pendingOpportunity is null)
+            return;
+
+        Emit($"[Opportunity] Left {_pendingOpportunity.Offer.Name} alone.");
+        _pendingOpportunity = null;
+        OpportunityOffered?.Invoke(null);
+    }
+
+    private void OnOpportunityResolved(OpportunityOutcome outcome)
+    {
+        var offer = _professions.TryGetOpportunity(outcome.ActionId, outcome.OpportunityId, out var definition)
+            ? definition.Name
+            : outcome.OpportunityId;
+
+        Emit(outcome.Success
+            ? $"[Opportunity] {offer} paid off → {DescribeStacks(outcome.Produced)} (xp +{outcome.XpGained})."
+            : $"[Opportunity] {offer} came to nothing (xp +{outcome.XpGained}).");
     }
 
     public string ProfessionSummary()
     {
         var report = new StringBuilder();
-        foreach (var def in _professionStore.GetAll().OrderBy(p => p.Name))
+        foreach (var category in Enum.GetValues<ProfessionCategory>())
         {
-            var progress = _professions.GetProgress(def.Id);
-            report.AppendLine($"{def.Name,-10} L{progress.Level}  (xp {progress.Xp}, {progress.ProgressToNextLevel:P0} to next)");
+            var inCategory = _professionStore.GetAll()
+                .Where(p => p.Category == category)
+                .OrderBy(p => p.Name, StringComparer.Ordinal)
+                .ToList();
+            if (inCategory.Count == 0)
+                continue;
+
+            report.AppendLine($"— {category} —");
+            foreach (var def in inCategory)
+            {
+                var progress = _professions.GetProgress(def.Id);
+                report.AppendLine($"{def.Name,-16} L{progress.Level,-3} (xp {progress.Xp}, {progress.ProgressToNextLevel:P0} to next)");
+            }
         }
 
         return report.ToString().TrimEnd();
     }
+
+    /// <summary>Every profession, grouped for the UI's category headings.</summary>
+    public IReadOnlyList<ProfessionDefinition> ProfessionsIn(ProfessionCategory category) =>
+        _professionStore.GetAll()
+            .Where(p => p.Category == category)
+            .OrderBy(p => p.Name, StringComparer.Ordinal)
+            .ToList();
+
+    public IReadOnlyList<ProfessionActionDefinition> ActionsFor(string professionId) =>
+        _actionStore.GetAll()
+            .Where(a => a.ProfessionId == professionId)
+            .OrderBy(a => a.RequiredLevel)
+            .ThenBy(a => a.Id, StringComparer.Ordinal)
+            .ToList();
+
+    public int ProfessionLevel(string professionId) => _professions.GetProgress(professionId).Level;
+
+    public bool CanRunAction(string actionId) => _professions.CanExecute(actionId);
+
+    // --- Farming plots ------------------------------------------------------
+
+    public IReadOnlyList<FarmingPlot> FarmingPlotsView => _farmingPlots.Plots;
+    public int UnlockedFarmingPlots => _farmingPlots.UnlockedPlots;
+    public IReadOnlyList<ProfessionActionDefinition> PlantableActions() => _farmingPlots.PlantableActions();
+
+    public void PlantCrop(int plotIndex, string actionId)
+    {
+        var failure = _farmingPlots.Plant(plotIndex, actionId, _tick.CurrentTick);
+        Emit(failure == PlotFailure.None
+            ? $"[Farm] Planted {ActionName(actionId)} in plot {plotIndex + 1}."
+            : $"[Farm] Cannot plant {ActionName(actionId)} ({failure}).");
+
+        if (failure == PlotFailure.None)
+            SetRunning(true); // crops only grow while the clock runs
+    }
+
+    public void HarvestPlot(int plotIndex)
+    {
+        var outcome = _farmingPlots.Harvest(plotIndex, _tick.CurrentTick, out var failure);
+        if (outcome is null)
+        {
+            Emit($"[Farm] Cannot harvest plot {plotIndex + 1} ({failure}).");
+            return;
+        }
+
+        Emit($"[Farm] Plot {plotIndex + 1} → {DescribeProduced(outcome)} (xp +{outcome.XpGained}).");
+    }
+
+    /// <summary>Growth in [0, 1] for a plot's UI bar.</summary>
+    public double PlotProgress(int plotIndex)
+    {
+        if (plotIndex < 0 || plotIndex >= _farmingPlots.Plots.Count)
+            return 0.0;
+        var plot = _farmingPlots.Plots[plotIndex];
+        if (plot.IsEmpty)
+            return 0.0;
+        return plot.Progress(_tick.CurrentTick, _professions.EffectiveIntervalTicks(plot.PlantedActionId!));
+    }
+
+    // --- Agility training course --------------------------------------------
+
+    public IReadOnlyList<TrainingObstacleDefinition> ObstaclesFor(TrainingSlot slot) =>
+        _trainingCourse.AvailableFor(slot);
+
+    public string? FittedObstacle(TrainingSlot slot) =>
+        _trainingCourse.Fitted.TryGetValue(slot, out var id) ? id : null;
+
+    public void FitObstacle(TrainingSlot slot, string obstacleId)
+    {
+        var failure = _trainingCourse.Fit(slot, obstacleId);
+        Emit(failure == CourseFitFailure.None
+            ? $"[Course] Fitted {ObstacleName(obstacleId)} to the {slot} station."
+            : $"[Course] Cannot fit {ObstacleName(obstacleId)} ({failure}).");
+    }
+
+    public void ClearObstacle(TrainingSlot slot)
+    {
+        _trainingCourse.Clear(slot);
+        Emit($"[Course] Cleared the {slot} station.");
+    }
+
+    public void RunTrainingLap()
+    {
+        var xp = _trainingCourse.RunLap();
+        Emit(xp > 0
+            ? $"[Course] Ran a lap ({_trainingCourse.LapIntervalTicks() / (double)TicksPerSecond:0.#}s) — Agility xp +{xp}."
+            : "[Course] Nothing is fitted; there is no course to run.");
+    }
+
+    /// <summary>The course's standing utility, in the player's language.</summary>
+    public string TrainingCourseSummary()
+    {
+        var report = new StringBuilder();
+        report.AppendLine($"Agility L{ProfessionLevel(TrainingCourse.AgilityProfessionId)} · " +
+                          $"lap {_trainingCourse.LapIntervalTicks() / (double)TicksPerSecond:0.#}s for {_trainingCourse.LapExperience()} xp");
+
+        var bonuses = _trainingCourse.ActiveBonuses();
+        if (bonuses.Count == 0)
+        {
+            report.Append("No stations fitted — no standing bonuses.");
+            return report.ToString();
+        }
+
+        foreach (var bonus in bonuses.OrderBy(b => b.Key, StringComparer.Ordinal))
+            report.AppendLine($"  {CourseBonusLabel(bonus.Key)}  +{bonus.Value:P0}");
+
+        return report.ToString().TrimEnd();
+    }
+
+    private static string CourseBonusLabel(string bonusKey) => bonusKey switch
+    {
+        CourseBonusKeys.RealmTravelSpeed => "Realm travel",
+        CourseBonusKeys.GatheringSpeed => "Gathering speed",
+        CourseBonusKeys.ExtractionSpeed => "Extraction speed",
+        CourseBonusKeys.HazardAvoidance => "Hazard avoidance",
+        CourseBonusKeys.OpportunitySafety => "Opportunity safety",
+        _ => bonusKey,
+    };
+
+    private string ObstacleName(string obstacleId) =>
+        _obstacleStore.TryGetById(obstacleId, out var obstacle) ? obstacle.Name : obstacleId;
+
+    // --- Assay ---------------------------------------------------------------
+
+    /// <summary>How much of a material's reading the player has earned the right to see.</summary>
+    public AssayDepth CurrentAssayDepth => AssayLens.DepthFor(ProfessionLevel("profession.assay"));
+
+    /// <summary>The §3 material inspector, redacted to the player's Assay level. Assay never
+    /// changes what a material is — only how much of it is legible (D30, rule 7).</summary>
+    public string MaterialSummaryAssayed(string materialId) =>
+        _materials.TryGetById(materialId, out var material)
+            ? AssayLens.Material(
+                MaterialReadings.From(material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences),
+                _glossary,
+                CurrentAssayDepth)
+            : materialId;
 
     public string InventoryReport()
     {
@@ -1442,10 +1703,16 @@ public partial class GameRoot : Node
     public void SaveGame()
     {
         var data = SaveMapper.Capture(_build, _stash, _professions, _discoveries, _realmKnowledge, _tick.CurrentTick, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves,
-            emergentEquipment: _equipment.GetAll().Where(e => e.Id.StartsWith("equip.emergent.", StringComparison.Ordinal)));
+            emergentEquipment: _equipment.GetAll().Where(e => e.Id.StartsWith("equip.emergent.", StringComparison.Ordinal)),
+            farmingPlots: _farmingPlots,
+            trainingCourse: _trainingCourse,
+            passiveActionId: _passiveRunner.CurrentActionId,
+            savedAtUnixSeconds: DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         _saveStore.Save(data);
         Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
              $"{data.StashInstances.Count} instance(s), {data.Equipment.Count} equipped, {data.Discoveries.Count} discovery(ies).");
+        if (data.PassiveActionId is not null)
+            Emit($"[Save] {ActionName(data.PassiveActionId)} will keep running while you are away.");
     }
 
     public void LoadGame()
@@ -1463,7 +1730,8 @@ public partial class GameRoot : Node
             return;
         }
 
-        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves, equipmentStore: _equipment);
+        SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves, equipmentStore: _equipment,
+            farmingPlots: _farmingPlots, trainingCourse: _trainingCourse);
         if (save.Build is not null)
         {
             _build = save.Build;
@@ -1473,10 +1741,88 @@ public partial class GameRoot : Node
         EquipStarterLoadout(); // fill any empty slots (fresh/old saves) so the player is never unarmed
 
         Emit($"[Load] Loaded save (schema v{save.SchemaVersion}, saved at tick {save.SavedAtTick}).");
+        ApplyTimeAway(save);
+
         InventoryChanged?.Invoke();
         DiscoveryChanged?.Invoke();
         RealmChanged?.Invoke();
     }
+
+    /// <summary>
+    /// Pays out the absence: the passive action the player left running, and any crop that
+    /// finished growing while the game was closed. Wall-clock, not ticks — the simulation clock
+    /// stops when the game does, so only <see cref="SaveData.SavedAtUnixSeconds"/> can measure
+    /// how long they were gone.
+    /// </summary>
+    private void ApplyTimeAway(SaveData save)
+    {
+        if (save.SavedAtUnixSeconds <= 0)
+            return; // a v6 save, or one written before the clock was stamped
+
+        var secondsAway = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - save.SavedAtUnixSeconds;
+        if (secondsAway <= 0)
+            return;
+
+        // Nothing may resolve twice: if a passive action was already running in this session
+        // when the player hit Load, its scheduled completions would double-count against the
+        // offline payout below.
+        _passiveRunner.Stop();
+
+        RebasePlantedCrops(save, ProfessionTuning.OfflineTicks(secondsAway));
+
+        if (save.PassiveActionId is { } actionId)
+        {
+            var report = OfflineProgressCalculator.Apply(_professions, actionId, secondsAway);
+            Emit(report.EarnedAnything
+                ? $"[Away] {TimeAwayPhrase(secondsAway)}: {ActionName(actionId)} ×{report.CompletedActions} → " +
+                  $"{DescribeStacks(report.Produced)} (xp +{report.XpGained}). {OfflineStopPhrase(report.StopReason)}"
+                : $"[Away] {TimeAwayPhrase(secondsAway)}: {ActionName(actionId)} produced nothing. {OfflineStopPhrase(report.StopReason)}");
+
+            // Picked back up whenever it still *can* run — including after an absence too short
+            // to have banked a single completion. Only an action that ran out of materials
+            // stays stopped, which is the one case the player needs to notice.
+            if (_professions.CanExecute(actionId))
+                _passiveRunner.Start(actionId);
+        }
+
+        var lifted = _farmingPlots.HarvestAllReady(_tick.CurrentTick);
+        foreach (var outcome in lifted)
+            Emit($"[Away] A crop finished: {ActionName(outcome.ActionId)} → {DescribeProduced(outcome)} (xp +{outcome.XpGained}).");
+    }
+
+    /// <summary>
+    /// Moves saved crops onto this session's clock, minus the time the player was away.
+    ///
+    /// <para>A plot stores an absolute <c>ReadyAtTick</c>, but the simulation clock does not
+    /// survive a restart — a fresh session starts at tick 0, so a crop saved as "ready at
+    /// 2900" would otherwise wait out its whole growth again. What actually carries over is the
+    /// <em>remaining</em> time, so that is what is recomputed: what was left at save, less the
+    /// absence, starting from now.</para>
+    /// </summary>
+    private void RebasePlantedCrops(SaveData save, long ticksAway)
+    {
+        _farmingPlots.Restore(save.FarmingPlots.Select(planting =>
+        {
+            var remainingAtSave = Math.Max(0, planting.ReadyAtTick - save.SavedAtTick);
+            var remainingNow = Math.Max(0, remainingAtSave - ticksAway);
+            return (planting.Index, planting.ActionId, _tick.CurrentTick + remainingNow);
+        }));
+    }
+
+    private static string TimeAwayPhrase(long secondsAway) => secondsAway switch
+    {
+        < 60 => $"{secondsAway}s away",
+        < 3600 => $"{secondsAway / 60}m away",
+        _ => $"{secondsAway / 3600.0:0.#}h away",
+    };
+
+    private static string OfflineStopPhrase(OfflineStopReason reason) => reason switch
+    {
+        OfflineStopReason.InputsExhausted => "It ran out of materials.",
+        OfflineStopReason.TimeCapped => $"Capped at {ProfessionTuning.MaxOfflineTicks / (TicksPerSecond * 3600)}h.",
+        OfflineStopReason.CompletionCapped => "Capped at the per-absence completion limit.",
+        _ => string.Empty,
+    };
 
     public void ReportStatus()
     {
@@ -1657,7 +2003,9 @@ public partial class GameRoot : Node
     private string ProfessionOf(string actionId) =>
         _actionStore.TryGetById(actionId, out var a) ? ProfessionName(a.ProfessionId) : "?";
 
-    private string ActionName(string actionId) =>
+    /// <summary>An action's display name. Public because the UI names the running passive
+    /// action and the crop in each plot, and neither should render a raw content id.</summary>
+    public string ActionName(string actionId) =>
         _actionStore.TryGetById(actionId, out var a) ? a.Name : actionId;
 
     private string ItemName(string itemId)

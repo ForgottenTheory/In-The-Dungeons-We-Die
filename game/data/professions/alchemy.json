@@ -1,6 +1,7 @@
 {
   "id": "profession.alchemy",
   "name": "Alchemy",
-  "category": "Crafting",
-  "primaryAttributes": ["Intelligence", "Wisdom"]
+  "category": "Processing",
+  "primaryAttributes": ["Intelligence", "Wisdom"],
+  "description": "Transforming compounds: distil, concentrate, stabilise, catalyse. Where Herblore prepares, Alchemy changes."
 }

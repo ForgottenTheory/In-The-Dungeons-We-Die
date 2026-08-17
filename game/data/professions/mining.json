@@ -2,5 +2,6 @@
   "id": "profession.mining",
   "name": "Mining",
   "category": "Gathering",
-  "primaryAttributes": ["Strength", "Endurance"]
+  "primaryAttributes": ["Strength", "Endurance"],
+  "description": "Ore, stone and crystal. Levels open different deposits, not strictly better ones."
 }

@@ -1,0 +1,209 @@
+[
+  // Farming owns plants and fungi as a *domain*, wild or planted — the four wild-gathering
+  // actions that used to sit under Herblore moved here in the 20-profession pass, because
+  // Herblore's identity is preparation, not collection. `action.gather_sageleaf` kept its id
+  // (the Dark Forest's Dark Grove points at it) and only changed profession.
+  //
+  // The `plant_*` actions are the plot loop: their input is the seed, their interval is the
+  // grow time, and every bed returns its own seed so an established plot sustains itself. They
+  // run through FarmingPlots, which pays for the seed at planting and completes the action
+  // when the crop is lifted — so XP, mastery and bonus outputs behave exactly as elsewhere.
+
+  // --- Wild collection ------------------------------------------------------------------
+  {
+    // Water had no source before the 20-profession pass, despite four actions consuming it —
+    // brewing, cooking and felting all quietly assumed a full bucket. Farming draws it,
+    // because Farming is the profession that is already standing at the Hideout well.
+    "id": "action.draw_water",
+    "professionId": "profession.farming",
+    "name": "Draw Water",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 70,
+    "experience": 6,
+    "outputs": [ { "itemId": "material.springwater", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.rainwater", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.gather_nettle",
+    "professionId": "profession.farming",
+    "name": "Gather Nettle",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 10,
+    "outputs": [ { "itemId": "material.nettle", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.nettle_seed", "chance": 0.3, "quantity": 1 } ]
+  },
+  {
+    "id": "action.dig_marsh_root",
+    "professionId": "profession.farming",
+    "name": "Dig Marsh Root",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 130,
+    "experience": 14,
+    "outputs": [ { "itemId": "material.marsh_root", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.gnarl_root", "chance": 0.1, "quantity": 1 } ]
+  },
+  {
+    "id": "action.forage_wild_seeds",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Seeds",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 120,
+    "experience": 18,
+    "outputs": [ { "itemId": "material.nettle_seed", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sageleaf_seed", "chance": 0.4, "quantity": 1 },
+      { "itemId": "material.comfrey_seed", "chance": 0.25, "quantity": 1 },
+      { "itemId": "material.emberleaf_seed", "chance": 0.06, "quantity": 1 }
+    ],
+    "opportunities": [
+      {
+        "id": "opportunity.seed_bearing_stand",
+        "name": "A Stand in Seed",
+        "prompt": "A whole thicket has gone to seed at once. Stripping it properly is an afternoon's work.",
+        "discoveryChance": 0.14,
+        "extraIntervalTicks": 240,
+        "riskWeight": 0.0,
+        "outputs": [ { "itemId": "material.sageleaf_seed", "quantity": 2 } ],
+        "bonusOutputs": [
+          { "itemId": "material.comfrey_seed", "chance": 0.5, "quantity": 2 },
+          { "itemId": "material.kingsfoil_seed", "chance": 0.15, "quantity": 1 }
+        ],
+        "experience": 40
+      }
+    ]
+  },
+  {
+    "id": "action.gather_wild_fungi",
+    "professionId": "profession.farming",
+    "name": "Gather Wild Fungi",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 110,
+    "experience": 19,
+    "outputs": [ { "itemId": "material.brown_cap", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.mushroom_spawn", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.milkcap", "chance": 0.25, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_comfrey",
+    "professionId": "profession.farming",
+    "name": "Harvest Comfrey",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 140,
+    "experience": 20,
+    "outputs": [ { "itemId": "material.comfrey", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.aloe", "chance": 0.15, "quantity": 1 },
+      { "itemId": "material.comfrey_seed", "chance": 0.25, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_kingsfoil",
+    "professionId": "profession.farming",
+    "name": "Harvest Kingsfoil",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 165,
+    "experience": 38,
+    "outputs": [ { "itemId": "material.kingsfoil", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.kingsfoil_seed", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.gather_emberleaf",
+    "professionId": "profession.farming",
+    "name": "Gather Emberleaf",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 175,
+    "experience": 48,
+    "outputs": [ { "itemId": "material.emberleaf", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.emberleaf_seed", "chance": 0.2, "quantity": 1 },
+      { "itemId": "material.frostfern", "chance": 0.1, "quantity": 1 }
+    ]
+  },
+
+  // --- Hideout plots --------------------------------------------------------------------
+  {
+    "id": "action.plant_nettle_bed",
+    "professionId": "profession.farming",
+    "name": "Plant a Nettle Bed",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 2400,
+    "experience": 40,
+    "inputs": [ { "itemId": "material.nettle_seed", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.nettle", "quantity": 3 },
+      { "itemId": "material.nettle_seed", "quantity": 2 }
+    ]
+  },
+  {
+    "id": "action.plant_sageleaf_bed",
+    "professionId": "profession.farming",
+    "name": "Plant a Sageleaf Bed",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 3000,
+    "experience": 55,
+    "inputs": [ { "itemId": "material.sageleaf_seed", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.sageleaf", "quantity": 3 },
+      { "itemId": "material.sageleaf_seed", "quantity": 2 }
+    ]
+  },
+  {
+    "id": "action.plant_comfrey_bed",
+    "professionId": "profession.farming",
+    "name": "Plant a Comfrey Bed",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 4200,
+    "experience": 80,
+    "inputs": [ { "itemId": "material.comfrey_seed", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.comfrey", "quantity": 3 },
+      { "itemId": "material.comfrey_seed", "quantity": 2 }
+    ],
+    "bonusOutputs": [ { "itemId": "material.aloe", "chance": 0.3, "quantity": 1 } ]
+  },
+  {
+    "id": "action.raise_mushroom_bed",
+    "professionId": "profession.farming",
+    "name": "Raise a Mushroom Bed",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 3600,
+    "experience": 90,
+    "inputs": [ { "itemId": "material.mushroom_spawn", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.cave_mushroom", "quantity": 3 },
+      { "itemId": "material.mushroom_spawn", "quantity": 2 }
+    ],
+    "bonusOutputs": [ { "itemId": "material.luminous_cap", "chance": 0.2, "quantity": 1 } ]
+  },
+  {
+    "id": "action.plant_kingsfoil_bed",
+    "professionId": "profession.farming",
+    "name": "Plant a Kingsfoil Bed",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 6000,
+    "experience": 160,
+    "inputs": [ { "itemId": "material.kingsfoil_seed", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.kingsfoil", "quantity": 2 },
+      { "itemId": "material.kingsfoil_seed", "quantity": 1 }
+    ],
+    "bonusOutputs": [ { "itemId": "material.kingsfoil_seed", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.plant_emberleaf_bed",
+    "professionId": "profession.farming",
+    "name": "Plant an Emberleaf Bed",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 7200,
+    "experience": 210,
+    "inputs": [ { "itemId": "material.emberleaf_seed", "quantity": 1 } ],
+    "outputs": [
+      { "itemId": "material.emberleaf", "quantity": 2 },
+      { "itemId": "material.emberleaf_seed", "quantity": 1 }
+    ],
+    "bonusOutputs": [ { "itemId": "material.ember_sap", "chance": 0.2, "quantity": 1 } ]
+  }
+]

@@ -1,32 +1,127 @@
 [
-  // Herblore's ladder (P2). Gather Sageleaf lives in gather_sageleaf.json.
+  // Herblore prepares organic material without changing what it is: dried emberleaf is still
+  // emberleaf, only drier, more concentrated and no longer rotting. That is the whole line
+  // between this profession and Alchemy, and it is visible in the outputs — every prepared
+  // reagent keeps its source's signature property and sheds water, bulk and decay.
+  //
+  // The wild-gathering actions that used to live here moved to Farming in the 20-profession
+  // pass. Herblore now buys its inputs from Farming, Hunting/Beast Lore and Forestry.
   {
-    "id": "action.gather_nettle",
+    "id": "action.grind_herb_powder",
     "professionId": "profession.herblore",
-    "name": "Gather Nettle",
+    "name": "Grind Herb Powder",
     "requiredLevel": 1,
     "baseIntervalTicks": 100,
-    "experience": 10,
-    "outputs": [ { "itemId": "material.nettle", "quantity": 1 } ]
+    "experience": 11,
+    "inputs": [ { "itemId": "material.nettle", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.herb_powder", "quantity": 1 } ]
   },
   {
-    "id": "action.dig_marsh_root",
+    "id": "action.press_aloe",
     "professionId": "profession.herblore",
-    "name": "Dig Marsh Root",
+    "name": "Press Aloe",
     "requiredLevel": 5,
-    "baseIntervalTicks": 130,
+    "baseIntervalTicks": 110,
     "experience": 14,
-    "outputs": [ { "itemId": "material.marsh_root", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.gnarl_root", "chance": 0.1, "quantity": 1 } ]
+    "inputs": [ { "itemId": "material.aloe", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.pressed_aloe", "quantity": 1 } ]
   },
   {
-    "id": "action.harvest_comfrey",
+    "id": "action.render_tallow",
     "professionId": "profession.herblore",
-    "name": "Harvest Comfrey",
-    "requiredLevel": 15,
+    "name": "Render Tallow",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 130,
+    "experience": 16,
+    "inputs": [ { "itemId": "material.bear_fat", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.tallow", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.wax", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.dry_emberleaf",
+    "professionId": "profession.herblore",
+    "name": "Dry Emberleaf",
+    "requiredLevel": 10,
     "baseIntervalTicks": 140,
-    "experience": 20,
-    "outputs": [ { "itemId": "material.comfrey", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.aloe", "chance": 0.15, "quantity": 1 } ]
+    "experience": 19,
+    "inputs": [ { "itemId": "material.emberleaf", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.dried_emberleaf", "quantity": 1 } ]
+  },
+  {
+    "id": "action.dry_frostfern",
+    "professionId": "profession.herblore",
+    "name": "Dry Frostfern",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 140,
+    "experience": 19,
+    "inputs": [ { "itemId": "material.frostfern", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.dried_frostfern", "quantity": 1 } ]
+  },
+  {
+    "id": "action.render_marrow",
+    "professionId": "profession.herblore",
+    "name": "Render Marrow",
+    "requiredLevel": 14,
+    "baseIntervalTicks": 150,
+    "experience": 22,
+    "inputs": [ { "itemId": "material.animal_bone", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.rendered_marrow", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.bone_meal", "chance": 0.4, "quantity": 1 } ]
+  },
+  {
+    "id": "action.dry_luminous_cap",
+    "professionId": "profession.herblore",
+    "name": "Dry Luminous Cap",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 155,
+    "experience": 26,
+    "inputs": [ { "itemId": "material.luminous_cap", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.dried_luminous_cap", "quantity": 1 } ]
+  },
+  {
+    "id": "action.grind_mandrake",
+    "professionId": "profession.herblore",
+    "name": "Grind Mandrake",
+    "requiredLevel": 22,
+    "baseIntervalTicks": 170,
+    "experience": 32,
+    "inputs": [ { "itemId": "material.mandrake_root", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.ground_mandrake", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.whole_taproot",
+        "name": "The Taproot Came Up Whole",
+        "prompt": "The root is intact, which almost never happens. Working it slowly by hand keeps far more of it usable.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 220,
+        "riskWeight": 0.15,
+        "outputs": [ { "itemId": "material.ground_mandrake", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.arcane_dust", "chance": 0.3, "quantity": 1 } ],
+        "experience": 55
+      }
+    ]
+  },
+  {
+    "id": "action.prepare_venom",
+    "professionId": "profession.herblore",
+    "name": "Prepare Venom",
+    "requiredLevel": 26,
+    "baseIntervalTicks": 180,
+    "experience": 38,
+    "inputs": [ { "itemId": "material.venom_gland", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.prepared_venom", "quantity": 1 } ]
+  },
+  {
+    "id": "action.steep_kingsfoil",
+    "professionId": "profession.herblore",
+    "name": "Steep Kingsfoil",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 200,
+    "experience": 45,
+    "inputs": [
+      { "itemId": "material.kingsfoil", "quantity": 1 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.steeped_kingsfoil", "quantity": 1 } ]
   }
 ]

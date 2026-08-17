@@ -1,6 +1,7 @@
 {
   "id": "profession.smithing",
   "name": "Smithing",
-  "category": "Crafting",
-  "primaryAttributes": ["Strength", "Endurance"]
+  "category": "Processing",
+  "primaryAttributes": ["Strength", "Endurance"],
+  "description": "Metal: smelting, alloying, quenching. Its deep work is the Forge bench, not a second engine."
 }

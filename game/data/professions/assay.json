@@ -1,0 +1,7 @@
+{
+  "id": "profession.assay",
+  "name": "Assay",
+  "category": "Utility",
+  "primaryAttributes": ["Intelligence", "Wisdom"],
+  "description": "Understanding, never power. Levels replace ??? with what the material was always doing."
+}

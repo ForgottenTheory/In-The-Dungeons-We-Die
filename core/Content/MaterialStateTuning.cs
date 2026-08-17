@@ -51,7 +51,12 @@ public static class MaterialStateTuning
     // Workability is the remaining transformation budget. An authored material that has
     // already been worked (an ingot, an extract) has spent some of it; a raw one has not.
 
-    /// <summary>Remaining transformation budget by <c>state:</c> tag.</summary>
+    /// <summary>
+    /// Remaining transformation budget by <c>state:</c> tag. Every value in
+    /// <see cref="TagFamilies.State"/> must appear here — a missing one silently falls back to
+    /// <see cref="DefaultWorkability"/>, i.e. reads as untouched, which is the wrong answer for
+    /// anything that has been worked. <c>AuthoredMaterialTests</c> pins the coverage.
+    /// </summary>
     public static readonly IReadOnlyDictionary<string, int> WorkabilityByState =
         new Dictionary<string, int>(StringComparer.Ordinal)
         {
@@ -62,6 +67,13 @@ public static class MaterialStateTuning
             ["extract"] = 85,
             ["distillate"] = 85,
             ["composite"] = 85,
+
+            // Attuning drives essence into a material and leaves the least room of anything
+            // short of spent. Added when Runecrafting's authored runes became the first
+            // *authored* material to carry the tag — until then only the Attune craftingAction
+            // set it, and derived materials take their budget from the chain, not this table.
+            ["attuned"] = 75,
+
             ["spent"] = 60,
         };
 

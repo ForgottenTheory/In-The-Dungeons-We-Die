@@ -1,0 +1,145 @@
+[
+  // Artifice is the profession that makes the other professions work. Its outputs are not gear:
+  // they are glass, parchment, mortar, lenses and mechanisms — the things Cartography writes
+  // on, Assay looks through, Salvaging's wreckage becomes again, and fabrication bolts in.
+  //
+  // Note the loop the design asks for is already closed twice over: Mining and Forestry feed
+  // Smithing's tool head and Artifice's haft; Salvaging's broken mechanisms come back as
+  // working ones. The two *worn* tool slots that consume a finished tool are E6 — the
+  // components exist now, deliberately ahead of the slots.
+  {
+    "id": "action.shape_tool_haft",
+    "professionId": "profession.artifice",
+    "name": "Shape a Tool Haft",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 11,
+    "inputs": [ { "itemId": "material.oak_plank", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.tool_haft", "quantity": 2 } ]
+  },
+  {
+    "id": "action.cut_glass",
+    "professionId": "profession.artifice",
+    "name": "Melt Glass",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 15,
+    "inputs": [
+      { "itemId": "material.silica_sand", "quantity": 2 },
+      { "itemId": "material.potash", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.glass", "quantity": 2 } ]
+  },
+  {
+    "id": "action.press_parchment",
+    "professionId": "profession.artifice",
+    "name": "Press Parchment",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 130,
+    "experience": 17,
+    "inputs": [
+      { "itemId": "material.rawhide", "quantity": 1 },
+      { "itemId": "material.quicklime", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.parchment", "quantity": 3 } ]
+  },
+  {
+    "id": "action.assemble_simple_mechanism",
+    "professionId": "profession.artifice",
+    "name": "Assemble a Simple Mechanism",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 160,
+    "experience": 22,
+    "inputs": [
+      { "itemId": "material.iron_ingot", "quantity": 1 },
+      { "itemId": "material.copper_ingot", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.simple_mechanism", "quantity": 1 } ]
+  },
+  {
+    "id": "action.mix_mortar",
+    "professionId": "profession.artifice",
+    "name": "Mix Mortar",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 110,
+    "experience": 20,
+    "inputs": [
+      { "itemId": "material.quicklime", "quantity": 1 },
+      { "itemId": "material.sand", "quantity": 2 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.mortar", "quantity": 2 } ]
+  },
+  {
+    "id": "action.repair_broken_mechanism",
+    "professionId": "profession.artifice",
+    "name": "Repair a Broken Mechanism",
+    "requiredLevel": 14,
+    "baseIntervalTicks": 165,
+    "experience": 26,
+    "inputs": [
+      { "itemId": "material.broken_mechanism", "quantity": 1 },
+      { "itemId": "material.scrap_iron", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.simple_mechanism", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_original_pattern",
+        "name": "The Original Pattern",
+        "prompt": "Under the corrosion the maker's layout is still legible. Following it instead of improvising takes longer and produces something far better.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.precision_mechanism", "quantity": 1 } ],
+        "bonusOutputs": [ { "itemId": "material.schematic_fragment", "chance": 0.3, "quantity": 1 } ],
+        "experience": 70
+      }
+    ]
+  },
+  {
+    "id": "action.grind_lens",
+    "professionId": "profession.artifice",
+    "name": "Grind a Lens",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 185,
+    "experience": 30,
+    "inputs": [
+      { "itemId": "material.quartz", "quantity": 1 },
+      { "itemId": "material.glass", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.ground_lens", "quantity": 1 } ]
+  },
+  {
+    "id": "action.assemble_precision_mechanism",
+    "professionId": "profession.artifice",
+    "name": "Assemble a Precision Mechanism",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 205,
+    "experience": 44,
+    "inputs": [
+      { "itemId": "material.simple_mechanism", "quantity": 1 },
+      { "itemId": "material.silver_ingot", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.precision_mechanism", "quantity": 1 } ]
+  },
+  {
+    // Where four professions meet: Smithing's gold, Artifice's own lens and mechanism,
+    // Runecrafting's rune, and an Assay dossier — you cannot build one of these without having
+    // understood what you are building it out of. This is the Runecrafting → magical
+    // fabrication bridge in the interconnection list.
+    "id": "action.build_clockwork_core",
+    "professionId": "profession.artifice",
+    "name": "Build a Clockwork Core",
+    "requiredLevel": 48,
+    "baseIntervalTicks": 270,
+    "experience": 82,
+    "inputs": [
+      { "itemId": "material.precision_mechanism", "quantity": 1 },
+      { "itemId": "material.ground_lens", "quantity": 1 },
+      { "itemId": "material.gold_ingot", "quantity": 1 },
+      { "itemId": "material.radiant_rune", "quantity": 1 },
+      { "itemId": "material.property_dossier", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.clockwork_core", "quantity": 1 } ]
+  }
+]

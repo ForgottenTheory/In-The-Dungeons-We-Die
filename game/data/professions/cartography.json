@@ -1,0 +1,7 @@
+{
+  "id": "profession.cartography",
+  "name": "Cartography",
+  "category": "Utility",
+  "primaryAttributes": ["Intelligence", "Wisdom"],
+  "description": "Reading Realms. Surveys and filed charts feed Realm Knowledge rather than a second map progression."
+}

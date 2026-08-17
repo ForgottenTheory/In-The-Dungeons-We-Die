@@ -1,0 +1,7 @@
+{
+  "id": "profession.leatherworking",
+  "name": "Leatherworking",
+  "category": "Processing",
+  "primaryAttributes": ["Dexterity", "Strength"],
+  "description": "Hide to leather, one creature at a time. Drake leather stays hot-proof; nothing is flattened into tiers."
+}

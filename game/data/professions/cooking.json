@@ -1,6 +1,7 @@
 {
   "id": "profession.cooking",
   "name": "Cooking",
-  "category": "Crafting",
-  "primaryAttributes": ["Wisdom", "Constitution"]
+  "category": "Processing",
+  "primaryAttributes": ["Wisdom", "Constitution"],
+  "description": "Meals as configurations — protein, vegetable, seasoning, liquid. What you put in is what it carries."
 }

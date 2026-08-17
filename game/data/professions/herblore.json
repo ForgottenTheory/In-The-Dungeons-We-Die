@@ -1,6 +1,7 @@
 {
   "id": "profession.herblore",
   "name": "Herblore",
-  "category": "Gathering",
-  "primaryAttributes": ["Intelligence", "Wisdom"]
+  "category": "Processing",
+  "primaryAttributes": ["Intelligence", "Wisdom"],
+  "description": "Preparing organic material — drying, grinding, steeping, pressing — without changing what it is."
 }

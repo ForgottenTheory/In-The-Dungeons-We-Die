@@ -1,0 +1,131 @@
+[
+  // Leatherworking: Raw Hide → Clean → Cure → Treat → usable leather.
+  //
+  // Deliberately NOT tiered. There is no "Leather 3" — there is drake leather, which keeps its
+  // heat resistance, and bear leather, which keeps its insulation, and they are good at
+  // different things forever. Flattening a creature into a tier would throw away the only
+  // interesting thing a hide has (docs/professions.md §12).
+  {
+    "id": "action.clean_rawhide",
+    "professionId": "profession.leatherworking",
+    "name": "Clean Rawhide",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 11,
+    "inputs": [ { "itemId": "material.boar_hide", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.rawhide", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cure_boar_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Cure Boar Leather",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 140,
+    "experience": 16,
+    "inputs": [
+      { "itemId": "material.rawhide", "quantity": 1 },
+      { "itemId": "material.rock_salt", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.cured_boar_leather", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cut_leather_straps",
+    "professionId": "profession.leatherworking",
+    "name": "Cut Leather Straps",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 90,
+    "experience": 15,
+    "inputs": [ { "itemId": "material.cured_boar_leather", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.leather_strap", "quantity": 3 } ]
+  },
+  {
+    "id": "action.tan_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Bark-Tan Leather",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 155,
+    "experience": 20,
+    "inputs": [
+      { "itemId": "material.rawhide", "quantity": 1 },
+      { "itemId": "material.oak_bark", "quantity": 2 }
+    ],
+    "outputs": [ { "itemId": "material.leather", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cure_deer_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Cure Deer Leather",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 160,
+    "experience": 24,
+    "inputs": [
+      { "itemId": "material.deer_hide", "quantity": 1 },
+      { "itemId": "material.rock_salt", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.supple_deer_leather", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cure_wolf_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Cure Wolf Leather",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 180,
+    "experience": 34,
+    "inputs": [
+      { "itemId": "material.wolf_hide", "quantity": 1 },
+      { "itemId": "material.alum", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.cured_wolf_leather", "quantity": 1 } ]
+  },
+  {
+    "id": "action.boil_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Boil Leather",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 195,
+    "experience": 42,
+    "inputs": [
+      { "itemId": "material.cured_boar_leather", "quantity": 1 },
+      { "itemId": "material.tallow", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.boiled_leather", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.the_hide_takes_the_wax",
+        "name": "The Hide Takes the Wax",
+        "prompt": "It is drinking the tallow far better than usual. Keep working it and the plate will come out harder — leave it too long and it cracks.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 200,
+        "riskWeight": 0.25,
+        "outputs": [ { "itemId": "material.boiled_leather", "quantity": 2 } ],
+        "experience": 60
+      }
+    ]
+  },
+  {
+    "id": "action.cure_bear_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Cure Bear Leather",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 215,
+    "experience": 55,
+    "inputs": [
+      { "itemId": "material.bear_hide", "quantity": 1 },
+      { "itemId": "material.alum", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.cured_bear_leather", "quantity": 1 } ]
+  },
+  {
+    "id": "action.cure_drake_leather",
+    "professionId": "profession.leatherworking",
+    "name": "Cure Drake Leather",
+    "requiredLevel": 55,
+    "baseIntervalTicks": 250,
+    "experience": 80,
+    "inputs": [
+      { "itemId": "material.drake_hide", "quantity": 1 },
+      { "itemId": "material.quicklime", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.cured_drake_leather", "quantity": 1 } ]
+  }
+]

@@ -53,6 +53,18 @@ public partial class MainMvpUI : Control
     private ProgressBar _timingBar = null!;
     private ProgressBar _passiveBar = null!;
 
+    // --- Professions --------------------------------------------------------
+    private OptionButton _professionPicker = null!;
+    private Label _professionBlurb = null!;
+    private VBoxContainer _actionLadder = null!;
+    private PanelContainer _opportunityCard = null!;
+    private Label _opportunityTitle = null!;
+    private Label _opportunityPrompt = null!;
+    private Label _opportunityCost = null!;
+    private VBoxContainer _farmingControls = null!;
+    private VBoxContainer _courseControls = null!;
+    private Label _courseSummaryLabel = null!;
+
     // --- Character Lab ------------------------------------------------------
     private OptionButton _basePicker = null!;
     private OptionButton _prefixPicker = null!;
@@ -105,6 +117,7 @@ public partial class MainMvpUI : Control
         _game.DiscoveryChanged += RefreshCrafting;
         _game.CombatChanged += RefreshCombat;
         _game.RealmChanged += RefreshRealm;
+        _game.OpportunityOffered += ShowOpportunity;
 
         _game.ReportStatus();
         RefreshCharacter();
@@ -125,6 +138,7 @@ public partial class MainMvpUI : Control
         _game.DiscoveryChanged -= RefreshCrafting;
         _game.CombatChanged -= RefreshCombat;
         _game.RealmChanged -= RefreshRealm;
+        _game.OpportunityOffered -= ShowOpportunity;
     }
 
     public override void _Process(double delta)
@@ -136,10 +150,20 @@ public partial class MainMvpUI : Control
 
         _statusLabel.Text = $"Tick {_game.CurrentTick}    Sim {(_game.IsRunning ? "▶ RUNNING" : "❚❚ paused")} @ {GameRoot.TicksPerSecond}/s";
 
-        _passiveBar.Value = _game.PassiveProgress * 100.0;
-        _passiveStatusLabel.Text = _game.IsPassiveRunning
-            ? $"Passive: {_game.CurrentPassiveActionId}"
-            : "Passive: (idle)";
+        // The pursuit bar borrows the passive bar: only one of the two can be in flight, and a
+        // second bar in the same row would just be furniture.
+        if (_game.IsPursuingOpportunity)
+        {
+            _passiveBar.Value = _game.PursuitProgress() * 100.0;
+            _passiveStatusLabel.Text = "Pursuing an opportunity…";
+        }
+        else
+        {
+            _passiveBar.Value = _game.PassiveProgress * 100.0;
+            _passiveStatusLabel.Text = _game.IsPassiveRunning
+                ? $"Passive: {_game.ActionName(_game.CurrentPassiveActionId!)}"
+                : "Passive: (idle)";
+        }
 
         if (_game.IsCombatActive)
             RefreshCombat(); // telegraph countdowns tick down each frame
@@ -296,39 +320,283 @@ public partial class MainMvpUI : Control
         }
     }
 
+    /// <summary>
+    /// The Professions tab. With twenty professions and nearly two hundred actions, one flat
+    /// list is unreadable — so the ladder is behind a profession picker, and the tab's fixed
+    /// furniture is the three things that are always true: what is running, what is on offer,
+    /// and what the course is granting.
+    /// </summary>
     private void BuildProfessionSection(VBoxContainer root)
     {
         root.AddChild(SectionTitle("Professions"));
         _professionSummaryLabel = new Label();
         root.AddChild(Card(_professionSummaryLabel));
 
+        // --- The passive lane: what runs while you are away ---------------------
+        var passiveRow = Row();
+        root.AddChild(passiveRow);
+        _passiveStatusLabel = new Label { Text = "Passive: (idle)", CustomMinimumSize = new Vector2(260, 0) };
+        passiveRow.AddChild(_passiveStatusLabel);
+        _passiveBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(180, 0), ShowPercentage = false };
+        passiveRow.AddChild(_passiveBar);
+        passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
+
+        var offlineNote = Wrapping(Muted);
+        offlineNote.Text = "Whatever is running when you save keeps going while the game is closed — same rate, "
+                          + "no opportunities. Levelling never needs you at the keyboard.";
+        root.AddChild(offlineNote);
+
+        // --- The active lane: timing, then the decision -------------------------
+        root.AddChild(new HSeparator());
         var timingRow = Row();
         root.AddChild(timingRow);
         timingRow.AddChild(new Label { Text = "Active timing (aim for the middle):" });
         _timingBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
         timingRow.AddChild(_timingBar);
 
-        foreach (var action in _game.Actions)
+        _opportunityCard = Card(BuildOpportunityPanel());
+        _opportunityCard.Visible = false;
+        root.AddChild(_opportunityCard);
+
+        // --- The ladder, one profession at a time -------------------------------
+        root.AddChild(new HSeparator());
+        var pickerRow = Row();
+        root.AddChild(pickerRow);
+        pickerRow.AddChild(new Label { Text = "Profession:", CustomMinimumSize = new Vector2(80, 0) });
+        _professionPicker = new OptionButton { CustomMinimumSize = new Vector2(240, 0) };
+        foreach (var profession in AllProfessionsGrouped())
+            _professionPicker.AddItem(profession.Name);
+        _professionPicker.ItemSelected += _ => RebuildActionLadder();
+        pickerRow.AddChild(_professionPicker);
+
+        _professionBlurb = Wrapping(Muted);
+        root.AddChild(_professionBlurb);
+
+        _actionLadder = new VBoxContainer();
+        root.AddChild(_actionLadder);
+
+        // --- Farming plots and the Agility course -------------------------------
+        root.AddChild(new HSeparator());
+        root.AddChild(SectionTitle("Hideout plots"));
+        _farmingControls = new VBoxContainer();
+        root.AddChild(_farmingControls);
+
+        root.AddChild(new HSeparator());
+        root.AddChild(SectionTitle("Training course"));
+        _courseSummaryLabel = new Label();
+        root.AddChild(Card(_courseSummaryLabel));
+        _courseControls = new VBoxContainer();
+        root.AddChild(_courseControls);
+        root.AddChild(MakeButton("Run a lap", () => _game.RunTrainingLap(), Accent));
+
+        RebuildActionLadder();
+        RebuildFarmingControls();
+        RebuildCourseControls();
+    }
+
+    /// <summary>Every profession in category order, so the picker reads Gathering →
+    /// Processing → Utility rather than alphabetically across twenty unrelated names.</summary>
+    private IReadOnlyList<Dungeons.Professions.ProfessionDefinition> AllProfessionsGrouped() =>
+        System.Enum.GetValues<Dungeons.Professions.ProfessionCategory>()
+            .SelectMany(_game.ProfessionsIn)
+            .ToList();
+
+    private VBoxContainer BuildOpportunityPanel()
+    {
+        var panel = new VBoxContainer();
+        _opportunityTitle = new Label();
+        _opportunityTitle.AddThemeColorOverride("font_color", Accent);
+        _opportunityTitle.AddThemeFontSizeOverride("font_size", 15);
+        panel.AddChild(_opportunityTitle);
+
+        _opportunityPrompt = Wrapping();
+        panel.AddChild(_opportunityPrompt);
+
+        _opportunityCost = Wrapping(Muted);
+        panel.AddChild(_opportunityCost);
+
+        var buttons = Row();
+        panel.AddChild(buttons);
+        buttons.AddChild(MakeButton("Pursue", () => _game.PursuePendingOpportunity(), Positive));
+        buttons.AddChild(MakeButton("Leave it", () => _game.DeclinePendingOpportunity()));
+        return panel;
+    }
+
+    /// <summary>Shows or hides the pursue/ignore card. The offer is the decision, so it gets
+    /// its own card rather than a line in the log.</summary>
+    private void ShowOpportunity(GameRoot.PendingOpportunity? pending)
+    {
+        if (pending is null)
         {
-            var row = Row();
-            root.AddChild(row);
-            var actionId = action.Id;
-            row.AddChild(new Label
-            {
-                Text = $"{action.Name} ({_game.ProfessionName(action.ProfessionId)})",
-                CustomMinimumSize = new Vector2(240, 0),
-            });
-            row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
-            row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, CurrentTimingPerformance()), Accent));
+            _opportunityCard.Visible = false;
+            return;
         }
 
-        var passiveRow = Row();
-        root.AddChild(passiveRow);
-        _passiveStatusLabel = new Label { Text = "Passive: (idle)", CustomMinimumSize = new Vector2(240, 0) };
-        passiveRow.AddChild(_passiveStatusLabel);
-        _passiveBar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(200, 0), ShowPercentage = false };
-        passiveRow.AddChild(_passiveBar);
-        passiveRow.AddChild(MakeButton("Stop", () => _game.StopPassive(), Danger));
+        var offer = pending.Offer;
+        _opportunityTitle.Text = offer.Name;
+        _opportunityPrompt.Text = offer.Prompt;
+
+        var seconds = offer.ExtraIntervalTicks / (double)GameRoot.TicksPerSecond;
+        var risk = offer.RiskWeight <= 0
+            ? "no risk"
+            : $"{offer.RiskWeight:P0} chance it comes to nothing";
+        _opportunityCost.Text = $"Costs {seconds:0.#}s · {risk}";
+        _opportunityCard.Visible = true;
+    }
+
+    private void RebuildActionLadder()
+    {
+        var professions = AllProfessionsGrouped();
+        if (professions.Count == 0)
+            return;
+
+        var selected = professions[Mathf.Clamp(_professionPicker.Selected, 0, professions.Count - 1)];
+        _professionBlurb.Text = $"{selected.Description}   ({selected.Category}, L{_game.ProfessionLevel(selected.Id)})";
+
+        foreach (var child in _actionLadder.GetChildren())
+            child.QueueFree();
+
+        foreach (var action in _game.ActionsFor(selected.Id))
+        {
+            var row = Row();
+            _actionLadder.AddChild(row);
+
+            var actionId = action.Id;
+            var locked = _game.ProfessionLevel(selected.Id) < action.RequiredLevel;
+            var label = new Label
+            {
+                Text = $"L{action.RequiredLevel,-3} {action.Name}",
+                CustomMinimumSize = new Vector2(260, 0),
+            };
+            if (locked)
+                label.AddThemeColorOverride("font_color", Muted);
+            row.AddChild(label);
+
+            if (locked)
+            {
+                row.AddChild(new Label { Text = "locked", CustomMinimumSize = new Vector2(140, 0) });
+                continue;
+            }
+
+            row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
+            row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, CurrentTimingPerformance()), Accent));
+
+            if (action.Opportunities.Count > 0)
+            {
+                var marker = new Label { Text = "◆ has an opportunity" };
+                marker.AddThemeColorOverride("font_color", Positive);
+                row.AddChild(marker);
+            }
+
+            if (action.SuccessChance < 1.0)
+            {
+                var chance = new Label { Text = $"{action.SuccessChance:P0} to land" };
+                chance.AddThemeColorOverride("font_color", Muted);
+                row.AddChild(chance);
+            }
+        }
+    }
+
+    private void RebuildFarmingControls()
+    {
+        foreach (var child in _farmingControls.GetChildren())
+            child.QueueFree();
+
+        var plantable = _game.PlantableActions();
+        var unlocked = _game.UnlockedFarmingPlots;
+
+        var header = Wrapping(Muted);
+        header.Text = $"{unlocked} plot(s) open at Farming L{_game.ProfessionLevel("profession.farming")}. "
+                     + "Crops grow on the world clock, so they keep growing while the game is closed.";
+        _farmingControls.AddChild(header);
+
+        for (var index = 0; index < unlocked; index++)
+        {
+            var plot = _game.FarmingPlotsView[index];
+            var plotIndex = index;
+            var row = Row();
+            _farmingControls.AddChild(row);
+            row.AddChild(new Label { Text = $"Plot {index + 1}", CustomMinimumSize = new Vector2(70, 0) });
+
+            if (plot.IsEmpty)
+            {
+                var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
+                foreach (var action in plantable)
+                    picker.AddItem(action.Name);
+                row.AddChild(picker);
+                row.AddChild(MakeButton("Plant", () =>
+                {
+                    if (plantable.Count == 0)
+                        return;
+                    _game.PlantCrop(plotIndex, plantable[Mathf.Clamp(picker.Selected, 0, plantable.Count - 1)].Id);
+                    RebuildFarmingControls();
+                }, Accent));
+                continue;
+            }
+
+            row.AddChild(new Label
+            {
+                Text = _game.ActionName(plot.PlantedActionId!),
+                CustomMinimumSize = new Vector2(220, 0),
+            });
+            var bar = new ProgressBar { MinValue = 0, MaxValue = 100, CustomMinimumSize = new Vector2(140, 0), ShowPercentage = false };
+            bar.Value = _game.PlotProgress(plotIndex) * 100.0;
+            row.AddChild(bar);
+            row.AddChild(MakeButton("Harvest", () =>
+            {
+                _game.HarvestPlot(plotIndex);
+                RebuildFarmingControls();
+            }, Positive));
+        }
+    }
+
+    private void RebuildCourseControls()
+    {
+        foreach (var child in _courseControls.GetChildren())
+            child.QueueFree();
+
+        _courseSummaryLabel.Text = _game.TrainingCourseSummary();
+
+        foreach (var slot in System.Enum.GetValues<Dungeons.Professions.TrainingSlot>())
+        {
+            var available = _game.ObstaclesFor(slot);
+            var row = Row();
+            _courseControls.AddChild(row);
+            row.AddChild(new Label { Text = slot.ToString(), CustomMinimumSize = new Vector2(90, 0) });
+
+            if (available.Count == 0)
+            {
+                var none = new Label { Text = "nothing unlocked yet" };
+                none.AddThemeColorOverride("font_color", Muted);
+                row.AddChild(none);
+                continue;
+            }
+
+            var picker = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
+            foreach (var obstacle in available)
+                picker.AddItem(obstacle.Name);
+
+            var fitted = _game.FittedObstacle(slot);
+            if (fitted is not null)
+            {
+                var fittedIndex = available.ToList().FindIndex(o => o.Id == fitted);
+                if (fittedIndex >= 0)
+                    picker.Selected = fittedIndex;
+            }
+
+            row.AddChild(picker);
+            var slotValue = slot;
+            row.AddChild(MakeButton("Fit", () =>
+            {
+                _game.FitObstacle(slotValue, available[Mathf.Clamp(picker.Selected, 0, available.Count - 1)].Id);
+                RebuildCourseControls();
+            }, Accent));
+            row.AddChild(MakeButton("Clear", () =>
+            {
+                _game.ClearObstacle(slotValue);
+                RebuildCourseControls();
+            }));
+        }
     }
 
     /// <summary>
@@ -1280,6 +1548,13 @@ public partial class MainMvpUI : Control
     private void RefreshProfessionsAndInventory()
     {
         _professionSummaryLabel.Text = _game.ProfessionSummary();
+
+        // A level-up unlocks ladder rungs, plots and obstacles, and a harvest empties a plot —
+        // all three panels are level- or state-dependent, so they follow the inventory.
+        RebuildActionLadder();
+        RebuildFarmingControls();
+        RebuildCourseControls();
+
         _inventoryLabel.Text = _game.InventoryReport();
         _craftingStashLabel.Text = _game.InventoryReport();
         RebuildEquipmentControls(); // stash equipment may have changed

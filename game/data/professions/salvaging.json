@@ -1,0 +1,7 @@
+{
+  "id": "profession.salvaging",
+  "name": "Salvaging",
+  "category": "Gathering",
+  "primaryAttributes": ["Intelligence", "Endurance"],
+  "description": "Recovery from ruins, wreckage and enemy scrap. Turns a cleared Realm into tomorrow's components."
+}

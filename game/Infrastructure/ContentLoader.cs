@@ -37,6 +37,7 @@ public static class ContentLoader
         NameFormats = LoadDefinitions<NameFormatDefinition>($"{dataRoot}/name_formats"),
         Professions = LoadDefinitions<ProfessionDefinition>($"{dataRoot}/professions"),
         Actions = LoadDefinitions<ProfessionActionDefinition>($"{dataRoot}/profession_actions"),
+        TrainingObstacles = LoadDefinitions<TrainingObstacleDefinition>($"{dataRoot}/training_obstacles"),
         Interactions = LoadDefinitions<CraftingInteractionDefinition>($"{dataRoot}/crafting_interactions"),
         Moves = LoadDefinitions<MoveDefinition>($"{dataRoot}/moves"),
         MoveModifiers = LoadDefinitions<MoveModifierDefinition>($"{dataRoot}/move_modifiers"),

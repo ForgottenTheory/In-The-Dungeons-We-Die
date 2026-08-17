@@ -1,6 +1,9 @@
 {
+  // Kept in its own file, and kept its id, since the vertical slice: the Dark Forest's Dark
+  // Grove points at this action. The 20-profession pass moved it from Herblore to Farming —
+  // collecting a plant is Farming's domain; Herblore is what you do to it afterwards.
   "id": "action.gather_sageleaf",
-  "professionId": "profession.herblore",
+  "professionId": "profession.farming",
   "name": "Gather Sageleaf",
   "requiredLevel": 1,
   "baseIntervalTicks": 120,
@@ -9,6 +12,20 @@
     { "itemId": "material.sageleaf", "quantity": 1 }
   ],
   "bonusOutputs": [
-    { "itemId": "material.marsh_root", "chance": 0.2, "quantity": 1 }
+    { "itemId": "material.marsh_root", "chance": 0.2, "quantity": 1 },
+    { "itemId": "material.sageleaf_seed", "chance": 0.25, "quantity": 1 }
+  ],
+  "opportunities": [
+    {
+      "id": "opportunity.deep_grove_stand",
+      "name": "Deeper in the Grove",
+      "prompt": "There is a better stand further in, away from the path. Reaching it costs time you could be spending on the way out.",
+      "discoveryChance": 0.13,
+      "extraIntervalTicks": 220,
+      "riskWeight": 0.20,
+      "outputs": [ { "itemId": "material.sageleaf", "quantity": 3 } ],
+      "bonusOutputs": [ { "itemId": "material.kingsfoil", "chance": 0.15, "quantity": 1 } ],
+      "experience": 35
+    }
   ]
 }

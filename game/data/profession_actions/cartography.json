@@ -1,0 +1,120 @@
+[
+  // Cartography feeds Realm Knowledge — the progression the game already has — rather than
+  // standing up a competing map system. `realmKnowledgeGain` is reported on the outcome and
+  // applied by the client, because Core holds no realm-progress state (docs/professions.md §19).
+  //
+  // The Hideout half (sketching, charting, filing) is the passive path: study what you brought
+  // back. The in-Realm half is the survey action, which is where the unmarked side path turns
+  // up. Charts compound: two route sketches make a survey chart, two survey charts make a
+  // hidden way.
+  {
+    "id": "action.sketch_a_route",
+    "professionId": "profession.cartography",
+    "name": "Sketch a Route",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 105,
+    "experience": 12,
+    "inputs": [ { "itemId": "material.parchment", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.route_sketch", "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 1 }
+  },
+  {
+    "id": "action.take_a_charcoal_rubbing",
+    "professionId": "profession.cartography",
+    "name": "Take a Charcoal Rubbing",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 110,
+    "experience": 15,
+    "inputs": [
+      { "itemId": "material.parchment", "quantity": 1 },
+      { "itemId": "material.charcoal", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.charcoal_rubbing", "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 1 }
+  },
+  {
+    "id": "action.survey_the_forest_path",
+    "professionId": "profession.cartography",
+    "name": "Survey the Forest Path",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 140,
+    "experience": 22,
+    "outputs": [ { "itemId": "material.route_sketch", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.charcoal_rubbing", "chance": 0.3, "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 2 },
+    "opportunities": [
+      {
+        "id": "opportunity.unmarked_side_path",
+        "name": "An Unmarked Side Path",
+        "prompt": "A track leaves the path here and is on none of your sketches. Walking it out and back is time you are not spending heading for the portal.",
+        "discoveryChance": 0.15,
+        "extraIntervalTicks": 240,
+        "riskWeight": 0.25,
+        "outputs": [ { "itemId": "material.route_sketch", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.hidden_way_note", "chance": 0.2, "quantity": 1 } ],
+        "experience": 55
+      }
+    ]
+  },
+  {
+    "id": "action.chart_the_old_grove",
+    "professionId": "profession.cartography",
+    "name": "Chart the Old Grove",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 165,
+    "experience": 32,
+    "inputs": [
+      { "itemId": "material.route_sketch", "quantity": 2 },
+      { "itemId": "material.parchment", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.survey_chart", "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 3 }
+  },
+  {
+    "id": "action.map_the_descent",
+    "professionId": "profession.cartography",
+    "name": "Map the Descent",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 190,
+    "experience": 44,
+    "outputs": [ { "itemId": "material.route_sketch", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.survey_chart", "chance": 0.2, "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 3 }
+  },
+  {
+    "id": "action.file_a_survey",
+    "professionId": "profession.cartography",
+    "name": "File a Survey",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 200,
+    "experience": 56,
+    "inputs": [ { "itemId": "material.survey_chart", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.hidden_way_note", "quantity": 1 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 5 }
+  },
+  {
+    "id": "action.trace_extraction_routes",
+    "professionId": "profession.cartography",
+    "name": "Trace Extraction Routes",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 220,
+    "experience": 72,
+    "inputs": [
+      { "itemId": "material.survey_chart", "quantity": 1 },
+      { "itemId": "material.hidden_way_note", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.hidden_way_note", "quantity": 2 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 6 }
+  },
+  {
+    "id": "action.read_the_deep_ways",
+    "professionId": "profession.cartography",
+    "name": "Read the Deep Ways",
+    "requiredLevel": 58,
+    "baseIntervalTicks": 250,
+    "experience": 95,
+    "inputs": [ { "itemId": "material.hidden_way_note", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.survey_chart", "quantity": 3 } ],
+    "realmKnowledgeGain": { "realmId": "realm.dark_forest", "amount": 8 }
+  }
+]

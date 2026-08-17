@@ -44,6 +44,7 @@ public class ContentValidatorTests
         NameFormats = Load<NameFormatDefinition>("name_formats"),
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),
+        TrainingObstacles = Load<TrainingObstacleDefinition>("training_obstacles"),
         Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),
         Moves = Load<MoveDefinition>("moves"),
         MoveModifiers = Load<MoveModifierDefinition>("move_modifiers"),

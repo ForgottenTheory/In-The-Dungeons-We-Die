@@ -1,6 +1,9 @@
 [
-  // Smithing's ladder (P2). Smelt Iron lives in smelt_iron.json. Charcoal cross-feeds from
-  // Forestry — interconnection is the point (GDD §7.2).
+  // Smithing's profession actions are the *feedstock* half: ore and scrap into ingots, and the
+  // one forged component Artifice needs. The deep half — infusion, quenching, alloying with
+  // intent, fabrication — is the Forge bench and the material transformation engine, which
+  // already exist. Nothing here is a second crafting engine (docs/professions.md §8).
+  // Smelt Iron lives in smelt_iron.json since the vertical slice.
   {
     "id": "action.smelt_copper",
     "professionId": "profession.smithing",
@@ -12,6 +15,16 @@
     "outputs": [ { "itemId": "material.copper_ingot", "quantity": 1 } ]
   },
   {
+    "id": "action.smelt_scrap",
+    "professionId": "profession.smithing",
+    "name": "Smelt Scrap",
+    "requiredLevel": 3,
+    "baseIntervalTicks": 135,
+    "experience": 15,
+    "inputs": [ { "itemId": "material.scrap_iron", "quantity": 3 } ],
+    "outputs": [ { "itemId": "material.iron_ingot", "quantity": 1 } ]
+  },
+  {
     "id": "action.render_charcoal",
     "professionId": "profession.smithing",
     "name": "Render Charcoal",
@@ -19,7 +32,8 @@
     "baseIntervalTicks": 100,
     "experience": 12,
     "inputs": [ { "itemId": "material.pine_log", "quantity": 1 } ],
-    "outputs": [ { "itemId": "material.charcoal", "quantity": 2 } ]
+    "outputs": [ { "itemId": "material.charcoal", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.wood_ash", "chance": 0.4, "quantity": 1 } ]
   },
   {
     "id": "action.smelt_tin",
@@ -30,5 +44,97 @@
     "experience": 18,
     "inputs": [ { "itemId": "material.tin_ore", "quantity": 2 } ],
     "outputs": [ { "itemId": "material.tin_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.smelt_bog_iron",
+    "professionId": "profession.smithing",
+    "name": "Smelt Bog Iron",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 145,
+    "experience": 20,
+    "inputs": [
+      { "itemId": "material.bog_iron", "quantity": 3 },
+      { "itemId": "material.charcoal", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.iron_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.smelt_lead",
+    "professionId": "profession.smithing",
+    "name": "Smelt Lead Ingot",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 140,
+    "experience": 24,
+    "inputs": [ { "itemId": "material.lead_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.lead_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.forge_tool_head",
+    "professionId": "profession.smithing",
+    "name": "Forge a Tool Head",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 175,
+    "experience": 30,
+    "inputs": [
+      { "itemId": "material.iron_ingot", "quantity": 1 },
+      { "itemId": "material.charcoal", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.tool_head", "quantity": 1 } ]
+  },
+  {
+    "id": "action.smelt_silver",
+    "professionId": "profession.smithing",
+    "name": "Smelt Silver Ingot",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 165,
+    "experience": 34,
+    "inputs": [ { "itemId": "material.silver_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.silver_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.smelt_nickel",
+    "professionId": "profession.smithing",
+    "name": "Smelt Nickel Ingot",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 170,
+    "experience": 38,
+    "inputs": [ { "itemId": "material.nickel_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.nickel_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.smelt_gold",
+    "professionId": "profession.smithing",
+    "name": "Smelt Gold Ingot",
+    "requiredLevel": 35,
+    "baseIntervalTicks": 185,
+    "experience": 46,
+    "inputs": [ { "itemId": "material.gold_ore", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.gold_ingot", "quantity": 1 } ]
+  },
+  {
+    "id": "action.alloy_electrum",
+    "professionId": "profession.smithing",
+    "name": "Alloy Electrum",
+    "requiredLevel": 42,
+    "baseIntervalTicks": 210,
+    "experience": 58,
+    "inputs": [
+      { "itemId": "material.silver_ingot", "quantity": 1 },
+      { "itemId": "material.gold_ingot", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.electrum_ingot", "quantity": 2 } ]
+  },
+  {
+    "id": "action.smelt_cobalt",
+    "professionId": "profession.smithing",
+    "name": "Smelt Cobalt Ingot",
+    "requiredLevel": 48,
+    "baseIntervalTicks": 215,
+    "experience": 66,
+    "inputs": [
+      { "itemId": "material.cobalt_ore", "quantity": 2 },
+      { "itemId": "material.coal", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.cobalt_ingot", "quantity": 1 } ]
   }
 ]

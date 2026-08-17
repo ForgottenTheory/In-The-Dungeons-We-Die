@@ -1,0 +1,26 @@
+[
+  // What the three knowledge professions carry home. These are records, not power: a survey
+  // chart is worth having because filing it raises Realm Knowledge, and a property dossier is
+  // worth having because it is what an Assay Table consumes. Neither one ever appears in a
+  // fabrication, which is the rule that keeps Cartography and Assay from quietly becoming
+  // damage professions (docs/professions.md §19-20).
+  //
+  // Thieving's take is here too. It is deliberately *not* a currency — there is no economy yet
+  // and inventing one for a breadth pass would be a fake resource. What a thief actually walks
+  // away with is precious metal (already in minerals.json), a key, or somebody's paperwork.
+
+  // --- Cartography ----------------------------------------------------------------------
+  { "id": "material.charcoal_rubbing", "name": "Charcoal Rubbing", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 50, "affinity": 30, "solubility": 20, "decay": 20 } },
+  { "id": "material.route_sketch", "name": "Route Sketch", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 48, "affinity": 34, "solubility": 18, "decay": 18 } },
+  { "id": "material.survey_chart", "name": "Survey Chart", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 5, "flexibility": 44, "affinity": 38, "solubility": 14, "decay": 12 } },
+  { "id": "material.hidden_way_note", "name": "Hidden Way Note", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 3, "flexibility": 44, "affinity": 42, "solubility": 12, "decay": 10, "arcane": 12 } },
+
+  // --- Assay ----------------------------------------------------------------------------
+  { "id": "material.reference_sample", "name": "Reference Sample", "tags": ["state:processed", "form:sample", "origin:synthetic", "rarity:common", "comp:inorganic", "class:knowledge"], "properties": { "hardness": 30, "mass": 10, "affinity": 45, "resonance": 15, "insulation": 25 } },
+  { "id": "material.property_dossier", "name": "Property Dossier", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 6, "flexibility": 40, "affinity": 40, "solubility": 12, "decay": 10 } },
+
+  // --- Thieving -------------------------------------------------------------------------
+  { "id": "material.iron_key", "name": "Iron Key", "tags": ["state:processed", "form:key", "origin:synthetic", "rarity:uncommon", "comp:inorganic", "class:knowledge"], "properties": { "hardness": 58, "mass": 16, "flexibility": 8, "affinity": 28, "conductivity": 48, "corrosion": 18 } },
+  { "id": "material.cipher_note", "name": "Cipher Note", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 46, "affinity": 36, "solubility": 22, "decay": 20 } },
+  { "id": "material.stolen_schematic", "name": "Stolen Schematic", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 5, "flexibility": 42, "affinity": 40, "solubility": 14, "decay": 12, "arcane": 10 } }
+]

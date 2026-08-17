@@ -1,0 +1,142 @@
+[
+  // The Hideout training course. Five slots, one obstacle each; running a lap grants Agility
+  // XP, and the obstacles you chose to fit grant their bonus for as long as they stay fitted.
+  //
+  // That second half is the reason the course is configurable at all. Fitting the climbing wall
+  // instead of the endurance run is choosing faster Realm travel over safer hazards — a
+  // decision made once and lived with, which is a different shape from the moment-to-moment
+  // Discover → Pursue decision the gathering professions make (docs/professions.md §18).
+  //
+  // Bonus keys are validated against CourseBonusKeys, so a typo fails content validation
+  // rather than silently granting nothing.
+
+  // --- Balance ---------------------------------------------------------------------------
+  {
+    "id": "obstacle.beam_walk",
+    "name": "Beam Walk",
+    "slot": "Balance",
+    "requiredLevel": 1,
+    "intervalTicks": 90,
+    "experience": 12,
+    "description": "A plank over nothing much. Everyone starts here.",
+    "bonuses": { "course.realm_travel_speed": 0.03 }
+  },
+  {
+    "id": "obstacle.rope_bridge",
+    "name": "Swaying Rope Bridge",
+    "slot": "Balance",
+    "requiredLevel": 20,
+    "intervalTicks": 120,
+    "experience": 30,
+    "description": "It moves when you do. Teaches you to stop fighting it.",
+    "bonuses": { "course.realm_travel_speed": 0.06, "course.hazard_avoidance": 0.02 }
+  },
+  {
+    "id": "obstacle.spinning_log",
+    "name": "Spinning Log",
+    "slot": "Balance",
+    "requiredLevel": 45,
+    "intervalTicks": 160,
+    "experience": 68,
+    "description": "Rolls under load. The one obstacle nobody clears on their first month.",
+    "bonuses": { "course.realm_travel_speed": 0.10, "course.hazard_avoidance": 0.04 }
+  },
+
+  // --- Climbing --------------------------------------------------------------------------
+  {
+    "id": "obstacle.knotted_rope",
+    "name": "Knotted Rope",
+    "slot": "Climbing",
+    "requiredLevel": 1,
+    "intervalTicks": 95,
+    "experience": 13,
+    "description": "Straight up, hand over hand.",
+    "bonuses": { "course.gathering_speed": 0.03 }
+  },
+  {
+    "id": "obstacle.overhang_wall",
+    "name": "Overhang Wall",
+    "slot": "Climbing",
+    "requiredLevel": 25,
+    "intervalTicks": 135,
+    "experience": 38,
+    "description": "Leans back at you. Punishes anyone climbing with their arms.",
+    "bonuses": { "course.gathering_speed": 0.06, "course.opportunity_safety": 0.03 }
+  },
+  {
+    "id": "obstacle.chimney_ascent",
+    "name": "Chimney Ascent",
+    "slot": "Climbing",
+    "requiredLevel": 55,
+    "intervalTicks": 175,
+    "experience": 84,
+    "description": "Braced between two walls with a long way down. Where reach work is really learned.",
+    "bonuses": { "course.gathering_speed": 0.10, "course.opportunity_safety": 0.06 }
+  },
+
+  // --- Endurance -------------------------------------------------------------------------
+  {
+    "id": "obstacle.loaded_run",
+    "name": "Loaded Run",
+    "slot": "Endurance",
+    "requiredLevel": 5,
+    "intervalTicks": 130,
+    "experience": 20,
+    "description": "The same circuit, carrying everything you would carry out of a Realm.",
+    "bonuses": { "course.realm_travel_speed": 0.04 }
+  },
+  {
+    "id": "obstacle.sand_pit_haul",
+    "name": "Sand Pit Haul",
+    "slot": "Endurance",
+    "requiredLevel": 30,
+    "intervalTicks": 170,
+    "experience": 46,
+    "description": "Ground that takes back half of every step.",
+    "bonuses": { "course.realm_travel_speed": 0.07, "course.gathering_speed": 0.03 }
+  },
+
+  // --- Recovery --------------------------------------------------------------------------
+  {
+    "id": "obstacle.breath_ladder",
+    "name": "Breath Ladder",
+    "slot": "Recovery",
+    "requiredLevel": 10,
+    "intervalTicks": 100,
+    "experience": 24,
+    "description": "Not about going fast. About being ready again sooner.",
+    "bonuses": { "course.extraction_speed": 0.04 }
+  },
+  {
+    "id": "obstacle.cold_plunge",
+    "name": "Cold Plunge",
+    "slot": "Recovery",
+    "requiredLevel": 38,
+    "intervalTicks": 140,
+    "experience": 58,
+    "description": "Unpleasant, effective, and over quickly.",
+    "bonuses": { "course.extraction_speed": 0.08, "course.hazard_avoidance": 0.03 }
+  },
+
+  // --- Advanced --------------------------------------------------------------------------
+  {
+    "id": "obstacle.collapsing_gantry",
+    "name": "Collapsing Gantry",
+    "slot": "Advanced",
+    "requiredLevel": 40,
+    "intervalTicks": 190,
+    "experience": 75,
+    "description": "Built to give way underfoot on a timer you cannot see.",
+    "bonuses": { "course.hazard_avoidance": 0.07, "course.extraction_speed": 0.04 }
+  },
+  {
+    "id": "obstacle.blind_drop",
+    "name": "Blind Drop",
+    "slot": "Advanced",
+    "requiredLevel": 65,
+    "intervalTicks": 220,
+    "experience": 110,
+    "description": "You do not get to look first. That is the whole exercise.",
+    "bonuses": { "course.hazard_avoidance": 0.12, "course.opportunity_safety": 0.07 }
+  }
+]

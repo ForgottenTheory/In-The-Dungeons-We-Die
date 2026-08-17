@@ -11,6 +11,21 @@ public sealed class ProfessionSave
     public Dictionary<string, int> Mastery { get; init; } = new();
 }
 
+/// <summary>A crop in the ground when the game was closed (v7).</summary>
+public sealed class FarmingPlotSave
+{
+    public int Index { get; init; }
+    public string ActionId { get; init; } = string.Empty;
+    public long ReadyAtTick { get; init; }
+}
+
+/// <summary>One obstacle fitted to the Agility training course (v7).</summary>
+public sealed class TrainingCourseSlotSave
+{
+    public string Slot { get; init; } = string.Empty;
+    public string ObstacleId { get; init; } = string.Empty;
+}
+
 /// <summary>Serializable form of an <see cref="ItemInstance"/> (PropertySet flattened to a map).</summary>
 public sealed class ItemInstanceSave
 {
@@ -122,11 +137,31 @@ public sealed class SaveData
     /// <para>v6 added the Genome and rolled affixes to <see cref="ItemInstanceSave"/> (R4b,
     /// D30). Older instances load with a null genome and no affixes — pre-affix gear stays
     /// plain rather than being retroactively rolled.</para>
+    ///
+    /// <para>v7 added what the profession expansion needs to keep running while the game is
+    /// closed: <see cref="PassiveActionId"/> and <see cref="SavedAtUnixSeconds"/> (offline
+    /// progress), <see cref="FarmingPlots"/> and <see cref="TrainingCourse"/>. A v6 save
+    /// loads with no passive action selected, no crops planted and an empty course — the
+    /// same state a new game starts in, so no migration step is needed.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 6;
+    public const int CurrentSchemaVersion = 7;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
+
+    /// <summary>Wall-clock time the save was written, as Unix seconds. Ticks alone cannot
+    /// measure an absence: the simulation clock stops when the game does (v7).</summary>
+    public long SavedAtUnixSeconds { get; init; }
+
+    /// <summary>The passive action left running when the game closed, if any. Offline
+    /// progress pays this one out on return (v7).</summary>
+    public string? PassiveActionId { get; init; }
+
+    /// <summary>Crops in the ground (v7).</summary>
+    public List<FarmingPlotSave> FarmingPlots { get; init; } = new();
+
+    /// <summary>The Agility training course's fitted obstacles (v7).</summary>
+    public List<TrainingCourseSlotSave> TrainingCourse { get; init; } = new();
 
     /// <summary>The four ids the character is composed from; null if none created yet.</summary>
     public CharacterBuild? Build { get; init; }

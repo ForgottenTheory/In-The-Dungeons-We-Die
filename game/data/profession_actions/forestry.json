@@ -1,5 +1,7 @@
 [
-  // Forestry's ladder (P2). Chop Oak lives in chop_oak.json since the vertical slice.
+  // Forestry. Chop Oak lives in chop_oak.json since the vertical slice. One tree is several
+  // resources: the bark, the sap and the fungi growing on it are separate actions on purpose,
+  // so "which part of this grove do I want today" is a real question.
   {
     "id": "action.chop_pine",
     "professionId": "profession.forestry",
@@ -8,7 +10,17 @@
     "baseIntervalTicks": 110,
     "experience": 13,
     "outputs": [ { "itemId": "material.pine_log", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.refined_resin", "chance": 0.1, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.pine_resin", "chance": 0.2, "quantity": 1 } ]
+  },
+  {
+    "id": "action.strip_birch_bark",
+    "professionId": "profession.forestry",
+    "name": "Strip Birch Bark",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 95,
+    "experience": 14,
+    "outputs": [ { "itemId": "material.birch_bark", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.birch_sap", "chance": 0.3, "quantity": 1 } ]
   },
   {
     "id": "action.saw_oak_planks",
@@ -21,6 +33,16 @@
     "outputs": [ { "itemId": "material.oak_plank", "quantity": 2 } ]
   },
   {
+    "id": "action.tap_resin",
+    "professionId": "profession.forestry",
+    "name": "Tap Resin",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 120,
+    "experience": 17,
+    "outputs": [ { "itemId": "material.pine_resin", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.copal_resin", "chance": 0.15, "quantity": 1 } ]
+  },
+  {
     "id": "action.chop_maple",
     "professionId": "profession.forestry",
     "name": "Chop Maple",
@@ -28,6 +50,105 @@
     "baseIntervalTicks": 130,
     "experience": 20,
     "outputs": [ { "itemId": "material.maple_log", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.oak_bark", "chance": 0.15, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.maple_sap", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.gather_forest_fungi",
+    "professionId": "profession.forestry",
+    "name": "Gather Forest Fungi",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 105,
+    "experience": 22,
+    "outputs": [ { "itemId": "material.king_bolete", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.brown_cap", "chance": 0.35, "quantity": 1 },
+      { "itemId": "material.luminous_cap", "chance": 0.12, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.saw_pine_planks",
+    "professionId": "profession.forestry",
+    "name": "Saw Pine Planks",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 90,
+    "experience": 24,
+    "inputs": [ { "itemId": "material.pine_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.pine_plank", "quantity": 2 } ]
+  },
+  {
+    "id": "action.chop_yew",
+    "professionId": "profession.forestry",
+    "name": "Chop Yew",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 155,
+    "experience": 32,
+    "outputs": [ { "itemId": "material.yew_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.elder_bark", "chance": 0.15, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.bowyers_limb",
+        "name": "A Bowyer's Limb",
+        "prompt": "One branch has grown dead straight for six feet. Cut around it and you have stave wood; rush and you have firewood.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 280,
+        "riskWeight": 0.15,
+        "outputs": [ { "itemId": "material.yew_log", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.willow_switch", "chance": 0.4, "quantity": 2 } ],
+        "experience": 60
+      }
+    ]
+  },
+  {
+    "id": "action.saw_maple_planks",
+    "professionId": "profession.forestry",
+    "name": "Saw Maple Planks",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 95,
+    "experience": 34,
+    "inputs": [ { "itemId": "material.maple_log", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.maple_plank", "quantity": 2 } ]
+  },
+  {
+    "id": "action.fell_ironwood",
+    "professionId": "profession.forestry",
+    "name": "Fell Ironwood",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 220,
+    "experience": 55,
+    "outputs": [ { "itemId": "material.ironwood_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.ironbark_seed", "chance": 0.12, "quantity": 1 } ]
+  },
+  {
+    "id": "action.harvest_emberwood",
+    "professionId": "profession.forestry",
+    "name": "Harvest Emberwood",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 230,
+    "experience": 66,
+    "outputs": [ { "itemId": "material.emberwood_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.emberbark", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.harvest_livingbark",
+    "professionId": "profession.forestry",
+    "name": "Harvest Livingbark",
+    "requiredLevel": 62,
+    "baseIntervalTicks": 260,
+    "experience": 84,
+    "outputs": [ { "itemId": "material.livingbark_log", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.spirit_bark", "chance": 0.2, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.heartwood_seam",
+        "name": "Living Heartwood",
+        "prompt": "The trunk is still growing around the cut. Wait it out and the wood closes over something worth having.",
+        "discoveryChance": 0.10,
+        "extraIntervalTicks": 400,
+        "riskWeight": 0.25,
+        "outputs": [ { "itemId": "material.spiritwood_log", "quantity": 1 } ],
+        "bonusOutputs": [ { "itemId": "material.spiritsap_resin", "chance": 0.35, "quantity": 1 } ],
+        "experience": 120
+      }
+    ]
   }
 ]

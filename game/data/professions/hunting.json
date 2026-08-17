@@ -1,0 +1,7 @@
+{
+  "id": "profession.hunting",
+  "name": "Hunting",
+  "category": "Gathering",
+  "primaryAttributes": ["Dexterity", "Wisdom"],
+  "description": "Tracking, trapping and taking creatures. Brings back the animal; Beast Lore reads it."
+}

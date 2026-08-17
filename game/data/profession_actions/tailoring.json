@@ -1,0 +1,124 @@
+[
+  // Tailoring: Fibre → Thread → Cloth → fabrication. Like Leatherworking, the source matters
+  // all the way through — silkvine keeps its resonance, felt keeps its insulation, and neither
+  // becomes generic "cloth tier 2" (docs/professions.md §13).
+  {
+    "id": "action.spin_linen_thread",
+    "professionId": "profession.tailoring",
+    "name": "Spin Linen Thread",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 95,
+    "experience": 10,
+    "inputs": [ { "itemId": "material.flax_fiber", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.linen_thread", "quantity": 1 } ]
+  },
+  {
+    "id": "action.spin_hemp_thread",
+    "professionId": "profession.tailoring",
+    "name": "Spin Hemp Thread",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 100,
+    "experience": 13,
+    "inputs": [ { "itemId": "material.hemp_fiber", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.hemp_thread", "quantity": 1 } ]
+  },
+  {
+    "id": "action.twist_rope",
+    "professionId": "profession.tailoring",
+    "name": "Twist Rope",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 115,
+    "experience": 16,
+    "inputs": [ { "itemId": "material.hemp_fiber", "quantity": 4 } ],
+    "outputs": [ { "itemId": "material.rope", "quantity": 1 } ]
+  },
+  {
+    "id": "action.weave_cloth",
+    "professionId": "profession.tailoring",
+    "name": "Weave Cloth",
+    "requiredLevel": 10,
+    "baseIntervalTicks": 140,
+    "experience": 20,
+    "inputs": [ { "itemId": "material.linen_thread", "quantity": 3 } ],
+    "outputs": [ { "itemId": "material.cloth", "quantity": 1 } ]
+  },
+  {
+    "id": "action.press_felt",
+    "professionId": "profession.tailoring",
+    "name": "Press Felt",
+    "requiredLevel": 14,
+    "baseIntervalTicks": 150,
+    "experience": 24,
+    "inputs": [
+      { "itemId": "material.wolf_fur", "quantity": 2 },
+      { "itemId": "material.springwater", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.pressed_felt", "quantity": 1 } ]
+  },
+  {
+    "id": "action.weave_canvas",
+    "professionId": "profession.tailoring",
+    "name": "Weave Canvas",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 165,
+    "experience": 28,
+    "inputs": [ { "itemId": "material.hemp_thread", "quantity": 4 } ],
+    "outputs": [ { "itemId": "material.canvas", "quantity": 1 } ]
+  },
+  {
+    "id": "action.salvage_tattered_cloth",
+    "professionId": "profession.tailoring",
+    "name": "Unpick Tattered Cloth",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 110,
+    "experience": 26,
+    "inputs": [ { "itemId": "material.tattered_cloth", "quantity": 3 } ],
+    "outputs": [ { "itemId": "material.linen_thread", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.hemp_thread", "chance": 0.3, "quantity": 1 } ]
+  },
+  {
+    "id": "action.spin_silkvine_thread",
+    "professionId": "profession.tailoring",
+    "name": "Spin Silkvine Thread",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 175,
+    "experience": 40,
+    "inputs": [ { "itemId": "material.silkvine_fiber", "quantity": 2 } ],
+    "outputs": [ { "itemId": "material.silkvine_thread", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.unbroken_filament",
+        "name": "An Unbroken Filament",
+        "prompt": "The whole length is coming off in one piece. Spinning it out without cutting takes real patience and yields far more.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 230,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.silkvine_thread", "quantity": 3 } ],
+        "experience": 70
+      }
+    ]
+  },
+  {
+    "id": "action.weave_silkvine_cloth",
+    "professionId": "profession.tailoring",
+    "name": "Weave Silkvine Cloth",
+    "requiredLevel": 38,
+    "baseIntervalTicks": 200,
+    "experience": 54,
+    "inputs": [ { "itemId": "material.silkvine_thread", "quantity": 3 } ],
+    "outputs": [ { "itemId": "material.silkvine_cloth", "quantity": 1 } ]
+  },
+  {
+    "id": "action.quilt_insulating_lining",
+    "professionId": "profession.tailoring",
+    "name": "Quilt an Insulating Lining",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 225,
+    "experience": 68,
+    "inputs": [
+      { "itemId": "material.pressed_felt", "quantity": 1 },
+      { "itemId": "material.silkvine_cloth", "quantity": 1 }
+    ],
+    "outputs": [ { "itemId": "material.insulating_lining", "quantity": 1 } ]
+  }
+]

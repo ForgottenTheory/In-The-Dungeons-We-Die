@@ -1,0 +1,7 @@
+{
+  "id": "profession.agility",
+  "name": "Agility",
+  "category": "Utility",
+  "primaryAttributes": ["Dexterity", "Endurance"],
+  "description": "A training course you build. What you fit into it is your standing travel, hazard and extraction loadout."
+}

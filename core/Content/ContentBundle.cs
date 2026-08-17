@@ -29,6 +29,7 @@ public sealed class ContentBundle
     public DataStore<Dungeons.Characters.Composition.NameFormatDefinition> NameFormats { get; init; } = new();
     public DataStore<ProfessionDefinition> Professions { get; init; } = new();
     public DataStore<ProfessionActionDefinition> Actions { get; init; } = new();
+    public DataStore<TrainingObstacleDefinition> TrainingObstacles { get; init; } = new();
     public DataStore<CraftingInteractionDefinition> Interactions { get; init; } = new();
     public DataStore<MoveDefinition> Moves { get; init; } = new();
     public DataStore<MoveModifierDefinition> MoveModifiers { get; init; } = new();

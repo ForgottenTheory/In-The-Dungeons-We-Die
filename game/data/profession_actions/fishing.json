@@ -1,5 +1,7 @@
 [
-  // Fishing (P3). Fish oil cross-feeds Alchemy; scales feed future fabrication.
+  // Fishing. Each rung is a *location* with its own catch table, not a bigger fish. Fish oil
+  // cross-feeds Alchemy, scales and skins feed fabrication, and the eel rung is a deliberate
+  // second storm-trace faucet (D29.3).
   {
     "id": "action.fish_river",
     "professionId": "profession.fishing",
@@ -11,6 +13,26 @@
     "bonusOutputs": [ { "itemId": "material.fish_scale", "chance": 0.2, "quantity": 1 } ]
   },
   {
+    "id": "action.gather_shoreline_kelp",
+    "professionId": "profession.fishing",
+    "name": "Gather Shoreline Kelp",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 95,
+    "experience": 12,
+    "outputs": [ { "itemId": "material.kelp", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.seaweed", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.trap_river_crab",
+    "professionId": "profession.fishing",
+    "name": "Trap River Crab",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 130,
+    "experience": 15,
+    "outputs": [ { "itemId": "material.crab_meat", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.crab_shell", "chance": 0.4, "quantity": 1 } ]
+  },
+  {
     "id": "action.net_oily_shoal",
     "professionId": "profession.fishing",
     "name": "Net the Oily Shoal",
@@ -18,7 +40,20 @@
     "baseIntervalTicks": 140,
     "experience": 17,
     "outputs": [ { "itemId": "material.fish_meat", "quantity": 2 } ],
-    "bonusOutputs": [ { "itemId": "material.fish_oil", "chance": 0.35, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.fish_oil", "chance": 0.35, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.shoal_turns",
+        "name": "The Shoal Turns",
+        "prompt": "The whole shoal swings back under the boat. Reset the net now and you take twice the haul — or lose the net.",
+        "discoveryChance": 0.15,
+        "extraIntervalTicks": 180,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.fish_meat", "quantity": 4 } ],
+        "bonusOutputs": [ { "itemId": "material.fish_oil", "chance": 0.5, "quantity": 2 } ],
+        "experience": 45
+      }
+    ]
   },
   {
     "id": "action.hunt_eels",
@@ -29,5 +64,67 @@
     "experience": 24,
     "outputs": [ { "itemId": "material.eel_skin", "quantity": 1 } ],
     "bonusOutputs": [ { "itemId": "material.shock_eel_gland", "chance": 0.15, "quantity": 1 } ]
+  },
+  {
+    "id": "action.fish_deep_water",
+    "professionId": "profession.fishing",
+    "name": "Fish Deep Water",
+    "requiredLevel": 28,
+    "baseIntervalTicks": 185,
+    "experience": 36,
+    "outputs": [ { "itemId": "material.fish_meat", "quantity": 2 } ],
+    "bonusOutputs": [
+      { "itemId": "material.shark_tooth", "chance": 0.2, "quantity": 1 },
+      { "itemId": "material.sea_wyrm_scale", "chance": 0.08, "quantity": 1 }
+    ],
+    "opportunities": [
+      {
+        "id": "opportunity.shape_under_the_boat",
+        "name": "Something Below",
+        "prompt": "A shape the length of the boat passes underneath, unhurried. You can bait it. You do not have to.",
+        "discoveryChance": 0.09,
+        "extraIntervalTicks": 320,
+        "riskWeight": 0.40,
+        "outputs": [ { "itemId": "material.sea_wyrm_scale", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.leviathan_oil", "chance": 0.25, "quantity": 1 } ],
+        "experience": 95
+      }
+    ]
+  },
+  {
+    "id": "action.harvest_storm_kelp",
+    "professionId": "profession.fishing",
+    "name": "Harvest Storm Kelp",
+    "requiredLevel": 34,
+    "baseIntervalTicks": 165,
+    "experience": 42,
+    "outputs": [ { "itemId": "material.storm_kelp", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.static_charge", "chance": 0.12, "quantity": 1 } ]
+  },
+  {
+    "id": "action.dive_the_coral_shelf",
+    "professionId": "profession.fishing",
+    "name": "Dive the Coral Shelf",
+    "requiredLevel": 42,
+    "baseIntervalTicks": 210,
+    "experience": 55,
+    "outputs": [ { "itemId": "material.deep_coral", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.pearl", "chance": 0.2, "quantity": 1 },
+      { "itemId": "material.siren_scale", "chance": 0.1, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.follow_leviathan_sign",
+    "professionId": "profession.fishing",
+    "name": "Follow Leviathan Sign",
+    "requiredLevel": 58,
+    "baseIntervalTicks": 260,
+    "experience": 80,
+    "outputs": [ { "itemId": "material.leviathan_oil", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.leviathan_bone", "chance": 0.15, "quantity": 1 },
+      { "itemId": "material.siren_pearl", "chance": 0.06, "quantity": 1 }
+    ]
   }
 ]

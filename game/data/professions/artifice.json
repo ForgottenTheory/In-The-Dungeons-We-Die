@@ -1,0 +1,7 @@
+{
+  "id": "profession.artifice",
+  "name": "Artifice",
+  "category": "Processing",
+  "primaryAttributes": ["Intelligence", "Dexterity"],
+  "description": "Tools, mechanisms, lenses and trinkets — the profession that makes the other professions faster."
+}

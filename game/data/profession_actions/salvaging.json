@@ -1,0 +1,146 @@
+[
+  // Salvaging. The Realm actions work a source in place — a wreck, a scrap heap, a collapsed
+  // workshop — and the Hideout actions pick over a hauled-back `salvage_pile` safely and
+  // slowly. Everything it recovers feeds Smithing or Artifice, which is what makes a cleared
+  // Realm worth returning to (docs/professions.md §7).
+  {
+    "id": "action.pick_over_scrap",
+    "professionId": "profession.salvaging",
+    "name": "Pick Over Scrap",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 100,
+    "experience": 10,
+    "inputs": [ { "itemId": "material.salvage_pile", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.scrap_iron", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.tattered_cloth", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.search_wagon_wreck",
+    "professionId": "profession.salvaging",
+    "name": "Search a Wagon Wreck",
+    "requiredLevel": 5,
+    "baseIntervalTicks": 130,
+    "experience": 15,
+    "outputs": [ { "itemId": "material.salvage_pile", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.tattered_cloth", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.broken_mechanism", "chance": 0.12, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.reclaim_fittings",
+    "professionId": "profession.salvaging",
+    "name": "Reclaim Fittings",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 120,
+    "experience": 17,
+    "inputs": [ { "itemId": "material.salvage_pile", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.broken_mechanism", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.scrap_iron", "chance": 0.4, "quantity": 1 } ]
+  },
+  {
+    "id": "action.strip_guard_post",
+    "professionId": "profession.salvaging",
+    "name": "Strip a Guard Post",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 150,
+    "experience": 21,
+    "outputs": [ { "itemId": "material.salvage_pile", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.scrap_iron", "chance": 0.35, "quantity": 1 } ]
+  },
+  {
+    "id": "action.salvage_goblin_camp",
+    "professionId": "profession.salvaging",
+    "name": "Salvage a Goblin Camp",
+    "requiredLevel": 15,
+    "baseIntervalTicks": 165,
+    "experience": 26,
+    "outputs": [ { "itemId": "material.goblin_scrap", "quantity": 2 } ],
+    "bonusOutputs": [
+      { "itemId": "material.goblin_hide", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.chitin_plate", "chance": 0.15, "quantity": 1 }
+    ],
+    "opportunities": [
+      {
+        "id": "opportunity.quartermasters_cache",
+        "name": "The Quartermaster's Cache",
+        "prompt": "One tent is stacked and sorted — somebody's stores. Emptying it properly takes long enough that somebody may come back for it.",
+        "discoveryChance": 0.14,
+        "extraIntervalTicks": 250,
+        "riskWeight": 0.30,
+        "outputs": [ { "itemId": "material.goblin_scrap", "quantity": 4 } ],
+        "bonusOutputs": [ { "itemId": "material.iron_key", "chance": 0.3, "quantity": 1 } ],
+        "experience": 60
+      }
+    ]
+  },
+  {
+    "id": "action.excavate_collapsed_workshop",
+    "professionId": "profession.salvaging",
+    "name": "Excavate a Collapsed Workshop",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 200,
+    "experience": 38,
+    "outputs": [ { "itemId": "material.salvage_pile", "quantity": 2 } ],
+    "bonusOutputs": [
+      { "itemId": "material.broken_mechanism", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.schematic_fragment", "chance": 0.15, "quantity": 1 }
+    ],
+    "opportunities": [
+      {
+        "id": "opportunity.intact_workbench",
+        "name": "An Intact Bench",
+        "prompt": "Under the fallen roof, one bench is untouched, tools still laid out. Digging it clear will take most of an hour.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 320,
+        "riskWeight": 0.25,
+        "outputs": [ { "itemId": "material.broken_mechanism", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.schematic_fragment", "chance": 0.45, "quantity": 1 } ],
+        "experience": 85
+      }
+    ]
+  },
+  {
+    // The Cartography loop the design asks for: a filed survey is what tells you where the
+    // worthwhile wreckage is. This is the only place a chart is spent outside Cartography
+    // itself, and it is why charting is worth doing for someone who never levels Cartography.
+    "id": "action.follow_a_charted_ruin",
+    "professionId": "profession.salvaging",
+    "name": "Follow a Charted Ruin",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 210,
+    "experience": 46,
+    "inputs": [ { "itemId": "material.survey_chart", "quantity": 1 } ],
+    "outputs": [ { "itemId": "material.salvage_pile", "quantity": 3 } ],
+    "bonusOutputs": [
+      { "itemId": "material.schematic_fragment", "chance": 0.3, "quantity": 1 },
+      { "itemId": "material.relic_shard", "chance": 0.15, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.strip_ancient_machinery",
+    "professionId": "profession.salvaging",
+    "name": "Strip Ancient Machinery",
+    "requiredLevel": 40,
+    "baseIntervalTicks": 235,
+    "experience": 58,
+    "outputs": [ { "itemId": "material.broken_mechanism", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.relic_shard", "chance": 0.12, "quantity": 1 },
+      { "itemId": "material.schematic_fragment", "chance": 0.2, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.recover_relic_cache",
+    "professionId": "profession.salvaging",
+    "name": "Recover a Relic Cache",
+    "requiredLevel": 55,
+    "baseIntervalTicks": 280,
+    "experience": 82,
+    "outputs": [ { "itemId": "material.relic_shard", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.schematic_fragment", "chance": 0.35, "quantity": 1 },
+      { "itemId": "material.arcane_dust", "chance": 0.25, "quantity": 1 }
+    ]
+  }
+]

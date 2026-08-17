@@ -1,5 +1,7 @@
 [
-  // Mining (P1) — the ore source that retires GameRoot's startup iron-ore seed.
+  // Mining. The ladder is NOT copper < iron < better iron: every rung opens a deposit with a
+  // different property profile, so a level-40 miner still comes back for copper when they want
+  // conductivity (docs/professions.md §1). `opportunities` fire on the active path only.
   {
     "id": "action.mine_copper",
     "professionId": "profession.mining",
@@ -8,7 +10,19 @@
     "baseIntervalTicks": 100,
     "experience": 10,
     "outputs": [ { "itemId": "material.copper_ore", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.flint", "chance": 0.15, "quantity": 1 } ]
+    "bonusOutputs": [ { "itemId": "material.flint", "chance": 0.15, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.native_copper_pocket",
+        "name": "Native Copper",
+        "prompt": "A seam of raw metal runs behind the ore — no smelting needed, but digging it out takes a while.",
+        "discoveryChance": 0.10,
+        "extraIntervalTicks": 200,
+        "riskWeight": 0.0,
+        "outputs": [ { "itemId": "material.native_copper", "quantity": 2 } ],
+        "experience": 30
+      }
+    ]
   },
   {
     "id": "action.mine_iron",
@@ -17,7 +31,20 @@
     "requiredLevel": 1,
     "baseIntervalTicks": 130,
     "experience": 14,
-    "outputs": [ { "itemId": "material.iron_ore", "quantity": 1 } ]
+    "outputs": [ { "itemId": "material.iron_ore", "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.rich_iron_vein",
+        "name": "Rich Vein",
+        "prompt": "The seam widens into denser ore. Following it means standing here a good deal longer.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.10,
+        "outputs": [ { "itemId": "material.iron_ore", "quantity": 4 } ],
+        "bonusOutputs": [ { "itemId": "material.meteoric_iron", "chance": 0.08, "quantity": 1 } ],
+        "experience": 45
+      }
+    ]
   },
   {
     "id": "action.quarry_granite",
@@ -30,6 +57,16 @@
     "bonusOutputs": [ { "itemId": "material.flint", "chance": 0.25, "quantity": 1 } ]
   },
   {
+    "id": "action.mine_bog_iron",
+    "professionId": "profession.mining",
+    "name": "Mine Bog Iron",
+    "requiredLevel": 8,
+    "baseIntervalTicks": 105,
+    "experience": 15,
+    "outputs": [ { "itemId": "material.bog_iron", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.peat_moss", "chance": 0.3, "quantity": 1 } ]
+  },
+  {
     "id": "action.mine_tin",
     "professionId": "profession.mining",
     "name": "Mine Tin",
@@ -37,5 +74,123 @@
     "baseIntervalTicks": 120,
     "experience": 18,
     "outputs": [ { "itemId": "material.tin_ore", "quantity": 1 } ]
+  },
+  {
+    "id": "action.work_coal_seam",
+    "professionId": "profession.mining",
+    "name": "Work the Coal Seam",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 115,
+    "experience": 19,
+    "outputs": [ { "itemId": "material.coal", "quantity": 2 } ],
+    "bonusOutputs": [ { "itemId": "material.lignite", "chance": 0.25, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.firedamp_pocket",
+        "name": "Firedamp",
+        "prompt": "Gas hisses from a crack in the coal. It can be bottled — carefully.",
+        "discoveryChance": 0.14,
+        "extraIntervalTicks": 160,
+        "riskWeight": 0.35,
+        "outputs": [ { "itemId": "material.firedamp", "quantity": 2 } ],
+        "experience": 35
+      }
+    ]
+  },
+  {
+    "id": "action.cut_quartz",
+    "professionId": "profession.mining",
+    "name": "Cut Quartz",
+    "requiredLevel": 18,
+    "baseIntervalTicks": 150,
+    "experience": 24,
+    "outputs": [ { "itemId": "material.quartz", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.rock_crystal", "chance": 0.2, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.crystal_pocket",
+        "name": "Crystal Pocket",
+        "prompt": "The rock opens into a lined cavity. Emptying it properly is slow work.",
+        "discoveryChance": 0.11,
+        "extraIntervalTicks": 300,
+        "riskWeight": 0.05,
+        "outputs": [ { "itemId": "material.rock_crystal", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.amethyst", "chance": 0.3, "quantity": 1 } ],
+        "experience": 55
+      }
+    ]
+  },
+  {
+    "id": "action.dig_saltpeter",
+    "professionId": "profession.mining",
+    "name": "Dig Saltpeter",
+    "requiredLevel": 20,
+    "baseIntervalTicks": 125,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.saltpeter", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.potash", "chance": 0.25, "quantity": 1 } ]
+  },
+  {
+    "id": "action.mine_silver",
+    "professionId": "profession.mining",
+    "name": "Mine Silver",
+    "requiredLevel": 25,
+    "baseIntervalTicks": 170,
+    "experience": 32,
+    "outputs": [ { "itemId": "material.silver_ore", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.native_gold", "chance": 0.08, "quantity": 1 } ]
+  },
+  {
+    "id": "action.quarry_obsidian",
+    "professionId": "profession.mining",
+    "name": "Quarry Obsidian",
+    "requiredLevel": 32,
+    "baseIntervalTicks": 180,
+    "experience": 40,
+    "outputs": [ { "itemId": "material.obsidian", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.basalt", "chance": 0.3, "quantity": 1 } ]
+  },
+  {
+    "id": "action.mine_emberite",
+    "professionId": "profession.mining",
+    "name": "Mine Emberite",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 210,
+    "experience": 58,
+    "outputs": [ { "itemId": "material.emberite_ore", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.cinder_shard", "chance": 0.18, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.unstable_ember_pocket",
+        "name": "Unstable Pocket",
+        "prompt": "The ore is still hot and it is moving. Cutting it free might get you an ember core; it might just get you burned.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 240,
+        "riskWeight": 0.45,
+        "outputs": [ { "itemId": "material.emberite_ore", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.ember_core", "chance": 0.2, "quantity": 1 } ],
+        "experience": 90
+      }
+    ]
+  },
+  {
+    "id": "action.mine_frostiron",
+    "professionId": "profession.mining",
+    "name": "Mine Frostiron",
+    "requiredLevel": 45,
+    "baseIntervalTicks": 210,
+    "experience": 58,
+    "outputs": [ { "itemId": "material.frostiron_ore", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.rime_shard", "chance": 0.18, "quantity": 1 } ]
+  },
+  {
+    "id": "action.mine_mithril",
+    "professionId": "profession.mining",
+    "name": "Mine Mithril",
+    "requiredLevel": 62,
+    "baseIntervalTicks": 250,
+    "experience": 82,
+    "outputs": [ { "itemId": "material.mithril_ore", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.mana_crystal", "chance": 0.1, "quantity": 1 } ]
   }
 ]

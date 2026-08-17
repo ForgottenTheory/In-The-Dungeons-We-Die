@@ -1,6 +1,7 @@
 {
   "id": "profession.beast_lore",
   "name": "Beast Lore",
-  "category": "Utility",
-  "primaryAttributes": ["Wisdom", "Dexterity"]
+  "category": "Gathering",
+  "primaryAttributes": ["Wisdom", "Intelligence"],
+  "description": "Creature anatomy. Decides which parts of a carcass you can recover, and how long each takes."
 }

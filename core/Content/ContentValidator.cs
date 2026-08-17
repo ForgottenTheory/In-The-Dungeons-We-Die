@@ -85,7 +85,8 @@ public static class ContentValidator
         ValidateActors(content.Actors, content.Moves, content.Materials,
             content.EnemyFamilies, content.EnemyRoles, content.AiProfiles, problems);
         ValidateMoves(content, problems);
-        ValidateProfessionActions(content.Actions, content.Professions, content.Materials, problems);
+        ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, problems);
+        ValidateTrainingObstacles(content.TrainingObstacles, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
         ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
@@ -1047,12 +1048,23 @@ public static class ContentValidator
         DataStore<ProfessionActionDefinition> actions,
         DataStore<ProfessionDefinition> professions,
         DataStore<MaterialDefinition> materials,
+        DataStore<RealmDefinition> realms,
         List<ContentProblem> problems)
     {
+        // Opportunity ids are referenced by the client when a pending offer is pursued, so
+        // they have to be unique across the whole action set, not just within one action.
+        var opportunityIds = new HashSet<string>(StringComparer.Ordinal);
+
         foreach (var action in actions.GetAll())
         {
             if (!professions.Contains(action.ProfessionId))
                 problems.Add(new("profession_actions", $"{action.Id} references unknown profession '{action.ProfessionId}'."));
+
+            if (action.SuccessChance is <= 0 or > 1)
+                problems.Add(new("profession_actions", $"{action.Id} success chance is {action.SuccessChance}, outside (0, 1]."));
+
+            if (action.BaseIntervalTicks < 1)
+                problems.Add(new("profession_actions", $"{action.Id} interval is {action.BaseIntervalTicks} ticks; must be at least 1."));
 
             foreach (var io in action.Inputs.Concat(action.Outputs))
                 if (!materials.Contains(io.ItemId))
@@ -1061,6 +1073,85 @@ public static class ContentValidator
             foreach (var bonus in action.BonusOutputs)
                 if (!materials.Contains(bonus.ItemId))
                     problems.Add(new("profession_actions", $"{action.Id} bonus output references unknown material '{bonus.ItemId}'."));
+
+            if (action.RealmKnowledgeGain is { } knowledge)
+            {
+                if (!realms.Contains(knowledge.RealmId))
+                    problems.Add(new("profession_actions", $"{action.Id} teaches unknown realm '{knowledge.RealmId}'."));
+                if (knowledge.Amount <= 0)
+                    problems.Add(new("profession_actions", $"{action.Id} realm knowledge gain is {knowledge.Amount}; must be positive."));
+            }
+
+            foreach (var opportunity in action.Opportunities)
+                ValidateOpportunity(action, opportunity, materials, opportunityIds, problems);
+        }
+    }
+
+    private static void ValidateOpportunity(
+        ProfessionActionDefinition action,
+        ProfessionOpportunityDefinition opportunity,
+        DataStore<MaterialDefinition> materials,
+        HashSet<string> seenIds,
+        List<ContentProblem> problems)
+    {
+        if (string.IsNullOrWhiteSpace(opportunity.Id))
+        {
+            problems.Add(new("profession_actions", $"{action.Id} has an opportunity with no id."));
+            return;
+        }
+
+        if (!seenIds.Add(opportunity.Id))
+            problems.Add(new("profession_actions", $"{action.Id} reuses opportunity id '{opportunity.Id}'."));
+
+        if (string.IsNullOrWhiteSpace(opportunity.Prompt))
+            problems.Add(new("profession_actions", $"{opportunity.Id} has no prompt; the offer is the decision."));
+
+        if (opportunity.DiscoveryChance is <= 0 or > 1)
+            problems.Add(new("profession_actions", $"{opportunity.Id} discovery chance is {opportunity.DiscoveryChance}, outside (0, 1]."));
+
+        if (opportunity.RiskWeight is < 0 or > 1)
+            problems.Add(new("profession_actions", $"{opportunity.Id} risk weight is {opportunity.RiskWeight}, outside [0, 1]."));
+
+        if (opportunity.ExtraIntervalTicks < 1)
+            problems.Add(new("profession_actions", $"{opportunity.Id} costs {opportunity.ExtraIntervalTicks} ticks; pursuing must cost time."));
+
+        // An opportunity that pays nothing is a decision with one right answer.
+        if (opportunity.Outputs.Count == 0 && opportunity.BonusOutputs.Count == 0 && opportunity.Experience <= 0)
+            problems.Add(new("profession_actions", $"{opportunity.Id} has no payoff — outputs, bonus outputs and XP are all empty."));
+
+        foreach (var io in opportunity.Inputs.Concat(opportunity.Outputs))
+            if (!materials.Contains(io.ItemId))
+                problems.Add(new("profession_actions", $"{opportunity.Id} references unknown material '{io.ItemId}'."));
+
+        foreach (var bonus in opportunity.BonusOutputs)
+            if (!materials.Contains(bonus.ItemId))
+                problems.Add(new("profession_actions", $"{opportunity.Id} bonus output references unknown material '{bonus.ItemId}'."));
+    }
+
+    private static void ValidateTrainingObstacles(
+        DataStore<TrainingObstacleDefinition> obstacles,
+        List<ContentProblem> problems)
+    {
+        var knownBonuses = new HashSet<string>(CourseBonusKeys.All, StringComparer.Ordinal);
+
+        foreach (var obstacle in obstacles.GetAll())
+        {
+            if (obstacle.IntervalTicks < 1)
+                problems.Add(new("training_obstacles", $"{obstacle.Id} costs {obstacle.IntervalTicks} ticks; a lap must take time."));
+
+            if (obstacle.Experience <= 0)
+                problems.Add(new("training_obstacles", $"{obstacle.Id} grants no XP; the course is Agility's only faucet."));
+
+            if (obstacle.Bonuses.Count == 0)
+                problems.Add(new("training_obstacles", $"{obstacle.Id} grants no bonus; fitting it would be a choice with no consequence."));
+
+            foreach (var bonus in obstacle.Bonuses)
+            {
+                if (!knownBonuses.Contains(bonus.Key))
+                    problems.Add(new("training_obstacles", $"{obstacle.Id} grants unknown course bonus '{bonus.Key}'."));
+                if (bonus.Value <= 0)
+                    problems.Add(new("training_obstacles", $"{obstacle.Id} bonus '{bonus.Key}' is {bonus.Value}; must be positive."));
+            }
         }
     }
 
