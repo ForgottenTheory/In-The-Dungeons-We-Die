@@ -1,0 +1,210 @@
+[
+  // ── The Dark Forest, Phase 6: the ranked kills, the new nodes, and the trader's stock ──────
+  //
+  // Depth is the reward curve. Read down this file and the drops get stranger rather than
+  // merely bigger: depth 1 pays in bark and iron, depth 2 in essence and technique, depth 3 in
+  // the things the bench cannot make. That progression IS the answer to "why go deeper".
+
+  // ---- Ranked kills ------------------------------------------------------------------------
+
+  {
+    // Grask carries what a warlord carries: other people's equipment, reduced to inputs.
+    // `loot.shared.rank_spoils` on the goblin family table adds the elite layer on top.
+    "id": "loot.actor.goblin_warlord",
+    "name": "Grask, the Warlord",
+    "tags": ["source:creature", "source:goblinoid", "elite"],
+    "alwaysDrops": [
+      { "itemId": "material.goblin_hide", "minQuantity": 2, "maxQuantity": 4 },
+      { "tableId": "loot.shared.salvage_heavy" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.schematic_fragment", "chance": 0.30 },
+      { "itemId": "material.relic_shard", "chance": 0.18 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.techniques_martial", "weight": 35 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 20 },
+          { "dropsNothing": true, "weight": 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // The boss pays in things that grow rather than things that were carried — heartwood, sap,
+    // living bark. Nothing here is craftable at the bench, which is the point of a boss.
+    "id": "loot.actor.thornheart",
+    "name": "Thornheart, the Old Growth",
+    "tags": ["source:creature", "source:plant", "boss"],
+    "alwaysDrops": [
+      { "itemId": "material.livingbark_log", "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.heartwood_tree", "minQuantity": 1, "maxQuantity": 1 },
+      { "tableId": "loot.shared.crafting_catalysts" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.spiritwood_log", "chance": 0.55 },
+      { "itemId": "material.briarheart", "chance": 0.40 },
+      { "itemId": "material.worldroot", "chance": 0.12 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 2,
+        "entries": [
+          { "tableId": "loot.shared.techniques_arcane", "weight": 30 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 25 },
+          { "itemId": "material.mana_seed", "weight": 20, "minQuantity": 1, "maxQuantity": 2 },
+          { "dropsNothing": true, "weight": 25 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Depth 1 ------------------------------------------------------------------------------
+
+  {
+    // The hidden cache. Deliberately the best thing at depth 1 — Realm Knowledge's first real
+    // payout should be worth the twenty runs it took to see the node at all.
+    "id": "loot.node.poachers_cache",
+    "name": "Poacher's Cache",
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_light" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.cured_boar_leather", "chance": 0.50, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.iron_key", "chance": 0.25 },
+      { "itemId": "material.schematic_fragment", "chance": 0.20 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_common", "weight": 40 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 15 },
+          { "dropsNothing": true, "weight": 45 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Depth 2 ------------------------------------------------------------------------------
+
+  {
+    // The shrine pays in knowledge, not goods — the loot is a token of the visit.
+    "id": "loot.event.old_shrine",
+    "name": "The Leaning Shrine",
+    "chanceDrops": [
+      { "itemId": "material.spirit_bark", "chance": 0.45 },
+      { "itemId": "material.arcane_dust", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.fey_essence", "weight": 40 },
+          { "dropsNothing": true, "weight": 60 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // The hedge trader deals in INPUTS AND KNOWLEDGE ONLY — never finished equipment. Selling a
+    // sword would undercut the one thing the whole game is about (D28, and the crafting
+    // identity it protects).
+    "id": "loot.merchant.hedge_trader",
+    "name": "The Hedge Trader's Stock",
+    "alwaysDrops": [
+      { "tableId": "loot.shared.crafting_catalysts" }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 2,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_common", "weight": 30 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 12 },
+          { "itemId": "material.schematic_fragment", "weight": 20 },
+          { "itemId": "material.reference_sample", "weight": 18 },
+          { "itemId": "material.stabilizing_agent", "weight": 20 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.node.hollow_stump",
+    "name": "The Hollow Stump",
+    "alwaysDrops": [
+      { "itemId": "material.spiritwood_log", "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.spirit_bark", "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.spiritcap", "chance": 0.40 },
+      { "itemId": "material.witchcap", "chance": 0.28 },
+      { "itemId": "material.mana_seed", "chance": 0.15 }
+    ]
+  },
+
+  // ---- Depth 3 — the things that only grow this far in ---------------------------------------
+
+  {
+    "id": "loot.node.rootwell",
+    "name": "The Rootwell",
+    "alwaysDrops": [
+      { "itemId": "material.livingbark_log", "minQuantity": 1, "maxQuantity": 1 }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.spiritwood_log", "chance": 0.45 },
+      { "itemId": "material.heartroot", "chance": 0.35 },
+      { "itemId": "material.worldroot", "chance": 0.10 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.fey_essence", "weight": 45 },
+          { "itemId": "material.mana_seed", "weight": 20, "minQuantity": 1, "maxQuantity": 2 },
+          { "dropsNothing": true, "weight": 35 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.node.witchwood_stand",
+    "name": "The Witchwood Stand",
+    "alwaysDrops": [
+      { "itemId": "material.witchwood", "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.ghostwood", "chance": 0.35 },
+      { "itemId": "material.dreamwood", "chance": 0.22 },
+      { "itemId": "material.witchvine", "chance": 0.30 }
+    ]
+  },
+
+  {
+    "id": "loot.event.bone_orchard",
+    "name": "The Bone Orchard",
+    "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 2, "maxQuantity": 5 }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.gravevine", "chance": 0.40 },
+      { "itemId": "material.grave_moss", "chance": 0.35 },
+      { "itemId": "material.soul_gem", "chance": 0.08 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_rare", "weight": 25 },
+          { "tableId": "loot.shared.techniques_arcane", "weight": 20 },
+          { "dropsNothing": true, "weight": 55 }
+        ]
+      }
+    ]
+  }
+]

@@ -2,7 +2,12 @@ using System.Text.Json.Serialization;
 
 namespace Dungeons.Realms;
 
-/// <summary>Kinds of spatial location in a Realm (docs/realms.md §11). MVP subset.</summary>
+/// <summary>
+/// Kinds of spatial location in a Realm (docs/realms.md §11).
+///
+/// <para>These names appear only in <c>realms/</c> content — a run is transient and never
+/// persisted — so adding a kind costs a validator rule and a handler, not a save migration.</para>
+/// </summary>
 public enum RealmLocationType
 {
     Entrance,
@@ -12,6 +17,22 @@ public enum RealmLocationType
     Event,
     Descent,
     Extraction,
+
+    /// <summary>Somewhere to stop. Restores a fraction of the party's pools, <b>once per run</b>,
+    /// so the decision it creates is "spend the safety now or carry it deeper".</summary>
+    Camp,
+
+    /// <summary>A one-time boon, paid for in Realm Knowledge rather than coin: standing at one
+    /// teaches you about the place.</summary>
+    Shrine,
+
+    /// <summary>The first gold sink in the game. Sells <b>inputs and knowledge</b> — never
+    /// finished equipment, because the whole identity is that you craft your own (D28).</summary>
+    Merchant,
+
+    /// <summary>Costs health to cross. Knowing it is there is what turns it from an ambush into
+    /// a route choice, which is what Realm Knowledge buys.</summary>
+    Hazard,
 }
 
 /// <summary>
@@ -47,4 +68,27 @@ public sealed class RealmLocationDefinition
     /// </summary>
     [JsonPropertyName("loot_table")]
     public string? LootTableId { get; init; }
+
+    /// <summary>
+    /// A node the party cannot see, let alone travel to, until Realm Knowledge reveals it
+    /// (<see cref="RealmInsight.HiddenRoutes"/>).
+    ///
+    /// <para>This is the payoff that makes Knowledge worth having: the shortcut, the cache and
+    /// the side route were in the graph the whole time, and the twentieth run walks a different
+    /// map from the first.</para>
+    /// </summary>
+    public bool Hidden { get; init; }
+
+    /// <summary>
+    /// Hazard nodes: health taken on entering. Charged once — the ground is crossed, not fought.
+    /// </summary>
+    [JsonPropertyName("hazard_damage")]
+    public int HazardDamage { get; init; }
+
+    /// <summary>Camp nodes: the fraction of each pool restored, 0–1.</summary>
+    [JsonPropertyName("restore_fraction")]
+    public double RestoreFraction { get; init; }
+
+    /// <summary>Merchant nodes: the coin price of the goods behind <see cref="LootTableId"/>.</summary>
+    public int Cost { get; init; }
 }

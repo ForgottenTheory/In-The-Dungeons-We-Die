@@ -96,8 +96,8 @@ Realm → Gather → Transform Materials → Fabricate → Generate Equipment
       → Build Character → Fight → Extract → Improve → Push Deeper
 ```
 
-**The loop is closed and runs end to end today.** Its thin links are *loot* (one guaranteed drop
-per enemy, no tables) and *preparation* (no loadout screen).
+**The loop is closed and runs end to end today.** Its remaining thin link is *preparation* — there
+is still no loadout screen.
 
 ### The risk rhyme — one decision at three scales
 
@@ -157,7 +157,7 @@ Progression runs on **multiple independent tracks**. There is deliberately no si
 |---|---|---|---|
 | Profession levels & XP | Yes | No | ✅ |
 | Per-action Mastery | Yes | No | ✅ shortens intervals, raises bonus + opportunity chance, talks risk down |
-| Realm Knowledge (per realm) | Yes | No | 🟡 Cartography now feeds it; it still **unlocks nothing** |
+| Realm Knowledge (per realm) | Yes | No | ✅ Five insights unlock at 6/12/20/30/42: enemy weaknesses, hazards, rich nodes, **hidden routes**, extraction routes. Options only — never damage |
 | Crafting discoveries | Yes | No | ✅ |
 | Equipment owned | Yes | Gear is safe by default | ✅ |
 | Character level & attributes | Yes | No | 📐 growth weights exist; **nothing awards XP** |
@@ -775,10 +775,19 @@ Realms are **spatial location graphs**, closer to For The King 2 than to Slay th
 selection. Movement is adjacency-gated; **Depth** measures progression within a run; **Tiers**
 are escalating versions of a realm.
 
-**164 realms ship; one is fully wired.** The Dark Forest is the built one — 15 locations across 2 depths: entrance, travel, **five**
-gathering nodes (oak grove, iron vein, overturned wagon, dark grove, hunting blind), **three**
-combat nodes (raider, brute, hexer), **two** event nodes (the ruins chest, a ravaged kill), a
-descent, an extraction portal. Every node past the plain travel ones has its own loot table.
+**164 realms ship; one is finished.** The Dark Forest is the reference Realm — **31 locations
+across 3 depths**, carrying every node kind the architecture has: entrance, travel, gather,
+combat, event, descent, extraction, **camp, shrine, merchant, hazard**, plus three **hidden**
+nodes that do not exist for a party which has not learned the routes.
+
+| Depth | What it is |
+|---|---|
+| **1** | Learn the place. **Two** ways out, so leaving is a repeated decision rather than the end of a run. A camp, a hazard, and the hidden Poacher's Cache behind it |
+| **2** | The wall. An **elite** (Grask, the Warlord) behind a hazard, the **Hedge Trader** — the first gold sink in the game — a shrine, and an extraction that is deliberately not next to the descent |
+| **3** | The payoff. **Thornheart, the Old Growth** — a plant-family boss in a goblin realm, so everything learned on the way down is the wrong lesson — the two richest gathering nodes in the game, and a hidden back door out of the boss room |
+
+Deeper pays **rarer, not merely more**: the average rarity of what depth 3 can hand you is 1.75
+against depth 1's 0.78, and a test asserts the direction.
 
 The other 163 are the **roster**: a name, a biome tag set, a tier band and a walkable two-depth
 graph (entrance → fork → descent, with a way out at each depth). They deliberately carry **no

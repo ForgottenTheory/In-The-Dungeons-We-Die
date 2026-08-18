@@ -123,6 +123,11 @@ coherent run.
    **Legacy gap closed ✅ (D36).** The 229 stranded legacy materials are wired too — 348 actions
    plus anatomy on six enemy family tables, with essence routed to Realm drops rather than
    professions. `EveryRawMaterialHasASource` is now exact. **Still unbalanced.**
+   **Phase 6 — the Dark Forest is finished ✅ (D37).** 15 locations / 2 depths → **31 / 3**, with
+   Camp, Shrine, Merchant and Hazard node kinds, three hidden nodes, an elite (Grask) and the
+   first boss (Thornheart). **Realm Knowledge now unlocks five insights** — options, never
+   damage. Deeper pays rarer: average drop rarity 0.78 at depth 1, 1.75 at depth 3.
+   **Not balanced**, and the realm has never been seen running in the editor.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -143,5 +148,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**985** now, every raw material sourced) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**995** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

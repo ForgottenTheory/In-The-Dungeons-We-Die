@@ -1,0 +1,43 @@
+[
+  // The Dark Forest's own named enemies — the two ranks the loot system was built for and has
+  // never had an occupant of.
+  //
+  // ── RANK IS A TAG, AND THAT IS THE WHOLE MECHANISM ─────────────────────────────────────────
+  //
+  // `loot.shared.rank_spoils` gates on the tags "elite" and "boss", and every family table
+  // already carries it. Combat passes the enemy's resolved tags into the loot context, so
+  // tagging an actor here is the entire wiring — elite and boss spoils start paying the moment
+  // one of these dies, with no code path added.
+
+  {
+    // Depth 2's wall. A goblin champion with real armour behind it: the first fight in the game
+    // that a fresh character should lose, and the reason to come back with a better loadout
+    // rather than a better plan.
+    "id": "actor.goblin_warlord",
+    "name": "Grask, the Warlord",
+    "family": "family.goblin",
+    "role": "role.champion",
+    "tags": ["elite"],
+    "attribute_tweaks": { "strength": 4, "constitution": 4 },
+    "resource_tweaks": { "health": 40 },
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush", "move.iron_slash"],
+    "loot_table": "loot.actor.goblin_warlord"
+  },
+
+  {
+    // Depth 3, and the reason to go there. A plant-family boss in a forest realm is the point:
+    // everything the player learned fighting goblins is the wrong lesson. Thornheart resists
+    // the physical lane, shrugs off toxin — the goblin answer — and BURNS, which is a fact the
+    // realm has been teaching in its loot tables the whole way down.
+    "id": "actor.thornheart",
+    "name": "Thornheart, the Old Growth",
+    "family": "family.plant",
+    "role": "role.champion",
+    "tags": ["boss"],
+    "attribute_tweaks": { "strength": 5, "constitution": 6, "endurance": 4 },
+    "resource_tweaks": { "health": 120 },
+    "resolve": 300,
+    "moves": ["move.crash", "move.overhead_crush", "move.expose_weakness", "move.venom_bolt", "move.wither"],
+    "loot_table": "loot.actor.thornheart"
+  }
+]

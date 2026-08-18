@@ -1659,6 +1659,10 @@ public partial class GameRoot : Node
             RealmLocationType.Combat => _run.IsCleared(location.Id) ? null : $"Fight {ActorName(location.ActorId ?? string.Empty)}",
             RealmLocationType.Gather => "Gather here",
             RealmLocationType.Event => _run.IsCleared(location.Id) ? null : "Investigate",
+            RealmLocationType.Camp => _run.IsCleared(location.Id) ? null : "Rest here",
+            RealmLocationType.Shrine => _run.IsCleared(location.Id) ? null : "Attend the shrine",
+            RealmLocationType.Merchant => _run.IsCleared(location.Id) ? null : $"Trade ({location.Cost} coin)",
+            RealmLocationType.Hazard => null,
             _ => null,
         };
     }
@@ -1671,7 +1675,7 @@ public partial class GameRoot : Node
         var realm = _realms.GetById(realmId);
         _passiveRunner.Stop();
         Character.RestoreAll(); // rested and prepared before the expedition
-        _run = new RealmRun(realm, tier: 1);
+        _run = new RealmRun(realm, tier: 1, knowledge: Knowledge(realmId));
         _run.RunInventory.Changed += () => InventoryChanged?.Invoke();
         AddKnowledge(realmId, RealmTuning.KnowledgePerEnter);
         Emit($"[Realm] Entered {realm.Name} (Tier {_run.Tier}, Depth {_run.CurrentDepth}).");
@@ -1694,8 +1698,38 @@ public partial class GameRoot : Node
 
         if (isNew)
             AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerTravel);
+
+        CrossHazardIfAny();
         Emit($"[Realm] Travelled to {_run.CurrentLocation.Name}.");
         RealmChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Crossing a Hazard costs health, once. The cost is paid on ARRIVAL rather than as an
+    /// action, because a hazard is ground you are standing on — there is no "decline to be in
+    /// the bog". What Realm Knowledge buys is seeing it on the map beforehand, which turns it
+    /// from an ambush into a route choice.
+    /// </summary>
+    private void CrossHazardIfAny()
+    {
+        if (_run is null || Character is null)
+            return;
+
+        var here = _run.CurrentLocation;
+        if (here.Type != RealmLocationType.Hazard || _run.IsCleared(here.Id))
+            return;
+
+        Emit($"[Hazard] {here.EventText}");
+        var dealt = Character.TakeDamage(here.HazardDamage);
+        Emit($"[Hazard] {here.Name} costs you {dealt} health.");
+        _run.MarkCleared(here.Id);
+        AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerHazardCrossed);
+
+        if (Character.Health.IsDepleted)
+        {
+            Emit("[Realm] The ground finishes what it started. Everything unsecured is lost.");
+            EndRealmRun(died: true);
+        }
     }
 
     /// <summary>Performs the current location's primary action (fight / gather / investigate).</summary>
@@ -1751,6 +1785,66 @@ public partial class GameRoot : Node
                 RealmChanged?.Invoke();
                 break;
 
+            // A camp is the only way to spend safety instead of banking it: resting here costs
+            // nothing but the fact that you cannot rest here twice.
+            case RealmLocationType.Camp:
+                if (_run.IsCleared(location.Id))
+                {
+                    Emit("[Realm] You have already taken what rest this place offers.");
+                    return;
+                }
+                if (Character is null)
+                    return;
+
+                Emit($"[Camp] {location.EventText}");
+                foreach (var pool in new[] { Character.Health, Character.Stamina, Character.Mana })
+                {
+                    var restored = pool.Restore((int)Math.Round(pool.Max * location.RestoreFraction));
+                    if (restored > 0)
+                        Emit($"[Camp] Recovered {restored} {pool.Type}.");
+                }
+                _run.MarkCleared(location.Id);
+                RealmChanged?.Invoke();
+                break;
+
+            // A shrine pays in Realm Knowledge. It is the fastest way to learn a place, which is
+            // why it sits deep enough that reaching it is already a decision.
+            case RealmLocationType.Shrine:
+                if (_run.IsCleared(location.Id))
+                {
+                    Emit("[Realm] The shrine has nothing more to tell you.");
+                    return;
+                }
+                Emit($"[Shrine] {location.EventText}");
+                if (location.LootTableId is { Length: > 0 } shrineTable)
+                    GrantLoot(new[] { shrineTable }, location.Name, LootCircumstances());
+                _run.MarkCleared(location.Id);
+                AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerShrine);
+                RealmChanged?.Invoke();
+                break;
+
+            // The first gold sink. It spends UNSECURED coin — the coin you would lose by dying
+            // on the way out — so buying here is the extraction decision in miniature.
+            case RealmLocationType.Merchant:
+                if (_run.IsCleared(location.Id))
+                {
+                    Emit("[Realm] She has nothing else you can afford to want.");
+                    return;
+                }
+                if (_run.RunInventory.Gold < location.Cost)
+                {
+                    Emit($"[Trade] {location.Cost} coin, and you are carrying {_run.RunInventory.Gold}. She waits.");
+                    return;
+                }
+
+                _run.RunInventory.TrySpendGold(location.Cost);
+                Emit($"[Trade] {location.EventText}");
+                if (location.LootTableId is { Length: > 0 } stock)
+                    GrantLoot(new[] { stock }, location.Name, LootCircumstances());
+                _run.MarkCleared(location.Id);
+                RealmChanged?.Invoke();
+                break;
+
             default:
                 Emit("[Realm] Nothing to do here — travel onward.");
                 break;
@@ -1785,6 +1879,71 @@ public partial class GameRoot : Node
         EndRealmRun(died: false);
     }
 
+    /// <summary>
+    /// What Realm Knowledge has actually bought, rendered for the player.
+    ///
+    /// <para>This is the whole payoff of the track and the reason it grants no damage: every
+    /// line here is <b>information the realm was always hiding</b>, not a number going up. A
+    /// party at 42 knowledge fights exactly as hard as a party at 0 and makes far better
+    /// decisions, which is the difference the GDD asks for (§11.4).</para>
+    /// </summary>
+    private string KnowledgeIntel(RealmRun run)
+    {
+        var intel = new StringBuilder();
+
+        if (run.Knows(RealmInsight.EnemyWeaknesses)
+            && run.CurrentLocation.ActorId is { Length: > 0 } actorId
+            && _actors.TryGetById(actorId, out var actor))
+        {
+            var resolved = ActorResolver.Resolve(actor, _enemyFamilies, _enemyRoles, _aiProfiles);
+            var weakTo = resolved.Vulnerable.Where(v => v.Value > 1.0).Select(v => v.Key);
+            var shrugsOff = resolved.Resistances.Where(r => r.Value > 0).Select(r => $"{r.Key} {r.Value:P0}");
+
+            intel.AppendLine($"Known — {resolved.Name}: weak to {Join(weakTo, "nothing in particular")}; "
+                + $"resists {Join(shrugsOff, "nothing")}.");
+        }
+
+        if (run.Knows(RealmInsight.Hazards))
+        {
+            var hazards = run.KnownAtCurrentDepth()
+                .Where(l => l.Type == RealmLocationType.Hazard && !run.IsCleared(l.Id))
+                .Select(l => $"{l.Name} ({l.HazardDamage})");
+            if (hazards.Any())
+                intel.AppendLine($"Known — dangerous ground at this depth: {string.Join(", ", hazards)}.");
+        }
+
+        if (run.Knows(RealmInsight.RichNodes))
+        {
+            var rich = run.KnownAtCurrentDepth()
+                .Where(l => l.Type == RealmLocationType.Gather && !string.IsNullOrEmpty(l.LootTableId))
+                .Select(l => l.Name);
+            if (rich.Any())
+                intel.AppendLine($"Known — worth working here: {string.Join(", ", rich)}.");
+        }
+
+        if (run.Knows(RealmInsight.HiddenRoutes))
+        {
+            var hidden = run.KnownAtCurrentDepth().Where(l => l.Hidden).Select(l => l.Name);
+            if (hidden.Any())
+                intel.AppendLine($"Known — ways nobody marked: {string.Join(", ", hidden)}.");
+        }
+
+        var exits = run.KnownExtractions();
+        if (exits.Count > 0)
+            intel.AppendLine($"Known — ways out at this depth: {string.Join(", ", exits.Select(l => l.Name))}.");
+
+        if (RealmKnowledgeLevels.Next(run.Knowledge) is { } next)
+            intel.AppendLine($"Next insight at {next.Required} knowledge: {DescribeInsight(next.Insight)}.");
+
+        return intel.ToString();
+
+        static string Join(IEnumerable<string> values, string whenEmpty)
+        {
+            var list = values.ToList();
+            return list.Count == 0 ? whenEmpty : string.Join(", ", list);
+        }
+    }
+
     public string RealmReport()
     {
         if (_run is null)
@@ -1804,6 +1963,7 @@ public partial class GameRoot : Node
         report.AppendLine($"Location: {location.Name} [{location.Type}]{cleared}");
         report.AppendLine($"Party HP: {healthText}    Knowledge: {Knowledge(run.Realm.Id)}");
         report.AppendLine($"Unsecured loot at risk: {unsecured} item(s){DescribeCoin(run.RunInventory.Gold)}");
+        report.Append(KnowledgeIntel(run));
         if (_encounter.IsActive)
             report.AppendLine("In combat — see the Combat panel.");
         return report.ToString().TrimEnd();
@@ -1835,8 +1995,30 @@ public partial class GameRoot : Node
         InventoryChanged?.Invoke();
     }
 
-    private void AddKnowledge(string realmId, int amount) =>
-        _realmKnowledge[realmId] = Knowledge(realmId) + amount;
+    private void AddKnowledge(string realmId, int amount)
+    {
+        var before = Knowledge(realmId);
+        _realmKnowledge[realmId] = before + amount;
+
+        // A run holds its own copy so hidden routes can open MID-RUN — the shortcut you earn on
+        // the way down is one you can take on the way back.
+        if (_run is not null && _run.Realm.Id == realmId)
+            _run.Knowledge = _realmKnowledge[realmId];
+
+        foreach (var insight in RealmKnowledgeLevels.Unlocked(_realmKnowledge[realmId]))
+            if (!RealmKnowledgeLevels.Reveals(before, insight))
+                Emit($"[Knowledge] You have learned this place well enough to {DescribeInsight(insight)}.");
+    }
+
+    private static string DescribeInsight(RealmInsight insight) => insight switch
+    {
+        RealmInsight.EnemyWeaknesses => "read what lives here",
+        RealmInsight.Hazards => "see the dangerous ground before you stand on it",
+        RealmInsight.RichNodes => "tell the rich workings from the poor ones",
+        RealmInsight.HiddenRoutes => "find the ways nobody marked",
+        RealmInsight.ExtractionRoutes => "always know where the way out is",
+        _ => insight.ToString(),
+    };
 
     // --- Save ---------------------------------------------------------------
 

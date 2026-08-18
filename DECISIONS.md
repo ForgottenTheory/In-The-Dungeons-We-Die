@@ -303,3 +303,24 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **A latent bug this surfaced.** The loot file already carried a trailing comma inside `loot.family.beast`'s `chanceDrops`, tolerated only because the loader runs with `AllowTrailingCommas`. Appending to that array produced `,,` and broke the parse. Both the double comma and every trailing comma in the file are now gone.
 
 **Consequences:** the library is fully reachable for the first time. **None of it is balanced** — 348 actions carry formula-derived intervals and XP, and the 0.12 anatomy drop chances are a first guess.
+
+### D37 — The Dark Forest becomes a place, and Realm Knowledge finally buys something
+*(Adopted 2026-08-18, Phase 6. Realm: `game/data/realms/dark_forest.json`; insights: `core/Realms/RealmInsight.cs`.)*
+
+**The Dark Forest goes 15 locations / 2 depths → 31 locations / 3 depths**, and carries every node kind the architecture has. Four new `RealmLocationType` members — **Camp, Shrine, Merchant, Hazard** — plus a `Hidden` flag. Adding kinds was cheap and stays cheap: a run is transient and never persisted, so a location type is content, not a save key.
+
+**Realm Knowledge unlocks options, never damage.** Five insights at 6 / 12 / 20 / 30 / 42: enemy weaknesses → hazards → rich nodes → **hidden routes** → extraction routes. A percentage would have made Knowledge a second power curve and quietly made the realm easier for reasons the player cannot see. Instead the realm stays exactly as lethal and the player stops walking into it blind. **The order is the design; the numbers are a first pass.**
+
+**Hidden nodes are the payoff, and they are load-bearing rather than bonuses.** Three of them: the cache behind the depth-1 thornwall, the stump off the depth-2 kill site, and the back door out of the boss room. `RealmRun.IsReachable` is the single rule for both "can I see it" and "can I walk there", so the map and the movement can never disagree. Knowledge is held **on the run** and updated live, so a shortcut earned on the way down is one you can take on the way back.
+
+**Three sub-rulings on the new node kinds:**
+
+1. **A camp spends safety instead of banking it** — restores a fraction of every pool, once, so the decision is "use it now or carry it deeper".
+2. **The merchant spends UNSECURED coin.** It is the first gold sink in the game, and it takes the coin you would lose by dying on the way out — which makes buying the extraction decision in miniature. It sells **inputs and knowledge only, never finished equipment**, because the whole identity is that you craft your own (D28).
+3. **A hazard is paid on arrival, not as an action.** There is no "decline to be in the bog". What Knowledge buys is seeing it on the map first, which turns an ambush into a route choice.
+
+**The rank seam is finally occupied.** `loot.shared.rank_spoils` has gated on the `elite`/`boss` tags since the loot pass, carried by every family table, with **no actor wearing one**. Grask, the Warlord (elite, depth 2) and Thornheart, the Old Growth (boss, depth 3) are the first — and tagging them was the entire wiring, because combat already passes resolved actor tags into the loot context. Thornheart is deliberately `family.plant` in a goblin realm: everything learned on the way down is the wrong lesson.
+
+**A test I got wrong, and what it taught.** `DeeperGroundPaysBetter` first measured *distinct drops reachable* and failed — depth 1 has more nodes and nests into the broad shared tables, so the shallows won on breadth while paying in bark and scrap. **Breadth is not reward.** Rewritten to measure average rarity: depth 1 scores 0.78, depth 3 scores 1.75.
+
+**Consequences:** four validator rules (a camp with no restore, a merchant with no price or stock, a shrine with no words, a hazard that costs nothing — each loads cleanly and does nothing when stood on), plus one that refuses a hidden node no visible node connects to. **Nothing is balanced**: hazard damage, restore fractions, the 40-coin price and all five knowledge thresholds are first guesses.

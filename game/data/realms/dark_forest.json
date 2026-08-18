@@ -1,16 +1,58 @@
 {
+  // ── THE DARK FOREST — the reference Realm ───────────────────────────────────────────────────
+  //
+  // Every other realm in the roster is a name and a walkable graph. This one is the proof that
+  // the architecture makes a place worth being in, and future realms should be content additions
+  // against these same node kinds rather than another architecture pass.
+  //
+  // ── THE SHAPE, AND WHY ──────────────────────────────────────────────────────────────────────
+  //
+  // Three depths, and each one asks the extraction question in a harder form:
+  //
+  //   Depth 1  safe-ish. TWO ways out (the forest edge and the descent), so leaving is a real
+  //            choice and not just "the run ended". Teaches the map.
+  //   Depth 2  the wall. An ELITE, a merchant that only takes coin you have not banked yet, a
+  //            shrine, and a hazard between you and the good ground. Extraction is one node,
+  //            and it is not next to the descent.
+  //   Depth 3  the payoff. A BOSS, the two richest gathering nodes in the game, and an
+  //            extraction you have to walk back to past everything that nearly killed you.
+  //
+  // ── WHAT REALM KNOWLEDGE CHANGES ────────────────────────────────────────────────────────────
+  //
+  // Three nodes here are `hidden` and simply do not exist for a party that has not learned the
+  // routes (RealmInsight.HiddenRoutes, 30 knowledge). They are not bonuses bolted on — they are
+  // the shortcut past the depth-2 hazard, the cache at depth 1, and the back way to the boss.
+  // The twentieth run walks a different map from the first, which is the whole point.
+  //
+  // Hazards are visible on the map at 12 knowledge and ambushes before it. Rich nodes are marked
+  // at 20. Enemy weaknesses read at 6. Where the exits are reads at 42.
+
   "id": "realm.dark_forest",
   "name": "The Dark Forest",
-  "supportedTiers": [1],
+  "supportedTiers": [1, 2],
   "tags": ["forest", "fey", "toxin"],
   "locations": [
+
+    // ══ DEPTH 1 — learn the place ═════════════════════════════════════════════════════════════
     {
       "id": "loc.entrance", "name": "Camp Entrance", "type": "Entrance", "depth": 1,
       "connections": ["loc.forest_path"]
     },
     {
       "id": "loc.forest_path", "name": "Forest Path", "type": "Travel", "depth": 1,
-      "connections": ["loc.entrance", "loc.old_grove", "loc.goblin_camp", "loc.iron_vein"]
+      "connections": ["loc.entrance", "loc.old_grove", "loc.goblin_camp", "loc.iron_vein", "loc.forest_edge", "loc.hunters_camp"]
+    },
+    {
+      // The first way out, one step from the entrance. Cheap to reach on purpose: extraction
+      // should be a decision you keep making, not a thing that happens to you at the end.
+      "id": "loc.forest_edge", "name": "The Forest Edge", "type": "Extraction", "depth": 1,
+      "connections": ["loc.forest_path"]
+    },
+    {
+      "id": "loc.hunters_camp", "name": "Hunter's Camp", "type": "Camp", "depth": 1,
+      "connections": ["loc.forest_path", "loc.thornwall"],
+      "restore_fraction": 0.5,
+      "eventText": "Cold ashes, a stripped bedroll, and enough shelter to close your eyes for an hour."
     },
     {
       "id": "loc.old_grove", "name": "Old Grove", "type": "Gather", "depth": 1,
@@ -39,6 +81,21 @@
       "loot_table": "loot.node.wagon_wreck"
     },
     {
+      "id": "loc.thornwall", "name": "The Thornwall", "type": "Hazard", "depth": 1,
+      "connections": ["loc.hunters_camp", "loc.poachers_cache"],
+      "hazard_damage": 6,
+      "eventText": "Blackthorn grown across the deer path, waist high and hooked. You can push through it. It will cost you."
+    },
+    {
+      // HIDDEN. The reward for learning the forest: the poachers' cache is the best thing at
+      // depth 1 and sits behind a hazard nobody would push through without a reason.
+      "id": "loc.poachers_cache", "name": "Poacher's Cache", "type": "Event", "depth": 1,
+      "hidden": true,
+      "connections": ["loc.thornwall"],
+      "eventText": "Under the flat stone, exactly where the scratched mark on the elm said it would be.",
+      "loot_table": "loot.node.poachers_cache"
+    },
+    {
       "id": "loc.ruins", "name": "Crumbling Ruins", "type": "Event", "depth": 1,
       "connections": ["loc.old_grove", "loc.goblin_camp", "loc.iron_vein", "loc.descent"],
       "eventText": "You pry open a moss-covered chest hidden in the ruins.",
@@ -49,9 +106,25 @@
       "connections": ["loc.ruins", "loc.wagon_wreck"]
     },
 
+    // ══ DEPTH 2 — the wall ════════════════════════════════════════════════════════════════════
     {
       "id": "loc.deep_path", "name": "Deep Path", "type": "Entrance", "depth": 2,
-      "connections": ["loc.dark_grove", "loc.brute_warren", "loc.hunting_blind"]
+      "connections": ["loc.dark_grove", "loc.brute_warren", "loc.hunting_blind", "loc.old_shrine"]
+    },
+    {
+      "id": "loc.old_shrine", "name": "The Leaning Shrine", "type": "Shrine", "depth": 2,
+      "connections": ["loc.deep_path", "loc.hedge_trader"],
+      "eventText": "Someone kept this clean for a long time, and then stopped. You leave it better than you found it, and the forest tells you something.",
+      "loot_table": "loot.event.old_shrine"
+    },
+    {
+      // The first gold sink in the game. Coin you have NOT banked yet — which makes it a
+      // genuine extraction decision rather than a shop.
+      "id": "loc.hedge_trader", "name": "The Hedge Trader", "type": "Merchant", "depth": 2,
+      "connections": ["loc.old_shrine", "loc.blight_seep"],
+      "cost": 40,
+      "eventText": "She does not ask where you have been and does not say where she is going.",
+      "loot_table": "loot.merchant.hedge_trader"
     },
     {
       // Hunting, level 1. Brings back carcasses; Beast Lore is still the only thing that opens
@@ -81,13 +154,92 @@
     },
     {
       "id": "loc.ravaged_kill", "name": "A Ravaged Kill", "type": "Event", "depth": 2,
-      "connections": ["loc.brute_warren", "loc.deep_extraction"],
+      "connections": ["loc.brute_warren", "loc.deep_extraction", "loc.hollow_stump"],
       "eventText": "Something large was killed here, and something larger opened it up. The carcass is still warm.",
       "loot_table": "loot.event.ravaged_kill"
     },
     {
+      // HIDDEN. A quiet node off the kill site — the reward for knowing the ground.
+      "id": "loc.hollow_stump", "name": "The Hollow Stump", "type": "Gather", "depth": 2,
+      "hidden": true,
+      "connections": ["loc.ravaged_kill"],
+      "professionActionId": "action.gather_sageleaf",
+      "loot_table": "loot.node.hollow_stump"
+    },
+    {
+      "id": "loc.blight_seep", "name": "The Blight Seep", "type": "Hazard", "depth": 2,
+      "connections": ["loc.hedge_trader", "loc.warlord_camp"],
+      "hazard_damage": 12,
+      "eventText": "The ground here weeps something that kills what it touches. There is no way around it that does not take an hour you do not have."
+    },
+    {
+      // THE ELITE. Behind a hazard, off the main route, and the gate to depth 3 — so reaching
+      // Grask is itself a decision, made with unsecured pockets and no exit nearby.
+      "id": "loc.warlord_camp", "name": "The Warlord's Camp", "type": "Combat", "depth": 2,
+      "connections": ["loc.blight_seep", "loc.deep_descent"],
+      "actorId": "actor.goblin_warlord"
+    },
+    {
       "id": "loc.deep_extraction", "name": "Extraction Portal", "type": "Extraction", "depth": 2,
       "connections": ["loc.dark_grove", "loc.brute_warren", "loc.hexer_hollow", "loc.ravaged_kill"]
+    },
+    {
+      "id": "loc.deep_descent", "name": "The Root Stair", "type": "Descent", "depth": 2,
+      "connections": ["loc.warlord_camp"]
+    },
+
+    // ══ DEPTH 3 — the payoff ══════════════════════════════════════════════════════════════════
+    {
+      "id": "loc.root_hollow", "name": "Root Hollow", "type": "Entrance", "depth": 3,
+      "connections": ["loc.rootwell", "loc.witchwood_stand", "loc.bone_orchard", "loc.root_extraction"]
+    },
+    {
+      "id": "loc.rootwell", "name": "The Rootwell", "type": "Gather", "depth": 3,
+      "connections": ["loc.root_hollow", "loc.deep_camp"],
+      "professionActionId": "action.chop_oak",
+      "loot_table": "loot.node.rootwell"
+    },
+    {
+      "id": "loc.witchwood_stand", "name": "The Witchwood Stand", "type": "Gather", "depth": 3,
+      "connections": ["loc.root_hollow", "loc.deep_camp", "loc.thornheart_heart"],
+      "professionActionId": "action.chop_oak",
+      "loot_table": "loot.node.witchwood_stand"
+    },
+    {
+      "id": "loc.bone_orchard", "name": "The Bone Orchard", "type": "Event", "depth": 3,
+      "connections": ["loc.root_hollow", "loc.creeping_dark"],
+      "eventText": "Trees grown through a great many ribcages, and grown well. Whatever it fed on, it is still here.",
+      "loot_table": "loot.event.bone_orchard"
+    },
+    {
+      "id": "loc.deep_camp", "name": "The Last Dry Ground", "type": "Camp", "depth": 3,
+      "connections": ["loc.rootwell", "loc.witchwood_stand", "loc.deep_way_out"],
+      "restore_fraction": 0.65,
+      "eventText": "A ring of stones someone else laid, a long time ago. They did not come back for them."
+    },
+    {
+      "id": "loc.creeping_dark", "name": "The Creeping Dark", "type": "Hazard", "depth": 3,
+      "connections": ["loc.bone_orchard", "loc.thornheart_heart"],
+      "hazard_damage": 20,
+      "eventText": "The light stops working here in a way you cannot argue with, and something in it takes an interest."
+    },
+    {
+      // THE BOSS. Two ways in — through the hazard, or the long way past the witchwood — so
+      // even the last fight is a route decision.
+      "id": "loc.thornheart_heart", "name": "The Heartwood", "type": "Combat", "depth": 3,
+      "connections": ["loc.creeping_dark", "loc.witchwood_stand", "loc.deep_way_out"],
+      "actorId": "actor.thornheart"
+    },
+    {
+      // HIDDEN. The back door out of the boss room — the difference between a clean escape and
+      // walking the whole depth again with everything you just earned.
+      "id": "loc.deep_way_out", "name": "The Split Trunk", "type": "Extraction", "depth": 3,
+      "hidden": true,
+      "connections": ["loc.deep_camp", "loc.thornheart_heart"]
+    },
+    {
+      "id": "loc.root_extraction", "name": "The Long Climb", "type": "Extraction", "depth": 3,
+      "connections": ["loc.root_hollow"]
     }
   ]
 }

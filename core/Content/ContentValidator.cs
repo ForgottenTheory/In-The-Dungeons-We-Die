@@ -1369,7 +1369,40 @@ public static class ContentValidator
                         if (string.IsNullOrEmpty(loc.EventText) && string.IsNullOrEmpty(loc.LootTableId))
                             problems.Add(new("realms", $"{realm.Id}/{loc.Id} is an Event node with no text and no loot."));
                         break;
+
+                    // Each of the Phase 6 kinds is defined by ONE number or reference. Without
+                    // it the node loads, sits on the map, and does nothing when stood on — the
+                    // failure mode that costs a playtest because nothing errors.
+                    case RealmLocationType.Camp:
+                        if (loc.RestoreFraction is <= 0 or > 1)
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is a Camp with restore_fraction {loc.RestoreFraction}; must be in (0, 1]."));
+                        break;
+
+                    case RealmLocationType.Shrine:
+                        if (string.IsNullOrEmpty(loc.EventText))
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is a Shrine with no text — the blessing is the words."));
+                        break;
+
+                    case RealmLocationType.Merchant:
+                        if (loc.Cost <= 0)
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is a Merchant charging {loc.Cost}; goods must cost coin."));
+                        if (string.IsNullOrEmpty(loc.LootTableId))
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is a Merchant with no stock table."));
+                        break;
+
+                    case RealmLocationType.Hazard:
+                        if (loc.HazardDamage <= 0)
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is a Hazard dealing {loc.HazardDamage}; crossing must cost something."));
+                        break;
                 }
+
+                // A hidden node nothing visible connects to can never be reached, even once
+                // Knowledge reveals it — it would appear on the map behind a door with no wall.
+                if (loc.Hidden
+                    && !realm.Locations.Any(other =>
+                        !other.Hidden && other.Depth == loc.Depth && other.Connections.Contains(loc.Id)))
+                    problems.Add(new("realms",
+                        $"{realm.Id}/{loc.Id} is Hidden but no visible node at its depth connects to it — revealing it would not help."));
 
                 if (loc.LootTableId is { Length: > 0 } nodeLoot && !lootTables.Contains(nodeLoot))
                     problems.Add(new("realms", $"{realm.Id}/{loc.Id} references unknown loot table '{nodeLoot}'."));
