@@ -115,6 +115,10 @@ coherent run.
    **Weapon list complete ✅ (D34 addendum).** 23 forms, **16 weapons**; every name in the
    design list is placed. Six more archetypes — Halberd, Shortsword, Javelin, Sling, Whip,
    Knuckles — each earning its place by what it refuses to read.
+   **Content library ✅ (D35).** Materials 559 → **1448** (582 plants, 307 ores/gems) and realms
+   1 → **164**. Generated from name lists with the anti-tiering rule encoded in the generator and
+   asserted by test. Realms ship as walkable rosters with **no encounters wired** — deliberate.
+   **Not gatherable and not balanced**: no profession action produces the new materials yet.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -135,5 +139,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**971** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**984** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

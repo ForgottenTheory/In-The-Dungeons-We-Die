@@ -260,3 +260,21 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **Two claims I wrote were false and the tests caught both.** The whip was first authored as out-reading every weapon on flexibility (the Warspear ties it on total) and then as "the hardest any form reads any property" (the Maul reads mass at 1.40). The fix was to narrow the claim to what is true rather than inflate a number to match the prose — a stat weight exists to make the item behave, not to win an argument in a comment.
 
 **Consequences:** 23 forms, 16 of them weapons; every name in the design list is placed. Four new archetype moves (Hew, Flurry, Lash, Pummel). Nunchaku became a Flail variant rather than an archetype, because mechanically that is what it is.
+
+### D35 — The library triples, and the anti-tiering rule becomes code
+*(Adopted 2026-08-17. Counts: `docs/game-overview.md` §18, `docs/crafting-overview.md` §3.)*
+
+**The expansion:** materials 559 → **1448** (582 plants, 307 ores/gems/stones), and realms 1 → **164**.
+
+**Generated, and said so plainly.** ~890 materials cannot be hand-authored in one pass, so they were produced by a keyword generator from the supplied name lists. That is a defensible way to get breadth and a terrible way to get balance, and the difference is stated here rather than discovered later: **every property in the new half is a first guess.**
+
+**The generator encodes two CLAUDE.md rules rather than hoping for them:**
+
+1. **Never MMO tiering.** A keyword shifts the property *profile*, it never scales it. Fire adds heat, Frost adds cold, Storm adds charge, Void adds arcane + instability. "Ancient / Elder / King" adds **harvest_resistance** — rare because it is hard to reach, not because its numbers are bigger. A `[Theory]` asserts the claim from the other side: anything named Frost carries cold, anything named Venom carries toxicity. A name is a claim about what a material *does*.
+2. **Mundane-majority.** Both lists split at a `#fantasy` marker; everything above it is a real plant or mineral and receives only *physical* modifiers. This was not cosmetic — before the split, Elderberry was read as "elder" (very_rare) and Rosemary as "rose" (a flower). A test pins that the real-world half carries no arcane and no resonance, because that contrast is what makes Voidleaf legible.
+
+**Realms ship as a roster, not as content.** Each of the 163 new realms is a name, a biome tag set, a tier band and a walkable two-depth graph — entrance → fork → descent, with a way out at each depth. **No combat or gather nodes**, per the instruction to leave encounters alone: those need actors and profession actions, and a node referencing neither cannot go stale. The Dark Forest keeps its hand-authored wiring; the generator refuses to shadow an existing realm id.
+
+**What the tests found.** Reachability had to be asserted *per depth*, not per realm: descending is not an edge, it drops the party at `EntranceForDepth(depth + 1)`, so a whole-realm walk reported all seven of the Dark Forest's depth-2 nodes as stranded. The model was wrong, not the content — and the corrected rule now also proves every depth has its own way out.
+
+**Consequences:** the new materials are **not gatherable** — no profession action produces them, and wiring ~890 into the profession ladders is its own pass. Nothing in the library is balanced. `ProfessionEcosystemTests` pins the count so the docs cannot drift from it again.

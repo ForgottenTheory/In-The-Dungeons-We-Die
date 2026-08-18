@@ -225,7 +225,7 @@ bonuses are declared and displayed but nothing reads them yet.
 
 # 6. Materials — the ingredient set ✅ BUILT
 
-**559 material definitions** on a **0–100 property scale**.
+**1448 material definitions** on a **0–100 property scale**.
 
 - Authored biome-by-biome as a *design lens* — there is deliberately **no biome field**.
 - **Mundane-majority** (oak, iron, salt, spring water), so the rare things stand out by their
@@ -775,10 +775,15 @@ Realms are **spatial location graphs**, closer to For The King 2 than to Slay th
 selection. Movement is adjacency-gated; **Depth** measures progression within a run; **Tiers**
 are escalating versions of a realm.
 
-**One realm built: The Dark Forest** — 15 locations across 2 depths: entrance, travel, **five**
+**164 realms ship; one is fully wired.** The Dark Forest is the built one — 15 locations across 2 depths: entrance, travel, **five**
 gathering nodes (oak grove, iron vein, overturned wagon, dark grove, hunting blind), **three**
 combat nodes (raider, brute, hexer), **two** event nodes (the ruins chest, a ravaged kill), a
 descent, an extraction portal. Every node past the plain travel ones has its own loot table.
+
+The other 163 are the **roster**: a name, a biome tag set, a tier band and a walkable two-depth
+graph (entrance → fork → descent, with a way out at each depth). They deliberately carry **no
+combat or gather nodes** — those need actors and profession actions, and wiring encounters is a
+later pass. What ships is the map, not the ambush.
 
 **Deliberate direction: make the Dark Forest much richer before adding a second realm.** Once one
 realm is genuinely good, adding realms is a content problem instead of repeatedly rebuilding
@@ -917,19 +922,19 @@ at startup, never mid-play.
 
 | Authored as data | Count |
 |---|---|
-| Materials | 559 |
+| Materials | 1448 |
 | Properties (with glyph + gloss) | 21 |
-| Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 3 |
+| Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 23 |
 | Modifiers (affixes) | 44 |
-| Moves / Move modifiers / Techniques | 27 / 1 / 19 |
+| Moves / Move modifiers / Techniques | 43 / 1 / 19 |
 | Statuses | 28 |
 | Modifier keys | 51 |
 | Bases / Prefixes / Suffixes / Species / Name formats | 15 / 25 / 50 / 3 / 9 |
 | Professions / Profession actions / Opportunities | 20 / 194 / 32 |
 | Training obstacles (the Agility course) | 12 |
 | Hideout stations | 20 |
-| Enemy families / roles / AI profiles / actors | 1 / 3 / 3 / 3 |
-| Realms / Equipment / Consumables | 1 / 4 / 1 |
+| Enemy families / roles / AI profiles / actors | 26 / 7 / 7 / 481 |
+| Realms / Equipment / Consumables | 164 / 4 / 1 |
 
 **The dividing line:** *code owns structure and closed vocabularies; data owns content
 instances.* Damage types, item types, roles and tag families are code. Materials, moves, statuses,

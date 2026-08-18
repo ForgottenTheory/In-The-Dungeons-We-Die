@@ -32,7 +32,7 @@ Six layers. Each is a separate mechanism; each hands its output to the next.
 
 ```
   ┌─ 1. MATERIALS ────────────────────────────────────────────────────── ✅ BUILT
-  │    480 definitions · 21 properties on a 0–100 scale · family:value tags
+  │    1448 definitions · 21 properties on a 0–100 scale · family:value tags
   │    Gathered by professions, dropped by realms, or produced by layer 2.
   ▼
   ┌─ 2. THE BENCH — the reaction engine ──────────────────────────────── ✅ BUILT
@@ -74,10 +74,12 @@ Six layers. Each is a separate mechanism; each hands its output to the next.
 
 # 3. Layer 1 — materials, the input ✅
 
-**480 definitions** across nine category files in `game/data/materials/`:
+**1448 definitions** across eighteen category files in `game/data/materials/`:
 
 | File | Count | |
 |---|---:|---|
+| `flora_expanded.json` | 582 | the plant expansion — herbs, roots, vines, fruit, wood, and their supernatural halves |
+| `minerals_expanded.json` | 307 | the ore/gem expansion — ores, crystals, gems, and the arcane stones |
 | `fauna.json` | 114 | creature parts — hide, fur, meat, bone, fang, blood |
 | `flora.json` | 108 | |
 | `minerals.json` | 84 | |
@@ -85,8 +87,9 @@ Six layers. Each is a separate mechanism; each hands its output to the next.
 | `fungal.json` | 45 | |
 | `elemental.json` | 36 | the rare property-profile spikes |
 | `processed.json` | 31 | ingots, leather, planks |
-| `byproducts.json` | 4 | Slag · Cinders · Dross · Residue |
-| `prepared.json` | 4 | `form:meal` / `form:tincture` |
+| `components.json` | 24 | |
+| `reagents.json` | 13 | |
+| the rest | 55 | knowledge · runes · carcasses · salvage · seeds · prepared · byproducts |
 
 Authored **biome-by-biome as a design lens** — there is deliberately no biome field. Deliberately
 **mundane-majority**, so the rare things stand out by their property *combination*, not by tier.
