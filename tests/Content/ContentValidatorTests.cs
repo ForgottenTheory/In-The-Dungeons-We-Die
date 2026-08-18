@@ -461,7 +461,7 @@ public class ContentValidatorTests
     public void Equipment_ArmorWithoutArmorBlock_IsFlagged()
     {
         var content = ValidBaseline();
-        content.Equipment.Add(new EquipmentDefinition { Id = "equip.bad", Slot = EquipmentSlot.Armor, Armor = null });
+        content.Equipment.Add(new EquipmentDefinition { Id = "equip.bad", Slot = EquipmentSlot.Body, Armor = null });
         AssertHasProblem(content, "equipment", "equip.bad");
     }
 
@@ -905,7 +905,9 @@ public class ContentValidatorTests
         {
             Id = "form.plank",
             Name = "Plank",
-            Slots = new() { ["body"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
+            Type = EquipmentSlot.Body,
+            Tags = new[] { "armor" },
+            Slots = new() { ["shell"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
         });
         content.Stations.Add(Station(
             craftingActions: new[] { "process.test" },
@@ -979,7 +981,9 @@ public class ContentValidatorTests
         {
             Id = "form.plank",
             Name = "Plank",
-            Slots = new() { ["body"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
+            Type = EquipmentSlot.Body,
+            Tags = new[] { "armor" },
+            Slots = new() { ["shell"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
         });
         content.Stations.Add(Station());
 

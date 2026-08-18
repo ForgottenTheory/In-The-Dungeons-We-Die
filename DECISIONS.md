@@ -188,3 +188,24 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **Why a drop table is not just more `bonusOutputs`.** Both exist on a profession action and mean different things: a bonus output is *more of the same work* and scales with mastery and active performance — a progression lever; a drop table is *something else entirely*, does not scale, and expresses weights, ranges, nesting and conditions. Keeping both is one concept each rather than one concept overloaded.
 
 **Consequences:** `ActorDefinition.LootItemId` and `RealmLocationDefinition.RewardItemId`/`RewardQuantity` are deleted (both were M5 placeholders). The Dark Forest grew five nodes so the tables have somewhere to live. `game/data/loot_tables/` ships 34 tables and **zero new materials** — the 559-material library already had the whole ecology, which is the strongest evidence the profession pass got the material set right.
+
+### D32 — Seven slots, and the body slot is called Body
+*(Adopted 2026-08-17, the Phase 4 equipment-breadth pass. Forms table: `docs/game-overview.md` §9.)*
+
+**The expansion:** `EquipmentSlot` grows from `Weapon`/`Armor` to **Weapon · Offhand · Head · Body · Hands · Feet · Trinket**, and `forms.json` from three forms to **eight**. Fabrication itself is untouched — slots, apertures, stat maps, dormancy, projection, genome and modifier rolls all run exactly as before. This is breadth over an existing engine, not a redesign.
+
+**Four sub-rulings:**
+
+1. **`Armor` → `Body`, with a real migration.** The torso slot's name stopped being true the moment a helm existed — a helm is armour too. Slot names are save keys and content fields, so this is the project's **first save migration** (v9): `SaveMapper.TryReadSlot` maps the legacy string, for both worn equipment and fabricated archetypes, and `EquipmentSlots.LegacyBodySlotName` is the only place the old name survives. **Why pay for it:** without it a v8 save silently drops whatever the player was wearing, and with it the slot vocabulary is coherent forever. **Rejected:** keeping `Armor` as the body slot (one slot named after its category while six are named after body locations — the "one name per concept" mistake, permanent, in the vocabulary a reader meets first).
+
+2. **Armour is the sum of the loadout, and coverage is authored.** `EquipmentResolver.ResolveWornArmor` adds armour and per-lane resistance across every worn piece, raw and uncapped (the cap stays in the pipeline, D-05a). How much a piece contributes is **the weight its own `stat_map` gives hardness** — a vest reads harder than gauntlets — not a per-slot multiplier in code. **Rejected:** a `CoverageBySlot` table (a second balance surface in C#, invisible from the form you are actually editing).
+
+3. **Armour-bearing is stated, not inferred.** `EquipmentSlots.ArmorBearing` names the five slots that mitigate. Deriving it as "not a weapon" would have quietly turned every trinket into a breastplate the moment the Trinket slot existed.
+
+4. **A form must read something no other form reads.** Enforced by test, not convention. The Focus is the extreme case and the reason the rule is worth stating: it is the only form whose `stat_map` reads `resonance`, which is what gives ley crystal, runes and mana prisms anywhere to be excellent. Delete that one read and every resonant material in the game becomes decoration. **Corollary:** the Buckler and the Longsword read the same two properties and that is fine — a form is distinguished by what it reads *or* how it is built, and one is a single component while the other is three.
+
+**Four new validation rules**, each catching a form that loads cleanly and is still broken: mass shares must sum to 1; every slot gate must be satisfiable by some shipped material; a weapon must grant moves (since E4 a weapon *is* its moves); and a form must carry the tag its modifier pool gates on (`weapon`/`armor`/`shield`) or it rolls nothing and looks merely unlucky.
+
+**The trinket needed no new affix content.** Nine shipped modifier families carry no `forms_any` gate at all — resources, regeneration, effort — and those are exactly a focus's identity. Widening existing affixes was available and declined: the pipeline was to be preserved, and it turned out to already say the right thing.
+
+**Consequences:** a full head-to-foot loadout is fabricable and pinned by test; five armour pieces instead of one means total mitigation rises sharply, which is a **balance** question and stays with the parked backlog. `ItemType` still reports a trinket as `Armor` for inventory routing — whether a piece *mitigates* is `EquipmentSlots.GrantsArmor`'s question, never `ItemType`'s.

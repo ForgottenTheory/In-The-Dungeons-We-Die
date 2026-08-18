@@ -1,7 +1,7 @@
 {
   "id": "equip.iron_armor",
   "name": "Iron Armor",
-  "slot": "Armor",
+  "slot": "Body",
   "tags": ["armor", "metal"],
   "armor": { "armor": 5, "resistances": { "physical": 0.15 } },
   "properties": { "hardness": 4 }

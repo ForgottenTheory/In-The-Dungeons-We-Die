@@ -645,7 +645,10 @@ the mathematics; `MaterialTransformationEngine` is the orchestration.
 **IMPORTANT FILES** — `core/Crafting/EquipmentAssemblyEngine.cs`,
 `core/Crafting/EquipmentBlueprintDefinition.cs` (`BlueprintSlot`, `StatContribution`, `EquipmentAssemblyTuning`)
 
-**DATA** — `game/data/forms/forms.json` (3: Longsword, Buckler, Vest).
+**DATA** — `game/data/forms/forms.json` (**8 forms across 7 slots**: Longsword + Warspear
+(Weapon), Buckler (Offhand), Helm (Head), Vest (Body), Gauntlets (Hands), Treads (Feet), Focus
+(Trinket)). Each exists to exercise a different part of the material system — the file's own
+header says which, and `tests/Crafting/FormBreadthTests.cs` holds it to that.
 
 **RUNTIME FLOW**
 ```
@@ -677,7 +680,17 @@ FabricationRequest(formId, { slotName → materialId })
 persisted in the save.
 
 **EXTENSION POINTS** — A new **form** is one JSON entry: slots (required tags, mass share,
-aperture), `stat_map`, `trait_cap`, granted moves, tags. No code.
+aperture), `stat_map`, `trait_cap`, granted moves, tags. No code. Validation will reject it if
+the mass shares do not sum to 1, a slot gate no material satisfies, a weapon grants no moves, or
+it lacks the tag (`weapon`/`armor`/`shield`) its modifier pool gates on — four ways to author a
+form that loads cleanly and is still broken.
+
+**WHERE THE FORM'S IDENTITY LIVES** — the `stat_map`, and it is worth internalising: the map
+decides both the item's stats *and*, through `ItemPotentialCalculator.MaterialInfluence`, which
+modifiers are eligible at all. A form that reads flexibility off its biggest component is a
+flexibility item that rolls flexibility modifiers; the same materials in a form that reads
+hardness are a different item. **This is what makes "there is no best material, only a best
+placement" true rather than aspirational.**
 
 **ENTRY POINT** — `EquipmentAssemblyEngine.Compose`. Everything interesting happens there; `Project`
 and `Fabricate` are thin wrappers around it, which is what makes the preview incapable of
@@ -1315,7 +1328,7 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add a crafting process** | One entry in `game/data/processes/processes.json`: channel, medium, severity, role weights, profession gate, substrate tags, tag effects, essence rate |
 | **Add a trait** | One entry in `game/data/traits/traits.json`: property conditions, magnitude, category (which aperture gates it), drawback, optional merge rule |
 | **Add an essence** | One entry in `game/data/essences/essences.json`: anchor aspect, opposites |
-| **Add an item Form** | One entry in `game/data/forms/forms.json`: `type`, `slots` (each: `requires_tags`, `mass_share`, `aperture` per trait category), `stat_map` (each read: `slot`, `property`, `weight`), `trait_cap`, `moves`, `tags` |
+| **Add an item Form** | One entry in `game/data/forms/forms.json`: `type` (an `EquipmentSlot`), `slots` (each: `requires_tags`, `mass_share` — they must sum to 1, `trait_expression` per trait category), `stat_map` (each read: `slot`, `property`, `weight`), `trait_cap`, `moves`, `tags`. **Plus a station in `stations/` that assembles it** — a form nobody can build fails validation. Make the `stat_map` read something no other form reads, or the form is cosmetic |
 | **Add an affix (item modifier)** | One entry in `game/data/affixes/affixes.json`: slot (prefix/suffix/innate), family, class, `eligibility`, `weight`, `tiers`, `grants`, `description` with `$roll`. **Ship it only when its mechanic resolves in play** |
 | **Add a Move** | One entry in `game/data/moves/*.json`: namespaced tags, `timing`, `costs`, `requires`, `targeting`, `packets`, `stagger_power`, effect riders. Reachability is validated — grant it from something |
 | **Add a Status** | One entry in `game/data/statuses/*.json`: category, stack policy, duration, `magnitude` (basis + coefficient), `while_active` modifiers, hooks. **No C# class** |
@@ -1370,7 +1383,7 @@ Some names are data, not code. Renaming them silently corrupts saves or breaks c
 |---|---|
 | Every property of `SaveData` and every `*Save` class in `core/Persistence/SaveData.cs` | These **are** the JSON keys in `user://save.json` |
 | The four `CharacterBuild` id properties | Positional **and** persisted |
-| `EquipmentSlot`, `ItemType`, `ItemQuality` enum **member names** | Serialized as strings in the save |
+| `EquipmentSlot`, `ItemType`, `ItemQuality` enum **member names** | Serialized as strings in the save **and** the `slot` field of every `equipment/` and `forms/` definition. Adding a member is free. `EquipmentSlot.Armor` → `Body` (save v9) is the one rename that has happened; `SaveMapper.TryReadSlot` carries it, and `EquipmentSlots.LegacyBodySlotName` is the only place the old name survives |
 | `TrainingSlot` enum **member names** | Written as strings into `SaveData.TrainingCourse` |
 | Action ids (`action.*`) | Per-action **mastery** is keyed by action id in every save |
 | `CourseBonusKeys` **values** | Keys in `training_obstacles/` content, and validated against |

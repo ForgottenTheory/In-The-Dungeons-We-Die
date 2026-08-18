@@ -83,6 +83,37 @@ public static class EquipmentResolver
         };
     }
 
+    /// <summary>
+    /// The mitigation of everything worn at once. A loadout is the sum of its pieces: armour
+    /// values add, and lane resistances add per lane — <b>raw and uncapped</b>, because the
+    /// cap belongs to the pipeline (D-05a) and capping here would lose the overcap that absorbs
+    /// exposure.
+    ///
+    /// <para>How much each piece contributes is a <em>content</em> decision, not a code one: a
+    /// helm reads hardness at a lower stat_map weight than a vest does, so coverage is authored
+    /// in the form rather than hard-coded as a per-slot multiplier here.</para>
+    /// </summary>
+    public static ArmorProfile ResolveWornArmor(IEnumerable<(EquipmentDefinition Definition, ItemInstance? Instance)> worn)
+    {
+        ArgumentNullException.ThrowIfNull(worn);
+
+        var armor = 0.0;
+        var resistances = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (definition, instance) in worn)
+        {
+            var piece = ResolveArmor(definition, instance);
+            armor += piece.Armor;
+            foreach (var (lane, value) in piece.Resistances)
+                resistances[lane] = resistances.GetValueOrDefault(lane) + value;
+        }
+
+        return armor == 0 && resistances.Count == 0
+            ? ArmorProfile.None
+            : new ArmorProfile { Armor = armor, Resistances = resistances };
+    }
+
+    /// <summary>One worn piece. <see cref="ResolveWornArmor"/> is what combat should ask.</summary>
     public static ArmorProfile ResolveArmor(EquipmentDefinition definition, ItemInstance? instance)
     {
         ArgumentNullException.ThrowIfNull(definition);

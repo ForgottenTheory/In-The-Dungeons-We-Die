@@ -121,7 +121,10 @@ public class ItemReadingTests
         var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
         var reading = ItemReadings.From(outcome.Item, definition, content);
 
-        Assert.Equal("armor", reading.Slot);
+        // The slot reads as the body location it is worn on, not as the category "armor" —
+        // once head, hands and feet exist, every one of them is armour too (D32).
+        Assert.Equal("body", reading.Slot);
+        Assert.NotNull(definition.Armor);
         Assert.Empty(reading.Moves);
     }
 

@@ -1414,9 +1414,12 @@ public partial class GameRoot : Node
     public IReadOnlyList<EquipmentDefinition> EquipmentCatalog =>
         _equipment.GetAll().Where(e => e.Id != StarterWeaponId && e.Id != StarterArmorId).OrderBy(e => e.Name).ToList();
 
-    /// <summary>The instance equipped in the weapon/armor slot, or null when empty.</summary>
+    /// <summary>The instance equipped in a slot, or null when empty. The UI walks
+    /// <see cref="EquipmentSlots.DisplayOrder"/> rather than naming slots one at a time, so a
+    /// new slot appears on the character sheet without a UI change.</summary>
+    public ItemInstance? Equipped(EquipmentSlot slot) => _playerEquipment.InSlot(slot);
+
     public ItemInstance? EquippedWeapon => _playerEquipment.InSlot(EquipmentSlot.Weapon);
-    public ItemInstance? EquippedArmor => _playerEquipment.InSlot(EquipmentSlot.Armor);
 
     /// <summary>Unequipped weapons/armor sitting in the Stash, ready to equip.</summary>
     public IReadOnlyList<ItemInstance> StashEquipment =>
@@ -1503,7 +1506,13 @@ public partial class GameRoot : Node
     {
         var report = new StringBuilder();
         report.AppendLine($"Weapon: {(EquippedWeapon?.DisplayName ?? "— (unarmed)")}  →  {EquippedWeaponSummary()}");
-        report.Append($"Armor:  {(EquippedArmor?.DisplayName ?? "— (none)")}  →  {EquippedArmorSummary()}");
+
+        // Every worn piece, then the mitigation they add up to. The total is the honest number:
+        // a loadout defends as a set, and reading it piece by piece hides that.
+        foreach (var slot in EquipmentSlots.DisplayOrder.Where(s => s != EquipmentSlot.Weapon))
+            report.AppendLine($"{slot,-8}{Equipped(slot)?.DisplayName ?? "— (empty)"}");
+
+        report.Append($"Worn:   {EquippedArmorSummary()}");
         return report.ToString();
     }
 
@@ -1511,8 +1520,8 @@ public partial class GameRoot : Node
     {
         if (_playerEquipment.InSlot(EquipmentSlot.Weapon) is null && _equipment.Contains(StarterWeaponId))
             _playerEquipment.Equip(EquipmentSlot.Weapon, InstantiateEquipment(_equipment.GetById(StarterWeaponId)));
-        if (_playerEquipment.InSlot(EquipmentSlot.Armor) is null && _equipment.Contains(StarterArmorId))
-            _playerEquipment.Equip(EquipmentSlot.Armor, InstantiateEquipment(_equipment.GetById(StarterArmorId)));
+        if (_playerEquipment.InSlot(EquipmentSlot.Body) is null && _equipment.Contains(StarterArmorId))
+            _playerEquipment.Equip(EquipmentSlot.Body, InstantiateEquipment(_equipment.GetById(StarterArmorId)));
     }
 
     private ItemInstance InstantiateEquipment(EquipmentDefinition def) => new()
@@ -1609,12 +1618,21 @@ public partial class GameRoot : Node
         return moveset;
     }
 
+    /// <summary>Mitigation from the whole loadout, not one piece. Head, body, hands, feet and
+    /// the offhand all contribute; the weapon and the trinket do not (they are not
+    /// armour-bearing slots). Core does the summing — this only gathers the worn pieces.</summary>
     private ArmorProfile ResolvePlayerArmor()
     {
-        var instance = _playerEquipment.InSlot(EquipmentSlot.Armor);
-        if (instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var def))
-            return EquipmentResolver.ResolveArmor(def, instance);
-        return ArmorProfile.None;
+        var worn = new List<(EquipmentDefinition Definition, ItemInstance? Instance)>();
+        foreach (var (slot, instance) in _playerEquipment.Slots)
+        {
+            if (!EquipmentSlots.GrantsArmor(slot))
+                continue;
+            if (_equipment.TryGetById(instance.BaseDefinitionId, out var definition))
+                worn.Add((definition, instance));
+        }
+
+        return EquipmentResolver.ResolveWornArmor(worn);
     }
 
     // --- Realm --------------------------------------------------------------

@@ -1,8 +1,42 @@
 [
-  // Fabrication forms (C2a, §16.2) — single-slot first, per §20: the 0–100 → combat-unit
-  // calibration is judged on swords before slots multiply. stat_map values land on the
-  // instance in combat units (FabricationTuning.CombatUnitScale), so the existing
-  // EquipmentResolver seam consumes fabricated gear unchanged.
+  // Fabrication forms (C2a §16.2) — the terminal boundary where materials become equipment.
+  //
+  // ── HOW TO READ A FORM ──────────────────────────────────────────────────────────────────────
+  //
+  // `slots`      named components. `requires_tags` is ANY-OF. `mass_share` is what fraction of
+  //              the item this component IS (they sum to 1.0 — validated). `trait_expression`
+  //              gates how much of each trait category this position lets through; the rest
+  //              goes dormant.
+  // `stat_map`   what the finished item's stats READ. A named slot reads only that component;
+  //              `"*"` reads the mass-share-weighted total. This is the single most important
+  //              field in the file: it is why the same iron ingot is excellent in one form and
+  //              wasted in another, and it is what `ItemPotential.MaterialInfluence` weights
+  //              when it decides which modifiers are even eligible.
+  //
+  // ── WHY THESE EIGHT ─────────────────────────────────────────────────────────────────────────
+  //
+  // Each form exists to exercise a different part of the material system, not to add variety:
+  //
+  //   Longsword   hardness-led, three slots      — the calibration reference (iron-sword parity)
+  //   Warspear    flexibility-led, mass in the   — the same iron that makes a great sword makes
+  //               haft rather than the head        a mediocre spear. The counter-example.
+  //   Buckler     one slot, all of it            — the simplest possible form; grants Parry
+  //   Helm        insulation matters             — the only armour whose stat_map reads it hard
+  //   Vest        hardness AND flexibility       — the trade-off form
+  //   Gauntlets   flexibility-led armour         — where being too hard is a cost
+  //   Treads      mass-led armour                — where being too heavy is a cost
+  //   Focus       resonance + arcane             — the ONLY form that reads them, which is what
+  //                                                gives resonant materials anywhere to go
+  //
+  // ── ARMOUR COVERAGE IS AUTHORED, NOT CODED ──────────────────────────────────────────────────
+  //
+  // A worn loadout's armour is the sum of its pieces (`EquipmentResolver.ResolveWornArmor`), and
+  // each piece's contribution comes from how hard its stat_map reads `hardness`. A vest covers
+  // more of you than gauntlets do, so it reads harder. There is no per-slot multiplier in the
+  // code — change the weight here and the coverage changes.
+
+  // ══ WEAPONS ═════════════════════════════════════════════════════════════════════════════════
+
   {
     "id": "form.longsword",
     "name": "Longsword",
@@ -33,10 +67,52 @@
     "moves": ["move.iron_slash", "move.heavy_strike"],
     "description": "A proper blade. The material decides what kind of proper."
   },
+
+  {
+    // The deliberate counterweight to the Longsword. Almost all the mass is in the haft, and
+    // the stat_map reads FLEXIBILITY from it — so a spear hafted in iron is heavy and stiff and
+    // worse than one hafted in yew, while the same iron in a longsword's edge is excellent.
+    // Hardness is read from the point alone, which is a quarter of the item.
+    //
+    // That is the whole material-genetics claim in one pair of forms: there is no best material,
+    // only a best placement.
+    "id": "form.warspear",
+    "name": "Warspear",
+    "type": "Weapon",
+    "tags": ["weapon", "spear", "polearm"],
+    "slots": {
+      "point": {
+        "requires_tags": ["form:metal", "form:crystal", "form:bone", "form:horn"],
+        "mass_share": 0.25,
+        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 1.0, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "haft": {
+        "requires_tags": ["form:wood", "form:metal", "form:fiber"],
+        "mass_share": 0.60,
+        "trait_expression": { "thermal": 0.2, "charge": 0.6, "toxic": 0.1, "vital": 0.5, "arcane": 0.8, "structural": 0.7 }
+      },
+      "grip": {
+        "requires_tags": ["form:hide", "form:fiber", "form:cloth"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.8 } ],
+      "hardness":    [ { "slot": "point", "property": "hardness",    "weight": 0.9 } ],
+      "flexibility": [ { "slot": "haft",  "property": "flexibility", "weight": 0.9 }, { "slot": "grip", "property": "flexibility", "weight": 0.3 } ]
+    },
+    "trait_cap": 4,
+    "moves": ["move.skewer", "move.quick_stab"],
+    "description": "Reach, and the discipline to use it. Most of a spear is the part nobody looks at."
+  },
+
+  // ══ OFFHAND ═════════════════════════════════════════════════════════════════════════════════
+
   {
     "id": "form.buckler",
     "name": "Buckler",
-    "type": "Armor",
+    "type": "Offhand",
     "tags": ["armor", "shield", "parry"],
     "slots": {
       "face": {
@@ -52,10 +128,42 @@
     "trait_cap": 4,
     "description": "A small answer to large questions. Carrying one makes Shield Bash yours."
   },
+
+  // ══ WORN ARMOUR ═════════════════════════════════════════════════════════════════════════════
+
+  {
+    // The only armour whose stat_map reads INSULATION hard, which makes it the one place a fur
+    // or a felt lining out-performs a better metal. Grounding, the Storm Veil and the Insulated
+    // innate are all reachable here and effectively nowhere else.
+    "id": "form.helm",
+    "name": "Helm",
+    "type": "Head",
+    "tags": ["armor", "helm"],
+    "slots": {
+      "crown": {
+        "requires_tags": ["form:metal", "form:chitin", "form:bone", "form:horn"],
+        "mass_share": 0.65,
+        "trait_expression": { "thermal": 0.7, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 1.0 }
+      },
+      "lining": {
+        "requires_tags": ["form:hide", "form:fur", "form:cloth", "form:fiber"],
+        "mass_share": 0.35,
+        "trait_expression": { "thermal": 0.4, "charge": 0.3, "toxic": 0.4, "vital": 0.8, "arcane": 0.4, "structural": 0.2 }
+      }
+    },
+    "stat_map": {
+      "hardness":   [ { "slot": "crown",  "property": "hardness",   "weight": 0.55 } ],
+      "mass":       [ { "slot": "*",      "property": "mass",       "weight": 0.6 } ],
+      "insulation": [ { "slot": "lining", "property": "insulation", "weight": 0.9 }, { "slot": "crown", "property": "insulation", "weight": 0.2 } ]
+    },
+    "trait_cap": 3,
+    "description": "Covers the part of you that decisions come out of."
+  },
+
   {
     "id": "form.vest",
     "name": "Vest",
-    "type": "Armor",
+    "type": "Body",
     "tags": ["armor"],
     "slots": {
       "shell": {
@@ -70,5 +178,99 @@
     },
     "trait_cap": 4,
     "description": "Worn close. The material decides whether that is comfort or armour."
+  },
+
+  {
+    // Where being HARD is a cost. The stat_map reads flexibility from the glove at nearly twice
+    // the weight it reads hardness from the plating, so an all-metal pair is a worse pair — the
+    // opposite pressure to every other armour form, and the only reliable route to Ghoststep.
+    "id": "form.gauntlets",
+    "name": "Gauntlets",
+    "type": "Hands",
+    "tags": ["armor", "gauntlets"],
+    "slots": {
+      "glove": {
+        "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
+        "mass_share": 0.60,
+        "trait_expression": { "thermal": 0.4, "charge": 0.4, "toxic": 0.6, "vital": 0.7, "arcane": 0.5, "structural": 0.4 }
+      },
+      "plating": {
+        "requires_tags": ["form:metal", "form:chitin", "form:bone"],
+        "mass_share": 0.40,
+        "trait_expression": { "thermal": 0.8, "charge": 0.6, "toxic": 0.3, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      }
+    },
+    "stat_map": {
+      "flexibility": [ { "slot": "glove",   "property": "flexibility", "weight": 0.95 } ],
+      "hardness":    [ { "slot": "plating", "property": "hardness",    "weight": 0.35 } ],
+      "mass":        [ { "slot": "*",       "property": "mass",        "weight": 0.4 } ]
+    },
+    "trait_cap": 3,
+    "description": "The compromise every fighter argues about: protect the hand, or keep it."
+  },
+
+  {
+    // Where being HEAVY is a cost, and the mirror of the Gauntlets. Hardness comes off the sole
+    // and insulation off the upper, so treads reward a dense sole under a warm boot — a
+    // combination no other form asks for.
+    "id": "form.treads",
+    "name": "Treads",
+    "type": "Feet",
+    "tags": ["armor", "boots"],
+    "slots": {
+      "sole": {
+        "requires_tags": ["form:leather", "form:hide", "form:wood", "form:metal", "form:chitin"],
+        "mass_share": 0.55,
+        "trait_expression": { "thermal": 0.6, "charge": 0.5, "toxic": 0.4, "vital": 0.4, "arcane": 0.3, "structural": 1.0 }
+      },
+      "upper": {
+        "requires_tags": ["form:hide", "form:fur", "form:cloth", "form:fiber"],
+        "mass_share": 0.45,
+        "trait_expression": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.4, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "sole",  "property": "hardness",    "weight": 0.40 } ],
+      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.7 } ],
+      "flexibility": [ { "slot": "upper", "property": "flexibility", "weight": 0.5 } ],
+      "insulation":  [ { "slot": "upper", "property": "insulation",  "weight": 0.6 } ]
+    },
+    "trait_cap": 3,
+    "description": "Carry everything you own on these. Choose accordingly."
+  },
+
+  // ══ TRINKET ═════════════════════════════════════════════════════════════════════════════════
+
+  {
+    // The only form whose stat_map reads RESONANCE and ARCANE, which is what finally gives ley
+    // crystal, runes and mana prisms somewhere to be excellent — a sword reads neither, so a
+    // resonant material in a sword is wasted potential rather than a good sword.
+    //
+    // It grants no armour (Trinket is not an armour-bearing slot) and no moves. What it rolls
+    // are the form-agnostic modifier families — resources, regeneration, effort — which is the
+    // trinket's whole identity and needed no new affix content to express.
+    "id": "form.focus",
+    "name": "Focus",
+    "type": "Trinket",
+    "tags": ["trinket", "focus"],
+    "slots": {
+      "stone": {
+        "requires_tags": ["form:crystal", "form:gem", "form:rune", "form:bone"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 0.6, "charge": 0.8, "toxic": 0.4, "vital": 0.6, "arcane": 1.0, "structural": 0.3 }
+      },
+      "setting": {
+        "requires_tags": ["form:metal", "form:wood", "form:fiber"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.4, "arcane": 0.9, "structural": 0.4 }
+      }
+    },
+    "stat_map": {
+      "resonance": [ { "slot": "stone",   "property": "resonance", "weight": 1.0 }, { "slot": "setting", "property": "resonance", "weight": 0.3 } ],
+      "arcane":    [ { "slot": "stone",   "property": "arcane",    "weight": 0.9 }, { "slot": "setting", "property": "arcane",    "weight": 0.4 } ],
+      "mass":      [ { "slot": "*",       "property": "mass",      "weight": 0.3 } ]
+    },
+    "trait_cap": 3,
+    "description": "Held, not worn. Whatever it is made of, it is listening."
   }
 ]

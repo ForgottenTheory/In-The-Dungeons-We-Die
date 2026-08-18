@@ -687,8 +687,17 @@ public partial class MainMvpUI : Control
     {
         ClearChildren(_equipmentControls);
 
-        AddSlotRow(EquipmentSlot.Weapon, _game.EquippedWeapon, _game.EquippedWeaponSummary());
-        AddSlotRow(EquipmentSlot.Armor, _game.EquippedArmor, _game.EquippedArmorSummary());
+        // Driven by the slot vocabulary, not by a hand-written list — a new slot appears here
+        // the moment it exists.
+        foreach (var slot in EquipmentSlots.DisplayOrder)
+        {
+            var summary = slot == EquipmentSlot.Weapon ? _game.EquippedWeaponSummary() : string.Empty;
+            AddSlotRow(slot, _game.Equipped(slot), summary);
+        }
+
+        var wornRow = new Label { Text = $"Worn total: {_game.EquippedArmorSummary()}" };
+        wornRow.AddThemeColorOverride("font_color", Muted);
+        _equipmentControls.AddChild(wornRow);
 
         var stashHead = new Label { Text = "In stash:" };
         stashHead.AddThemeColorOverride("font_color", Muted);
@@ -716,7 +725,8 @@ public partial class MainMvpUI : Control
         var row = Row();
         _equipmentControls.AddChild(row);
         var name = equipped?.DisplayName ?? "— (empty)";
-        row.AddChild(new Label { Text = $"{slot}: {name}  →  {summary}", CustomMinimumSize = new Vector2(420, 0) });
+        var line = summary.Length > 0 ? $"{slot}: {name}  →  {summary}" : $"{slot}: {name}";
+        row.AddChild(new Label { Text = line, CustomMinimumSize = new Vector2(420, 0) });
         if (equipped is not null)
             row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot), Danger));
     }

@@ -442,10 +442,28 @@ Equipment Form  +  Material(s) in named slots  →  Equipment Instance
   reaction bench has: a **pre-commit projection** computed by the same code path that mints the
   real item.
 
-**Built forms: 3** — Longsword (3 slots), Buckler (declares `parry`), Vest.
-📐 Not built: the ~6–8 form target and the Weapon/Offhand/Head/Body/Hands/Feet/Trinket slot
-spread · consumable forms · form **acquisition** (starter set + profession ladders + schematics
-as a knowledge loot class).
+**Built forms: 8 across all 7 slots** ✅, each existing to exercise a different part of the
+material system rather than to add variety:
+
+| Form | Slot | What it tests |
+|---|---|---|
+| **Longsword** (3 slots) | Weapon | the calibration reference — hardness off the edge |
+| **Warspear** (3 slots) | Weapon | the counter-example — flexibility off the *haft*, which is 60% of it, so the iron that makes a great sword makes a mediocre spear |
+| **Buckler** | Offhand | the simplest possible form; declares `parry` |
+| **Helm** | Head | the only armour that reads **insulation** hard — where a fur lining beats a better metal |
+| **Vest** | Body | the hardness/flexibility trade-off |
+| **Gauntlets** | Hands | where being **too hard** is a cost |
+| **Treads** | Feet | where being **too heavy** is a cost |
+| **Focus** | Trinket | the only form that reads **resonance/arcane**, which is what gives resonant materials anywhere to be excellent. Grants no armour and no moves |
+
+A worn loadout's mitigation is the **sum of its pieces**, and how much each contributes is
+authored (a helm reads hardness at a lower weight than a vest) rather than coded as a per-slot
+multiplier.
+
+📐 Not built: consumable forms · form **acquisition** (starter set + profession ladders +
+schematics as a knowledge loot class — the schematic *items* drop already) · balance of any of
+the above. There is no arcane-category trait yet, so the Focus's arcane aperture gates a category
+with no content in it.
 
 ---
 

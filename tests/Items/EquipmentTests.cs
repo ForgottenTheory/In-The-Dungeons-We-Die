@@ -43,7 +43,7 @@ public class EquipmentTests
     {
         Id = "equip.iron_armor",
         Name = "Iron Armor",
-        Slot = EquipmentSlot.Armor,
+        Slot = EquipmentSlot.Body,
         Armor = new ArmorStats { Armor = 4, Resistances = new() { ["Slashing"] = 0.1 } },
     };
 

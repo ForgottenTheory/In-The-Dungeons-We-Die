@@ -67,7 +67,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
-    "blueprints": ["form.longsword", "form.buckler"]
+    "blueprints": ["form.longsword", "form.buckler", "form.helm"]
   },
   {
     "id": "station.apothecary",
@@ -94,20 +94,21 @@
     "name": "Tannery",
     "description": "Lye, a scraping beam and drying frames. Drake leather stays drake; nothing here is flattened into a tier.",
     "professions": ["profession.leatherworking"],
-    "blueprints": ["form.vest"]
+    "blueprints": ["form.vest", "form.gauntlets", "form.treads"]
   },
   {
     "id": "station.loom",
     "name": "Loom",
     "description": "Fibre, thread, cloth. Slow, quiet, and the only source of anything soft enough to wear.",
     "professions": ["profession.tailoring"],
-    "blueprints": ["form.vest"]
+    "blueprints": ["form.vest", "form.gauntlets"]
   },
   {
     "id": "station.fletchers_bench",
     "name": "Fletcher's Bench",
-    "description": "Shafts, staves, strings and vanes — parts for weapons that have no blueprint yet.",
-    "professions": ["profession.fletching"]
+    "description": "Shafts, staves, strings and vanes. The haft is most of a spear, which is why the spear is made here and not at the Forge.",
+    "professions": ["profession.fletching"],
+    "blueprints": ["form.warspear"]
   },
   {
     "id": "station.workbench",
@@ -115,14 +116,15 @@
     "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
     "professions": ["profession.artifice"],
     "crafting_actions": ["process.grind"],
-    "blueprints": ["form.buckler"]
+    "blueprints": ["form.buckler", "form.focus"]
   },
   {
     "id": "station.runic_altar",
     "name": "Runic Altar",
-    "description": "A cut blank, an essence and a very steady hand. Raising a material's resonance starts here.",
+    "description": "A cut blank, an essence and a very steady hand. Raising a material's resonance starts here — and a focus is where that resonance finally does something.",
     "professions": ["profession.runecrafting"],
-    "crafting_actions": ["process.attune"]
+    "crafting_actions": ["process.attune"],
+    "blueprints": ["form.focus"]
   },
 
   // --- Utility --------------------------------------------------------------------------

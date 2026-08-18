@@ -95,6 +95,12 @@ coherent run.
    entries passive cannot, structurally. Elite/boss spoils wired and tested before any elite
    exists. **Gold** ships as the sole currency on `Inventory` (save **v8**) and nothing spends it
    yet, by design. The Dark Forest grew to 15 nodes so the tables have somewhere to live.
+   **Equipment breadth ✅ (2026-08-17, D32).** `forms.json` 3 → **8 forms across all 7 slots**
+   (`EquipmentSlot` gained Offhand/Head/Hands/Feet/Trinket; `Armor` → `Body` with the project's
+   **first save migration**, v9). Fabrication itself untouched — slots, apertures, stat maps,
+   dormancy, projection, genome and modifier rolls all unchanged. Worn armour is now the sum of
+   the loadout, with coverage authored in each form's `stat_map` rather than coded per slot.
+   Four new form validation rules; the Focus needed no new affix content.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -115,5 +121,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**923** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**946** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

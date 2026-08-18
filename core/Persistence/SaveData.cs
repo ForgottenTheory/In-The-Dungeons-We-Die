@@ -146,8 +146,15 @@ public sealed class SaveData
     ///
     /// <para>v8 added <see cref="Gold"/>, the currency loot tables pay out in. A v7 save loads
     /// with none, which is what a character who has never been paid has. No migration step.</para>
+    ///
+    /// <para>v9 is the <b>first version with a real migration</b>. The equipment slot vocabulary
+    /// grew from two entries to seven, and the torso slot's name — <c>Armor</c> — stopped being
+    /// true once a helm existed. <c>SaveMapper.TryReadSlot</c> maps the legacy key onto
+    /// <c>EquipmentSlot.Body</c> on load, for both <see cref="Equipment"/> and any fabricated
+    /// archetype in <see cref="EmergentEquipment"/>. Without it a v8 save would silently lose
+    /// whatever the player was wearing.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 8;
+    public const int CurrentSchemaVersion = 9;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }

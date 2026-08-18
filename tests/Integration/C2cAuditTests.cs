@@ -78,6 +78,86 @@ public class C2cAuditTests
             Moves = new[] { new Dungeons.Combat.MoveGrantSpec { Id = "move.imaginary" } },
         }), p => p.Message.Contains("unknown move"));
 
+    // ---- The Phase 4 rules: forms that load cleanly and are still broken ----------------------
+
+    /// <summary>A form whose slots do not sum to 1 under-reads every <c>"*"</c> stat and
+    /// under-weights every material influence, silently.</summary>
+    [Fact]
+    public void MassSharesThatDoNotSumToOneFailLoudly() =>
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
+        {
+            Id = "form.broken",
+            Type = Dungeons.Items.EquipmentSlot.Body,
+            Tags = new[] { "armor" },
+            Slots =
+            {
+                ["shell"] = new BlueprintSlot { MassShare = 0.5 },
+                ["trim"] = new BlueprintSlot { MassShare = 0.2 },
+            },
+        }), p => p.Message.Contains("mass shares sum to"));
+
+    /// <summary>A gate no shipped material can satisfy is a form nobody can ever assemble.</summary>
+    [Fact]
+    public void AnUnsatisfiableSlotGateFailsLoudly() =>
+        Assert.Contains(FormProblemsAgainstShippedMaterials(new EquipmentBlueprintDefinition
+        {
+            Id = "form.broken",
+            Type = Dungeons.Items.EquipmentSlot.Body,
+            Tags = new[] { "armor" },
+            Slots = { ["shell"] = new BlueprintSlot { RequiresTags = new[] { "form:unobtainium" } } },
+        }), p => p.Message.Contains("could never be assembled"));
+
+    /// <summary>Since E4 a weapon IS its moves; one granting none equips fine and leaves the
+    /// player swinging nothing.</summary>
+    [Fact]
+    public void AWeaponFormGrantingNoMovesFailsLoudly() =>
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
+        {
+            Id = "form.broken",
+            Type = Dungeons.Items.EquipmentSlot.Weapon,
+            Tags = new[] { "weapon" },
+            Slots = { ["edge"] = new BlueprintSlot() },
+        }), p => p.Message.Contains("grants no moves"));
+
+    /// <summary>Most modifiers gate on <c>weapon</c> / <c>armor</c> / <c>shield</c>. A form
+    /// missing its tag rolls nothing and looks merely unlucky.</summary>
+    [Fact]
+    public void AFormMissingTheTagItsModifierPoolGatesOnFailsLoudly()
+    {
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
+        {
+            Id = "form.broken",
+            Type = Dungeons.Items.EquipmentSlot.Weapon,
+            Moves = new[] { new Dungeons.Combat.MoveGrantSpec { Id = "move.iron_slash" } },
+            Slots = { ["edge"] = new BlueprintSlot() },
+        }), p => p.Message.Contains("does not carry the 'weapon' tag"));
+
+        Assert.Contains(FormProblems(new EquipmentBlueprintDefinition
+        {
+            Id = "form.broken",
+            Type = Dungeons.Items.EquipmentSlot.Feet,
+            Slots = { ["sole"] = new BlueprintSlot() },
+        }), p => p.Message.Contains("neither the 'armor' nor the 'shield' tag"));
+    }
+
+    /// <summary>The unsatisfiable-gate rule only fires when there are materials to check
+    /// against — a bundle with an empty material store is a partial fixture, not content that
+    /// forgot its library.</summary>
+    private static IReadOnlyList<ContentProblem> FormProblemsAgainstShippedMaterials(EquipmentBlueprintDefinition broken)
+    {
+        var forms = new DataStore<EquipmentBlueprintDefinition>();
+        forms.Add(broken);
+        var content = new ContentBundle
+        {
+            Forms = forms,
+            Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
+            Properties = TestPaths.LoadStore<PropertyDefinition>("properties"),
+            Moves = TestPaths.LoadStore<Dungeons.Combat.MoveDefinition>("moves"),
+        };
+
+        return ContentValidator.Validate(content).Where(p => p.Category == "forms").ToList();
+    }
+
     // ---- D28/D29 — the first-session sufficiency audit ---------------------------------------
 
     /// <summary>A fresh character must reach a fabricated Longsword with professions only:

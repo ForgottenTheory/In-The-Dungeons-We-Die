@@ -278,8 +278,10 @@ public sealed class EquipmentAssemblyEngine
         }
 
         // ---- Armour derivation: response properties → lane resistances ----------------------
+        // Only the slots that actually mitigate. A trinket is worn and a weapon is held; neither
+        // becomes armour just because it is not the other one.
         ArmorStats? armor = null;
-        if (form.Type == EquipmentSlot.Armor)
+        if (EquipmentSlots.GrantsArmor(form.Type))
         {
             var resistances = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
             foreach (var (property, lane) in EquipmentAssemblyTuning.ResponseLanes)

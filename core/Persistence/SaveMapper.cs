@@ -89,6 +89,24 @@ public static class SaveMapper
         };
     }
 
+    /// <summary>
+    /// Reads a persisted slot name. <b>The project's first save migration</b>: schemas v1–v8
+    /// called the torso slot <c>Armor</c>, which stopped being true the moment head, hands and
+    /// feet existed. Without this, a v8 save would fail to parse the key and silently drop
+    /// whatever the player was wearing — so the rename buys a coherent slot vocabulary for the
+    /// cost of these three lines (docs/code-map.md §12, DECISIONS D32).
+    /// </summary>
+    private static bool TryReadSlot(string persistedName, out EquipmentSlot slot)
+    {
+        if (string.Equals(persistedName, EquipmentSlots.LegacyBodySlotName, StringComparison.Ordinal))
+        {
+            slot = EquipmentSlot.Body;
+            return true;
+        }
+
+        return Enum.TryParse(persistedName, out slot);
+    }
+
     private static EquipmentArchetypeSave ToSave(Items.EquipmentDefinition definition) => new()
     {
         Id = definition.Id,
@@ -109,7 +127,8 @@ public static class SaveMapper
     {
         Id = save.Id,
         Name = save.Name,
-        Slot = Enum.TryParse<Items.EquipmentSlot>(save.Slot, out var slot) ? slot : Items.EquipmentSlot.Weapon,
+        // Same v9 rename: a fabricated vest stored before the slot vocabulary grew says "Armor".
+        Slot = TryReadSlot(save.Slot, out var slot) ? slot : Items.EquipmentSlot.Weapon,
         Tags = save.Tags,
         Moves = save.MoveIds.Select(id => new Combat.MoveGrantSpec { Id = id }).ToList(),
         Armor = save.HasArmor
@@ -155,7 +174,7 @@ public static class SaveMapper
             equipment.Clear();
             foreach (var pair in save.Equipment)
             {
-                if (Enum.TryParse<EquipmentSlot>(pair.Key, out var slot))
+                if (TryReadSlot(pair.Key, out var slot))
                     equipment.Equip(slot, FromSave(pair.Value));
             }
         }

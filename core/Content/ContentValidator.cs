@@ -41,6 +41,10 @@ public static class ContentValidator
     public const double MaxChannelRate = 1.0;
     public const double RoleWeightTolerance = 0.001;
 
+    /// <summary>How far a form's slot mass shares may drift from 1.0 before it is a bug rather
+    /// than floating-point noise (docs/crafting-overview.md, forms).</summary>
+    public const double MassShareTolerance = 0.001;
+
     /// <summary>Generic tier words the name grammar forbids (docs/emergent-item-system.md §13.1) —
     /// intensity is expressed through vocabulary, not adjectives-of-adjectives.</summary>
     public static readonly IReadOnlySet<string> ForbiddenNameWords =
@@ -76,7 +80,7 @@ public static class ContentValidator
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateTraits(content.Traits, knownProperties, problems);
         ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
-        ValidateForms(content.Forms, content.Moves, knownProperties, problems);
+        ValidateForms(content.Forms, content.Moves, content.Materials, knownProperties, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
         ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
@@ -976,36 +980,84 @@ public static class ContentValidator
 
     /// <summary>§16.2 forms (C2a): apertures gate known categories, stat maps read known
     /// properties from real slots, and granted moves resolve.</summary>
+    /// <summary>
+    /// Forms (C2a §16.2). Beyond the reference checks, four rules that each catch a form which
+    /// <em>loads cleanly and is still broken</em> — the failure mode that costs a milestone
+    /// because nothing throws:
+    ///
+    /// <list type="bullet">
+    ///   <item><b>Mass shares must sum to 1.</b> They are shares. A form summing to 0.8 quietly
+    ///   under-reads every <c>"*"</c> stat and under-weights every material influence.</item>
+    ///   <item><b>Every slot gate must be satisfiable</b> by some shipped material, or the form
+    ///   can never be assembled at all.</item>
+    ///   <item><b>A weapon must grant moves.</b> Since E4 a weapon <i>is</i> its moves; one
+    ///   granting none equips fine and leaves the player swinging nothing.</item>
+    ///   <item><b>A form must carry the tag its modifier pool gates on.</b> Most affixes are
+    ///   available to <c>weapon</c> / <c>armor</c> / <c>shield</c>; a weapon form missing the
+    ///   <c>weapon</c> tag rolls no weapon modifiers and looks merely unlucky.</item>
+    /// </list>
+    /// </summary>
     private static void ValidateForms(
         DataStore<Dungeons.Crafting.EquipmentBlueprintDefinition> forms,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
+        DataStore<MaterialDefinition> materials,
         IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
         foreach (var form in forms.GetAll())
         {
+            void Problem(string message) => problems.Add(new ContentProblem("forms", $"{form.Id} {message}"));
+
             if (form.Slots.Count == 0)
                 problems.Add(new("forms", $"{form.Id} has no slots."));
             if (form.TraitCap < 1)
                 problems.Add(new("forms", $"{form.Id} trait_cap must be at least 1."));
 
+            if (form.Slots.Count > 0)
+            {
+                var totalMassShare = form.Slots.Values.Sum(slot => slot.MassShare);
+                if (Math.Abs(totalMassShare - 1.0) > MassShareTolerance)
+                    Problem($"mass shares sum to {totalMassShare:0.###}; they are shares and must sum to 1.");
+            }
+
             foreach (var (slotName, slot) in form.Slots)
+            {
                 foreach (var category in slot.TraitExpression.Keys)
                     if (!Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories.Contains(category))
                         problems.Add(new("forms", $"{form.Id} slot '{slotName}' traitExpression gates unknown category '{category}'."));
+
+                if (slot.MassShare <= 0)
+                    Problem($"slot '{slotName}' has mass_share {slot.MassShare}; a component that is none of the item cannot exist.");
+
+                // An unsatisfiable gate is a form nobody can ever assemble. Skipped for bundles
+                // with no material store — those are partial fixtures, not shipped content.
+                if (materials.Count > 0 && slot.RequiresTags.Count > 0
+                    && !materials.GetAll().Any(material =>
+                        slot.RequiresTags.Any(tag => material.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))))
+                    Problem($"slot '{slotName}' accepts {string.Join("/", slot.RequiresTags)}, which no material carries — it could never be assembled.");
+            }
 
             foreach (var (stat, reads) in form.StatMap)
                 foreach (var read in reads)
                 {
                     if (!knownProperties.Contains(read.Property))
                         problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown property '{read.Property}'."));
-                    if (read.Slot != "*" && !form.Slots.ContainsKey(read.Slot))
+                    if (read.Slot != Dungeons.Crafting.BlueprintSlots.AllSlots && !form.Slots.ContainsKey(read.Slot))
                         problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown slot '{read.Slot}'."));
                 }
 
             foreach (var grant in form.Moves)
                 if (!moves.Contains(grant.Id))
                     problems.Add(new("forms", $"{form.Id} grants unknown move '{grant.Id}'."));
+
+            if (form.Type == EquipmentSlot.Weapon && form.Moves.Count == 0)
+                Problem("is a weapon that grants no moves — since E4 a weapon IS its moves.");
+
+            var tags = new HashSet<string>(form.Tags, StringComparer.OrdinalIgnoreCase);
+            if (form.Type == EquipmentSlot.Weapon && !tags.Contains("weapon"))
+                Problem("is a weapon but does not carry the 'weapon' tag, so no weapon modifier is available to it.");
+            if (EquipmentSlots.GrantsArmor(form.Type) && !tags.Contains("armor") && !tags.Contains("shield"))
+                Problem("is worn armour but carries neither the 'armor' nor the 'shield' tag, so no defensive modifier is available to it.");
         }
     }
 
@@ -1385,17 +1437,14 @@ public static class ContentValidator
     {
         foreach (var def in equipment.GetAll())
         {
-            switch (def.Slot)
-            {
-                // Weapon-granted moves are mandatory, not optional — the Fighter's identity is
-                // "moveset comes from the weapon" (docs/moves.md §5.1).
-                case EquipmentSlot.Weapon when def.Moves.Count == 0:
-                    problems.Add(new("equipment", $"{def.Id} is a Weapon but grants no moves."));
-                    break;
-                case EquipmentSlot.Armor when def.Armor is null:
-                    problems.Add(new("equipment", $"{def.Id} is Armor but has no armor stats block."));
-                    break;
-            }
+            // Weapon-granted moves are mandatory, not optional — the Fighter's identity is
+            // "moveset comes from the weapon" (docs/moves.md §5.1). And a piece worn in an
+            // armour-bearing slot with no armour block mitigates nothing while looking as
+            // though it should.
+            if (def.Slot == EquipmentSlot.Weapon && def.Moves.Count == 0)
+                problems.Add(new("equipment", $"{def.Id} is a Weapon but grants no moves."));
+            else if (EquipmentSlots.GrantsArmor(def.Slot) && def.Armor is null)
+                problems.Add(new("equipment", $"{def.Id} is worn in the {def.Slot} slot but has no armor stats block."));
 
             foreach (var grant in def.Moves)
                 if (!moves.Contains(grant.Id))

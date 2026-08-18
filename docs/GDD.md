@@ -1286,7 +1286,8 @@ Built, tested, and runnable today. 654 passing tests, zero build warnings.
 | System | What's real |
 |---|---|
 | **Crafting traits + essence (C1)** | 16-trait library (birth/cap/displacement/supersession, `id:tier` identity), seven typed essences with anchors/opposition, resonance capacity → strain → instability, Attune |
-| **Fabrication (C2a+C2b)** | Form templates (3-slot Longsword, Buckler, Vest), aperture-gated trait expression with dormancy, derived equipment archetypes persisted, 0–100 → combat-unit reconciliation pinned by iron-sword parity, per-slot component UI |
+| **Fabrication (C2a+C2b)** | Form templates, aperture-gated trait expression with dormancy, derived equipment archetypes persisted, 0–100 → combat-unit reconciliation pinned by iron-sword parity, per-slot component UI |
+| **Equipment breadth (Phase 4, D32)** | **8 forms across all 7 slots** (Weapon ×2, Offhand, Head, Body, Hands, Feet, Trinket); `EquipmentSlot` expanded with the `Armor` → `Body` rename and the project's first save migration (v9); worn armour is the sum of the loadout with coverage authored per form; four new form validation rules. Fabrication itself unchanged |
 | **The semantic layer (R0–R3, D30)** | `Dungeons.Presentation`: tiers/pips/wear words, trends from typed change kinds, risk bands, slot-fit readings, material readings, the typed projection lines, item cards/strips — the only path from simulation state to player-facing text; raw values behind Advanced. Bench, preview, fabrication and reveal all speak it |
 | **Affixes + Genome (R4, E5 front half)** | Genome persisted (save v6), eligibility/weight/tier + potency roll-quality, deterministic innates, seeded rolling, 43 affixes with live grants (contributions/rules/move-mods), lane-key alignment (D-07 executed), thorns/parry/evade/avoidance/penetration/barrier/status-depth mechanics, §8 validation + distribution tests |
 

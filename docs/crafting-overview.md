@@ -407,16 +407,19 @@ authored at all**.
 
 ## 7.1 What a form declares
 
-**Three ship** (`game/data/forms/forms.json`): **Longsword** (edge / core / binding), **Buckler**
-(face — and it declares the `parry` tag that grants the parry command), **Vest** (shell).
+**Eight ship** (`game/data/forms/forms.json`), one per equipment slot plus a second weapon:
+**Longsword** (edge / core / binding), **Warspear** (point / haft / grip), **Buckler** (face —
+and it declares the `parry` tag that grants the parry command), **Helm** (crown / lining),
+**Vest** (shell), **Gauntlets** (glove / plating), **Treads** (sole / upper), **Focus** (stone /
+setting). The table of what each one exists to test is in `docs/game-overview.md` §9.
 
 Each **slot** declares:
 
 | Field | Meaning |
 |---|---|
-| `requires_tags` | any-of tag gate — `["form:metal","form:crystal"]` means either works |
-| `mass_share` | how much of the item this component is |
-| `aperture` | per **trait category**, 0–1: how much of that kind of trait this slot may express |
+| `requires_tags` | any-of tag gate — `["form:metal","form:crystal"]` means either works. Validated: a gate no material satisfies is a form nobody can build |
+| `mass_share` | how much of the item this component is. Validated: they must sum to 1 |
+| `trait_expression` | per **trait category**, 0–1: how much of that kind of trait this slot may express (the design word is *aperture*) |
 
 And the form declares a **`stat_map`**: each stat is a list of weighted reads —
 `{ slot, property, weight }`, where slot `"*"` means the mass-share-weighted total across all
@@ -428,9 +431,23 @@ slots. The Longsword's hardness reads `edge × 0.8 + core × 0.2`.
 genuinely different weapon from the reverse, and the system computes that with zero authored
 combinations.
 
-**The stat map is what stops a single "best material" existing.** A robe reads flexibility and
-insulation; plate reads hardness and mass; a staff reads resonance and arcane. A Bogwillow Log is
-a bad sword and an excellent rod shaft — same library, opposite verdict, no tool-specific content.
+**The stat map is what stops a single "best material" existing** — and since the breadth pass it
+is no longer only an argument, it is a shipped pair. The **Longsword** reads hardness off its
+edge, which is 60% of it. The **Warspear** reads flexibility off its *haft*, which is 60% of it,
+and hardness off a point that is a quarter. So the same iron ingot makes an excellent sword and a
+heavy, stiff, worse spear, while a yew log does the reverse — same library, opposite verdict, no
+authored combinations. `FormBreadthTests.TheSameMetalIsExcellentInOneFormAndWastedInAnother`
+fails the day that stops being true.
+
+The extreme case is the **Focus**, the only form whose stat map reads `resonance` at all. Delete
+that one read and every resonant material in the game — ley crystal, runes, mana prisms — becomes
+decoration with nowhere to be excellent.
+
+**The stat map also decides what the item can *roll*.** `ItemPotentialCalculator.MaterialInfluence`
+weights each property by where the map reads it, and that influence is the sole input to modifier
+eligibility, weight and tier. A form that reads flexibility hard is a flexibility item that rolls
+flexibility modifiers — the Gauntlets reach Ghoststep and the Helm reaches Grounding for exactly
+this reason, with no per-form affix content.
 
 ## 7.3 Apertures and dormancy
 

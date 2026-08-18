@@ -1,7 +1,7 @@
 {
   "id": "equip.tattered_armor",
   "name": "Tattered Armor",
-  "slot": "Armor",
+  "slot": "Body",
   "tags": ["armor", "starter"],
   "armor": { "armor": 1, "resistances": {} },
   "properties": { "hardness": 1 }
