@@ -1250,6 +1250,7 @@ the actor's own identity tags. `loot.template.beast_anatomy` is the ready-made c
 | `CraftReading.cs` | A projection as grouped movements, opposition, risk, emergence |
 | `SlotReading.cs` | Why a material suits (or does not suit) a form slot |
 | `ItemReading.cs` | An item as stats, modifier lines, moves, genome support |
+| `EquipmentSlotNames.cs` | `EquipmentSlot` → player text. `CategoryOf` = what kind of place ("ring"), `PositionOf` = which one ("Ring I"). **Slot enum members are save keys and read as data, not English** — `Ring1` is the reason this file exists |
 | `TraitProximity.cs` | "Within reach: Emberveined — needs more Heat" |
 | `SemanticFormat.cs` | **All wording.** Readings → strings and typed `ProjectionLine`s |
 | `AdvancedFormat.cs` | The numeric voice, behind the Advanced toggle |

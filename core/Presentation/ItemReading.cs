@@ -72,7 +72,7 @@ public static class ItemReadings
 
         return new ItemReading(
             instance?.DisplayName ?? definition.Name,
-            definition.Slot.ToString().ToLowerInvariant(),
+            EquipmentSlotNames.CategoryOf(definition.Slot),
             moves,
             armor.Armor,
             armor.Resistances,

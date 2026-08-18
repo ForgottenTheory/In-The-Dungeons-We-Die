@@ -5,6 +5,7 @@ using Dungeons.Combat;
 using Dungeons.Hideout;
 using Dungeons.Items;
 using Dungeons.Professions;
+using Dungeons.Presentation;
 using Godot;
 using static Dungeons.Game.Ui.ConsoleTheme;
 
@@ -725,7 +726,8 @@ public partial class MainMvpUI : Control
         var row = Row();
         _equipmentControls.AddChild(row);
         var name = equipped?.DisplayName ?? "— (empty)";
-        var line = summary.Length > 0 ? $"{slot}: {name}  →  {summary}" : $"{slot}: {name}";
+        var position = EquipmentSlotNames.PositionOf(slot);
+        var line = summary.Length > 0 ? $"{position}: {name}  →  {summary}" : $"{position}: {name}";
         row.AddChild(new Label { Text = line, CustomMinimumSize = new Vector2(420, 0) });
         if (equipped is not null)
             row.AddChild(MakeButton("Unequip", () => _game.UnequipToStash(slot), Danger));

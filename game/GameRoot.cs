@@ -1511,7 +1511,7 @@ public partial class GameRoot : Node
         // Every worn piece, then the mitigation they add up to. The total is the honest number:
         // a loadout defends as a set, and reading it piece by piece hides that.
         foreach (var slot in EquipmentSlots.DisplayOrder.Where(s => s != EquipmentSlot.Weapon))
-            report.AppendLine($"{slot,-8}{Equipped(slot)?.DisplayName ?? "— (empty)"}");
+            report.AppendLine($"{EquipmentSlotNames.PositionOf(slot),-8}{Equipped(slot)?.DisplayName ?? "— (empty)"}");
 
         report.Append($"Worn:   {EquippedArmorSummary()}");
         return report.ToString();
