@@ -1,0 +1,190 @@
+[
+  // Wave 2 — the dead, in both of their kinds.
+  //
+  // Moveset rules: see `humanoids.json`'s header.
+  //
+  // family.undead is bone and preserved flesh: hammers do the work, points pass through.
+  // family.spirit is not there at all: physical barely applies, magic is the whole answer.
+  // Getting an entry into the right one of those two is the only real decision in this file —
+  // a Draugr is undead, a Shade is a spirit, and mixing them up quietly ruins a fight.
+
+  // ══ SKELETONS ═══════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.skeleton", "name": "Skeleton", "family": "family.undead", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.skeleton_mage", "name": "Skeleton Mage", "family": "family.undead", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.unarmed"] },
+
+  { "id": "actor.skeleton_champion", "name": "Skeleton Champion", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.frozen_skeleton", "name": "Frozen Skeleton", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.floating_skull", "name": "Floating Skull", "family": "family.undead", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.unarmed"] },
+
+  { "id": "actor.bone_beast", "name": "Bone Beast", "family": "family.undead", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.bone_golem", "name": "Bone Golem", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  // ══ ZOMBIES AND EATERS ══════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.armored_zombie", "name": "Armored Zombie", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.plague_zombie", "name": "Plague Zombie", "family": "family.undead", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.ghast", "name": "Ghast", "family": "family.undead", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.corpse_eater", "name": "Corpse Eater", "family": "family.undead", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.flesh_golem", "name": "Flesh Golem", "family": "family.undead", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.frozen_dead", "name": "Frozen Dead", "family": "family.undead", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  // ══ THE OLDER DEAD ══════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.wight", "name": "Wight", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.revenant", "name": "Revenant", "family": "family.undead", "role": "role.stalker",
+    "moves": ["move.iron_slash", "move.quick_stab"] },
+
+  { "id": "actor.draugr", "name": "Draugr", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.mummy", "name": "Mummy", "family": "family.undead", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.mummy_warrior", "name": "Mummy Warrior", "family": "family.undead", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.mummy_guardian", "name": "Mummy Guardian", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.anubis_warrior", "name": "Anubis Warrior", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.graveyard_keeper", "name": "Graveyard Keeper", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.headless_knight", "name": "Headless Knight", "family": "family.undead", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.headless_horseman", "name": "Headless Horseman", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.iron_slash"] },
+
+  // ══ THE COMMANDING DEAD ═════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.lich", "name": "Lich", "family": "family.undead", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.arcane_dart", "move.unarmed"] },
+
+  { "id": "actor.archlich", "name": "Archlich", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.crash", "move.wither", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.death_knight", "name": "Death Knight", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.vampire", "name": "Vampire", "family": "family.undead", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.iron_slash"] },
+
+  { "id": "actor.vampire_spawn", "name": "Vampire Spawn", "family": "family.undead", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.vampire_lord", "name": "Vampire Lord", "family": "family.undead", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.vampire_countess", "name": "Vampire Countess", "family": "family.undead", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  // ══ UNDEAD BEASTS ═══════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.grave_hound", "name": "Grave Hound", "family": "family.undead", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.undead_hound", "name": "Undead Hound", "family": "family.undead", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.undead_horse", "name": "Undead Horse", "family": "family.undead", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ SPIRITS — physical barely applies ═══════════════════════════════════════════════════════
+
+  { "id": "actor.specter", "name": "Specter", "family": "family.spirit", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.ghost", "name": "Ghost", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.poltergeist", "name": "Poltergeist", "family": "family.spirit", "role": "role.archer",
+    "moves": ["move.sling_stone", "move.unarmed"] },
+
+  { "id": "actor.shade", "name": "Shade", "family": "family.spirit", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.frost_wraith", "name": "Frost Wraith", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.ash_wraith", "name": "Ash Wraith", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.sand_wraith", "name": "Sand Wraith", "family": "family.spirit", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.ice_spirit", "name": "Ice Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.snow_spirit", "name": "Snow Spirit", "family": "family.spirit", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.ember_spirit", "name": "Ember Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.flame_spirit", "name": "Flame Spirit", "family": "family.spirit", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.forest_spirit", "name": "Forest Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.ancient_spirit", "name": "Ancient Spirit", "family": "family.spirit", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.quick_stab"] },
+
+  { "id": "actor.nature_spirit", "name": "Nature Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.tree_spirit", "name": "Tree Spirit", "family": "family.spirit", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.river_spirit", "name": "River Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.mountain_spirit", "name": "Mountain Spirit", "family": "family.spirit", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.cave_spirit", "name": "Cave Spirit", "family": "family.spirit", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.guardian_spirit", "name": "Guardian Spirit", "family": "family.spirit", "role": "role.guardian",
+    "moves": ["move.quick_stab", "move.stoneskin"] },
+
+  { "id": "actor.ancestor_spirit", "name": "Ancestor Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.lost_soul", "name": "Lost Soul", "family": "family.spirit", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.tormented_soul", "name": "Tormented Soul", "family": "family.spirit", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.cursed_spirit", "name": "Cursed Spirit", "family": "family.spirit", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.unarmed"] }
+]

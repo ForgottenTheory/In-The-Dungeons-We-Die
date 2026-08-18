@@ -1,0 +1,146 @@
+[
+  // Wave 2 — made things, formless things, and growing things.
+  //
+  // Moveset rules: see `humanoids.json`'s header.
+  //
+  // The golems are the clearest case in the whole enemy set for why families are physiological
+  // rather than nominal: an Ice Golem and a Magma Golem are the same construct body with
+  // different moves. Splitting them into families would have duplicated an entire stat block to
+  // express one spell.
+
+  // ══ ANIMATED THINGS ═════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.possessed_armor", "name": "Possessed Armor", "family": "family.construct", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.animated_weapon", "name": "Animated Weapon", "family": "family.construct", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.animated_statue", "name": "Animated Statue", "family": "family.construct", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.living_statue", "name": "Living Statue", "family": "family.construct", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.possessed_doll", "name": "Possessed Doll", "family": "family.construct", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.living_doll", "name": "Living Doll", "family": "family.construct", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.scarecrow", "name": "Scarecrow", "family": "family.construct", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.animated_scarecrow", "name": "Animated Scarecrow", "family": "family.construct", "role": "role.stalker",
+    "moves": ["move.rusty_slash", "move.quick_stab"] },
+
+  { "id": "actor.pumpkin_beast", "name": "Pumpkin Beast", "family": "family.construct", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.colossus", "name": "Colossus", "family": "family.construct", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  // ══ GOLEMS — one body, many materials ═══════════════════════════════════════════════════════
+
+  { "id": "actor.clay_golem", "name": "Clay Golem", "family": "family.construct", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.wood_golem", "name": "Wood Golem", "family": "family.construct", "role": "role.skirmisher",
+    "moves": ["move.overhead_crush", "move.expose_weakness"] },
+
+  { "id": "actor.crystal_golem", "name": "Crystal Golem", "family": "family.construct", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.overhead_crush"] },
+
+  { "id": "actor.obsidian_golem", "name": "Obsidian Golem", "family": "family.construct", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.ice_golem", "name": "Ice Golem", "family": "family.construct", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.overhead_crush"] },
+
+  { "id": "actor.magma_golem", "name": "Magma Golem", "family": "family.construct", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.overhead_crush"] },
+
+  { "id": "actor.sand_golem", "name": "Sand Golem", "family": "family.construct", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.swamp_golem", "name": "Swamp Golem", "family": "family.construct", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.lava_golem", "name": "Lava Golem", "family": "family.construct", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.ash_golem", "name": "Ash Golem", "family": "family.construct", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.coral_golem", "name": "Coral Golem", "family": "family.construct", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  // ══ SLIMES AND OOZES ════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.slime", "name": "Slime", "family": "family.ooze", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.red_slime", "name": "Red Slime", "family": "family.ooze", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.blue_slime", "name": "Blue Slime", "family": "family.ooze", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.black_slime", "name": "Black Slime", "family": "family.ooze", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.acid_slime", "name": "Acid Slime", "family": "family.ooze", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.ice_slime", "name": "Ice Slime", "family": "family.ooze", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.fire_slime", "name": "Fire Slime", "family": "family.ooze", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.poison_slime", "name": "Poison Slime", "family": "family.ooze", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.gelatinous_ooze", "name": "Gelatinous Ooze", "family": "family.ooze", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.ooze", "name": "Ooze", "family": "family.ooze", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.black_ooze", "name": "Black Ooze", "family": "family.ooze", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.living_tar", "name": "Living Tar", "family": "family.ooze", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.mudcrawler", "name": "Mudcrawler", "family": "family.ooze", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  // ══ PLANTS ══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.ancient_treant", "name": "Ancient Treant", "family": "family.plant", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.elder_treant", "name": "Elder Treant", "family": "family.plant", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.crash"] },
+
+  { "id": "actor.walking_tree", "name": "Walking Tree", "family": "family.plant", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.living_root", "name": "Living Root", "family": "family.plant", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.thorn_beast", "name": "Thorn Beast", "family": "family.plant", "role": "role.guardian",
+    "moves": ["move.quick_stab", "move.brace"] },
+
+  { "id": "actor.carnivorous_plant", "name": "Carnivorous Plant", "family": "family.plant", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  // ══ FUNGI ═══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.giant_mushroom", "name": "Giant Mushroom", "family": "family.fungal", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.fungal_beast", "name": "Fungal Beast", "family": "family.fungal", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] }
+]

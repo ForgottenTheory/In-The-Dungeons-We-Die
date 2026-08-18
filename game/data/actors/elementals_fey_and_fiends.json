@@ -1,0 +1,168 @@
+[
+  // Wave 2 — things from elsewhere.
+  //
+  // Moveset rules: see `humanoids.json`'s header.
+  //
+  // Every elemental below shares one family and differs by a single spell. That is the layering's
+  // best argument in the whole enemy set: fourteen elementals cost fourteen movesets, not
+  // fourteen stat blocks.
+
+  // ══ ELEMENTALS ══════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.water_elemental", "name": "Water Elemental", "family": "family.elemental", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.air_elemental", "name": "Air Elemental", "family": "family.elemental", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.magma_elemental", "name": "Magma Elemental", "family": "family.elemental", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.sand_elemental", "name": "Sand Elemental", "family": "family.elemental", "role": "role.skirmisher",
+    "moves": ["move.overhead_crush", "move.expose_weakness"] },
+
+  { "id": "actor.smoke_elemental", "name": "Smoke Elemental", "family": "family.elemental", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.ash_elemental", "name": "Ash Elemental", "family": "family.elemental", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.crystal_elemental", "name": "Crystal Elemental", "family": "family.elemental", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.light_elemental", "name": "Light Elemental", "family": "family.elemental", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.shadow_elemental", "name": "Shadow Elemental", "family": "family.elemental", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.mud_elemental", "name": "Mud Elemental", "family": "family.elemental", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.elder_elemental", "name": "Elder Elemental", "family": "family.elemental", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush", "move.arcane_dart"] },
+
+  { "id": "actor.dust_devil", "name": "Dust Devil", "family": "family.elemental", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  // ══ FEY ═════════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.sprite", "name": "Sprite", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.unarmed"] },
+
+  { "id": "actor.fairy", "name": "Fairy", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.nymph", "name": "Nymph", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.naiad", "name": "Naiad", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.sylph", "name": "Sylph", "family": "family.fey", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.brownie", "name": "Brownie", "family": "family.fey", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.will_o_the_wisp", "name": "Will-o'-the-Wisp", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arc_surge", "move.unarmed"] },
+
+  { "id": "actor.changeling", "name": "Changeling", "family": "family.fey", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.fey_hound", "name": "Fey Hound", "family": "family.fey", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.fey_stag", "name": "Fey Stag", "family": "family.fey", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.fairy_dragon", "name": "Fairy Dragon", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.quick_stab"] },
+
+  { "id": "actor.jackalope", "name": "Jackalope", "family": "family.fey", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.nightmare", "name": "Nightmare", "family": "family.fey", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.kelpie", "name": "Kelpie", "family": "family.fey", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  // ══ FIENDS ══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.quasit", "name": "Quasit", "family": "family.fiend", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.demon", "name": "Demon", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.lesser_demon", "name": "Lesser Demon", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.greater_demon", "name": "Greater Demon", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.demon_hound", "name": "Demon Hound", "family": "family.fiend", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.demon_knight", "name": "Demon Knight", "family": "family.fiend", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.demon_lord", "name": "Demon Lord", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.devil", "name": "Devil", "family": "family.fiend", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.quick_stab"] },
+
+  { "id": "actor.lesser_devil", "name": "Lesser Devil", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.greater_devil", "name": "Greater Devil", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.succubus", "name": "Succubus", "family": "family.fiend", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.incubus", "name": "Incubus", "family": "family.fiend", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.iron_slash"] },
+
+  { "id": "actor.winged_demon", "name": "Winged Demon", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.horned_demon", "name": "Horned Demon", "family": "family.fiend", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.abyssal_beast", "name": "Abyssal Beast", "family": "family.fiend", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.chaos_spawn", "name": "Chaos Spawn", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.fiend", "name": "Fiend", "family": "family.fiend", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.infernal_knight", "name": "Infernal Knight", "family": "family.fiend", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.demon_prince", "name": "Demon Prince", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.demon_queen", "name": "Demon Queen", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.wither", "move.expose_weakness", "move.crash"] },
+
+  { "id": "actor.archdemon", "name": "Archdemon", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.arcane_dart", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.cerberus", "name": "Cerberus", "family": "family.fiend", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.two_headed_hound", "name": "Two-Headed Hound", "family": "family.fiend", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.three_headed_hound", "name": "Three-Headed Hound", "family": "family.fiend", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.hellcat", "name": "Hellcat", "family": "family.fiend", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] }
+]

@@ -101,6 +101,9 @@ coherent run.
    dormancy, projection, genome and modifier rolls all unchanged. Worn armour is now the sum of
    the loadout, with coverage authored in each form's `stat_map` rather than coded per slot.
    Four new form validation rules; the Focus needed no new affix content.
+   **Enemy roster complete ✅.** Every name in the design list ships: **481 actors** across 26
+   families and 7 roles. Wave 2 needed no new families -- the layer built for wave 1 absorbed all
+   ~350 remaining names, which is the layering paying for itself.
    **Rings ✅ (D33).** `Ring1`/`Ring2` appended (free — slots persist by name, so no migration)
    and a ninth form, the Ring, reading `conductivity`/`affinity` — the two properties no form
    read before it. One form fills both positions via `EquipmentSlots.InterchangeablePositions`;
@@ -129,5 +132,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**968** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**969** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

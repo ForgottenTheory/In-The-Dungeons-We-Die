@@ -33,11 +33,11 @@
     "name": "Orc",
     "tags": ["source:creature", "source:greenskin"],
     "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 1, "maxQuantity": 3 },
       { "tableId": "loot.shared.creature_remains" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
-      { "itemId": "material.animal_bone", "chance": 0.50, "minQuantity": 1, "maxQuantity": 3 },
       { "itemId": "material.beast_heart", "chance": 0.20 },
       { "itemId": "material.scrap_iron", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 }
     ]
@@ -79,11 +79,11 @@
     "name": "Ogre",
     "tags": ["source:creature", "source:giantkin"],
     "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 2, "maxQuantity": 5 },
       { "tableId": "loot.shared.creature_remains" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
-      { "itemId": "material.animal_bone", "chance": 0.55, "minQuantity": 2, "maxQuantity": 5 },
       { "itemId": "material.ivory_tusk", "chance": 0.18 }
     ]
   },
@@ -110,13 +110,13 @@
     "name": "Beastfolk",
     "tags": ["source:creature", "source:beastfolk"],
     "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 1, "maxQuantity": 3 },
       { "tableId": "loot.shared.creature_remains" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
       { "itemId": "material.ram_horn", "chance": 0.35 },
       { "itemId": "material.goat_horn", "chance": 0.30 },
-      { "itemId": "material.animal_bone", "chance": 0.40, "minQuantity": 1, "maxQuantity": 3 }
     ]
   },
 
@@ -174,13 +174,13 @@
     "name": "Beast",
     "tags": ["source:creature", "source:beast"],
     "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 1, "maxQuantity": 3 },
       { "tableId": "loot.shared.creature_remains" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
       { "itemId": "material.animal_blood", "chance": 0.45 },
       { "itemId": "material.beast_heart", "chance": 0.22 },
-      { "itemId": "material.animal_bone", "chance": 0.40, "minQuantity": 1, "maxQuantity": 3 }
     ]
   },
 
@@ -342,12 +342,12 @@
     "name": "Fey",
     "tags": ["source:creature", "source:fey"],
     "alwaysDrops": [
+      { "itemId": "material.glimmerdust", "minQuantity": 1, "maxQuantity": 2 },
       { "tableId": "loot.shared.fey_essence" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
       { "itemId": "material.fairy_ring", "chance": 0.25 },
-      { "itemId": "material.glimmerdust", "chance": 0.30 },
       { "itemId": "material.dream_essence", "chance": 0.15 }
     ]
   },
@@ -391,11 +391,11 @@
     "name": "Human",
     "tags": ["source:creature", "source:humanoid"],
     "alwaysDrops": [
+      { "itemId": "material.tattered_cloth", "minQuantity": 1, "maxQuantity": 2 },
       { "tableId": "loot.shared.salvage_light" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
-      { "itemId": "material.tattered_cloth", "chance": 0.45, "minQuantity": 1, "maxQuantity": 2 },
       { "itemId": "material.scrap_iron", "chance": 0.35 },
       { "itemId": "material.iron_key", "chance": 0.08 }
     ]
@@ -406,11 +406,11 @@
     "name": "Lycanthrope",
     "tags": ["source:creature", "source:beast", "source:humanoid"],
     "alwaysDrops": [
+      { "itemId": "material.wolf_fang", "minQuantity": 1, "maxQuantity": 2 },
       { "tableId": "loot.shared.creature_remains" },
       { "tableId": "loot.shared.rank_spoils" }
     ],
     "chanceDrops": [
-      { "itemId": "material.wolf_fang", "chance": 0.40 },
       { "itemId": "material.direwolf_pelt", "chance": 0.25 },
       { "itemId": "material.beast_heart", "chance": 0.30 },
       { "itemId": "material.silver_ore", "chance": 0.10 }

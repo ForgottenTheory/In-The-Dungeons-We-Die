@@ -1,0 +1,353 @@
+[
+  // Wave 2 — the rest of the roster: people who chose this, the very large, and the things with
+  // no agreed-upon shape.
+  //
+  // Moveset rules: see `humanoids.json`'s header.
+
+  // ══ GOBLINOIDS AND GREENSKINS — the plain forms ═════════════════════════════════════════════
+
+  { "id": "actor.goblin", "name": "Goblin", "family": "family.goblin", "role": "role.skirmisher",
+    "moves": ["move.goblin_slash", "move.expose_weakness"] },
+
+  { "id": "actor.goblin_warrior", "name": "Goblin Warrior", "family": "family.goblin", "role": "role.guardian",
+    "moves": ["move.goblin_slash", "move.brace"] },
+
+  { "id": "actor.goblin_king", "name": "Goblin King", "family": "family.goblin", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.hobgoblin", "name": "Hobgoblin", "family": "family.hobgoblin", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.orc", "name": "Orc", "family": "family.orc", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.half_orc", "name": "Half-Orc", "family": "family.orc", "role": "role.stalker",
+    "moves": ["move.iron_slash", "move.quick_stab"] },
+
+  { "id": "actor.orc_warlord", "name": "Orc Warlord", "family": "family.orc", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.gnoll", "name": "Gnoll", "family": "family.beastfolk", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.gnoll_warrior", "name": "Gnoll Warrior", "family": "family.beastfolk", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  // ══ BEASTFOLK — the rest ════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.minotaur_warrior", "name": "Minotaur Warrior", "family": "family.beastfolk", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.minotaur_champion", "name": "Minotaur Champion", "family": "family.beastfolk", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.centaur", "name": "Centaur", "family": "family.beastfolk", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.centaur_warrior", "name": "Centaur Warrior", "family": "family.beastfolk", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.faun", "name": "Faun", "family": "family.beastfolk", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.harpy_matriarch", "name": "Harpy Matriarch", "family": "family.beastfolk", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.quick_stab"] },
+
+  { "id": "actor.ratfolk", "name": "Ratfolk", "family": "family.beastfolk", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.frogfolk", "name": "Frogfolk", "family": "family.beastfolk", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.toadfolk", "name": "Toadfolk", "family": "family.beastfolk", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.sphinx", "name": "Sphinx", "family": "family.beastfolk", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.unarmed"] },
+
+  // ══ THE VERY LARGE ══════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.ogre", "name": "Ogre", "family": "family.ogre", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.ogre_mage", "name": "Ogre Mage", "family": "family.ogre", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.overhead_crush"] },
+
+  { "id": "actor.cyclops", "name": "Cyclops", "family": "family.ogre", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.troll", "name": "Troll", "family": "family.troll", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.forest_troll", "name": "Forest Troll", "family": "family.troll", "role": "role.skirmisher",
+    "moves": ["move.overhead_crush", "move.expose_weakness"] },
+
+  { "id": "actor.frost_troll", "name": "Frost Troll", "family": "family.troll", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.swamp_troll", "name": "Swamp Troll", "family": "family.troll", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.bog_troll", "name": "Bog Troll", "family": "family.troll", "role": "role.stalker",
+    "moves": ["move.overhead_crush", "move.quick_stab"] },
+
+  { "id": "actor.snow_troll", "name": "Snow Troll", "family": "family.troll", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.troll_berserker", "name": "Troll Berserker", "family": "family.troll", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.troll_king", "name": "Troll King", "family": "family.troll", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.crash"] },
+
+  { "id": "actor.giant", "name": "Giant", "family": "family.giant", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.fire_giant", "name": "Fire Giant", "family": "family.giant", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.cloud_giant", "name": "Cloud Giant", "family": "family.giant", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arc_surge", "move.overhead_crush"] },
+
+  { "id": "actor.ice_giant", "name": "Ice Giant", "family": "family.giant", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.giant_chieftain", "name": "Giant Chieftain", "family": "family.giant", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.crash"] },
+
+  { "id": "actor.titan", "name": "Titan", "family": "family.giant", "role": "role.champion",
+    "moves": ["move.crash", "move.arcane_dart", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.yeti", "name": "Yeti", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.wendigo", "name": "Wendigo", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.snow_beast", "name": "Snow Beast", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  // ══ OUTLAWS ═════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.bandit_thug", "name": "Bandit Thug", "family": "family.human", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.highwayman", "name": "Highwayman", "family": "family.human", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.brigand", "name": "Brigand", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.raider", "name": "Raider", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.marauder", "name": "Marauder", "family": "family.human", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.pirate", "name": "Pirate", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.pirate_captain", "name": "Pirate Captain", "family": "family.human", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.smuggler", "name": "Smuggler", "family": "family.human", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.mercenary", "name": "Mercenary", "family": "family.human", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.deserter", "name": "Deserter", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  // ══ THE FALLEN AND THE FAITHFUL ═════════════════════════════════════════════════════════════
+
+  { "id": "actor.corrupted_soldier", "name": "Corrupted Soldier", "family": "family.human", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.corrupted_knight", "name": "Corrupted Knight", "family": "family.human", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.corrupted_mage", "name": "Corrupted Mage", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.quick_stab"] },
+
+  { "id": "actor.blackguard", "name": "Blackguard", "family": "family.human", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.dark_cultist", "name": "Dark Cultist", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.cult_fanatic", "name": "Cult Fanatic", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.cult_sorcerer", "name": "Cult Sorcerer", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.quick_stab"] },
+
+  // ══ SPELLCASTERS ════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.warlock", "name": "Warlock", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.hag", "name": "Hag", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.swamp_hag", "name": "Swamp Hag", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.unarmed"] },
+
+  { "id": "actor.sea_hag", "name": "Sea Hag", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.night_hag", "name": "Night Hag", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.unarmed"] },
+
+  { "id": "actor.witch_doctor", "name": "Witch Doctor", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.shaman", "name": "Shaman", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.quick_stab"] },
+
+  { "id": "actor.dark_shaman", "name": "Dark Shaman", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.sorcerer", "name": "Sorcerer", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.quick_stab"] },
+
+  { "id": "actor.battle_mage", "name": "Battle Mage", "family": "family.human", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.wither", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.elementalist", "name": "Elementalist", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.frost_lance", "move.arc_surge", "move.quick_stab"] },
+
+  { "id": "actor.druid", "name": "Druid", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.quick_stab"] },
+
+  { "id": "actor.corrupted_druid", "name": "Corrupted Druid", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.alchemist", "name": "Alchemist", "family": "family.human", "role": "role.archer",
+    "moves": ["move.sling_stone", "move.quick_stab"] },
+
+  { "id": "actor.mad_alchemist", "name": "Mad Alchemist", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.quick_stab"] },
+
+  { "id": "actor.plague_doctor", "name": "Plague Doctor", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.quick_stab"] },
+
+  { "id": "actor.possessed_villager", "name": "Possessed Villager", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.cursed_noble", "name": "Cursed Noble", "family": "family.human", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.iron_slash"] },
+
+  // ══ HORRORS AND SHAPESHIFTERS ═══════════════════════════════════════════════════════════════
+
+  { "id": "actor.mimic", "name": "Mimic", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.door_mimic", "name": "Door Mimic", "family": "family.aberration", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.statue_mimic", "name": "Statue Mimic", "family": "family.aberration", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.shapechanger", "name": "Shapechanger", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.iron_slash"] },
+
+  { "id": "actor.gibbering_beast", "name": "Gibbering Beast", "family": "family.aberration", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  // Two bodies stitched from several animals, which is what family.aberration is for. The
+  // Manticore takes role.archer because the tail spikes ARE its identity — and the archer brain
+  // then requires it to carry a ranged attack, so the flavour cannot silently go missing.
+  { "id": "actor.manticore", "name": "Manticore", "family": "family.aberration", "role": "role.archer",
+    "moves": ["move.javelin_throw", "move.quick_stab"] },
+
+  { "id": "actor.chimera", "name": "Chimera", "family": "family.aberration", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.cave_horror", "name": "Cave Horror", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.swamp_horror", "name": "Swamp Horror", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.forest_horror", "name": "Forest Horror", "family": "family.aberration", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.abyssal_horror", "name": "Abyssal Horror", "family": "family.aberration", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.burrowing_horror", "name": "Burrowing Horror", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ CARRION AND ROT ═════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.carrion_beast", "name": "Carrion Beast", "family": "family.aberration", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.blood_beast", "name": "Blood Beast", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.flesh_beast", "name": "Flesh Beast", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.plague_beast", "name": "Plague Beast", "family": "family.aberration", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.rot_beast", "name": "Rot Beast", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.mutant", "name": "Mutant", "family": "family.aberration", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.mutant_brute", "name": "Mutant Brute", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.mutant_hound", "name": "Mutant Hound", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  // ══ WORMS AND THINGS THAT BURROW ════════════════════════════════════════════════════════════
+
+  { "id": "actor.frost_worm", "name": "Frost Worm", "family": "family.aberration", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.overhead_crush"] },
+
+  { "id": "actor.sand_worm", "name": "Sand Worm", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_worm", "name": "Giant Worm", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.carrion_worm", "name": "Carrion Worm", "family": "family.aberration", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.rock_worm", "name": "Rock Worm", "family": "family.aberration", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.lava_worm", "name": "Lava Worm", "family": "family.aberration", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.overhead_crush"] },
+
+  { "id": "actor.burrowing_worm", "name": "Burrowing Worm", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.magma_worm", "name": "Magma Worm", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ THE WET AND THE BURNING ═════════════════════════════════════════════════════════════════
+
+  { "id": "actor.bog_beast", "name": "Bog Beast", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.swamp_beast", "name": "Swamp Beast", "family": "family.aberration", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.marsh_stalker", "name": "Marsh Stalker", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.dune_stalker", "name": "Dune Stalker", "family": "family.aberration", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.lava_beast", "name": "Lava Beast", "family": "family.elemental", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.magma_beast", "name": "Magma Beast", "family": "family.elemental", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] }
+]

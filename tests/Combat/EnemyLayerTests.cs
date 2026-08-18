@@ -85,6 +85,39 @@ public class EnemyLayerTests
         }
     }
 
+    /// <summary>
+    /// Every family must pay out <b>structurally</b>, not on average.
+    ///
+    /// <para>This exists because the probabilistic check caught the same bug twice. A family
+    /// whose only guaranteed line is <c>loot.shared.creature_remains</c> looks safe and is not:
+    /// that table carries a <c>dropsNothing</c> weight, so a kill can pay nothing and whether it
+    /// does is down to the seed. Seven families shipped that way, and the roll-based test only
+    /// noticed when a later wave added an actor unlucky enough to hit it.</para>
+    ///
+    /// <para>So: at least one <c>alwaysDrops</c> entry must be a direct item, or a table that
+    /// itself guarantees one. No dice involved.</para>
+    /// </summary>
+    [Fact]
+    public void EveryFamilyLeavesSomethingBehindWithoutRelyingOnLuck()
+    {
+        var lootTables = TestPaths.LoadStore<LootTableDefinition>("loot_tables");
+
+        bool GuaranteesAnItem(string tableId, HashSet<string> visited)
+        {
+            if (!visited.Add(tableId) || !lootTables.TryGetById(tableId, out var table))
+                return false;
+
+            return table.AlwaysDrops.Any(entry =>
+                !string.IsNullOrEmpty(entry.ItemId)
+                || (!string.IsNullOrEmpty(entry.TableId) && GuaranteesAnItem(entry.TableId, visited)));
+        }
+
+        foreach (var family in Families().GetAll())
+            Assert.True(
+                GuaranteesAnItem(family.LootTableId!, new HashSet<string>(StringComparer.OrdinalIgnoreCase)),
+                $"{family.Id} can roll an empty haul — nothing in its alwaysDrops chain is certain.");
+    }
+
     // ---- Roles ------------------------------------------------------------------------------
 
     /// <summary>

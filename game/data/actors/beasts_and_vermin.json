@@ -1,0 +1,245 @@
+[
+  // Wave 2 — everything with fur, feathers, chitin or too many legs.
+  //
+  // Moveset rules: see `humanoids.json`'s header.
+  //
+  // The Dire prefix is a ROLE change, not a family one: a Wolf is a skirmisher and a Dire Wolf is
+  // a brute, on the same body. That is the layering doing its job — "dire" costs one word here
+  // instead of a duplicated stat block.
+
+  // ══ WOLVES, BEARS, BOARS ════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.warg", "name": "Warg", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.ice_wolf", "name": "Ice Wolf", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.dire_bear", "name": "Dire Bear", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.polar_bear", "name": "Polar Bear", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.frost_bear", "name": "Frost Bear", "family": "family.beast", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.boar", "name": "Boar", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  // ══ HORNED AND HOOFED ═══════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.elk", "name": "Elk", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.dire_elk", "name": "Dire Elk", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.stag", "name": "Stag", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.dire_stag", "name": "Dire Stag", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.mammoth", "name": "Mammoth", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.war_mammoth", "name": "War Mammoth", "family": "family.beast", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.rhinoceros", "name": "Rhinoceros", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ CATS AND HUNTERS ════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.lion", "name": "Lion", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.dire_lion", "name": "Dire Lion", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.tiger", "name": "Tiger", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.dire_tiger", "name": "Dire Tiger", "family": "family.beast", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.panther", "name": "Panther", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.hyena", "name": "Hyena", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.dire_hyena", "name": "Dire Hyena", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.dire_ape", "name": "Dire Ape", "family": "family.beast", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ BIRDS ═══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.phoenix", "name": "Phoenix", "family": "family.beast", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.mend", "move.unarmed"] },
+
+  { "id": "actor.thunderbird", "name": "Thunderbird", "family": "family.beast", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arc_surge", "move.unarmed"] },
+
+  { "id": "actor.roc", "name": "Roc", "family": "family.beast", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.giant_eagle", "name": "Giant Eagle", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.giant_owl", "name": "Giant Owl", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.dire_raven", "name": "Dire Raven", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.giant_raven", "name": "Giant Raven", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.blood_hawk", "name": "Blood Hawk", "family": "family.beast", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.giant_vulture", "name": "Giant Vulture", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.giant_falcon", "name": "Giant Falcon", "family": "family.beast", "role": "role.archer",
+    "moves": ["move.sling_stone", "move.unarmed"] },
+
+  { "id": "actor.griffin", "name": "Griffin", "family": "family.beast", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.hippogriff", "name": "Hippogriff", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.pegasus", "name": "Pegasus", "family": "family.beast", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.unicorn", "name": "Unicorn", "family": "family.fey", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.quick_stab"] },
+
+  // ══ RODENTS AND BATS ════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.giant_rat", "name": "Giant Rat", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.dire_rat", "name": "Dire Rat", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.giant_bat", "name": "Giant Bat", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.dire_bat", "name": "Dire Bat", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.rat_king", "name": "Rat King", "family": "family.vermin", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.quick_stab"] },
+
+  // ══ SPIDERS AND CRAWLERS ════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.cave_spider", "name": "Cave Spider", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.forest_spider", "name": "Forest Spider", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.giant_centipede", "name": "Giant Centipede", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.giant_millipede", "name": "Giant Millipede", "family": "family.vermin", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.desert_scorpion", "name": "Desert Scorpion", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.giant_scorpion_queen", "name": "Giant Scorpion Queen", "family": "family.vermin", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.quick_stab"] },
+
+  { "id": "actor.carrion_crawler", "name": "Carrion Crawler", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.giant_leech", "name": "Giant Leech", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  // ══ BEETLES, ANTS AND STINGERS ══════════════════════════════════════════════════════════════
+
+  { "id": "actor.giant_beetle", "name": "Giant Beetle", "family": "family.vermin", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.fire_beetle", "name": "Fire Beetle", "family": "family.vermin", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.stag_beetle", "name": "Stag Beetle", "family": "family.vermin", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.giant_ant", "name": "Giant Ant", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.giant_wasp", "name": "Giant Wasp", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.giant_hornet", "name": "Giant Hornet", "family": "family.vermin", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.giant_mantis", "name": "Giant Mantis", "family": "family.vermin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  // ══ THINGS FROM THE WATER ═══════════════════════════════════════════════════════════════════
+
+  { "id": "actor.giant_crab", "name": "Giant Crab", "family": "family.aquatic", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_lobster", "name": "Giant Lobster", "family": "family.aquatic", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_squid", "name": "Giant Squid", "family": "family.aquatic", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_octopus", "name": "Giant Octopus", "family": "family.aquatic", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.kraken", "name": "Kraken", "family": "family.aquatic", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.giant_eel", "name": "Giant Eel", "family": "family.aquatic", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.giant_shark", "name": "Giant Shark", "family": "family.aquatic", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  // ══ SWARMS ══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.scarab_swarm", "name": "Scarab Swarm", "family": "family.swarm", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  { "id": "actor.locust_swarm", "name": "Locust Swarm", "family": "family.swarm", "role": "role.stalker",
+    "moves": ["move.unarmed"] },
+
+  { "id": "actor.bat_swarm", "name": "Bat Swarm", "family": "family.swarm", "role": "role.stalker",
+    "moves": ["move.unarmed"] },
+
+  { "id": "actor.spider_swarm", "name": "Spider Swarm", "family": "family.swarm", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.plague_swarm", "name": "Plague Swarm", "family": "family.swarm", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.piranha_swarm", "name": "Piranha Swarm", "family": "family.swarm", "role": "role.stalker",
+    "moves": ["move.unarmed"] },
+
+  { "id": "actor.leech_swarm", "name": "Leech Swarm", "family": "family.swarm", "role": "role.stalker",
+    "moves": ["move.unarmed"] },
+
+  // ══ LYCANTHROPES ════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.werebear", "name": "Werebear", "family": "family.lycanthrope", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.wereboar", "name": "Wereboar", "family": "family.lycanthrope", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.werecat", "name": "Werecat", "family": "family.lycanthrope", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] }
+]

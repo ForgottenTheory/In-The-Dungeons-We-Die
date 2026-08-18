@@ -1,0 +1,175 @@
+[
+  // Wave 2 — scaled things. Dragons, drakes, serpents, and everything that basks.
+  //
+  // Moveset rules are in `humanoids.json`'s header. The short version: the role's brain decides
+  // which moves an actor MUST carry, and the archetype weapon moves (backstab, cleave, rend,
+  // pulverize, spear_thrust, aimed_shot, bolt_shot, staff_sweep, flail_crush) are all gated on
+  // equipment tags, so enemies cannot use those either — only the ungated library.
+  //
+  // The elemental dragons differ by ONE move. That is the whole point of the layering: a Frost
+  // Dragon is not a new stat block, it is a Dragon that reaches for Frost Lance.
+
+  // ══ DRAGONS ═════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.dragon", "name": "Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.forest_dragon", "name": "Forest Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.venom_bolt", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.swamp_dragon", "name": "Swamp Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.wither", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.desert_dragon", "name": "Desert Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.sea_dragon", "name": "Sea Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.frost_lance", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.storm_dragon", "name": "Storm Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.arc_surge", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.ancient_dragon", "name": "Ancient Dragon", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.fireball", "move.arcane_dart", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.dragon_turtle", "name": "Dragon Turtle", "family": "family.draconic", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  // ══ DRAKES AND WYVERNS ══════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.fire_drake", "name": "Fire Drake", "family": "family.draconic", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.quick_stab"] },
+
+  { "id": "actor.frost_drake", "name": "Frost Drake", "family": "family.draconic", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.quick_stab"] },
+
+  { "id": "actor.river_drake", "name": "River Drake", "family": "family.draconic", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.volcanic_drake", "name": "Volcanic Drake", "family": "family.draconic", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.sea_drake", "name": "Sea Drake", "family": "family.draconic", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  // ══ WYRMS AND HYDRAS ════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.wyrm", "name": "Wyrm", "family": "family.draconic", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.ancient_wyrm", "name": "Ancient Wyrm", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush", "move.arcane_dart"] },
+
+  { "id": "actor.ice_wyrm", "name": "Ice Wyrm", "family": "family.draconic", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.overhead_crush"] },
+
+  { "id": "actor.hydra", "name": "Hydra", "family": "family.draconic", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.hydra_queen", "name": "Hydra Queen", "family": "family.draconic", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  // ══ SERPENTS ════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.sea_serpent", "name": "Sea Serpent", "family": "family.aquatic", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_serpent", "name": "Giant Serpent", "family": "family.reptilian", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.winged_serpent", "name": "Winged Serpent", "family": "family.reptilian", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.sand_serpent", "name": "Sand Serpent", "family": "family.reptilian", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.river_serpent", "name": "River Serpent", "family": "family.aquatic", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.reef_serpent", "name": "Reef Serpent", "family": "family.aquatic", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  // ══ LIZARDFOLK, NAGA AND KIN ════════════════════════════════════════════════════════════════
+
+  { "id": "actor.kobold", "name": "Kobold", "family": "family.kobold", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.lizardfolk", "name": "Lizardfolk", "family": "family.reptilian", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.lizardfolk_warrior", "name": "Lizardfolk Warrior", "family": "family.reptilian", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.naga", "name": "Naga", "family": "family.reptilian", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.naga_priest", "name": "Naga Priest", "family": "family.reptilian", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.mend", "move.quick_stab"] },
+
+  { "id": "actor.naga_sorcerer", "name": "Naga Sorcerer", "family": "family.reptilian", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.quick_stab"] },
+
+  { "id": "actor.lamia", "name": "Lamia", "family": "family.reptilian", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.gorgon", "name": "Gorgon", "family": "family.reptilian", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.medusa", "name": "Medusa", "family": "family.reptilian", "role": "role.archer",
+    "moves": ["move.arrow_shot", "move.quick_stab"] },
+
+  { "id": "actor.cockatrice", "name": "Cockatrice", "family": "family.reptilian", "role": "role.skirmisher",
+    "moves": ["move.unarmed", "move.expose_weakness"] },
+
+  // ══ BIG COLD-BLOODED THINGS ═════════════════════════════════════════════════════════════════
+
+  { "id": "actor.giant_lizard", "name": "Giant Lizard", "family": "family.reptilian", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.giant_crocodile", "name": "Giant Crocodile", "family": "family.reptilian", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.giant_turtle", "name": "Giant Turtle", "family": "family.reptilian", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.giant_toad", "name": "Giant Toad", "family": "family.reptilian", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.giant_frog", "name": "Giant Frog", "family": "family.reptilian", "role": "role.stalker",
+    "moves": ["move.unarmed", "move.quick_stab"] },
+
+  { "id": "actor.fire_lizard", "name": "Fire Lizard", "family": "family.reptilian", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.fireball", "move.unarmed"] },
+
+  { "id": "actor.serpentfolk_priest", "name": "Serpentfolk Priest", "family": "family.reptilian", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  // ══ AQUATIC FOLK ════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.merfolk", "name": "Merfolk", "family": "family.aquatic", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.mermaid", "name": "Mermaid", "family": "family.aquatic", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.unarmed"] },
+
+  { "id": "actor.merman", "name": "Merman", "family": "family.aquatic", "role": "role.archer",
+    "moves": ["move.javelin_throw", "move.quick_stab"] },
+
+  { "id": "actor.fishfolk", "name": "Fishfolk", "family": "family.aquatic", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.crabfolk", "name": "Crabfolk", "family": "family.aquatic", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.sea_devil", "name": "Sea Devil", "family": "family.aquatic", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.water_weird", "name": "Water Weird", "family": "family.aquatic", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.frost_lance", "move.unarmed"] },
+
+  { "id": "actor.angler_beast", "name": "Angler Beast", "family": "family.aquatic", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] },
+
+  { "id": "actor.deep_sea_horror", "name": "Deep-Sea Horror", "family": "family.aberration", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] }
+]
