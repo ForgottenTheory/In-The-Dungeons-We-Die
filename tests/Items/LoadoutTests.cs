@@ -85,6 +85,11 @@ public class LoadoutTests
         Assert.False(EquipmentSlots.GrantsArmor(EquipmentSlot.Weapon));
         Assert.False(EquipmentSlots.GrantsArmor(EquipmentSlot.Trinket));
 
+        // Rings are worn and mitigate nothing — the same ruling as the trinket. Nine slots means
+        // nine chances for "worn" to be mistaken for "armour".
+        foreach (var ring in EquipmentSlots.RingPositions)
+            Assert.False(EquipmentSlots.GrantsArmor(ring), $"{ring} should not mitigate.");
+
         foreach (var slot in new[] { EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Body, EquipmentSlot.Hands, EquipmentSlot.Feet })
             Assert.True(EquipmentSlots.GrantsArmor(slot), $"{slot} should mitigate.");
     }
@@ -96,6 +101,72 @@ public class LoadoutTests
             Enum.GetValues<EquipmentSlot>().OrderBy(s => s).ToList(),
             EquipmentSlots.DisplayOrder.OrderBy(s => s).ToList());
         Assert.Equal(EquipmentSlots.DisplayOrder.Count, EquipmentSlots.DisplayOrder.Distinct().Count());
+    }
+
+    // --- The two ring positions ---------------------------------------------
+
+    /// <summary>
+    /// The failure this exists to prevent: every ring definition names <c>Ring1</c>, so equipping
+    /// by declared slot would put the second ring on top of the first and the player would own a
+    /// ring slot they could never fill.
+    /// </summary>
+    [Fact]
+    public void ASecondRingGoesOnTheOtherHandRatherThanDisplacingTheFirst()
+    {
+        var equipment = new Dungeons.Items.Equipment();
+        var first = Instance("ring.first", 0);
+        var second = new ItemInstance { InstanceId = 2, BaseDefinitionId = "ring.second", ItemType = ItemType.Armor };
+
+        Assert.Null(equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, first));
+        Assert.Null(equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, second));
+
+        Assert.Same(first, equipment.InSlot(EquipmentSlot.Ring1));
+        Assert.Same(second, equipment.InSlot(EquipmentSlot.Ring2));
+    }
+
+    /// <summary>With both hands full a third ring has to evict one, and it must always be the
+    /// same predictable one rather than whichever the dictionary happened to yield.</summary>
+    [Fact]
+    public void AThirdRingDisplacesTheFirstPosition()
+    {
+        var equipment = new Dungeons.Items.Equipment();
+        var first = Instance("ring.first", 0);
+        equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, first);
+        equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.second", 0));
+
+        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.third", 0));
+
+        Assert.Same(first, displaced);
+        Assert.Equal("ring.third", equipment.InSlot(EquipmentSlot.Ring1)!.BaseDefinitionId);
+        Assert.Equal("ring.second", equipment.InSlot(EquipmentSlot.Ring2)!.BaseDefinitionId);
+    }
+
+    /// <summary>Every other slot has exactly one position, so the free-position rule must behave
+    /// exactly like <c>Equip</c> there — a second vest replaces the first.</summary>
+    [Fact]
+    public void ASlotWithOnePositionStillReplacesWhatIsThere()
+    {
+        var equipment = new Dungeons.Items.Equipment();
+        var firstVest = Instance("vest.first", 0);
+        equipment.EquipInFirstFreePosition(EquipmentSlot.Body, firstVest);
+
+        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Body, Instance("vest.second", 0));
+
+        Assert.Same(firstVest, displaced);
+        Assert.Equal("vest.second", equipment.InSlot(EquipmentSlot.Body)!.BaseDefinitionId);
+    }
+
+    [Fact]
+    public void OnlyRingsHaveMoreThanOnePosition()
+    {
+        foreach (var slot in EquipmentSlots.DisplayOrder)
+        {
+            var positions = EquipmentSlots.InterchangeablePositions(slot);
+            if (EquipmentSlots.RingPositions.Contains(slot))
+                Assert.Equal(EquipmentSlots.RingPositions, positions);
+            else
+                Assert.Equal(new[] { slot }, positions);
+        }
     }
 
     // --- The v9 migration ---------------------------------------------------

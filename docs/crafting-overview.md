@@ -407,11 +407,15 @@ authored at all**.
 
 ## 7.1 What a form declares
 
-**Eight ship** (`game/data/forms/forms.json`), one per equipment slot plus a second weapon:
+**Nine ship** (`game/data/forms/forms.json`), one per equipment slot plus a second weapon:
 **Longsword** (edge / core / binding), **Warspear** (point / haft / grip), **Buckler** (face —
 and it declares the `parry` tag that grants the parry command), **Helm** (crown / lining),
 **Vest** (shell), **Gauntlets** (glove / plating), **Treads** (sole / upper), **Focus** (stone /
-setting). The table of what each one exists to test is in `docs/game-overview.md` §9.
+setting), **Ring** (band / inset). The table of what each one exists to test is in
+`docs/game-overview.md` §9.
+
+The Ring is the one form that does **not** map one-to-one onto a slot: it declares `Ring1` and
+fills either ring position (D33). Do not author a second ring form for `Ring2`.
 
 Each **slot** declares:
 
@@ -441,7 +445,9 @@ fails the day that stops being true.
 
 The extreme case is the **Focus**, the only form whose stat map reads `resonance` at all. Delete
 that one read and every resonant material in the game — ley crystal, runes, mana prisms — becomes
-decoration with nowhere to be excellent.
+decoration with nowhere to be excellent. The **Ring** is the same argument run forwards: it reads
+`conductivity` and `affinity`, which *no* form read before it existed, so until it shipped the
+most conductive metals in the library were strictly worse swords and nothing else.
 
 **The stat map also decides what the item can *roll*.** `ItemPotentialCalculator.MaterialInfluence`
 weights each property by where the map reads it, and that influence is the sole input to modifier

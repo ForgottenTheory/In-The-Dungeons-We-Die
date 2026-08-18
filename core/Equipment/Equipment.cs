@@ -24,6 +24,25 @@ public sealed class Equipment
         return previous;
     }
 
+    /// <summary>
+    /// Equips into the first free position this item may occupy, falling back to the position it
+    /// declares once they are all full. For every slot but the rings there is exactly one
+    /// position and this is <see cref="Equip"/>; for rings it is the difference between owning a
+    /// second ring slot and being able to use it.
+    ///
+    /// <para>The fallback displaces <see cref="EquipmentSlots.RingPositions"/>'s first entry
+    /// rather than picking one at random, so a third ring always evicts the same predictable
+    /// one.</para>
+    /// </summary>
+    /// <returns>The displaced item, if the fallback had to evict one.</returns>
+    public ItemInstance? EquipInFirstFreePosition(EquipmentSlot declaredSlot, ItemInstance item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        var positions = EquipmentSlots.InterchangeablePositions(declaredSlot);
+        return Equip(positions.FirstOrDefault(position => InSlot(position) is null, positions[0]), item);
+    }
+
     public ItemInstance? Unequip(EquipmentSlot slot)
     {
         if (!_slots.Remove(slot, out var removed))

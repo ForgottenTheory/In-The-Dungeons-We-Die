@@ -67,7 +67,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
-    "blueprints": ["form.longsword", "form.buckler", "form.helm"]
+    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring"]
   },
   {
     "id": "station.apothecary",
@@ -116,7 +116,7 @@
     "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
     "professions": ["profession.artifice"],
     "crafting_actions": ["process.grind"],
-    "blueprints": ["form.buckler", "form.focus"]
+    "blueprints": ["form.buckler", "form.focus", "form.ring"]
   },
   {
     "id": "station.runic_altar",

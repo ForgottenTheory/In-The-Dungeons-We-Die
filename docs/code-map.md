@@ -645,9 +645,9 @@ the mathematics; `MaterialTransformationEngine` is the orchestration.
 **IMPORTANT FILES** — `core/Crafting/EquipmentAssemblyEngine.cs`,
 `core/Crafting/EquipmentBlueprintDefinition.cs` (`BlueprintSlot`, `StatContribution`, `EquipmentAssemblyTuning`)
 
-**DATA** — `game/data/forms/forms.json` (**8 forms across 7 slots**: Longsword + Warspear
+**DATA** — `game/data/forms/forms.json` (**9 forms across 9 slots**: Longsword + Warspear
 (Weapon), Buckler (Offhand), Helm (Head), Vest (Body), Gauntlets (Hands), Treads (Feet), Focus
-(Trinket)). Each exists to exercise a different part of the material system — the file's own
+(Trinket), Ring (Ring1 **or** Ring2 — one form fills both, D33)). Each exists to exercise a different part of the material system — the file's own
 header says which, and `tests/Crafting/FormBreadthTests.cs` holds it to that.
 
 **RUNTIME FLOW**
@@ -778,7 +778,11 @@ Hardness → armour; fabrication now lands richer stats through it without comba
 **OUTPUT** — moves + `ArmorProfile`; inventory change events.
 
 **EXTENSION POINTS** — Richer property → combat mappings go in `EquipmentResolver`, behind the
-same seam. New slots go on the `EquipmentSlot` enum plus the `Equipment` container.
+same seam. New slots go on the `EquipmentSlot` enum plus the `Equipment` container — **appending
+is free** (slots persist by name, so an older save simply arrives with that slot empty); renaming
+one is a save migration, which is the whole of D32. If the new slot comes in a set whose members
+are interchangeable, add it to `EquipmentSlots.InterchangeablePositions` rather than authoring one
+form per position — see the rings, D33.
 
 **ENTRY POINT** — `EquipmentResolver`. It is 105 lines and it is the whole seam.
 

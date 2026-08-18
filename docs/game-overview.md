@@ -442,7 +442,7 @@ Equipment Form  +  Material(s) in named slots  →  Equipment Instance
   reaction bench has: a **pre-commit projection** computed by the same code path that mints the
   real item.
 
-**Built forms: 8 across all 7 slots** ✅, each existing to exercise a different part of the
+**Built forms: 9 across all 9 slots** ✅, each existing to exercise a different part of the
 material system rather than to add variety:
 
 | Form | Slot | What it tests |
@@ -455,10 +455,18 @@ material system rather than to add variety:
 | **Gauntlets** | Hands | where being **too hard** is a cost |
 | **Treads** | Feet | where being **too heavy** is a cost |
 | **Focus** | Trinket | the only form that reads **resonance/arcane**, which is what gives resonant materials anywhere to be excellent. Grants no armour and no moves |
+| **Ring** | Ring1 / Ring2 | the only form that reads **conductivity/affinity** — nothing read either before it, so the most conductive metals were strictly worse swords and nothing else. Deliberately *not* resonance, or it would just be a small focus |
 
 A worn loadout's mitigation is the **sum of its pieces**, and how much each contributes is
 authored (a helm reads hardness at a lower weight than a vest) rather than coded as a per-slot
 multiplier.
+
+**The two ring positions are the one place the slot is not decided by the item.** Every ring
+definition names `Ring1` — a definition must name one slot — so the second ring you put on would
+displace the first, and you would own a ring slot you could never fill. `EquipmentSlots.`
+`InterchangeablePositions` states that rings fill either position, and `Equipment.`
+`EquipInFirstFreePosition` is what every equip path goes through. **Do not author a second
+near-identical ring form to fill `Ring2`.**
 
 📐 Not built: consumable forms · form **acquisition** (starter set + profession ladders +
 schematics as a knowledge loot class — the schematic *items* drop already) · balance of any of

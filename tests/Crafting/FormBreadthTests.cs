@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 namespace Dungeons.Tests.Crafting;
 
 /// <summary>
-/// The Phase 4 breadth pass, checked as a claim rather than a count: <b>eight forms across seven
+/// The Phase 4 breadth pass, checked as a claim rather than a count: <b>nine forms across nine
 /// slots, each existing to exercise a different part of the material system</b>.
 ///
 /// <para>The load-bearing test is <see cref="TheSameMetalIsExcellentInOneFormAndWastedInAnother"/>.
@@ -69,6 +69,11 @@ public class FormBreadthTests
         ("form.gauntlets", new() { ["glove"] = "material.supple_deer_leather", ["plating"] = "material.iron_ingot" }),
         ("form.treads", new() { ["sole"] = "material.cured_boar_leather", ["upper"] = "material.wolf_fur" }),
         ("form.focus", new() { ["stone"] = "material.ley_crystal", ["setting"] = "material.silver_ingot" }),
+
+        // Two rings from the SAME form. Nothing about the pair says which hand it goes on — that
+        // is decided at equip time, which is the whole point of the ring positions.
+        ("form.ring", new() { ["band"] = "material.silver_ingot", ["inset"] = "material.amethyst" }),
+        ("form.ring", new() { ["band"] = "material.copper_ingot", ["inset"] = "material.onyx" }),
     };
 
     /// <summary>
@@ -89,8 +94,11 @@ public class FormBreadthTests
             Assert.True(outcome.Success, $"{formId} failed to assemble: {outcome.Failure}");
 
             var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
-            Assert.Null(equipment.InSlot(definition.Slot)); // nothing in the set collides
-            equipment.Equip(definition.Slot, outcome.Item);
+
+            // Core picks the position — which is how the second ring reaches the second hand.
+            // Nothing in a representative loadout should have to evict one of its own pieces.
+            var displaced = equipment.EquipInFirstFreePosition(definition.Slot, outcome.Item);
+            Assert.Null(displaced);
         }
 
         // Every slot the game knows about is filled by something a player fabricated.
@@ -118,9 +126,15 @@ public class FormBreadthTests
     {
         var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms").GetAll();
 
-        Assert.InRange(forms.Count, 6, 10); // the GDD's 6–8 target, with room either side
+        Assert.InRange(forms.Count, 6, 11); // the GDD's 6–8 target, with room either side
 
-        var covered = forms.Select(form => form.Type).ToHashSet();
+        // Expanded through the interchangeable positions: no form declares Ring2 and none should,
+        // because a Ring1-declaring form fills either hand. Comparing declared types alone would
+        // demand a duplicate ring form to satisfy a slot that is already reachable.
+        var covered = forms
+            .SelectMany(form => EquipmentSlots.InterchangeablePositions(form.Type))
+            .ToHashSet();
+
         foreach (var slot in EquipmentSlots.DisplayOrder)
             Assert.Contains(slot, covered);
     }
@@ -209,6 +223,14 @@ public class FormBreadthTests
         // The Focus is the only home for resonance.
         var resonanceReaders = readsByForm.Where(f => f.Value.Contains(ItemProperties.Resonance)).Select(f => f.Key);
         Assert.Equal(new[] { "form.focus" }, resonanceReaders);
+
+        // …and the Ring the only home for conductivity and affinity, which nothing read before it
+        // existed — that is why a ring is not simply a smaller focus. If a later form starts
+        // reading either, decide deliberately whether the ring is still distinct.
+        foreach (var property in new[] { ItemProperties.Conductivity, ItemProperties.Affinity })
+            Assert.Equal(
+                new[] { "form.ring" },
+                readsByForm.Where(f => f.Value.Contains(property)).Select(f => f.Key));
     }
 
     // ---- The pipeline the breadth pass must not have disturbed --------------------------------
@@ -390,13 +412,19 @@ public class FormBreadthTests
         var page = new StringBuilder();
         page.AppendLine("───── A fabricated head-to-foot loadout ─────");
 
+        // Equipped rather than merely fabricated, so the printed position is the one the item
+        // actually ends up in — otherwise both rings report the Ring1 their definition declares.
+        var equipment = new Dungeons.Items.Equipment();
         var worn = new List<(EquipmentDefinition Definition, ItemInstance? Instance)>();
 
         foreach (var (formId, slots) in FullLoadout)
         {
             var outcome = engine.Assemble(new EquipmentAssemblyRequest(formId, slots));
             var definition = content.Equipment.GetById(outcome.Item!.BaseDefinitionId);
-            if (EquipmentSlots.GrantsArmor(definition.Slot))
+            equipment.EquipInFirstFreePosition(definition.Slot, outcome.Item);
+            var position = equipment.Slots.First(pair => ReferenceEquals(pair.Value, outcome.Item)).Key;
+
+            if (EquipmentSlots.GrantsArmor(position))
                 worn.Add((definition, outcome.Item));
 
             var stats = string.Join(", ", definition.Properties.OrderBy(p => p.Key).Select(p => $"{p.Key} {p.Value:0.##}"));
@@ -405,7 +433,7 @@ public class FormBreadthTests
                 : string.Join(", ", outcome.Item.Affixes.Select(a => $"{a.AffixId.Replace("affix.", "")} T{a.Tier}"));
             var traits = outcome.Expressed.Count == 0 ? "—" : string.Join(", ", outcome.Expressed.Select(t => t.Id.Replace("trait.", "")));
 
-            page.AppendLine($"  [{definition.Slot,-8}] {outcome.Name}");
+            page.AppendLine($"  [{position,-8}] {outcome.Name}");
             page.AppendLine($"             stats    {stats}");
             page.AppendLine($"             traits   {traits}");
             page.AppendLine($"             mods     {modifiers}");

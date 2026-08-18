@@ -11,6 +11,11 @@ namespace Dungeons.Items;
 /// <c>forms/</c> definition (docs/code-map.md §12). Adding a member is free; renaming one needs
 /// the content and a save migration in the same commit, which is exactly what
 /// <see cref="EquipmentSlots.LegacyBodySlotName"/> records.</para>
+///
+/// <para>The two rings were appended, and appending really is free: slots persist <b>by name</b>
+/// (<c>SaveMapper</c> writes <c>slot.ToString()</c>), so a save written before they existed
+/// simply carries no ring keys and loads as a character wearing no rings — which is what a
+/// character who has never owned one is. No migration, no schema bump.</para>
 /// </summary>
 public enum EquipmentSlot
 {
@@ -21,6 +26,8 @@ public enum EquipmentSlot
     Hands,
     Feet,
     Trinket,
+    Ring1,
+    Ring2,
 }
 
 /// <summary>Facts about slots that would otherwise be re-derived at each call site.</summary>
@@ -49,8 +56,26 @@ public static class EquipmentSlots
     public static readonly IReadOnlyList<EquipmentSlot> DisplayOrder = new[]
     {
         EquipmentSlot.Weapon, EquipmentSlot.Offhand, EquipmentSlot.Head,
-        EquipmentSlot.Body, EquipmentSlot.Hands, EquipmentSlot.Feet, EquipmentSlot.Trinket,
+        EquipmentSlot.Body, EquipmentSlot.Hands, EquipmentSlot.Feet,
+        EquipmentSlot.Trinket, EquipmentSlot.Ring1, EquipmentSlot.Ring2,
     };
+
+    /// <summary>
+    /// The ring positions, in the order they fill. Rings are the one case where <em>which</em>
+    /// position a piece takes is not decided by the piece: a definition must name a single slot,
+    /// so every ring names <see cref="EquipmentSlot.Ring1"/>, but the second ring the player puts
+    /// on belongs on the other hand rather than on top of the first.
+    /// </summary>
+    public static readonly IReadOnlyList<EquipmentSlot> RingPositions =
+        new[] { EquipmentSlot.Ring1, EquipmentSlot.Ring2 };
+
+    /// <summary>
+    /// Every position a piece declared for <paramref name="declaredSlot"/> may legally occupy —
+    /// itself, plus any position it is interchangeable with. Only rings have more than one, and
+    /// stating it here is what stops "the player owns two ring slots and can only ever fill one".
+    /// </summary>
+    public static IReadOnlyList<EquipmentSlot> InterchangeablePositions(EquipmentSlot declaredSlot) =>
+        RingPositions.Contains(declaredSlot) ? RingPositions : new[] { declaredSlot };
 }
 
 /// <summary>Armor base stats (before instance-property derivation).</summary>

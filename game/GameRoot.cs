@@ -1448,7 +1448,8 @@ public partial class GameRoot : Node
         }
 
         _stash.RemoveInstance(instanceId);
-        var displaced = _playerEquipment.Equip(def.Slot, instance);
+        // A second ring goes on the other hand rather than displacing the first (Core decides which).
+        var displaced = _playerEquipment.EquipInFirstFreePosition(def.Slot, instance);
         if (displaced is not null)
             _stash.AddInstance(displaced);
         AttachBuildRules(); // affix rules swap with the gear (R4b)

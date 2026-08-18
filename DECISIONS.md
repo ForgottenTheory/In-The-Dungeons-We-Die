@@ -209,3 +209,22 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **The trinket needed no new affix content.** Nine shipped modifier families carry no `forms_any` gate at all — resources, regeneration, effort — and those are exactly a focus's identity. Widening existing affixes was available and declined: the pipeline was to be preserved, and it turned out to already say the right thing.
 
 **Consequences:** a full head-to-foot loadout is fabricable and pinned by test; five armour pieces instead of one means total mitigation rises sharply, which is a **balance** question and stays with the parked backlog. `ItemType` still reports a trinket as `Armor` for inventory routing — whether a piece *mitigates* is `EquipmentSlots.GrantsArmor`'s question, never `ItemType`'s.
+
+### D33 — Two ring positions, one ring form
+*(Adopted 2026-08-17, extending D32. Forms table: `docs/game-overview.md` §9.)*
+
+**The expansion:** `EquipmentSlot` grows to nine — D32's seven plus **`Ring1` and `Ring2`** — and `forms.json` gains a ninth form, the Ring. Fabrication is again untouched.
+
+**Appending slots is free, and that is a fact about the format rather than luck.** Slots persist **by name** (`SaveMapper` writes `slot.ToString()`), so a save written before the rings existed carries no ring keys and loads as a character wearing no rings — which is what a character who has never owned one is. **No migration, no schema bump.** Contrast D32, where a *rename* cost the project its first migration. Appending and renaming are not the same operation and should never be priced the same.
+
+**Four sub-rulings:**
+
+1. **`Ring1`/`Ring2`, not `RingLeft`/`RingRight`.** The user's call. Numeric names are honest that the two positions are interchangeable; left/right would imply a handedness that means nothing mechanically and would invite someone to give it meaning later. **Cost accepted:** this is the one place the slot vocabulary stops reading like the body-location prose D32 established.
+
+2. **One form fills both positions.** A definition must name one slot, so every ring names `Ring1`; `EquipmentSlots.InterchangeablePositions` states that rings may occupy either, and `Equipment.EquipInFirstFreePosition` routes every equip path through it. Without this the second ring displaces the first and the player owns a slot they can never fill. **Rejected:** authoring a second near-identical ring form whose `type` is `Ring2` — content duplication to work around a code gap, and exactly the "do not author material-specific gear" mistake in a different costume.
+
+3. **A third ring always displaces `Ring1`.** Stated, not left to dictionary order, so eviction is predictable rather than whichever position happened to enumerate first.
+
+4. **The Ring reads `conductivity` and `affinity`.** Before it, **no form read either** — which meant the most conductive metals in the library (silver, copper, electrum) were strictly worse swords and nothing else. This is the same move the Focus made for resonance: a property with nowhere to be excellent is a property the player has no reason to care about. **Deliberately not resonance** — a ring that read resonance would be a small focus, and the two would compete for the same materials instead of wanting different ones. Pinned by test: the Ring is the sole reader of both, as the Focus is of resonance.
+
+**Consequences:** rings are **not** armour-bearing (the trinket ruling, D32 §3, applies unchanged) so nine slots still means five that mitigate. `EveryShippedFormCoversASlotAndTheSlotsAreAllCovered` now expands declared types through `InterchangeablePositions` — comparing declared types alone would demand a duplicate ring form to satisfy a slot that is already reachable. Like the Focus, the Ring needed **no new affix content**: it draws the same nine ungated modifier families.

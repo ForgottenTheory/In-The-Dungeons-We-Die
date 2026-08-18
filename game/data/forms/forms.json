@@ -13,7 +13,7 @@
   //              wasted in another, and it is what `ItemPotential.MaterialInfluence` weights
   //              when it decides which modifiers are even eligible.
   //
-  // ── WHY THESE EIGHT ─────────────────────────────────────────────────────────────────────────
+  // ── WHY THESE NINE ──────────────────────────────────────────────────────────────────────────
   //
   // Each form exists to exercise a different part of the material system, not to add variety:
   //
@@ -27,6 +27,9 @@
   //   Treads      mass-led armour                — where being too heavy is a cost
   //   Focus       resonance + arcane             — the ONLY form that reads them, which is what
   //                                                gives resonant materials anywhere to go
+  //   Ring        conductivity + affinity        — the only form reading the two properties
+  //                                                nothing else looked at. Fills EITHER ring
+  //                                                position (see EquipmentSlots.RingPositions)
   //
   // ── ARMOUR COVERAGE IS AUTHORED, NOT CODED ──────────────────────────────────────────────────
   //
@@ -272,5 +275,47 @@
     },
     "trait_cap": 3,
     "description": "Held, not worn. Whatever it is made of, it is listening."
+  },
+
+  // ══ RINGS ═══════════════════════════════════════════════════════════════════════════════════
+
+  {
+    // The only form that reads CONDUCTIVITY and AFFINITY. Before this form nothing in the game
+    // read either, which meant the most conductive metals — silver, copper, electrum — were
+    // strictly worse swords and nothing else. Same move the Focus made for resonance: a property
+    // with nowhere to be excellent is a property the player has no reason to care about.
+    //
+    // Deliberately NOT resonance. A ring that read resonance would be a small focus, and the two
+    // would compete for the same materials instead of wanting different ones.
+    //
+    // `type` is Ring1 because a definition must name one slot — but a ring fills EITHER position.
+    // `EquipmentSlots.InterchangeablePositions` is what makes the second ring slot usable; do not
+    // author a second near-identical form to fill it.
+    //
+    // Tiny mass share: a ring weighs nothing you would notice, so it reads mass at 0.15 and gets
+    // the smallest trait_cap in the file. It is the cheapest form to make and holds the least.
+    "id": "form.ring",
+    "name": "Ring",
+    "type": "Ring1",
+    "tags": ["trinket", "ring"],
+    "slots": {
+      "band": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 0.5, "charge": 1.0, "toxic": 0.3, "vital": 0.5, "arcane": 0.8, "structural": 0.4 }
+      },
+      "inset": {
+        "requires_tags": ["form:gem", "form:crystal", "form:rune"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.6, "charge": 0.9, "toxic": 0.4, "vital": 0.7, "arcane": 0.9, "structural": 0.2 }
+      }
+    },
+    "stat_map": {
+      "conductivity": [ { "slot": "band",  "property": "conductivity", "weight": 1.0 }, { "slot": "inset", "property": "conductivity", "weight": 0.4 } ],
+      "affinity":     [ { "slot": "inset", "property": "affinity",     "weight": 0.9 }, { "slot": "band",  "property": "affinity",     "weight": 0.3 } ],
+      "mass":         [ { "slot": "*",     "property": "mass",         "weight": 0.15 } ]
+    },
+    "trait_cap": 2,
+    "description": "Small, and worn where the hand meets everything. Twice over, if you have two."
   }
 ]

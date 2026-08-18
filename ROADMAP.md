@@ -101,6 +101,10 @@ coherent run.
    dormancy, projection, genome and modifier rolls all unchanged. Worn armour is now the sum of
    the loadout, with coverage authored in each form's `stat_map` rather than coded per slot.
    Four new form validation rules; the Focus needed no new affix content.
+   **Rings ✅ (D33).** `Ring1`/`Ring2` appended (free — slots persist by name, so no migration)
+   and a ninth form, the Ring, reading `conductivity`/`affinity` — the two properties no form
+   read before it. One form fills both positions via `EquipmentSlots.InterchangeablePositions`;
+   authoring a second near-identical ring form to fill `Ring2` is explicitly rejected.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -121,5 +125,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**946** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**950** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.
