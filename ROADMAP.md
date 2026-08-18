@@ -85,12 +85,20 @@ coherent run.
    casting-speed decision (GDD §18 #16), profession interval/XP, fabrication calibration
    constants, affix-roll odds. Also close the small gap: per-rule failing-content tests for
    `ValidateForms`. Plus the D28/D29 audits: first-session sufficiency, essence sources.
-5. ⬜ **M6 — Loop closers**. Loot tables on the three goblins per §12.4 ecology and **D28**
-   (inputs only — anatomy/salvage/techniques, never finished gear; technique items are
-   debug-granted today). **Form acquisition lands here too (D29):** starter set + profession
-   ladder + schematics as a new knowledge loot class, `forms.json` gains an acquisition field on
-   the learned-list precedent. Character XP/levels + a minimal build-selection screen (the build
-   is debug-cycled today). Makes the slice self-sustaining end to end.
+5. 🔄 **M6 — Loop closers**.
+   **Loot ✅ (2026-08-17, `docs/loot.md`, D31).** One data-driven table shape for every source —
+   enemies (composed family+role+actor), gathering nodes, event chests and profession actions.
+   Guaranteed/chance/weighted-draw rules, quantity ranges, depth+tag conditions, nested shared
+   tables, rarity read from the material's own tag. 34 tables over the **existing** material
+   library (zero new materials). D28 held by test — no table yields finished equipment; D29.3
+   held by test — no profession drop table reaches essence or coin. Active gathering reaches
+   entries passive cannot, structurally. Elite/boss spoils wired and tested before any elite
+   exists. **Gold** ships as the sole currency on `Inventory` (save **v8**) and nothing spends it
+   yet, by design. The Dark Forest grew to 15 nodes so the tables have somewhere to live.
+   **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
+   `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
+   rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
+   (the build is debug-cycled today).
 6. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
    Yield Log ("mostly free once scoped modifiers exist" — they do). **P4 already ships the
    components** (Smithing's tool head, Artifice's haft/mechanisms/lenses) and the Agility
@@ -107,5 +115,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**847** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**923** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

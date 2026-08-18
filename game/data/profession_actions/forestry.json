@@ -4,6 +4,7 @@
   // so "which part of this grove do I want today" is a real question.
   {
     "id": "action.chop_pine",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Chop Pine",
     "requiredLevel": 5,
@@ -14,6 +15,7 @@
   },
   {
     "id": "action.strip_birch_bark",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Strip Birch Bark",
     "requiredLevel": 8,
@@ -34,6 +36,7 @@
   },
   {
     "id": "action.tap_resin",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Tap Resin",
     "requiredLevel": 12,
@@ -44,6 +47,7 @@
   },
   {
     "id": "action.chop_maple",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Chop Maple",
     "requiredLevel": 15,
@@ -54,6 +58,7 @@
   },
   {
     "id": "action.gather_forest_fungi",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Gather Forest Fungi",
     "requiredLevel": 18,
@@ -77,6 +82,7 @@
   },
   {
     "id": "action.chop_yew",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Chop Yew",
     "requiredLevel": 25,
@@ -110,6 +116,7 @@
   },
   {
     "id": "action.fell_ironwood",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Fell Ironwood",
     "requiredLevel": 40,
@@ -120,6 +127,7 @@
   },
   {
     "id": "action.harvest_emberwood",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Harvest Emberwood",
     "requiredLevel": 50,
@@ -130,6 +138,7 @@
   },
   {
     "id": "action.harvest_livingbark",
+    "loot_table": "loot.gather.forestry",
     "professionId": "profession.forestry",
     "name": "Harvest Livingbark",
     "requiredLevel": 62,

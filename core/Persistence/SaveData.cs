@@ -143,8 +143,11 @@ public sealed class SaveData
     /// progress), <see cref="FarmingPlots"/> and <see cref="TrainingCourse"/>. A v6 save
     /// loads with no passive action selected, no crops planted and an empty course — the
     /// same state a new game starts in, so no migration step is needed.</para>
+    ///
+    /// <para>v8 added <see cref="Gold"/>, the currency loot tables pay out in. A v7 save loads
+    /// with none, which is what a character who has never been paid has. No migration step.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 7;
+    public const int CurrentSchemaVersion = 8;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
@@ -171,6 +174,10 @@ public sealed class SaveData
 
     /// <summary>Persistent, secured unique item instances (generated materials, gear).</summary>
     public List<ItemInstanceSave> StashInstances { get; init; } = new();
+
+    /// <summary>Secured coin (v8). Unsecured coin carried inside a Realm is transient, exactly
+    /// like unsecured stacks, and is not saved.</summary>
+    public long Gold { get; init; }
 
     /// <summary>Equipped item instances, keyed by slot name.</summary>
     public Dictionary<string, ItemInstanceSave> Equipment { get; init; } = new();

@@ -95,8 +95,18 @@ public sealed class ActorDefinition : IDefinition
     /// </summary>
     public IReadOnlyList<AiRuleSpec> Ai { get; init; } = Array.Empty<AiRuleSpec>();
 
-    /// <summary>Milestone-5 placeholder: a single guaranteed drop on defeat (loot tables come later).</summary>
-    public string? LootItemId { get; init; }
+    /// <summary>
+    /// This actor's own drop table, rolled <em>in addition to</em> its family's and its role's
+    /// (docs/realms.md, DECISIONS D26/D28). Three layers rather than one because that is how
+    /// the rest of the enemy framework composes: goblin-ness contributes hide and bone,
+    /// brute-ness contributes the heavier salvage, and this particular goblin contributes
+    /// whatever makes it worth seeking out.
+    ///
+    /// <para>Per D28 an enemy table yields <b>inputs</b> — anatomy, salvage, reagents,
+    /// techniques, schematics, coin — never finished equipment. A test enforces that.</para>
+    /// </summary>
+    [JsonPropertyName("loot_table")]
+    public string? LootTableId { get; init; }
 
     /// <summary>
     /// Per-lane resistance, keyed by <see cref="Dungeons.Combat.DamageLanes"/>. Fractions.

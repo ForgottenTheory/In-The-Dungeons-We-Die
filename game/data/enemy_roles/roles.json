@@ -5,7 +5,8 @@
     "id": "role.skirmisher", "name": "Skirmisher",
     "attribute_tweaks": { "dexterity": 2, "luck": 1 },
     "resolve": 35,
-    "ai_profile": "ai.skirmisher"
+    "ai_profile": "ai.skirmisher",
+    "loot_table": "loot.role.skirmisher"
   },
   {
     "id": "role.brute", "name": "Brute",
@@ -16,13 +17,15 @@
     // the plates (D-02, two-way, clamped [0.50, 1.50]).
     "vulnerable": { "Crushing": 1.25, "Slashing": 0.85 },
     "resolve": 80,
-    "ai_profile": "ai.brute"
+    "ai_profile": "ai.brute",
+    "loot_table": "loot.role.brute"
   },
   {
     "id": "role.caster", "name": "Caster",
     "attribute_tweaks": { "intelligence": 5, "wisdom": 3, "strength": -2 },
     "resource_tweaks": { "mana": 40, "health": -6 },
     "resolve": 45,
-    "ai_profile": "ai.caster"
+    "ai_profile": "ai.caster",
+    "loot_table": "loot.role.caster"
   }
 ]

@@ -8,6 +8,7 @@
   // slow rather than punishing.
   {
     "id": "action.snare_rabbit",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Snare Rabbit",
     "requiredLevel": 1,
@@ -19,6 +20,7 @@
   },
   {
     "id": "action.net_wildfowl",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Net Wildfowl",
     "requiredLevel": 5,
@@ -30,6 +32,7 @@
   },
   {
     "id": "action.hunt_boar",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Hunt Boar",
     "requiredLevel": 10,
@@ -52,6 +55,7 @@
   },
   {
     "id": "action.stalk_deer",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Stalk Deer",
     "requiredLevel": 18,
@@ -62,6 +66,7 @@
   },
   {
     "id": "action.hunt_wolf_pack",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Hunt the Wolf Pack",
     "requiredLevel": 28,
@@ -85,6 +90,7 @@
   },
   {
     "id": "action.trap_bear",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Trap Bear",
     "requiredLevel": 38,
@@ -95,6 +101,7 @@
   },
   {
     "id": "action.hunt_thunderhorn",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Hunt Thunderhorn",
     "requiredLevel": 52,
@@ -118,6 +125,7 @@
   },
   {
     "id": "action.hunt_drake",
+    "loot_table": "loot.gather.hunting",
     "professionId": "profession.hunting",
     "name": "Hunt Drake",
     "requiredLevel": 65,

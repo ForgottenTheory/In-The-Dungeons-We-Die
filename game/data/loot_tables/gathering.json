@@ -1,0 +1,214 @@
+[
+  // ── Gathering drop tables ──────────────────────────────────────────────────────────────────
+  //
+  // One table per gathering profession, shared by every one of its actions. These are the things
+  // the work TURNS UP rather than the things it produces: the seed shaken loose from a felled
+  // tree, the grub in the bait tin, the crystal in the ore pocket.
+  //
+  // Not `bonusOutputs`, and the distinction is load-bearing. A bonus output is more of the same
+  // work and scales with mastery and performance — a profession-progression lever. A drop table
+  // does not scale; it expresses weighted variety, quantity ranges and shared libraries.
+  //
+  // EVERY TABLE HERE HAS THE SAME SHAPE:
+  //   draw 1  — no condition        → what any attempt might turn up, passive or active
+  //   draw 2  — requiresTags:active → what only somebody actually standing there would notice
+  //
+  // That second draw is the structural version of "active Realm gathering reaches better and
+  // stranger rewards than safe passive training". It is a fact about the content, not a tuning
+  // number — passive play cannot reach those entries at any rate.
+  //
+  // D29.3: none of these may reach `loot.shared.fey_essence`, and none of them declares gold.
+  // Essence and coin are the Realm's export. A test enforces both.
+
+  {
+    "id": "loot.gather.forestry",
+    "name": "What the Tree Gives Up",
+    "chanceDrops": [
+      { "itemId": "material.green_moss", "chance": 0.18 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.pinecone", "weight": 18 },
+          { "itemId": "material.wild_berry", "weight": 14, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.brown_cap", "weight": 12 },
+          { "itemId": "material.creeper_vine", "weight": 10 },
+          { "itemId": "material.bark_canker", "weight": 8 },
+          { "itemId": "material.ironbark_seed", "weight": 5 },
+          { "dropsNothing": true, "weight": 33 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "itemId": "material.gnarl_root", "weight": 18 },
+          { "itemId": "material.elder_bark", "weight": 15 },
+          { "itemId": "material.treeblight", "weight": 12 },
+          { "itemId": "material.thornvine", "weight": 10 },
+          { "tableId": "loot.shared.forest_reagents", "weight": 14 },
+          { "itemId": "material.mandrake_root", "weight": 3 },
+          { "dropsNothing": true, "weight": 28 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.gather.mining",
+    "name": "What Comes Out With the Ore",
+    // The design brief's Iron Vein, as a table: ore and stone, an uncommon inclusion, a rare
+    // crystal, and something very rare and out of place at the bottom of the second draw.
+    "chanceDrops": [
+      { "itemId": "material.granite", "chance": 0.22 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.flint", "weight": 18, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.limestone", "weight": 14 },
+          { "itemId": "material.slate", "weight": 12 },
+          { "itemId": "material.coal", "weight": 10 },
+          { "itemId": "material.quartz", "weight": 8 },
+          { "itemId": "material.sulfur", "weight": 6 },
+          { "dropsNothing": true, "weight": 32 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "itemId": "material.rock_crystal", "weight": 18 },
+          { "itemId": "material.native_copper", "weight": 14 },
+          { "itemId": "material.alum", "weight": 12 },
+          { "itemId": "material.amethyst", "weight": 9 },
+          { "itemId": "material.obsidian", "weight": 6 },
+          { "itemId": "material.deepcrystal", "weight": 3 },
+          { "itemId": "material.meteoric_iron", "weight": 1 },
+          { "dropsNothing": true, "weight": 37 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.gather.fishing",
+    "name": "In the Net With the Fish",
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.leech", "weight": 20 },
+          { "itemId": "material.kelp", "weight": 15 },
+          { "itemId": "material.fish_scale", "weight": 14, "minQuantity": 1, "maxQuantity": 3 },
+          { "itemId": "material.silt", "weight": 12 },
+          { "itemId": "material.crab_shell", "weight": 8 },
+          { "dropsNothing": true, "weight": 31 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "itemId": "material.fish_oil", "weight": 18 },
+          { "itemId": "material.gutworm", "weight": 15 },
+          { "itemId": "material.rock_salt", "weight": 12 },
+          { "itemId": "material.eel_skin", "weight": 8 },
+          { "itemId": "material.pearl", "weight": 2 },
+          { "dropsNothing": true, "weight": 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.gather.hunting",
+    "name": "Signs of the Kill",
+    // Nothing here is anatomy, and that is deliberate: Hunting brings back the creature, Beast
+    // Lore is the only thing that opens it. The active draw pays a SECOND CARCASS — better
+    // reward, same fence. A test enforces the fence through the loot system too.
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.feather", "weight": 20, "minQuantity": 1, "maxQuantity": 3 },
+          { "itemId": "material.bird_egg", "weight": 14 },
+          { "itemId": "material.green_moss", "weight": 12 },
+          { "itemId": "material.thornvine", "weight": 10 },
+          { "itemId": "material.pinecone", "weight": 8 },
+          { "dropsNothing": true, "weight": 36 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "itemId": "material.rabbit_carcass", "weight": 16 },
+          { "itemId": "material.hemp_fiber", "weight": 14 },
+          { "itemId": "material.wolfsbane", "weight": 8 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 6 },
+          { "dropsNothing": true, "weight": 56 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.gather.foraging",
+    "name": "Turned Up in the Soil",
+    "chanceDrops": [
+      { "itemId": "material.loam", "chance": 0.20 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.fertile_soil", "weight": 18 },
+          { "itemId": "material.sunflower_seed", "weight": 14 },
+          { "itemId": "material.nettle_seed", "weight": 12 },
+          { "itemId": "material.mushroom_spawn", "weight": 10 },
+          { "itemId": "material.clay", "weight": 8 },
+          { "dropsNothing": true, "weight": 38 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "itemId": "material.comfrey_seed", "weight": 16 },
+          { "itemId": "material.kingsfoil_seed", "weight": 8 },
+          { "tableId": "loot.shared.forest_reagents", "weight": 20 },
+          { "itemId": "material.glowfruit", "weight": 5 },
+          { "dropsNothing": true, "weight": 51 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.gather.salvaging",
+    "name": "Deeper in the Wreck",
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.salvage_light", "weight": 34 },
+          { "itemId": "material.iron_key", "weight": 8 },
+          { "dropsNothing": true, "weight": 58 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["active"] },
+        "entries": [
+          { "tableId": "loot.shared.salvage_heavy", "weight": 26 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 16 },
+          { "itemId": "material.schematic_fragment", "weight": 6 },
+          { "dropsNothing": true, "weight": 52 }
+        ]
+      }
+    ]
+  }
+]

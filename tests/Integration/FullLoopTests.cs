@@ -2,6 +2,7 @@ using Dungeons.Events;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Items;
+using Dungeons.Loot;
 using Dungeons.Professions;
 using Dungeons.Randomness;
 using Dungeons.Realms;
@@ -32,6 +33,19 @@ public class FullLoopTests
             new RealmLocationDefinition { Id = "extract", Type = RealmLocationType.Extraction, Depth = 1, Connections = new[] { "camp" } },
         },
     };
+
+    private static DataStore<LootTableDefinition> GoblinLootTable()
+    {
+        var tables = new DataStore<LootTableDefinition>();
+        tables.Add(new LootTableDefinition
+        {
+            Id = "loot.actor.goblin",
+            Name = "Goblin",
+            AlwaysDrops = new[] { new LootEntryDefinition { ItemId = "material.goblin_scrap" } },
+            Gold = new GoldDropDefinition { MinAmount = 5, MaxAmount = 5 },
+        });
+        return tables;
+    }
 
     private static ProfessionActionDefinition ChopOak() => new()
     {
@@ -67,16 +81,19 @@ public class FullLoopTests
         var slash = Move("move.goblin_slash", DamageType.Slashing, 6, 8, 8, 20);
         var encounter = new CombatEncounter(
             tick, new HitPipeline(new FakeRandom(0.99)), Moves(slash), new FakeRandom(0.99), new GameEventBus());
+        // The kill pays through the real loot system, exactly as GameRoot wires it: the
+        // enemy's tables, the run's circumstances, and one deposit into whichever bag is live.
+        var loot = new LootResolver(new ContentBundle { LootTables = GoblinLootTable() }, new SeededRandom(11));
         encounter.Ended += outcome =>
         {
             if (outcome.Result != CombatResult.Victory)
                 return;
-            foreach (var enemy in outcome.DefeatedEnemies.Where(e => e.LootItemId is not null))
-                Bag().Add(enemy.LootItemId!, 1);
+            foreach (var enemy in outcome.DefeatedEnemies)
+                loot.Roll(enemy.LootTableIds, new LootContext(depth: run.CurrentDepth, tier: run.Tier)).DepositInto(Bag());
         };
 
         var player = Player(hp: 60, attrs: Attrs(str: 20));
-        var goblin = Enemy("Goblin", 12, Attrs(con: 2), slash, loot: "material.goblin_scrap");
+        var goblin = Enemy("Goblin", 12, Attrs(con: 2), slash, lootTables: new[] { "loot.actor.goblin" });
         encounter.Start(player, new[] { goblin });
 
         // Take a hit's worth of damage, then heal with a crafted salve from the run bag.
@@ -94,6 +111,7 @@ public class FullLoopTests
         Assert.False(goblin.IsAlive);
         Assert.True(player.IsAlive);
         Assert.Equal(1, run.RunInventory.GetQuantity("material.goblin_scrap"));
+        Assert.Equal(5, run.RunInventory.Gold); // unsecured, exactly like the stacks
 
         // 3) Travel to extraction and secure everything.
         run.MarkCleared("camp");
@@ -103,7 +121,10 @@ public class FullLoopTests
         Assert.True(summary.Secured);
         Assert.Equal(2, stash.GetQuantity("material.oak_log"));
         Assert.Equal(1, stash.GetQuantity("material.goblin_scrap"));
+        Assert.Equal(5, summary.Gold);
+        Assert.Equal(5, stash.Gold);
         Assert.Empty(run.RunInventory.Snapshot());
+        Assert.Equal(0, run.RunInventory.Gold);
         Assert.False(run.Active);
 
         // 4) Progression persisted: gathering earned Forestry XP.

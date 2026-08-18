@@ -727,8 +727,10 @@ Realms are **spatial location graphs**, closer to For The King 2 than to Slay th
 selection. Movement is adjacency-gated; **Depth** measures progression within a run; **Tiers**
 are escalating versions of a realm.
 
-**One realm built: The Dark Forest** — 10 locations across 2 depths: entrance, travel, two
-gathering nodes, two combat nodes, an event node, a descent, an extraction portal.
+**One realm built: The Dark Forest** — 15 locations across 2 depths: entrance, travel, **five**
+gathering nodes (oak grove, iron vein, overturned wagon, dark grove, hunting blind), **three**
+combat nodes (raider, brute, hexer), **two** event nodes (the ruins chest, a ravaged kill), a
+descent, an extraction portal. Every node past the plain travel ones has its own loot table.
 
 **Deliberate direction: make the Dark Forest much richer before adding a second realm.** Once one
 realm is genuinely good, adding realms is a content problem instead of repeatedly rebuilding
@@ -760,19 +762,35 @@ campsite · the preparation/portal screen · tiers beyond 1 · procedural genera
 **Extraction opportunities should be valuable decisions, not ubiquitous escape buttons.** Some
 mechanics deliberately reward *refusing* extraction (the "Of No Return" pattern).
 
-**Loot** 🟡: currently a single guaranteed drop per enemy. No tables, rarity, weighting or
-currency. When loot tables land, they follow **D28 — gear comes from the bench; realms drop
-inputs**:
+**Loot** ✅ BUILT — full doc: **`docs/loot.md`**. One data-driven table shape serves every source
+in the game (enemies, gathering nodes, chests, profession actions): guaranteed drops, independent
+chance drops, weighted draws with real misses, quantity ranges, depth/tag conditions, and nested
+shared tables. 34 tables ship over the existing 559-material library — **no new materials were
+needed**, which is itself the evidence that the ecology was already there.
+
+It follows **D28 — gear comes from the bench; realms drop inputs**:
 
 > *Extraction converts risk into materials; fabrication converts materials into permanence.*
 
-Realm loot is predominantly **inputs**: anatomy, salvage (an enemy's crude blade arrives as scrap
-metal and rawhide, never as equippable gear), rare property-profile materials, essence-bearing
-parts, technique items, catalysts. **Relic materials are the chase design** — boss drops with
-impossible property profiles that feed the genome machinery instead of bypassing it. Rare
-authored **unique gear** is the one sanctioned exception, and it is fenced: a rule-breaker with a
-drawback, **sealed** (no genome, no rolls, no operations), rarer than relic materials, and its
-end-of-life is Fracture back into components. Even the exception terminates at the bench.
+Realm loot is **inputs**: anatomy, salvage (an enemy's crude blade arrives as scrap metal and
+rawhide, never as equippable gear), rare property-profile materials, essence-bearing parts,
+technique items, catalysts, schematics, coin. A test fails any table that yields finished
+equipment. **Relic materials are the chase design** — boss drops with impossible property
+profiles that feed the genome machinery instead of bypassing it (📐 content post-slice; the boss
+table's `relic_shard` holds the shape). Rare authored **unique gear** is the one sanctioned
+exception, and it is fenced: a rule-breaker with a drawback, **sealed** (no genome, no rolls, no
+operations), rarer than relic materials, and its end-of-life is Fracture back into components.
+Even the exception terminates at the bench.
+
+Three things the loot layer makes structural rather than numeric:
+
+- **Enemy loot composes** family + role + actor, so a new creature is lootable in one line.
+- **Active gathering reaches what passive cannot** — a condition, not better odds.
+- **Elite/boss spoils are already wired** and fire on a context tag, so authoring the first elite
+  needs no code. Nothing carries the tag yet; a test proves the seam anyway.
+
+**Gold** ✅ exists as the sole currency. It lives on the inventory, so coin is unsecured in a Realm
+and lost on death exactly like everything else. Nothing spends it — see §15.
 
 ---
 
@@ -812,12 +830,18 @@ portal/preparation screen.
 
 # 15. Economy ❓ LARGELY UNDESIGNED
 
-What exists is a barter-of-materials economy: gather → process → craft → use.
+What exists is a barter-of-materials economy: gather → process → craft → use — plus **gold**,
+which now drops (🟡) and accumulates and does absolutely nothing. That is deliberate: the brief
+for the loot pass was *"gold simply exists as the current currency; do not design the economy
+yet."* Having the faucet before the sink is the right order — a currency nothing spends is
+harmless, whereas pricing things before knowing what drops is guesswork.
 
-Missing and needed: **currency** (none exists — respec is priced in "Realm currency" that has not
-been designed) · **merchants/vendors** · **loot tables** · **item valuation** (emergent items have
-no author to price them, so value must be *computed* from potency, trait rarity, essence,
-generation and integrity) · **resource sinks**.
+Missing and needed: **merchants/vendors** · **item valuation** (emergent items have no author to
+price them, so value must be *computed* from potency, trait rarity, essence, generation and
+integrity) · **resource sinks** · whether respec's "Realm currency" is gold or something else.
+
+**Thieving deliberately still yields no coin of its own** — it takes precious metal, gems, keys
+and paperwork. Coin is a Realm export, alongside essence (D29.3), and a test holds that line.
 
 ---
 

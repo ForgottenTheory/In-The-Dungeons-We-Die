@@ -25,7 +25,7 @@ public class RealmContentValidationTests
         var realms = Load<RealmDefinition>("realms");
         var actors = Load<ActorDefinition>("actors");
         var actions = Load<ProfessionActionDefinition>("profession_actions");
-        var materials = Load<MaterialDefinition>("materials");
+        var lootTables = Load<Dungeons.Loot.LootTableDefinition>("loot_tables");
 
         var forest = realms.GetById("realm.dark_forest");
 
@@ -52,10 +52,14 @@ public class RealmContentValidationTests
                 case RealmLocationType.Gather:
                     Assert.True(actions.Contains(loc.ProfessionActionId!), $"{loc.Id} → unknown action {loc.ProfessionActionId}");
                     break;
-                case RealmLocationType.Event when !string.IsNullOrEmpty(loc.RewardItemId):
-                    Assert.True(materials.Contains(loc.RewardItemId!), $"{loc.Id} → unknown reward {loc.RewardItemId}");
+                case RealmLocationType.Event:
+                    Assert.False(string.IsNullOrEmpty(loc.EventText) && string.IsNullOrEmpty(loc.LootTableId),
+                        $"{loc.Id} is an Event node that does nothing");
                     break;
             }
+
+            if (!string.IsNullOrEmpty(loc.LootTableId))
+                Assert.True(lootTables.Contains(loc.LootTableId!), $"{loc.Id} → unknown loot table {loc.LootTableId}");
         }
     }
 

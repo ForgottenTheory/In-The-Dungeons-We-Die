@@ -10,45 +10,84 @@
     },
     {
       "id": "loc.forest_path", "name": "Forest Path", "type": "Travel", "depth": 1,
-      "connections": ["loc.entrance", "loc.old_grove", "loc.goblin_camp"]
+      "connections": ["loc.entrance", "loc.old_grove", "loc.goblin_camp", "loc.iron_vein"]
     },
     {
       "id": "loc.old_grove", "name": "Old Grove", "type": "Gather", "depth": 1,
       "connections": ["loc.forest_path", "loc.ruins"],
-      "professionActionId": "action.chop_oak"
+      "professionActionId": "action.chop_oak",
+      "loot_table": "loot.node.old_grove"
+    },
+    {
+      // Mining, level 1 — the design brief's worked example, reachable on a first run.
+      "id": "loc.iron_vein", "name": "Iron Vein", "type": "Gather", "depth": 1,
+      "connections": ["loc.forest_path", "loc.ruins"],
+      "professionActionId": "action.mine_iron",
+      "loot_table": "loot.node.iron_vein"
     },
     {
       "id": "loc.goblin_camp", "name": "Goblin Camp", "type": "Combat", "depth": 1,
-      "connections": ["loc.forest_path", "loc.ruins"],
+      "connections": ["loc.forest_path", "loc.ruins", "loc.wagon_wreck"],
       "actorId": "actor.goblin_raider"
     },
     {
+      // Salvaging 5 — a deliberate profession gate on a Realm node. A fresh character can see
+      // it and cannot work it, which is the interlock the design wants between the two halves.
+      "id": "loc.wagon_wreck", "name": "Overturned Wagon", "type": "Gather", "depth": 1,
+      "connections": ["loc.goblin_camp", "loc.descent"],
+      "professionActionId": "action.search_wagon_wreck",
+      "loot_table": "loot.node.wagon_wreck"
+    },
+    {
       "id": "loc.ruins", "name": "Crumbling Ruins", "type": "Event", "depth": 1,
-      "connections": ["loc.old_grove", "loc.goblin_camp", "loc.descent"],
+      "connections": ["loc.old_grove", "loc.goblin_camp", "loc.iron_vein", "loc.descent"],
       "eventText": "You pry open a moss-covered chest hidden in the ruins.",
-      "rewardItemId": "material.iron_ore", "rewardQuantity": 2
+      "loot_table": "loot.event.crumbling_ruins"
     },
     {
       "id": "loc.descent", "name": "The Descent", "type": "Descent", "depth": 1,
-      "connections": ["loc.ruins"]
+      "connections": ["loc.ruins", "loc.wagon_wreck"]
     },
+
     {
       "id": "loc.deep_path", "name": "Deep Path", "type": "Entrance", "depth": 2,
-      "connections": ["loc.dark_grove", "loc.brute_warren"]
+      "connections": ["loc.dark_grove", "loc.brute_warren", "loc.hunting_blind"]
+    },
+    {
+      // Hunting, level 1. Brings back carcasses; Beast Lore is still the only thing that opens
+      // them, so this feeds a profession rather than replacing one.
+      "id": "loc.hunting_blind", "name": "Abandoned Hunting Blind", "type": "Gather", "depth": 2,
+      "connections": ["loc.deep_path", "loc.dark_grove"],
+      "professionActionId": "action.snare_rabbit",
+      "loot_table": "loot.node.hunting_blind"
     },
     {
       "id": "loc.dark_grove", "name": "Dark Grove", "type": "Gather", "depth": 2,
-      "connections": ["loc.deep_path", "loc.deep_extraction"],
-      "professionActionId": "action.gather_sageleaf"
+      "connections": ["loc.deep_path", "loc.deep_extraction", "loc.hunting_blind", "loc.hexer_hollow"],
+      "professionActionId": "action.gather_sageleaf",
+      "loot_table": "loot.node.dark_grove"
+    },
+    {
+      // The Hexer finally has somewhere to live. It is the only Realm source of arcane
+      // techniques, which is what makes killing the caster worth the trouble.
+      "id": "loc.hexer_hollow", "name": "Hexer's Hollow", "type": "Combat", "depth": 2,
+      "connections": ["loc.dark_grove", "loc.deep_extraction"],
+      "actorId": "actor.goblin_hexer"
     },
     {
       "id": "loc.brute_warren", "name": "Brute Warren", "type": "Combat", "depth": 2,
-      "connections": ["loc.deep_path", "loc.deep_extraction"],
+      "connections": ["loc.deep_path", "loc.deep_extraction", "loc.ravaged_kill"],
       "actorId": "actor.goblin_brute"
     },
     {
+      "id": "loc.ravaged_kill", "name": "A Ravaged Kill", "type": "Event", "depth": 2,
+      "connections": ["loc.brute_warren", "loc.deep_extraction"],
+      "eventText": "Something large was killed here, and something larger opened it up. The carcass is still warm.",
+      "loot_table": "loot.event.ravaged_kill"
+    },
+    {
       "id": "loc.deep_extraction", "name": "Extraction Portal", "type": "Extraction", "depth": 2,
-      "connections": ["loc.dark_grove", "loc.brute_warren"]
+      "connections": ["loc.dark_grove", "loc.brute_warren", "loc.hexer_hollow", "loc.ravaged_kill"]
     }
   ]
 }

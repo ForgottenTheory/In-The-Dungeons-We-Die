@@ -26,10 +26,11 @@ public sealed class Combatant
         ResourcePool mana,
         IReadOnlyList<ResolvedMove> moveset,
         Func<AttributeSet> attributes,
-        string? lootItemId = null,
+        IReadOnlyList<string>? lootTableIds = null,
         ArmorProfile? armorProfile = null,
         IReadOnlyDictionary<string, double>? vulnerability = null,
-        IReadOnlyList<AiRuleSpec>? ai = null)
+        IReadOnlyList<AiRuleSpec>? ai = null,
+        IReadOnlyList<string>? tags = null)
     {
         Name = name;
         Team = team;
@@ -38,7 +39,8 @@ public sealed class Combatant
         Mana = mana;
         Moveset = moveset;
         _attributes = attributes;
-        LootItemId = lootItemId;
+        LootTableIds = lootTableIds ?? Array.Empty<string>();
+        Tags = tags ?? Array.Empty<string>();
         ArmorProfile = armorProfile ?? ArmorProfile.None;
         Vulnerability = vulnerability ?? EmptyVulnerability;
         Ai = ai ?? Array.Empty<AiRuleSpec>();
@@ -67,7 +69,13 @@ public sealed class Combatant
     /// 1 = indifferent to repeats; 0 = never the same move twice running.</summary>
     public double AvoidRepeatWeight { get; init; } = 1.0;
 
-    public string? LootItemId { get; }
+    /// <summary>Drop tables rolled when this combatant is defeated — family, role and actor
+    /// merged into one haul by <see cref="Dungeons.Loot.LootResolver"/>.</summary>
+    public IReadOnlyList<string> LootTableIds { get; }
+
+    /// <summary>Identity tags from the resolved actor. Loot conditions read them, which is how
+    /// an <c>elite</c> tag unlocks elite spoils without a line of code.</summary>
+    public IReadOnlyList<string> Tags { get; }
 
     /// <summary>Equipped-armor mitigation applied when this combatant is hit.</summary>
     public ArmorProfile ArmorProfile { get; }
@@ -157,7 +165,7 @@ public sealed class Combatant
         character.Mana,
         moveset,
         () => character.EffectiveAttributes,
-        lootItemId: null,
+        lootTableIds: null,
         armorProfile: armorProfile);
 
     /// <summary>Builds the runtime combatant from a <see cref="ResolvedActor"/> — the output of
@@ -174,12 +182,13 @@ public sealed class Combatant
             new ResourcePool(ResourceType.Mana, actor.Resources.Mana),
             moveset,
             () => attributes,
-            actor.LootItemId,
+            actor.LootTableIds,
             armorProfile: actor.Armor <= 0 && actor.Resistances.Count == 0
                 ? null
                 : new ArmorProfile { Armor = actor.Armor, Resistances = new Dictionary<string, double>(actor.Resistances) },
             vulnerability: actor.Vulnerable,
-            ai: actor.Ai)
+            ai: actor.Ai,
+            tags: actor.Tags)
         {
             Resolve = actor.Resolve,
             AvoidRepeatWeight = actor.AvoidRepeatWeight,

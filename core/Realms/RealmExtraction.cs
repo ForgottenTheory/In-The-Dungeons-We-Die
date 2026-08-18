@@ -9,6 +9,10 @@ public sealed class ExtractionSummary
     public required IReadOnlyList<ItemStack> Items { get; init; }
     public IReadOnlyList<ItemInstance> Instances { get; init; } = Array.Empty<ItemInstance>();
 
+    /// <summary>Coin secured or forfeited. Gold is carried like everything else, so it is at
+    /// risk like everything else.</summary>
+    public long Gold { get; init; }
+
     /// <summary>Total item count moved/lost: stacked quantities plus unique instances.</summary>
     public int TotalQuantity => Items.Sum(i => i.Quantity) + Instances.Count;
 }
@@ -29,14 +33,17 @@ public static class RealmExtraction
 
         var items = run.RunInventory.Snapshot();
         var instances = run.RunInventory.Instances;
+        var gold = run.RunInventory.Gold;
         foreach (var stack in items)
             stash.Add(stack);
         foreach (var instance in instances)
             stash.AddInstance(instance);
+        if (gold > 0)
+            stash.AddGold(gold);
         run.RunInventory.Clear();
         run.End();
 
-        return new ExtractionSummary { Secured = true, Items = items, Instances = instances };
+        return new ExtractionSummary { Secured = true, Items = items, Instances = instances, Gold = gold };
     }
 
     /// <summary>Forfeits all unsecured run loot (death) and ends the run. The Stash is untouched.</summary>
@@ -46,9 +53,10 @@ public static class RealmExtraction
 
         var items = run.RunInventory.Snapshot();
         var instances = run.RunInventory.Instances;
+        var gold = run.RunInventory.Gold;
         run.RunInventory.Clear();
         run.End();
 
-        return new ExtractionSummary { Secured = false, Items = items, Instances = instances };
+        return new ExtractionSummary { Secured = false, Items = items, Instances = instances, Gold = gold };
     }
 }

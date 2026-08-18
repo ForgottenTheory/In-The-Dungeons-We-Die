@@ -1,0 +1,169 @@
+[
+  // ── Enemy drop tables ──────────────────────────────────────────────────────────────────────
+  //
+  // Loot composes exactly the way the rest of the enemy framework does (D26): a kill rolls its
+  // FAMILY's table (what the body is made of), its ROLE's table (what that archetype carries)
+  // and its ACTOR's table (what makes this one worth seeking out) — all three, merged into one
+  // haul. Family and role tables are species/role-agnostic on purpose: `loot.role.brute` is one
+  // definition whether the brute is a goblin, an undead or a construct.
+  //
+  // D28, and the reason there is not one equipment entry in this file: enemies drop INPUTS.
+  // What the Brute was swinging arrives as scrap iron and rawhide; the sword it becomes is
+  // fabricated at the bench.
+
+  // ---- Family: what a goblin body gives up -------------------------------------------------
+
+  {
+    "id": "loot.family.goblin",
+    "name": "Goblin",
+    "tags": ["source:creature", "source:goblinoid"],
+    "alwaysDrops": [
+      { "itemId": "material.goblin_hide", "minQuantity": 1, "maxQuantity": 2 },
+      // One line, and every goblin family member is elite/boss-ready. Pays nothing until
+      // something actually carries the tag.
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.goblin_scrap", "chance": 0.55, "minQuantity": 1, "maxQuantity": 3 },
+      { "itemId": "material.chitin_plate", "chance": 0.18 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.creature_remains", "weight": 45 },
+          { "itemId": "material.animal_blood", "weight": 15 },
+          { "dropsNothing": true, "weight": 40 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Roles: what the archetype was carrying ----------------------------------------------
+
+  {
+    "id": "loot.role.skirmisher",
+    "name": "Skirmisher's Kit",
+    "chanceDrops": [
+      { "itemId": "material.tattered_cloth", "chance": 0.30 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.salvage_light", "weight": 48 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 12 },
+          { "dropsNothing": true, "weight": 40 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 2, "maxAmount": 8, "chance": 0.75 }
+  },
+
+  {
+    "id": "loot.role.brute",
+    "name": "Brute's Gear",
+    // The armoured physique reads the same on any body — and so does what is left of its kit.
+    "chanceDrops": [
+      { "itemId": "material.rawhide", "chance": 0.30 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.salvage_heavy", "weight": 60 },
+          { "tableId": "loot.shared.salvage_light", "weight": 20 },
+          { "dropsNothing": true, "weight": 20 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 3, "maxAmount": 12, "chance": 0.60 }
+  },
+
+  {
+    "id": "loot.role.caster",
+    "name": "Caster's Pouch",
+    "chanceDrops": [
+      { "itemId": "material.arcane_dust", "chance": 0.25 },
+      { "itemId": "material.bone_meal", "chance": 0.20 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.forest_reagents", "weight": 40 },
+          { "tableId": "loot.shared.crafting_catalysts", "weight": 20 },
+          { "itemId": "material.rune_blank", "weight": 12 },
+          { "dropsNothing": true, "weight": 28 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 4, "maxAmount": 14, "chance": 0.70 }
+  },
+
+  // ---- Actors: the identity layer ----------------------------------------------------------
+
+  {
+    "id": "loot.actor.goblin_raider",
+    "name": "Raider's Take",
+    // A raider carries what it took off somebody else. This is where the ore and the paperwork
+    // come from — a goblin does not mine, it robs miners.
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.iron_ore", "weight": 16, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.copper_ore", "weight": 12, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.leather_strap", "weight": 14 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 10 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 3 },
+          { "dropsNothing": true, "weight": 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.actor.goblin_brute",
+    "name": "Warren Bully",
+    "chanceDrops": [
+      { "itemId": "material.chitin_plate", "chance": 0.30, "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.tool_head", "weight": 14 },
+          { "itemId": "material.boar_hide", "weight": 12 },
+          { "itemId": "material.broken_mechanism", "weight": 10 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 6, "when": { "minDepth": 2 } },
+          { "tableId": "loot.shared.techniques_martial", "weight": 5 },
+          { "dropsNothing": true, "weight": 53 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.actor.goblin_hexer",
+    "name": "Hexer's Fetishes",
+    // The only Realm source of arcane techniques today, which is the Hexer's whole identity as
+    // a loot source: killing the caster is how a martial build gets a spell at all.
+    "chanceDrops": [
+      { "itemId": "material.rot_spore", "chance": 0.35 },
+      { "itemId": "material.nightbloom", "chance": 0.12 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.crafting_catalysts", "weight": 22 },
+          { "tableId": "loot.shared.fey_essence", "weight": 16 },
+          { "tableId": "loot.shared.techniques_arcane", "weight": 8 },
+          { "itemId": "material.ectoplasm", "weight": 6 },
+          { "dropsNothing": true, "weight": 48 }
+        ]
+      }
+    ]
+  }
+]

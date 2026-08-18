@@ -4,6 +4,7 @@
   // conductivity (docs/professions.md §1). `opportunities` fire on the active path only.
   {
     "id": "action.mine_copper",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Copper",
     "requiredLevel": 1,
@@ -26,6 +27,7 @@
   },
   {
     "id": "action.mine_iron",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Iron",
     "requiredLevel": 1,
@@ -48,6 +50,7 @@
   },
   {
     "id": "action.quarry_granite",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Quarry Granite",
     "requiredLevel": 5,
@@ -58,6 +61,7 @@
   },
   {
     "id": "action.mine_bog_iron",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Bog Iron",
     "requiredLevel": 8,
@@ -68,6 +72,7 @@
   },
   {
     "id": "action.mine_tin",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Tin",
     "requiredLevel": 10,
@@ -77,6 +82,7 @@
   },
   {
     "id": "action.work_coal_seam",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Work the Coal Seam",
     "requiredLevel": 12,
@@ -99,6 +105,7 @@
   },
   {
     "id": "action.cut_quartz",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Cut Quartz",
     "requiredLevel": 18,
@@ -122,6 +129,7 @@
   },
   {
     "id": "action.dig_saltpeter",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Dig Saltpeter",
     "requiredLevel": 20,
@@ -132,6 +140,7 @@
   },
   {
     "id": "action.mine_silver",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Silver",
     "requiredLevel": 25,
@@ -142,6 +151,7 @@
   },
   {
     "id": "action.quarry_obsidian",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Quarry Obsidian",
     "requiredLevel": 32,
@@ -152,6 +162,7 @@
   },
   {
     "id": "action.mine_emberite",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Emberite",
     "requiredLevel": 45,
@@ -175,6 +186,7 @@
   },
   {
     "id": "action.mine_frostiron",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Frostiron",
     "requiredLevel": 45,
@@ -185,6 +197,7 @@
   },
   {
     "id": "action.mine_mithril",
+    "loot_table": "loot.gather.mining",
     "professionId": "profession.mining",
     "name": "Mine Mithril",
     "requiredLevel": 62,

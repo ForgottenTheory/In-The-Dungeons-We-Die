@@ -1,18 +1,54 @@
 namespace Dungeons.Items;
 
 /// <summary>
-/// A bag holding both <b>stacks</b> (quantity-keyed stackable items — raw materials,
-/// consumables) and <b>instances</b> (unique <see cref="ItemInstance"/>s — equipment
-/// and generated materials). Stack transactions are all-or-nothing. Used for both the
-/// Stash and a run's unsecured inventory (docs/architecture.md §23, docs/itemization.md §4).
+/// A bag holding <b>stacks</b> (quantity-keyed stackable items — raw materials, consumables),
+/// <b>instances</b> (unique <see cref="ItemInstance"/>s — equipment and generated materials)
+/// and <b>coin</b>. Stack transactions are all-or-nothing. Used for both the Stash and a run's
+/// unsecured inventory (docs/architecture.md §23, docs/itemization.md §4).
+///
+/// <para>Gold lives here rather than on a separate purse for one reason that matters: it makes
+/// coin obey the extraction risk model for free. Gold picked up inside a Realm sits in the
+/// unsecured run inventory and is lost on death; gold in the Stash is safe — the same rule as
+/// every other thing the player carries, with no second code path to keep in step.</para>
 /// </summary>
 public sealed class Inventory
 {
     private readonly Dictionary<string, int> _quantities = new(StringComparer.Ordinal);
     private readonly List<ItemInstance> _instances = new();
 
-    /// <summary>Raised after any change to contents (stacks or instances).</summary>
+    /// <summary>Raised after any change to contents (stacks, instances or coin).</summary>
     public event Action? Changed;
+
+    /// <summary>Coin in this bag. The game's only currency; nothing spends it yet.</summary>
+    public long Gold { get; private set; }
+
+    public void AddGold(long amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), amount, "Gold amount must be positive.");
+        Gold += amount;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Spends coin if there is enough. Returns false and changes nothing otherwise.</summary>
+    public bool TrySpendGold(long amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), amount, "Gold amount must be positive.");
+        if (Gold < amount)
+            return false;
+
+        Gold -= amount;
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>Sets coin outright. For loading a save, not for gameplay.</summary>
+    public void RestoreGold(long amount)
+    {
+        Gold = Math.Max(0, amount);
+        Changed?.Invoke();
+    }
 
     public int GetQuantity(string itemId) => _quantities.TryGetValue(itemId, out var qty) ? qty : 0;
 
@@ -107,10 +143,11 @@ public sealed class Inventory
 
     public void Clear()
     {
-        if (_quantities.Count == 0 && _instances.Count == 0)
+        if (_quantities.Count == 0 && _instances.Count == 0 && Gold == 0)
             return;
         _quantities.Clear();
         _instances.Clear();
+        Gold = 0;
         Changed?.Invoke();
     }
 }

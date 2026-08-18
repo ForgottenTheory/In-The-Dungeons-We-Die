@@ -22,7 +22,7 @@ public class CombatContentValidationTests
     {
         var actors = Load<ActorDefinition>("actors");
         var moves = Load<MoveDefinition>("moves");
-        var materials = Load<MaterialDefinition>("materials");
+        var lootTables = Load<Dungeons.Loot.LootTableDefinition>("loot_tables");
 
         Assert.True(actors.Count >= 2); // Goblin Raider + Brute
 
@@ -31,8 +31,8 @@ public class CombatContentValidationTests
             Assert.NotEmpty(actor.Moves);
             foreach (var grant in actor.Moves)
                 Assert.True(moves.Contains(grant.Id), $"{actor.Id} grants unknown move {grant.Id}");
-            if (!string.IsNullOrEmpty(actor.LootItemId))
-                Assert.True(materials.Contains(actor.LootItemId!), $"{actor.Id} drops unknown material {actor.LootItemId}");
+            if (!string.IsNullOrEmpty(actor.LootTableId))
+                Assert.True(lootTables.Contains(actor.LootTableId!), $"{actor.Id} drops from unknown table {actor.LootTableId}");
             Assert.True(actor.Resources.Health > 0);
         }
     }

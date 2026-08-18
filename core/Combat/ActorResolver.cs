@@ -17,7 +17,10 @@ public sealed class ResolvedActor
     public required double Armor { get; init; }
     public required double Resolve { get; init; }
     public required IReadOnlyList<string> Tags { get; init; }
-    public string? LootItemId { get; init; }
+
+    /// <summary>Family, role and actor drop tables, in that order — all three are rolled and
+    /// their results merged into one haul.</summary>
+    public IReadOnlyList<string> LootTableIds { get; init; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -76,7 +79,14 @@ public static class ActorResolver
                 .Concat(actor.Tags)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList(),
-            LootItemId = actor.LootItemId,
+            // Loot accumulates across the layers instead of overriding, unlike armour or
+            // Resolve: what a body is made of and what it happens to be carrying are different
+            // claims, and both are true at once.
+            LootTableIds = new[] { family?.LootTableId, role?.LootTableId, actor.LootTableId }
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Select(id => id!)
+                .Distinct(StringComparer.Ordinal)
+                .ToList(),
         };
     }
 

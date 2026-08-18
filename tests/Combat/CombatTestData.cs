@@ -52,12 +52,12 @@ internal static class CombatTestData
         new ResourcePool(ResourceType.Mana, 0),
         moveset ?? Set(Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5)),
         () => attrs ?? Attrs(),
-        lootItemId: null,
+        lootTableIds: null,
         armorProfile: armor);
 
     public static Combatant Enemy(
         string name, int hp, AttributeSet attrs, MoveDefinition move,
-        string? loot = "material.goblin_scrap",
+        IReadOnlyList<string>? lootTables = null,
         ArmorProfile? armor = null,
         IReadOnlyDictionary<string, double>? vulnerable = null,
         IReadOnlyList<AiRuleSpec>? ai = null) => new(
@@ -67,7 +67,7 @@ internal static class CombatTestData
         new ResourcePool(ResourceType.Mana, 0),
         Set(move),
         () => attrs,
-        loot,
+        lootTables,
         armorProfile: armor,
         vulnerability: vulnerable,
         ai: ai);

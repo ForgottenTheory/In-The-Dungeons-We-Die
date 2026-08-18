@@ -6,5 +6,5 @@
   "family": "family.goblin",
   "role": "role.brute",
   "moves": ["move.goblin_smash", "move.overhead_crush", "move.brace"],
-  "lootItemId": "material.goblin_scrap"
+  "loot_table": "loot.actor.goblin_brute"
 }

@@ -82,14 +82,15 @@ public static class ContentValidator
         ValidateBases(content.Classes, content.ModifierKeys, problems);
         ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
         ValidateSuffixes(content.Suffixes, content.ModifierKeys, problems);
-        ValidateActors(content.Actors, content.Moves, content.Materials,
+        ValidateActors(content.Actors, content.Moves, content.LootTables,
             content.EnemyFamilies, content.EnemyRoles, content.AiProfiles, problems);
         ValidateMoves(content, problems);
-        ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, problems);
+        ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, content.LootTables, problems);
         ValidateTrainingObstacles(content.TrainingObstacles, problems);
         ValidateStations(content, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
-        ValidateRealms(content.Realms, content.Actors, content.Actions, content.Materials, content.Consumables, problems);
+        ValidateRealms(content.Realms, content.Actors, content.Actions, content.LootTables, problems);
+        ValidateLootTables(content, problems);
         ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
         ValidateStatuses(content, problems);
         ValidateComponentMoves(content, problems);
@@ -762,7 +763,7 @@ public static class ContentValidator
     private static void ValidateActors(
         DataStore<ActorDefinition> actors,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
-        DataStore<MaterialDefinition> materials,
+        DataStore<Loot.LootTableDefinition> lootTables,
         DataStore<EnemyFamilyDefinition> families,
         DataStore<CombatRoleDefinition> roles,
         DataStore<AiProfileDefinition> aiProfiles,
@@ -775,12 +776,16 @@ public static class ContentValidator
         {
             ValidateLanes(family.Id, "enemy_families", family.Resistances, problems);
             ValidateVulnerability(family.Id, "enemy_families", family.Vulnerable, problems);
+            if (family.LootTableId is { Length: > 0 } familyLoot && !lootTables.Contains(familyLoot))
+                problems.Add(new("enemy_families", $"{family.Id} references unknown loot table '{familyLoot}'."));
         }
 
         foreach (var role in roles.GetAll())
         {
             ValidateLanes(role.Id, "enemy_roles", role.Resistances, problems);
             ValidateVulnerability(role.Id, "enemy_roles", role.Vulnerable, problems);
+            if (role.LootTableId is { Length: > 0 } roleLoot && !lootTables.Contains(roleLoot))
+                problems.Add(new("enemy_roles", $"{role.Id} references unknown loot table '{roleLoot}'."));
             if (role.AiProfile is { } roleProfile && !aiProfiles.Contains(roleProfile))
                 problems.Add(new("enemy_roles", $"{role.Id} references unknown AI profile '{roleProfile}'."));
         }
@@ -873,8 +878,8 @@ public static class ContentValidator
             foreach (var rule in actor.Ai)
                 ValidateAiRule(actor.Id, "actors", rule, problems);
 
-            if (!string.IsNullOrEmpty(actor.LootItemId) && !materials.Contains(actor.LootItemId))
-                problems.Add(new("actors", $"{actor.Id} drops unknown material '{actor.LootItemId}'."));
+            if (actor.LootTableId is { Length: > 0 } actorLoot && !lootTables.Contains(actorLoot))
+                problems.Add(new("actors", $"{actor.Id} references unknown loot table '{actorLoot}'."));
 
             ValidateLanes(actor.Id, "actors", actor.Resistances, problems);
             ValidateVulnerability(actor.Id, "actors", actor.Vulnerable, problems);
@@ -1050,6 +1055,7 @@ public static class ContentValidator
         DataStore<ProfessionDefinition> professions,
         DataStore<MaterialDefinition> materials,
         DataStore<RealmDefinition> realms,
+        DataStore<Loot.LootTableDefinition> lootTables,
         List<ContentProblem> problems)
     {
         // Opportunity ids are referenced by the client when a pending offer is pursued, so
@@ -1082,6 +1088,9 @@ public static class ContentValidator
                 if (knowledge.Amount <= 0)
                     problems.Add(new("profession_actions", $"{action.Id} realm knowledge gain is {knowledge.Amount}; must be positive."));
             }
+
+            if (action.LootTableId is { Length: > 0 } dropTable && !lootTables.Contains(dropTable))
+                problems.Add(new("profession_actions", $"{action.Id} references unknown loot table '{dropTable}'."));
 
             foreach (var opportunity in action.Opportunities)
                 ValidateOpportunity(action, opportunity, materials, opportunityIds, problems);
@@ -1249,8 +1258,7 @@ public static class ContentValidator
         DataStore<RealmDefinition> realms,
         DataStore<ActorDefinition> actors,
         DataStore<ProfessionActionDefinition> actions,
-        DataStore<MaterialDefinition> materials,
-        DataStore<ConsumableDefinition> consumables,
+        DataStore<Loot.LootTableDefinition> lootTables,
         List<ContentProblem> problems)
     {
         foreach (var realm in realms.GetAll())
@@ -1287,12 +1295,14 @@ public static class ContentValidator
                         break;
 
                     case RealmLocationType.Event:
-                        // A reward may be a stackable material or a consumable item.
-                        if (!string.IsNullOrEmpty(loc.RewardItemId)
-                            && !materials.Contains(loc.RewardItemId) && !consumables.Contains(loc.RewardItemId))
-                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} rewards unknown item '{loc.RewardItemId}'."));
+                        // An event with neither text nor a table is a node that does nothing.
+                        if (string.IsNullOrEmpty(loc.EventText) && string.IsNullOrEmpty(loc.LootTableId))
+                            problems.Add(new("realms", $"{realm.Id}/{loc.Id} is an Event node with no text and no loot."));
                         break;
                 }
+
+                if (loc.LootTableId is { Length: > 0 } nodeLoot && !lootTables.Contains(nodeLoot))
+                    problems.Add(new("realms", $"{realm.Id}/{loc.Id} references unknown loot table '{nodeLoot}'."));
             }
         }
     }
@@ -1649,4 +1659,134 @@ public static class ContentValidator
             if (!reachable.Contains(move.Id))
                 problems.Add(new("moves", $"{move.Id} is granted by nothing — orphan content."));
     }
+
+    /// <summary>
+    /// Loot tables (M6). The rules here are the ones a typo can silently turn into "this source
+    /// drops nothing" — the worst kind of content bug, because nothing throws and the table just
+    /// quietly stops paying out.
+    ///
+    /// <para>Three of them are design rules rather than shape checks, and are the reason this
+    /// method exists at all: a nested table must not form a cycle (an infinite roll); an entry
+    /// must name exactly one of item/table/nothing (anything else is an author who meant
+    /// something and got neither); and a material entry may not restate rarity, because the
+    /// material's own <c>rarity:</c> tag is the single source of truth for it.</para>
+    /// </summary>
+    private static void ValidateLootTables(ContentBundle content, List<ContentProblem> problems)
+    {
+        var tables = content.LootTables;
+
+        foreach (var table in tables.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("loot_tables", $"{table.Id}: {message}"));
+
+            if (string.IsNullOrWhiteSpace(table.Name))
+                Problem("has no name — loot is player-facing, and the log prints this.");
+
+            if (Loot.LootReachability.FormsCycle(tables, table.Id))
+                Problem("reaches itself through a nested table — that roll would never end.");
+
+            if (table.AlwaysDrops.Count == 0 && table.ChanceDrops.Count == 0
+                && table.WeightedDraws.Count == 0 && table.Gold is null)
+                Problem("has no entries and no gold — it can never pay out.");
+
+            foreach (var entry in table.AlwaysDrops)
+                ValidateLootEntry(table.Id, entry, content, requiresWeight: false, problems);
+            foreach (var entry in table.ChanceDrops)
+            {
+                if (entry.Chance is <= 0 or > 1)
+                    Problem($"chance drop '{DescribeEntry(entry)}' has chance {entry.Chance}, outside (0, 1].");
+                ValidateLootEntry(table.Id, entry, content, requiresWeight: false, problems);
+            }
+
+            foreach (var draw in table.WeightedDraws)
+            {
+                if (draw.Picks < 1)
+                    Problem($"a weighted draw picks {draw.Picks} times — it would never fire.");
+                if (draw.Picks > Loot.LootTuning.MaxPicksPerDraw)
+                    Problem($"a weighted draw picks {draw.Picks} times, above the {Loot.LootTuning.MaxPicksPerDraw} cap.");
+                if (draw.Entries.Count == 0)
+                    Problem("a weighted draw has no entries.");
+                if (draw.Entries.Count > 0 && draw.Entries.All(entry => entry.DropsNothing))
+                    Problem("a weighted draw contains nothing but misses.");
+
+                foreach (var entry in draw.Entries)
+                    ValidateLootEntry(table.Id, entry, content, requiresWeight: true, problems);
+            }
+
+            if (table.Gold is { } gold)
+            {
+                if (gold.MinAmount < 0 || gold.MaxAmount < 0)
+                    Problem($"gold range [{gold.MinAmount}, {gold.MaxAmount}] is negative.");
+                if (gold.MinAmount > gold.MaxAmount)
+                    Problem($"gold range [{gold.MinAmount}, {gold.MaxAmount}] is inverted.");
+                if (gold.MaxAmount == 0)
+                    Problem("declares gold but its maximum is 0.");
+                if (gold.Chance is <= 0 or > 1)
+                    Problem($"gold chance is {gold.Chance}, outside (0, 1].");
+            }
+        }
+    }
+
+    /// <summary>One entry, wherever it lives. <paramref name="requiresWeight"/> is set inside a
+    /// weighted draw, where a non-positive weight means the entry can never be picked.</summary>
+    private static void ValidateLootEntry(
+        string tableId,
+        Loot.LootEntryDefinition entry,
+        ContentBundle content,
+        bool requiresWeight,
+        List<ContentProblem> problems)
+    {
+        void Problem(string message) =>
+            problems.Add(new ContentProblem("loot_tables", $"{tableId}: entry '{DescribeEntry(entry)}' {message}"));
+
+        var declared = 0;
+        if (!string.IsNullOrEmpty(entry.ItemId)) declared++;
+        if (!string.IsNullOrEmpty(entry.TableId)) declared++;
+        if (entry.DropsNothing) declared++;
+
+        if (declared != 1)
+            Problem("must set exactly one of itemId / tableId / dropsNothing.");
+
+        if (entry.ItemId is { Length: > 0 } itemId && !IsDroppableItem(itemId, content))
+            Problem($"names unknown item '{itemId}' (not a material, consumable or technique).");
+
+        if (entry.TableId is { Length: > 0 } nested && !content.LootTables.Contains(nested))
+            Problem($"nests unknown loot table '{nested}'.");
+
+        if (entry.MinQuantity < 1)
+            Problem($"has minQuantity {entry.MinQuantity}; must be at least 1.");
+        if (entry.MinQuantity > entry.MaxQuantity)
+            Problem($"has an inverted quantity range [{entry.MinQuantity}, {entry.MaxQuantity}].");
+
+        if (requiresWeight && entry.Weight <= 0)
+            Problem($"has weight {entry.Weight} inside a weighted draw; it could never be picked.");
+
+        // The single-source-of-truth rule for rarity. A material states its own; anything else
+        // (a technique manual, a schematic, a consumable) has nowhere to state it but here.
+        if (entry.Rarity is not null && entry.ItemId is { Length: > 0 } rated
+            && content.Materials.TryGetById(rated, out var material)
+            && material.Tags.Any(tag => tag.StartsWith("rarity:", StringComparison.OrdinalIgnoreCase)))
+            Problem($"declares a rarity, but '{rated}' already carries a rarity: tag — the tag is authoritative.");
+
+        if (entry.When is { } condition)
+        {
+            if (condition.MinDepth < 0)
+                Problem($"has a negative minDepth ({condition.MinDepth}).");
+            if (condition.MaxDepth is { } ceiling && ceiling < condition.MinDepth)
+                Problem($"has an inverted depth range [{condition.MinDepth}, {ceiling}].");
+            foreach (var tag in condition.RequiresTags.Intersect(condition.ExcludesTags, StringComparer.OrdinalIgnoreCase))
+                Problem($"both requires and excludes tag '{tag}' — it can never drop.");
+        }
+    }
+
+    /// <summary>What a loot entry is allowed to name: anything that can sit in a bag as a
+    /// stack. Equipment is deliberately absent — D28 says realms drop inputs, and a test
+    /// enforces the enemy half of that rule on top of this.</summary>
+    private static bool IsDroppableItem(string itemId, ContentBundle content) =>
+        content.Materials.Contains(itemId)
+        || content.Consumables.Contains(itemId)
+        || content.Techniques.Contains(itemId);
+
+    private static string DescribeEntry(Loot.LootEntryDefinition entry) =>
+        entry.ItemId ?? entry.TableId ?? (entry.DropsNothing ? "(nothing)" : "(empty)");
 }

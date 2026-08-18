@@ -44,6 +44,10 @@ public sealed class ContentBundle
     public DataStore<CombatRoleDefinition> EnemyRoles { get; init; } = new();
     public DataStore<AiProfileDefinition> AiProfiles { get; init; } = new();
     public DataStore<RealmDefinition> Realms { get; init; } = new();
+
+    /// <summary>Drop tables (M6). One shape for every loot source in the game — enemies,
+    /// gathering nodes, chests, profession actions — composed by nesting rather than copied.</summary>
+    public DataStore<Dungeons.Loot.LootTableDefinition> LootTables { get; init; } = new();
     public DataStore<ConsumableDefinition> Consumables { get; init; } = new();
     public DataStore<TechniqueDefinition> Techniques { get; init; } = new();
     public DataStore<EquipmentDefinition> Equipment { get; init; } = new();

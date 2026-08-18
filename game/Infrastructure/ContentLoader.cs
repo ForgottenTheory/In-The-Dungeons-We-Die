@@ -47,6 +47,7 @@ public static class ContentLoader
         EnemyRoles = LoadDefinitions<CombatRoleDefinition>($"{dataRoot}/enemy_roles"),
         AiProfiles = LoadDefinitions<AiProfileDefinition>($"{dataRoot}/ai_profiles"),
         Realms = LoadDefinitions<RealmDefinition>($"{dataRoot}/realms"),
+        LootTables = LoadDefinitions<Dungeons.Loot.LootTableDefinition>($"{dataRoot}/loot_tables"),
         Consumables = LoadDefinitions<ConsumableDefinition>($"{dataRoot}/consumables"),
         Techniques = LoadDefinitions<TechniqueDefinition>($"{dataRoot}/techniques"),
         Equipment = LoadDefinitions<EquipmentDefinition>($"{dataRoot}/equipment"),

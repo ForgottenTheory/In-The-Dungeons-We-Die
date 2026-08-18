@@ -26,6 +26,12 @@ public sealed class EnemyFamilyDefinition : IDefinition
 
     public double? Armor { get; init; }
     public double? Resolve { get; init; }
+
+    /// <summary>What a body of this kind leaves behind — hide, bone, blood, the parts every
+    /// member of the family shares. Rolled alongside the role's and the actor's own tables, so
+    /// a new creature of a known family is lootable the moment it is authored.</summary>
+    [JsonPropertyName("loot_table")]
+    public string? LootTableId { get; init; }
 }
 
 /// <summary>
@@ -55,6 +61,12 @@ public sealed class CombatRoleDefinition : IDefinition
     /// <summary>Default brain for this role; an actor's own <c>ai_profile</c> overrides it.</summary>
     [JsonPropertyName("ai_profile")]
     public string? AiProfile { get; init; }
+
+    /// <summary>What this <em>role</em> carries, as opposed to what the body is made of: a
+    /// brute's heavier gear salvages differently from a caster's reagent pouch, whatever
+    /// species is wearing it. This is also where an <c>role.elite</c> hangs its spoils.</summary>
+    [JsonPropertyName("loot_table")]
+    public string? LootTableId { get; init; }
 }
 
 /// <summary>

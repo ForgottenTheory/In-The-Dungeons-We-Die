@@ -3,6 +3,7 @@
   // Grove points at this action. The 20-profession pass moved it from Herblore to Farming —
   // collecting a plant is Farming's domain; Herblore is what you do to it afterwards.
   "id": "action.gather_sageleaf",
+  "loot_table": "loot.gather.foraging",
   "professionId": "profession.farming",
   "name": "Gather Sageleaf",
   "requiredLevel": 1,

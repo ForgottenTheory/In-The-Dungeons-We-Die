@@ -7,6 +7,9 @@
     "resources": { "health": 30, "mana": 0, "stamina": 40 },
     // A lifetime of eating things nothing should eat.
     "resistances": { "toxin": 0.25 },
-    "resolve": 50
+    "resolve": 50,
+    // What a goblin body is made of. Rolled alongside the role's and the actor's tables, so a
+    // new goblin needs only its own identity table — or none at all.
+    "loot_table": "loot.family.goblin"
   }
 ]

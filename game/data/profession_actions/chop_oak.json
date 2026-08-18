@@ -2,6 +2,7 @@
   // Kept in its own file, and kept its id, since the vertical slice: the Dark Forest's Old
   // Grove points at this action.
   "id": "action.chop_oak",
+  "loot_table": "loot.gather.forestry",
   "professionId": "profession.forestry",
   "name": "Chop Oak",
   "requiredLevel": 1,

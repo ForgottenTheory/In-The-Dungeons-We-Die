@@ -15,6 +15,7 @@
     // brewing, cooking and felting all quietly assumed a full bucket. Farming draws it,
     // because Farming is the profession that is already standing at the Hideout well.
     "id": "action.draw_water",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Draw Water",
     "requiredLevel": 1,
@@ -25,6 +26,7 @@
   },
   {
     "id": "action.gather_nettle",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Gather Nettle",
     "requiredLevel": 1,
@@ -35,6 +37,7 @@
   },
   {
     "id": "action.dig_marsh_root",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Dig Marsh Root",
     "requiredLevel": 5,
@@ -45,6 +48,7 @@
   },
   {
     "id": "action.forage_wild_seeds",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Forage Wild Seeds",
     "requiredLevel": 10,
@@ -75,6 +79,7 @@
   },
   {
     "id": "action.gather_wild_fungi",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Gather Wild Fungi",
     "requiredLevel": 12,
@@ -88,6 +93,7 @@
   },
   {
     "id": "action.harvest_comfrey",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Harvest Comfrey",
     "requiredLevel": 15,
@@ -101,6 +107,7 @@
   },
   {
     "id": "action.harvest_kingsfoil",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Harvest Kingsfoil",
     "requiredLevel": 30,
@@ -111,6 +118,7 @@
   },
   {
     "id": "action.gather_emberleaf",
+    "loot_table": "loot.gather.foraging",
     "professionId": "profession.farming",
     "name": "Gather Emberleaf",
     "requiredLevel": 40,

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Dungeons.Realms;
 
 /// <summary>Kinds of spatial location in a Realm (docs/realms.md §11). MVP subset.</summary>
@@ -31,8 +33,18 @@ public sealed class RealmLocationDefinition
     /// <summary>Gather nodes: the profession action to perform.</summary>
     public string? ProfessionActionId { get; init; }
 
-    /// <summary>Event nodes: flavour text and an optional reward.</summary>
+    /// <summary>Event nodes: flavour text.</summary>
     public string? EventText { get; init; }
-    public string? RewardItemId { get; init; }
-    public int RewardQuantity { get; init; } = 1;
+
+    /// <summary>
+    /// What this node pays out, on top of whatever its primary action already produces
+    /// (docs/realms.md). On a Gather node this is the Realm's own layer over the profession
+    /// action — the strange finds that a safe Hideout ladder never surfaces. On an Event node
+    /// it is the chest.
+    ///
+    /// <para>A Gather node's table is rolled only when the profession attempt actually lands,
+    /// so standing on a node is never a free faucet.</para>
+    /// </summary>
+    [JsonPropertyName("loot_table")]
+    public string? LootTableId { get; init; }
 }

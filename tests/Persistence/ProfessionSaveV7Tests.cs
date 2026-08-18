@@ -74,9 +74,13 @@ public class ProfessionSaveV7Tests
             new Dictionary<string, int>());
     }
 
+    /// <summary>The version this file's fixtures were written against is 7; the live schema has
+    /// moved past it (v8 added gold) and a v7 save still loads, which is what the rest of this
+    /// class proves. Pinned as a floor rather than an equality so the next additive bump does
+    /// not require editing a test that is not about versioning.</summary>
     [Fact]
-    public void NewSavesAreWrittenAtVersionSeven() =>
-        Assert.Equal(7, SaveData.CurrentSchemaVersion);
+    public void NewSavesAreWrittenAtVersionSevenOrLater() =>
+        Assert.True(SaveData.CurrentSchemaVersion >= 7, $"schema went backwards to v{SaveData.CurrentSchemaVersion}.");
 
     [Fact]
     public void CaptureThenApply_RestoresThePassiveActionAndTheClock()

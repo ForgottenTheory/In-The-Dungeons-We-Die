@@ -165,11 +165,23 @@ public class C2cAuditTests
         // Opportunity payloads are profession faucets too — the whole point of one is that it
         // pays better than the action that surfaced it, so leaving them out of this audit would
         // have been a hole big enough to drive the entire active path through.
+        //
+        // M6 added a third faucet: an action's `loot_table`, which reaches further than the
+        // action's own JSON because tables nest. Walking it keeps this audit honest about the
+        // whole surface. (The loot path is additionally held to a ZERO-tolerance rule by
+        // LootEcosystemTests.NoProfessionDropTableReachesEssence — the allowlist above is a
+        // legacy of content that predates it, and the new path starts clean rather than
+        // inheriting eleven exceptions.)
+        var lootTables = TestPaths.LoadStore<Dungeons.Loot.LootTableDefinition>("loot_tables");
+
         var essenceOutputs = actions
             .SelectMany(a => a.Outputs.Select(o => o.ItemId)
                 .Concat(a.BonusOutputs.Select(o => o.ItemId))
                 .Concat(a.Opportunities.SelectMany(op => op.Outputs.Select(o => o.ItemId)))
-                .Concat(a.Opportunities.SelectMany(op => op.BonusOutputs.Select(o => o.ItemId))))
+                .Concat(a.Opportunities.SelectMany(op => op.BonusOutputs.Select(o => o.ItemId)))
+                .Concat(a.LootTableId is { Length: > 0 } table
+                    ? Dungeons.Loot.LootReachability.ItemsReachableFrom(lootTables, table)
+                    : Enumerable.Empty<string>()))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(id => materials.TryGetById(id, out var m) && m.Essence.Count > 0)
             .ToList();

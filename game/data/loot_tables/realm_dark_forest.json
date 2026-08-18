@@ -1,0 +1,192 @@
+[
+  // ── The Dark Forest's own tables ───────────────────────────────────────────────────────────
+  //
+  // A Gather node's table is the REALM'S LAYER OVER a profession action: the action still pays
+  // what it always pays (and rolls its own profession drop table), and this is what being here
+  // — in a place that can kill you, with unsecured pockets — adds on top. It rolls only when
+  // the attempt actually lands, so standing on a node is never a free faucet.
+  //
+  // An Event node's table simply IS the node: the chest, the kill site, the cache.
+  //
+  // This is where essence and coin live, per D29.3 and the same reasoning: extraction keeps the
+  // practical monopoly on the supernatural tier, and on being paid.
+
+  // ---- Depth 1 -----------------------------------------------------------------------------
+
+  {
+    "id": "loot.node.old_grove",
+    "name": "Old Grove",
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.forest_reagents", "weight": 30 },
+          { "itemId": "material.elder_bark", "weight": 14 },
+          { "itemId": "material.pine_resin", "weight": 12 },
+          { "itemId": "material.lichen", "weight": 10 },
+          { "dropsNothing": true, "weight": 34 }
+        ]
+      },
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.fey_essence", "weight": 12 },
+          { "itemId": "material.mana_seed", "weight": 4 },
+          { "dropsNothing": true, "weight": 84 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // The design brief's worked example: iron and stone, an uncommon inclusion, a rare crystal,
+    // and something very rare that has no business being in a forest hillside.
+    "id": "loot.node.iron_vein",
+    "name": "Iron Vein",
+    "chanceDrops": [
+      { "itemId": "material.iron_ore", "chance": 0.45, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.granite", "chance": 0.30, "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.bog_iron", "weight": 18 },
+          { "itemId": "material.native_copper", "weight": 14 },
+          { "itemId": "material.rock_crystal", "weight": 12 },
+          { "itemId": "material.amethyst", "weight": 7 },
+          { "itemId": "material.cold_iron", "weight": 3 },
+          { "itemId": "material.deepcrystal", "weight": 2 },
+          { "dropsNothing": true, "weight": 44 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.node.wagon_wreck",
+    "name": "Overturned Wagon",
+    // Somebody was carrying all this out when the raiders caught them. D28: it comes back as
+    // salvage and paperwork, never as the gear it used to be.
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_light" }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.salvage_heavy", "weight": 24 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 20 },
+          { "itemId": "material.canvas", "weight": 12 },
+          { "itemId": "material.rope", "weight": 12 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 5 },
+          { "dropsNothing": true, "weight": 27 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 4, "maxAmount": 16, "chance": 0.55 }
+  },
+
+  {
+    "id": "loot.event.crumbling_ruins",
+    "name": "Moss-Covered Chest",
+    "alwaysDrops": [
+      { "itemId": "material.iron_ore", "minQuantity": 2, "maxQuantity": 4 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 2,
+        "entries": [
+          { "tableId": "loot.shared.salvage_light", "weight": 26 },
+          { "tableId": "loot.shared.knowledge_common", "weight": 22 },
+          { "tableId": "loot.shared.crafting_catalysts", "weight": 16 },
+          { "itemId": "material.silver_ore", "weight": 10 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 6 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 6 },
+          { "dropsNothing": true, "weight": 14 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 15, "maxAmount": 45, "chance": 1.0 }
+  },
+
+  // ---- Depth 2 -----------------------------------------------------------------------------
+
+  {
+    "id": "loot.node.dark_grove",
+    "name": "Dark Grove",
+    "chanceDrops": [
+      { "itemId": "material.crypt_moss", "chance": 0.22 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.forest_reagents", "weight": 34 },
+          { "itemId": "material.nightbloom", "weight": 12 },
+          { "itemId": "material.moonflower", "weight": 8 },
+          { "itemId": "material.fairy_ring", "weight": 6 },
+          { "dropsNothing": true, "weight": 40 }
+        ]
+      },
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.fey_essence", "weight": 26 },
+          { "dropsNothing": true, "weight": 74 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.node.hunting_blind",
+    "name": "Hunting Blind",
+    // A hide somebody else built and abandoned. Note what is NOT here: hide, meat, organs. The
+    // Hunting/Beast Lore fence holds through the loot system too — a kill has to be opened.
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.rabbit_carcass", "weight": 20 },
+          { "itemId": "material.fowl_carcass", "weight": 14 },
+          { "itemId": "material.feather", "weight": 14, "minQuantity": 2, "maxQuantity": 4 },
+          { "itemId": "material.hemp_fiber", "weight": 12 },
+          { "itemId": "material.boar_carcass", "weight": 6 },
+          { "dropsNothing": true, "weight": 34 }
+        ]
+      },
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_common", "weight": 14 },
+          { "itemId": "material.wolfsbane", "weight": 10 },
+          { "dropsNothing": true, "weight": 76 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // Something else got here first. This is the one place the beast-anatomy template is
+    // reachable before beasts are authored as enemies — and it stays reachable afterwards,
+    // because a torn-open kill is exactly what that table describes.
+    "id": "loot.event.ravaged_kill",
+    "name": "A Ravaged Kill",
+    "alwaysDrops": [
+      { "tableId": "loot.template.beast_anatomy" }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.creature_remains", "weight": 40 },
+          { "tableId": "loot.shared.fey_essence", "weight": 22 },
+          { "itemId": "material.corpse_wax", "weight": 10 },
+          { "dropsNothing": true, "weight": 28 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 8, "maxAmount": 24, "chance": 0.40 }
+  }
+]

@@ -64,6 +64,7 @@ public static class SaveMapper
                     .ToList(),
             Build = build,
             Stash = stash.Snapshot().ToList(),
+            Gold = stash.Gold,
             StashInstances = stash.Instances.Select(ToSave).ToList(),
             Equipment = equipment is null
                 ? new Dictionary<string, ItemInstanceSave>()
@@ -147,6 +148,7 @@ public static class SaveMapper
             stash.Add(stack);
         foreach (var instance in save.StashInstances)
             stash.AddInstance(FromSave(instance));
+        stash.RestoreGold(save.Gold);
 
         if (equipment is not null)
         {

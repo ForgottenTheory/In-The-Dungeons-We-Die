@@ -5,5 +5,5 @@
   "family": "family.goblin",
   "role": "role.skirmisher",
   "moves": ["move.goblin_slash", "move.quick_stab", "move.expose_weakness"],
-  "lootItemId": "material.goblin_scrap"
+  "loot_table": "loot.actor.goblin_raider"
 }

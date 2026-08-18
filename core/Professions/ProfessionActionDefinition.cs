@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Dungeons.Content;
 using Dungeons.Items;
 
@@ -39,6 +40,25 @@ public sealed class ProfessionActionDefinition : IDefinition
     public IReadOnlyList<ItemStack> Inputs { get; init; } = Array.Empty<ItemStack>();
     public IReadOnlyList<ItemStack> Outputs { get; init; } = Array.Empty<ItemStack>();
     public IReadOnlyList<ItemChance> BonusOutputs { get; init; } = Array.Empty<ItemChance>();
+
+    /// <summary>
+    /// Things the work turns up that are not the work's product: a seed shaken loose from a
+    /// felled tree, a grub in the bait tin, a coin in the silt. Rolled on any attempt that
+    /// lands, in addition to <see cref="Outputs"/> and <see cref="BonusOutputs"/>.
+    ///
+    /// <para><b>Why this is not just more <see cref="BonusOutputs"/>.</b> Those are <em>more of
+    /// the same work</em>, and mastery and active performance raise their odds — they are a
+    /// profession-progression lever. A drop table is <em>something else entirely</em>: it does
+    /// not scale with mastery, it can express weighted variety and quantity ranges, and one
+    /// table is shared by every action that would otherwise copy the same six lines.</para>
+    ///
+    /// <para>The table is rolled with <c>active</c> or <c>passive</c> on the context, so an
+    /// entry can be reachable only when the player is actually there doing the work — which is
+    /// what keeps Realm gathering ahead of safe Hideout training without a second balance
+    /// model.</para>
+    /// </summary>
+    [JsonPropertyName("loot_table")]
+    public string? LootTableId { get; init; }
 
     /// <summary>Discoveries only active play can surface. Empty for most actions.</summary>
     public IReadOnlyList<ProfessionOpportunityDefinition> Opportunities { get; init; } =

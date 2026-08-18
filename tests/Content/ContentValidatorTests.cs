@@ -55,6 +55,7 @@ public class ContentValidatorTests
         EnemyRoles = Load<CombatRoleDefinition>("enemy_roles"),
         AiProfiles = Load<AiProfileDefinition>("ai_profiles"),
         Realms = Load<RealmDefinition>("realms"),
+        LootTables = Load<Dungeons.Loot.LootTableDefinition>("loot_tables"),
         Consumables = Load<ConsumableDefinition>("consumables"),
         Techniques = Load<TechniqueDefinition>("techniques"),
         Equipment = Load<EquipmentDefinition>("equipment"),
@@ -269,16 +270,16 @@ public class ContentValidatorTests
     }
 
     [Fact]
-    public void Actor_WithUnknownLoot_IsFlagged()
+    public void Actor_WithUnknownLootTable_IsFlagged()
     {
         var content = ValidBaseline();
         content.Actors.Add(new ActorDefinition
         {
             Id = "actor.bad",
             Moves = new[] { new MoveGrantSpec { Id = "move.strike" } },
-            LootItemId = "material.ghost",
+            LootTableId = "loot.ghost",
         });
-        AssertHasProblem(content, "actors", "material.ghost");
+        AssertHasProblem(content, "actors", "loot.ghost");
     }
 
     [Fact]
@@ -418,7 +419,7 @@ public class ContentValidatorTests
     }
 
     [Fact]
-    public void Realm_EventNodeWithUnknownReward_IsFlagged()
+    public void Realm_NodeWithUnknownLootTable_IsFlagged()
     {
         var content = ValidBaseline();
         content.Realms.Add(new RealmDefinition
@@ -426,10 +427,26 @@ public class ContentValidatorTests
             Id = "realm.bad",
             Locations = new[]
             {
-                new RealmLocationDefinition { Id = "loc.a", Type = RealmLocationType.Event, RewardItemId = "material.ghost" },
+                new RealmLocationDefinition
+                {
+                    Id = "loc.a", Type = RealmLocationType.Event,
+                    EventText = "A chest.", LootTableId = "loot.ghost",
+                },
             },
         });
-        AssertHasProblem(content, "realms", "material.ghost");
+        AssertHasProblem(content, "realms", "loot.ghost");
+    }
+
+    [Fact]
+    public void Realm_EventNodeThatDoesNothing_IsFlagged()
+    {
+        var content = ValidBaseline();
+        content.Realms.Add(new RealmDefinition
+        {
+            Id = "realm.bad",
+            Locations = new[] { new RealmLocationDefinition { Id = "loc.a", Type = RealmLocationType.Event } },
+        });
+        AssertHasProblem(content, "realms", "no text and no loot");
     }
 
     [Fact]

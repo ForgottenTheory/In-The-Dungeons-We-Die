@@ -194,6 +194,17 @@ Themes:
 - Predators
 - Hidden crossings
 
+**As shipped** (`game/data/realms/dark_forest.json`) — 15 locations across 2 depths:
+
+| Depth | Nodes |
+|---|---|
+| 1 | Camp Entrance · Forest Path · Old Grove (Forestry) · **Iron Vein** (Mining) · Goblin Camp (Raider) · **Overturned Wagon** (Salvaging 5) · Crumbling Ruins (chest) · The Descent |
+| 2 | Deep Path · **Abandoned Hunting Blind** (Hunting) · Dark Grove (Farming) · **Hexer's Hollow** (Hexer) · Brute Warren (Brute) · **A Ravaged Kill** (event) · Extraction Portal |
+
+Every Gather and Event node carries a `loot_table`, which is the Realm's own layer *on top of*
+whatever the profession action already pays — see `docs/loot.md`. A Gather node's table rolls
+only when the attempt lands, so standing on a node is never a free faucet.
+
 ## Tiered Deserts
 
 Progression:

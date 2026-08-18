@@ -8,5 +8,5 @@
   "role": "role.caster",
   "resource_tweaks": { "mana": 20 },
   "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.goblin_slash"],
-  "lootItemId": "material.goblin_scrap"
+  "loot_table": "loot.actor.goblin_hexer"
 }

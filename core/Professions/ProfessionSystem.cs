@@ -1,11 +1,20 @@
 using Dungeons.Content;
 using Dungeons.Items;
+using Dungeons.Loot;
 using Dungeons.Randomness;
 
 namespace Dungeons.Professions;
 
 /// <summary>Notification that a profession's level increased.</summary>
 public readonly record struct ProfessionLevelUp(string ProfessionId, int OldLevel, int NewLevel);
+
+/// <summary>
+/// Rolls a profession action's drop table. A delegate rather than a <c>LootResolver</c> field
+/// because the <em>circumstances</em> of the roll — how deep the party is, which Realm they are
+/// in, whether this attempt was active — belong to the host, not to Core's profession rules.
+/// Null wherever no loot system is wired, in which case an action yields only what it authors.
+/// </summary>
+public delegate LootResult RollActionDropTable(string lootTableId, bool wasActive);
 
 /// <summary>
 /// Coordinates profession execution: validates an action, consumes inputs, produces
@@ -20,6 +29,7 @@ public sealed class ProfessionSystem
     private readonly DataStore<ProfessionActionDefinition> _actions;
     private readonly Func<Inventory> _inventoryProvider;
     private readonly IRandomSource _random;
+    private readonly RollActionDropTable? _rollDropTable;
     private readonly Dictionary<string, ProfessionProgress> _progress = new(StringComparer.Ordinal);
 
     public ProfessionSystem(
@@ -40,11 +50,13 @@ public sealed class ProfessionSystem
         DataStore<ProfessionActionDefinition> actions,
         Func<Inventory> inventoryProvider,
         IRandomSource random,
-        IEnumerable<ProfessionProgress>? initialProgress = null)
+        IEnumerable<ProfessionProgress>? initialProgress = null,
+        RollActionDropTable? rollDropTable = null)
     {
         _actions = actions ?? throw new ArgumentNullException(nameof(actions));
         _inventoryProvider = inventoryProvider ?? throw new ArgumentNullException(nameof(inventoryProvider));
         _random = random ?? throw new ArgumentNullException(nameof(random));
+        _rollDropTable = rollDropTable;
 
         if (initialProgress is not null)
         {
@@ -166,6 +178,19 @@ public sealed class ProfessionSystem
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 
+        // The drop table is what the work turns up rather than what it produces, so it only
+        // rolls on an attempt that actually landed — a bolted deer leaves nothing behind.
+        var produced = yield.Produced;
+        if (yield.Landed && action.LootTableId is { Length: > 0 } dropTableId && _rollDropTable is not null)
+        {
+            var found = _rollDropTable(dropTableId, isActive);
+            if (!found.IsEmpty)
+            {
+                found.DepositInto(bag);
+                produced = produced.Concat(found.Drops.Select(drop => drop.Stack)).ToList();
+            }
+        }
+
         // A missed attempt still teaches the hand, but it does not deepen the craft.
         var masteryGained = yield.Landed ? ProfessionTuning.MasteryPerAction : 0;
 
@@ -180,7 +205,7 @@ public sealed class ProfessionSystem
             Success = true,
             AttemptMissed = !yield.Landed,
             Consumed = inputHandling == InputHandling.ConsumeNow ? action.Inputs : Array.Empty<ItemStack>(),
-            Produced = yield.Produced,
+            Produced = produced,
             XpGained = yield.Xp,
             MasteryGained = masteryGained,
             Performance = performance,

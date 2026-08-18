@@ -13,6 +13,7 @@ using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
 using Dungeons.Hideout;
 using Dungeons.Items;
+using Dungeons.Loot;
 using Dungeons.Modifiers;
 using Dungeons.Persistence;
 using Dungeons.Presentation;
@@ -86,6 +87,7 @@ public partial class GameRoot : Node
     private const string StarterArmorId = "equip.tattered_armor";
 
     private CharacterComposer _composer = null!;
+    private LootResolver _lootResolver = null!;
     private ProfessionSystem _professions = null!;
     private PassiveProfessionRunner _passiveRunner = null!;
     private FarmingPlots _farmingPlots = null!;
@@ -205,9 +207,21 @@ public partial class GameRoot : Node
         RebuildCharacter();
         EquipStarterLoadout();
 
+        // Loot draws from its own seeded stream, so a change to combat or crafting rolls does
+        // not silently reshuffle what drops.
+        _lootResolver = new LootResolver(content, new SeededRandom(0x1007ab1e));
+
         // Gathering deposits into the current bag: the Stash in the Hideout, the run
-        // inventory while in a Realm (unsecured until extraction).
-        _professions = new ProfessionSystem(_actionStore, () => ActiveInventory, new SeededRandom(20260814));
+        // inventory while in a Realm (unsecured until extraction). The drop-table delegate is
+        // the seam: Core decides *whether* an action turned something up, the client supplies
+        // the circumstances (depth, realm, active-or-passive) that decide *what*.
+        _professions = new ProfessionSystem(
+            _actionStore,
+            () => ActiveInventory,
+            new SeededRandom(20260814),
+            rollDropTable: (tableId, wasActive) => _lootResolver.Roll(
+                tableId,
+                LootCircumstances(new[] { wasActive ? LootContextTags.Active : LootContextTags.Passive })));
         _passiveRunner = new PassiveProfessionRunner(_tick, _professions);
         _professions.ActionCompleted += OnActionCompleted;
         _professions.OpportunityResolved += OnOpportunityResolved;
@@ -781,18 +795,22 @@ public partial class GameRoot : Node
     public string InventoryReport()
     {
         var report = new StringBuilder();
-        report.AppendLine("STASH (secured):");
+        report.AppendLine($"STASH (secured) — {_stash.Gold} gold:");
         report.AppendLine(FormatInventory(_stash));
 
         if (InRealm)
         {
             report.AppendLine();
-            report.AppendLine("UNSECURED — lost if you die:");
+            report.AppendLine($"UNSECURED — lost if you die{DescribeCoin(_run!.RunInventory.Gold)}:");
             report.AppendLine(FormatInventory(_run!.RunInventory));
         }
 
         return report.ToString().TrimEnd();
     }
+
+    /// <summary>Coin, only when there is any — an extraction report that always says "and 0
+    /// gold" trains the player to stop reading it.</summary>
+    private static string DescribeCoin(long gold) => gold > 0 ? $" and {gold} gold" : string.Empty;
 
     private string FormatInventory(Inventory inventory)
     {
@@ -1294,10 +1312,9 @@ public partial class GameRoot : Node
         {
             foreach (var enemy in outcome.DefeatedEnemies)
             {
-                if (string.IsNullOrEmpty(enemy.LootItemId))
-                    continue;
-                ActiveInventory.Add(enemy.LootItemId, 1);
-                Emit($"[Loot] {ItemName(enemy.LootItemId)} x1.");
+                // The enemy's own identity tags join the circumstances, which is how an `elite`
+                // or `boss` enemy reaches its spoils without combat knowing what a rank is.
+                GrantLoot(enemy.LootTableIds, enemy.Name, LootCircumstances(enemy.Tags));
             }
         }
 
@@ -1322,6 +1339,74 @@ public partial class GameRoot : Node
             EndRealmRun(died: true);
         }
     }
+
+    // --- Loot ---------------------------------------------------------------
+    //
+    // Application glue only. What a table contains and how it rolls lives in Core's
+    // LootResolver; GameRoot supplies the circumstances, banks the result into whichever bag is
+    // current, and turns it into a log line.
+
+    /// <summary>
+    /// Where the party is, as a loot table sees it: depth, tier, the Realm's own tags, plus
+    /// whatever the specific source contributes. Depth 0 <em>is</em> the Hideout, which is why
+    /// no caller ever has to ask "am I in a Realm?" — a <c>minDepth</c> gate answers it.
+    /// </summary>
+    private LootContext LootCircumstances(IEnumerable<string>? sourceTags = null)
+    {
+        var tags = new List<string>();
+        if (_run is { Active: true } run)
+        {
+            tags.Add(LootContextTags.InRealm);
+            tags.Add(run.Realm.Id);
+            tags.AddRange(run.Realm.Tags);
+        }
+
+        if (sourceTags is not null)
+            tags.AddRange(sourceTags);
+
+        return new LootContext(
+            depth: _run is { Active: true } ? _run.CurrentDepth : 0,
+            tier: _run is { Active: true } ? _run.Tier : 1,
+            tags);
+    }
+
+    /// <summary>Rolls tables, banks the haul, reports it. Every loot source routes through here
+    /// so the log reads the same everywhere and nothing can forget which bag it is filling.</summary>
+    private void GrantLoot(IReadOnlyList<string> tableIds, string sourceName, LootContext circumstances)
+    {
+        if (tableIds.Count == 0)
+            return;
+
+        var loot = _lootResolver.Roll(tableIds, circumstances);
+        if (loot.IsEmpty)
+        {
+            Emit($"[Loot] {sourceName} — nothing worth carrying.");
+            return;
+        }
+
+        loot.DepositInto(ActiveInventory);
+        Emit($"[Loot] {sourceName}: {DescribeLoot(loot)}");
+    }
+
+    private string DescribeLoot(LootResult loot)
+    {
+        var parts = loot.Drops
+            .Select(drop => $"{ItemName(drop.ItemId)} ×{drop.Quantity}{RarityMark(drop.Rarity)}")
+            .ToList();
+        if (loot.Gold > 0)
+            parts.Add($"{loot.Gold} gold");
+        return string.Join(", ", parts);
+    }
+
+    /// <summary>A rare find should read as one. Common and uncommon carry no mark at all, so
+    /// the mark still means something the day it appears.</summary>
+    private static string RarityMark(LootRarity rarity) => rarity switch
+    {
+        LootRarity.Rare => " ★",
+        LootRarity.VeryRare => " ★★",
+        LootRarity.Exceptional => " ★★★",
+        _ => string.Empty,
+    };
 
     // --- Equipment ----------------------------------------------------------
 
@@ -1619,7 +1704,17 @@ public partial class GameRoot : Node
             case RealmLocationType.Gather:
                 if (location.ProfessionActionId is null)
                     return;
-                _professions.Execute(location.ProfessionActionId); // logs + inventory via existing wiring
+
+                // Working a node in a Realm is active play by definition — the player is
+                // standing there doing it, with unsecured pockets.
+                var gathered = _professions.Execute(
+                    location.ProfessionActionId, RealmTuning.RealmGatherPerformance, isActive: true);
+
+                if (!gathered.Success)
+                    Emit($"[Realm] You cannot work this here ({gathered.Failure}).");
+                else if (location.LootTableId is { Length: > 0 } nodeTable && !gathered.AttemptMissed)
+                    GrantLoot(new[] { nodeTable }, location.Name, LootCircumstances());
+
                 RealmChanged?.Invoke();
                 break;
 
@@ -1630,11 +1725,8 @@ public partial class GameRoot : Node
                     return;
                 }
                 Emit($"[Event] {location.EventText}");
-                if (!string.IsNullOrEmpty(location.RewardItemId))
-                {
-                    ActiveInventory.Add(location.RewardItemId, location.RewardQuantity);
-                    Emit($"[Loot] {ItemName(location.RewardItemId)} x{location.RewardQuantity}.");
-                }
+                if (location.LootTableId is { Length: > 0 } eventTable)
+                    GrantLoot(new[] { eventTable }, location.Name, LootCircumstances());
                 _run.MarkCleared(location.Id);
                 AddKnowledge(_run.Realm.Id, RealmTuning.KnowledgePerEvent);
                 RealmChanged?.Invoke();
@@ -1692,7 +1784,7 @@ public partial class GameRoot : Node
         report.AppendLine($"{run.Realm.Name} — Tier {run.Tier}   Depth {run.CurrentDepth}");
         report.AppendLine($"Location: {location.Name} [{location.Type}]{cleared}");
         report.AppendLine($"Party HP: {healthText}    Knowledge: {Knowledge(run.Realm.Id)}");
-        report.AppendLine($"Unsecured loot at risk: {unsecured} item(s)");
+        report.AppendLine($"Unsecured loot at risk: {unsecured} item(s){DescribeCoin(run.RunInventory.Gold)}");
         if (_encounter.IsActive)
             report.AppendLine("In combat — see the Combat panel.");
         return report.ToString().TrimEnd();
@@ -1707,13 +1799,15 @@ public partial class GameRoot : Node
         if (died)
         {
             var lost = RealmExtraction.Forfeit(_run);
-            Emit($"[Realm] You have died. {lost.TotalQuantity} unsecured item(s) lost. Your Stash and equipped gear are safe.");
+            Emit($"[Realm] You have died. {lost.TotalQuantity} unsecured item(s){DescribeCoin(lost.Gold)} lost. " +
+                 "Your Stash and equipped gear are safe.");
         }
         else
         {
             var secured = RealmExtraction.Secure(_run, _stash);
             AddKnowledge(realmId, RealmTuning.KnowledgePerExtract);
-            Emit($"[Extraction] Secured {secured.TotalQuantity} item(s) to your Stash. Returned to the Hideout.");
+            Emit($"[Extraction] Secured {secured.TotalQuantity} item(s){DescribeCoin(secured.Gold)} to your Stash. " +
+                 "Returned to the Hideout.");
         }
 
         _run = null;

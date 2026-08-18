@@ -16,6 +16,7 @@
   },
   {
     "id": "action.search_wagon_wreck",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Search a Wagon Wreck",
     "requiredLevel": 5,
@@ -40,6 +41,7 @@
   },
   {
     "id": "action.strip_guard_post",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Strip a Guard Post",
     "requiredLevel": 12,
@@ -50,6 +52,7 @@
   },
   {
     "id": "action.salvage_goblin_camp",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Salvage a Goblin Camp",
     "requiredLevel": 15,
@@ -76,6 +79,7 @@
   },
   {
     "id": "action.excavate_collapsed_workshop",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Excavate a Collapsed Workshop",
     "requiredLevel": 25,
@@ -119,6 +123,7 @@
   },
   {
     "id": "action.strip_ancient_machinery",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Strip Ancient Machinery",
     "requiredLevel": 40,
@@ -132,6 +137,7 @@
   },
   {
     "id": "action.recover_relic_cache",
+    "loot_table": "loot.gather.salvaging",
     "professionId": "profession.salvaging",
     "name": "Recover a Relic Cache",
     "requiredLevel": 55,

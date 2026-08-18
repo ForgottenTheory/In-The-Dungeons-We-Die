@@ -4,6 +4,7 @@
   // second storm-trace faucet (D29.3).
   {
     "id": "action.fish_river",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Fish the River",
     "requiredLevel": 1,
@@ -14,6 +15,7 @@
   },
   {
     "id": "action.gather_shoreline_kelp",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Gather Shoreline Kelp",
     "requiredLevel": 5,
@@ -24,6 +26,7 @@
   },
   {
     "id": "action.trap_river_crab",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Trap River Crab",
     "requiredLevel": 8,
@@ -34,6 +37,7 @@
   },
   {
     "id": "action.net_oily_shoal",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Net the Oily Shoal",
     "requiredLevel": 10,
@@ -57,6 +61,7 @@
   },
   {
     "id": "action.hunt_eels",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Hunt Eels",
     "requiredLevel": 20,
@@ -67,6 +72,7 @@
   },
   {
     "id": "action.fish_deep_water",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Fish Deep Water",
     "requiredLevel": 28,
@@ -93,6 +99,7 @@
   },
   {
     "id": "action.harvest_storm_kelp",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Harvest Storm Kelp",
     "requiredLevel": 34,
@@ -103,6 +110,7 @@
   },
   {
     "id": "action.dive_the_coral_shelf",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Dive the Coral Shelf",
     "requiredLevel": 42,
@@ -116,6 +124,7 @@
   },
   {
     "id": "action.follow_leviathan_sign",
+    "loot_table": "loot.gather.fishing",
     "professionId": "profession.fishing",
     "name": "Follow Leviathan Sign",
     "requiredLevel": 58,

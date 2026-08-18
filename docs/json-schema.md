@@ -422,24 +422,66 @@ Do not attempt to express arbitrary game logic through giant JSON expression lan
 
 # 19. LootTableData
 
-{
-  "id": "loot.goblin_basic",
+**BUILT** (M6). `game/data/loot_tables/*.json`. Full system doc: `docs/loot.md`.
 
-  "entries": [
+One shape for every loot source in the game. Three drop rules as separate named lists, because
+they are separate mechanics; an entry sets **exactly one** of `itemId` / `tableId` /
+`dropsNothing`.
+
+```jsonc
+{
+  "id": "loot.actor.goblin_raider",
+  "name": "Raider's Take",              // player-facing; the log prints it
+  "tags": ["source:goblinoid"],         // joins the roll context for everything nested below
+
+  "alwaysDrops": [                      // every entry drops
+    { "itemId": "material.goblin_hide", "minQuantity": 1, "maxQuantity": 2 }
+  ],
+
+  "chanceDrops": [                      // each entry rolls its own chance, independently
+    { "itemId": "material.goblin_scrap", "chance": 0.55, "maxQuantity": 3 }
+  ],
+
+  "weightedDraws": [                    // `picks` selections from a weighted set
     {
-      "itemId": "material.scrap_iron",
-      "weight": 50,
-      "min": 1,
-      "max": 2
-    },
-    {
-      "itemId": "currency.coin",
-      "weight": 100,
-      "min": 2,
-      "max": 8
+      "picks": 1,
+      "when": { "requiresTags": ["active"] },     // optional, same shape as an entry's
+      "entries": [
+        { "tableId": "loot.shared.salvage_light", "weight": 48 },   // nested/shared table
+        { "itemId": "material.iron_ore", "weight": 16 },
+        { "itemId": "technique.manual_feint", "weight": 3, "rarity": "Rare" },
+        { "dropsNothing": true, "weight": 33 }                      // a real miss
+      ]
     }
-  ]
+  ],
+
+  "gold": { "minAmount": 2, "maxAmount": 8, "chance": 0.75 }
 }
+```
+
+**Entry fields.** `itemId` (material / consumable / technique) · `tableId` (nest a table) ·
+`dropsNothing` · `weight` (draws only) · `chance` (chanceDrops only) · `minQuantity` /
+`maxQuantity` (both default 1) · `when` · `rarity`.
+
+**`when`** — `{ "minDepth": 2, "maxDepth": 3, "requiresTags": [...], "excludesTags": [...] }`.
+Depth 0 is the Hideout. Guaranteed context tags: `active`, `passive`, `in_realm`, the realm id
+and its tags, the enemy's identity tags (`elite`, `boss`, `family:*`), and each rolled table's
+own `tags`.
+
+**`rarity`** — `Common` · `Uncommon` · `Rare` · `VeryRare` · `Exceptional`. **Only** for items
+with no `rarity:` tag of their own; declaring one for a material is a validation error, because
+the material's tag is the single source of truth and the resolver reads it.
+
+**Who points at a table** — `actors/`, `enemy_families/` and `enemy_roles/` via `loot_table`
+(all three roll and merge); `realms/` locations via `loot_table` (Gather: on top of the action,
+only when it lands — Event: the node itself); `profession_actions/` via `loot_table`.
+
+**Validated** — unknown items/tables, cycles, empty tables, inverted ranges, out-of-range
+chances, zero weights inside a draw, draws that are nothing but misses, self-contradicting
+conditions, and restated rarity.
+
+**Note:** there is no `currency.coin` item. Gold is not an item — it is `gold` on the table and
+`Inventory.Gold` at runtime, so it obeys the extraction risk model with the rest of the bag.
 
 ---
 

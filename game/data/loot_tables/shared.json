@@ -1,0 +1,374 @@
+[
+  // ── The shared loot library ────────────────────────────────────────────────────────────────
+  //
+  // Nothing in this file is attached to a source. These are the tables everything else *nests*,
+  // and they are the reason a new enemy, node or profession action becomes lootable in one line
+  // of JSON instead of thirty. A creature that does not exist yet is made lootable by pointing
+  // its `loot_table` at the tables that already ship here.
+  //
+  // A table's own `tags` join the context for everything nested beneath it, so a shared table
+  // can ask who reached it — `source:creature` is what lets one anatomy table serve every body.
+  //
+  // D28: realms drop INPUTS. Nothing here yields finished equipment, and a test enforces it.
+
+  // ---- Bodies ------------------------------------------------------------------------------
+
+  {
+    "id": "loot.shared.creature_remains",
+    "name": "Creature Remains",
+    "tags": ["source:creature"],
+    // What is left of anything that was alive. Deliberately species-agnostic: the parts that
+    // identify a creature belong on its own table, and the parts every carcass has belong here.
+    "chanceDrops": [
+      { "itemId": "material.animal_bone", "chance": 0.40, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.animal_blood", "chance": 0.25 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.beast_liver", "weight": 14 },
+          { "itemId": "material.beast_heart", "weight": 8 },
+          { "itemId": "material.musk_gland", "weight": 6 },
+          { "dropsNothing": true, "weight": 72 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // The Dire Wolf shape from the design brief, authored ahead of the creature that will use
+    // it. When a beast family ships, its definition points `loot_table` here and it is done —
+    // no code, no new tables, nothing re-authored.
+    //
+    // It is live content today rather than a comment: the Ravaged Kill event reaches it, so it
+    // is rolled in real play and pinned by test. A table nothing can roll is a table nothing
+    // tests, and untested loot is loot that has quietly stopped paying out.
+    "id": "loot.template.beast_anatomy",
+    "name": "Beast Anatomy",
+    "tags": ["source:creature", "source:beast"],
+    "chanceDrops": [
+      { "itemId": "material.wolf_meat", "chance": 0.55, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.wolf_hide", "chance": 0.45 },
+      { "itemId": "material.wolf_fang", "chance": 0.30, "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.creature_remains", "weight": 40 },
+          { "itemId": "material.wolf_fur", "weight": 22 },
+          { "itemId": "material.deer_sinew", "weight": 14 },
+          { "dropsNothing": true, "weight": 24 }
+        ]
+      },
+      {
+        // The rare gland and the essence-bearing part the brief asks for: deep only, so a
+        // depth-1 kill never trivialises what a depth-2 one is for.
+        "picks": 1,
+        "when": { "minDepth": 2 },
+        "entries": [
+          { "itemId": "material.venom_gland", "weight": 10 },
+          { "itemId": "material.direwolf_pelt", "weight": 6 },
+          { "tableId": "loot.shared.fey_essence", "weight": 8 },
+          { "dropsNothing": true, "weight": 76 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Carried goods -----------------------------------------------------------------------
+
+  {
+    "id": "loot.shared.salvage_light",
+    "name": "Scavenged Oddments",
+    "tags": ["source:salvage"],
+    // D28 sub-ruling 3: enemy-wielded equipment arrives as salvage, never as gear. This is what
+    // a lightly-armed thing was carrying, in the only form the bench can use.
+    "chanceDrops": [
+      { "itemId": "material.scrap_iron", "chance": 0.40, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.tattered_cloth", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.salvage_pile", "weight": 20 },
+          { "itemId": "material.leather_strap", "weight": 16 },
+          { "itemId": "material.hemp_thread", "weight": 14, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.flint", "weight": 10 },
+          { "itemId": "material.broken_mechanism", "weight": 6 },
+          { "dropsNothing": true, "weight": 34 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.shared.salvage_heavy",
+    "name": "Battered Warplate",
+    "tags": ["source:salvage"],
+    "alwaysDrops": [
+      { "itemId": "material.scrap_iron", "minQuantity": 1, "maxQuantity": 3 }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.rawhide", "chance": 0.35 },
+      { "itemId": "material.boiled_leather", "chance": 0.15 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.salvage_pile", "weight": 24, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.broken_mechanism", "weight": 15 },
+          { "itemId": "material.iron_ingot", "weight": 10 },
+          { "itemId": "material.tool_head", "weight": 8 },
+          { "itemId": "material.schematic_fragment", "weight": 5 },
+          { "dropsNothing": true, "weight": 38 }
+        ]
+      }
+    ]
+  },
+
+  // ---- The forest's own materials ----------------------------------------------------------
+
+  {
+    "id": "loot.shared.forest_reagents",
+    "name": "Forest Cuttings",
+    "tags": ["source:flora"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.sageleaf", "weight": 22, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.nettle", "weight": 18, "minQuantity": 1, "maxQuantity": 2 },
+          { "itemId": "material.comfrey", "weight": 14 },
+          { "itemId": "material.green_moss", "weight": 12, "minQuantity": 1, "maxQuantity": 3 },
+          { "itemId": "material.brown_cap", "weight": 10 },
+          { "itemId": "material.marsh_root", "weight": 8 },
+          { "itemId": "material.wolfsbane", "weight": 5, "when": { "minDepth": 2 } },
+          { "itemId": "material.kingsfoil", "weight": 4, "when": { "minDepth": 2 } },
+          { "itemId": "material.dreamleaf", "weight": 2, "when": { "minDepth": 2 } },
+          { "dropsNothing": true, "weight": 12 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.shared.crafting_catalysts",
+    "name": "Prepared Reagents",
+    "tags": ["source:reagents"],
+    // Catalysts are somebody else's prepared work — a hexer's pouch, a wrecked alchemist's
+    // crate. They are never gathered raw, which is why they only ever appear through a table.
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.catalytic_salt", "weight": 30 },
+          { "itemId": "material.stabilizing_agent", "weight": 24 },
+          { "itemId": "material.concentrated_extract", "weight": 16 },
+          { "itemId": "material.prepared_venom", "weight": 10 },
+          { "itemId": "material.arcane_solvent", "weight": 8, "when": { "minDepth": 2 } },
+          { "itemId": "material.resonance_catalyst", "weight": 4, "when": { "minDepth": 2 } },
+          { "dropsNothing": true, "weight": 18 }
+        ]
+      }
+    ]
+  },
+
+  {
+    // D29.3, the standing rule this table exists to obey: essence is the Realm's export.
+    // Nothing here may be reached from a profession action's drop table — a test enforces it —
+    // so the first meaningful essence craft stays a post-extraction milestone.
+    "id": "loot.shared.fey_essence",
+    "name": "Something the Forest Kept",
+    "tags": ["source:essence"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.rotroot", "weight": 26 },
+          { "itemId": "material.tainted_water", "weight": 20 },
+          { "itemId": "material.spirit_bark", "weight": 12, "when": { "minDepth": 2 } },
+          { "itemId": "material.wraith_essence", "weight": 10, "when": { "minDepth": 2 } },
+          { "itemId": "material.curse_dust", "weight": 8, "when": { "minDepth": 2 } },
+          { "itemId": "material.death_mote", "weight": 6, "when": { "minDepth": 2 } },
+          { "itemId": "material.spiritwood_log", "weight": 5, "when": { "minDepth": 2 } },
+          { "itemId": "material.livingbark_log", "weight": 2, "when": { "minDepth": 2 } },
+          { "dropsNothing": true, "weight": 28 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Knowledge (D29.2: schematics are a loot class, symmetric with techniques) ------------
+
+  {
+    "id": "loot.shared.knowledge_common",
+    "name": "Scribbled Paper",
+    "tags": ["source:knowledge"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.charcoal_rubbing", "weight": 28 },
+          { "itemId": "material.route_sketch", "weight": 24 },
+          { "itemId": "material.reference_sample", "weight": 16 },
+          { "itemId": "material.cipher_note", "weight": 14 },
+          { "itemId": "material.iron_key", "weight": 10 },
+          { "dropsNothing": true, "weight": 8 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.shared.knowledge_rare",
+    "name": "Somebody's Working Notes",
+    "tags": ["source:knowledge"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "material.schematic_fragment", "weight": 32 },
+          { "itemId": "material.survey_chart", "weight": 22 },
+          { "itemId": "material.property_dossier", "weight": 16 },
+          { "itemId": "material.hidden_way_note", "weight": 14 },
+          { "itemId": "material.stolen_schematic", "weight": 10 },
+          { "dropsNothing": true, "weight": 6 }
+        ]
+      }
+    ]
+  },
+
+  // ---- Techniques (M2' acquisition: the debug grant button stops being the only faucet) -----
+  //
+  // Techniques carry no `rarity:` tag of their own — they are not materials — so these are the
+  // one place an entry legitimately declares its own rarity.
+
+  {
+    "id": "loot.shared.techniques_martial",
+    "name": "A Fighting Manual",
+    "tags": ["source:knowledge"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "technique.manual_heavy_strike", "weight": 18, "rarity": "Uncommon" },
+          { "itemId": "technique.manual_brace", "weight": 16, "rarity": "Uncommon" },
+          { "itemId": "technique.manual_feint", "weight": 14, "rarity": "Uncommon" },
+          { "itemId": "technique.manual_expose_weakness", "weight": 14, "rarity": "Uncommon" },
+          { "itemId": "technique.manual_shield_bash", "weight": 12, "rarity": "Rare" },
+          { "itemId": "technique.manual_crash", "weight": 10, "rarity": "Rare" },
+          { "itemId": "technique.manual_sunder", "weight": 8, "rarity": "Rare" },
+          { "itemId": "technique.manual_skewer", "weight": 6, "rarity": "Rare" },
+          { "itemId": "technique.manual_whirlwind", "weight": 4, "rarity": "VeryRare", "when": { "minDepth": 2 } },
+          { "itemId": "technique.manual_execute", "weight": 3, "rarity": "VeryRare", "when": { "minDepth": 2 } }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.shared.techniques_arcane",
+    "name": "A Grimoire",
+    "tags": ["source:knowledge"],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "itemId": "technique.grimoire_arcane_dart", "weight": 18, "rarity": "Uncommon" },
+          { "itemId": "technique.grimoire_venom_bolt", "weight": 15, "rarity": "Uncommon" },
+          { "itemId": "technique.grimoire_mend", "weight": 14, "rarity": "Uncommon" },
+          { "itemId": "technique.grimoire_wither", "weight": 12, "rarity": "Rare" },
+          { "itemId": "technique.grimoire_drain", "weight": 11, "rarity": "Rare" },
+          { "itemId": "technique.grimoire_stoneskin", "weight": 10, "rarity": "Rare" },
+          { "itemId": "technique.grimoire_frost_lance", "weight": 8, "rarity": "Rare" },
+          { "itemId": "technique.grimoire_arc_surge", "weight": 6, "rarity": "VeryRare", "when": { "minDepth": 2 } },
+          { "itemId": "technique.grimoire_fireball", "weight": 4, "rarity": "VeryRare", "when": { "minDepth": 2 } }
+        ]
+      }
+    ]
+  },
+
+  // ---- Rank spoils: the seam for elites and bosses ------------------------------------------
+  //
+  // Every family table nests this one line. Nothing carries the `elite` or `boss` tag today, so
+  // it pays out nothing — and the day an elite is authored, giving it the tag is the entire
+  // change. The context tags come from the resolved actor's own identity tags, so no code has
+  // to learn what an elite is.
+
+  {
+    "id": "loot.shared.rank_spoils",
+    "name": "Spoils of Rank",
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["elite"] },
+        "entries": [
+          { "tableId": "loot.shared.elite_spoils", "weight": 100 }
+        ]
+      },
+      {
+        "picks": 1,
+        "when": { "requiresTags": ["boss"] },
+        "entries": [
+          { "tableId": "loot.shared.boss_spoils", "weight": 100 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.shared.elite_spoils",
+    "name": "An Elite's Hoard",
+    "tags": ["source:elite"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.crafting_catalysts" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.relic_shard", "chance": 0.15 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 2,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_rare", "weight": 26 },
+          { "tableId": "loot.shared.fey_essence", "weight": 24 },
+          { "tableId": "loot.shared.salvage_heavy", "weight": 22 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 8 },
+          { "tableId": "loot.shared.techniques_arcane", "weight": 8 },
+          { "dropsNothing": true, "weight": 12 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 25, "maxAmount": 70, "chance": 0.9 }
+  },
+
+  {
+    "id": "loot.shared.boss_spoils",
+    "name": "A Boss's Hoard",
+    "tags": ["source:boss"],
+    // D28 sub-ruling 1: the chase item is a *material* with an impossible profile, not a sword.
+    // The relic material itself is post-slice content; the shard is the placeholder that keeps
+    // the shape honest until it lands.
+    "alwaysDrops": [
+      { "tableId": "loot.shared.knowledge_rare" },
+      { "itemId": "material.relic_shard", "minQuantity": 1, "maxQuantity": 2 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 3,
+        "entries": [
+          { "tableId": "loot.shared.fey_essence", "weight": 30 },
+          { "tableId": "loot.shared.crafting_catalysts", "weight": 24 },
+          { "tableId": "loot.shared.techniques_arcane", "weight": 14 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 14 },
+          { "tableId": "loot.shared.salvage_heavy", "weight": 18 }
+        ]
+      }
+    ],
+    "gold": { "minAmount": 80, "maxAmount": 200, "chance": 1.0 }
+  }
+]

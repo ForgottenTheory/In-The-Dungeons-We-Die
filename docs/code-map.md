@@ -1142,7 +1142,7 @@ red, deliberately.
 **IMPORTANT FILES** — `RealmDefinition.cs`, `RealmLocationDefinition.cs`, `RealmRun.cs`,
 `RealmExtraction.cs`, `RealmTuning.cs`
 
-**DATA** — `game/data/realms/dark_forest.json` (10 locations, 2 depths).
+**DATA** — `game/data/realms/dark_forest.json` (15 locations, 2 depths).
 
 **RUNTIME FLOW**
 ```
@@ -1150,10 +1150,10 @@ GameRoot.EnterRealm  → new RealmRun(realm, tier)     (run inventory created he
         RealmTravel  → RealmRun.TravelTo             (adjacency-gated; knowledge on first visit)
         RealmAction  → by location type:
                          Combat  → StartCombatInternal(actorId), remembering the location
-                         Gather  → ProfessionSystem.Execute (existing wiring deposits the loot)
-                         Event   → narrate + reward + mark cleared
+                         Gather  → ProfessionSystem.Execute(active) + the node's loot table
+                         Event   → narrate + the node's loot table + mark cleared
         RealmGoDeeper→ RealmRun.Descend
-        RealmExtract → RealmExtraction.Secure(run, stash)   ← stacks AND instances move
+        RealmExtract → RealmExtraction.Secure(run, stash)   ← stacks, instances AND coin move
         death        → RealmExtraction.Forfeit(run)         ← unsecured loot lost
 ```
 
@@ -1165,6 +1165,55 @@ GameRoot.EnterRealm  → new RealmRun(realm, tier)     (run inventory created he
 validated). A new **location type** needs an enum value plus a case in `GameRoot.RealmAction`.
 
 **ENTRY POINT** — `RealmRun` for the rules; `GameRoot.RealmAction` for the orchestration.
+
+---
+
+## 10.16a Loot (`Dungeons.Loot`)
+
+**PURPOSE** — What a source drops. One table shape for every payer in the game, so "how loot
+works" is one readable method rather than a rule per source. Full doc: **`docs/loot.md`**.
+
+**IMPORTANT FILES** — `LootTableDefinition.cs` (table/entry/draw/gold/condition),
+`LootResolver.cs` (every roll), `LootContext.cs`, `LootResult.cs`, `LootReachability.cs`
+(walks the graph without rolling it), `LootRarity.cs`, `LootTuning.cs`
+
+**DATA** — `game/data/loot_tables/` — `shared.json` (the nested library), `enemies.json`,
+`gathering.json`, `realm_dark_forest.json`. 34 tables, **zero new materials**.
+
+**THE THREE DROP RULES**, as separate named lists rather than a kind field:
+`alwaysDrops` · `chanceDrops` (each rolls its own chance) · `weightedDraws` (`picks` from a
+weighted set; `dropsNothing` is a real miss). An entry sets exactly one of
+`itemId` / `tableId` / `dropsNothing` — validated.
+
+**WHO POINTS AT A TABLE**
+```
+EnemyFamilyDefinition.LootTableId ─┐
+CombatRoleDefinition.LootTableId  ─┼→ ActorResolver → ResolvedActor.LootTableIds → Combatant
+ActorDefinition.LootTableId       ─┘   (accumulates across layers — it does NOT override)
+
+RealmLocationDefinition.LootTableId   Gather: on top of the action, only when it lands
+                                      Event:  the node itself
+ProfessionActionDefinition.LootTableId  rolled inside ProfessionSystem.Execute, via the
+                                        RollActionDropTable delegate (null = no loot wired)
+```
+
+**THE ACTIVE/PASSIVE SEAM** — `LootContext` carries `active` or `passive`, and gathering tables
+gate their second draw on `active`. Passive play cannot reach those entries **at any rate** —
+the same structural trick opportunities use. Do not "fix" it into a probability.
+
+**RARITY IS READ, NEVER AUTHORED TWICE** — a dropped material's own `rarity:` tag decides; only
+items with no tag (techniques, schematics) may declare `rarity` on the entry. The other
+direction is a validation error.
+
+**GOLD** — lives on `Inventory`, so coin obeys the extraction risk model for free (unsecured in
+a Realm, safe in the Stash). Save **v8**. Nothing spends it — there is no economy yet.
+
+**EXTENSION POINTS** — A new enemy becomes lootable with **one line**: point `loot_table` at the
+shared tables that already ship. Elite/boss support is already wired — `loot.shared.rank_spoils`
+is nested by every family table and fires on the `elite`/`boss` context tag, which comes from
+the actor's own identity tags. `loot.template.beast_anatomy` is the ready-made creature table.
+
+**ENTRY POINT** — `LootResolver.Roll` for the rules; `GameRoot.GrantLoot` for the orchestration.
 
 ---
 
@@ -1270,7 +1319,9 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add an affix (item modifier)** | One entry in `game/data/affixes/affixes.json`: slot (prefix/suffix/innate), family, class, `eligibility`, `weight`, `tiers`, `grants`, `description` with `$roll`. **Ship it only when its mechanic resolves in play** |
 | **Add a Move** | One entry in `game/data/moves/*.json`: namespaced tags, `timing`, `costs`, `requires`, `targeting`, `packets`, `stagger_power`, effect riders. Reachability is validated — grant it from something |
 | **Add a Status** | One entry in `game/data/statuses/*.json`: category, stack policy, duration, `magnitude` (basis + coefficient), `while_active` modifiers, hooks. **No C# class** |
-| **Add an enemy** | `game/data/actors/<name>.json`: `family`, `role`, `moves`, per-key tweaks, loot. Reuse an `ai_profile` or add inline rules. Never write a C# class |
+| **Add an enemy** | `game/data/actors/<name>.json`: `family`, `role`, `moves`, per-key tweaks, `loot_table`. Reuse an `ai_profile` or add inline rules. Never write a C# class |
+| **Add a loot table** | One entry in `game/data/loot_tables/*.json`: `alwaysDrops` / `chanceDrops` / `weightedDraws` / `gold`. Nest a shared table with `tableId` rather than copying entries. Only an item with no `rarity:` tag may declare `rarity`. See `docs/loot.md` |
+| **Make something new droppable** | Point its `loot_table` at a shared table that already ships. An enemy often needs no table of its own — its family and role already pay. Elite/boss spoils need only the `elite`/`boss` tag |
 | **Add an enemy family / role / AI brain** | One entry in `enemy_families/`, `enemy_roles/`, `ai_profiles/`. Roles are **deltas** and must stay family-agnostic |
 | **Add a profession action** | One entry in `game/data/profession_actions/<profession>.json`: profession, level gate, interval, inputs, outputs, bonus outputs (`ItemChance`), XP. Optional: `successChance` (Hunting/Thieving only), `realmKnowledgeGain` (Cartography only) |
 | **Add an active opportunity** | A nested entry in an action's `opportunities[]`: unique id, `prompt` (the offer text *is* the decision), `discoveryChance`, `extraIntervalTicks`, `riskWeight`, payoff. It must out-pay its own action — a test checks |
@@ -1330,7 +1381,8 @@ Some names are data, not code. Renaming them silently corrupts saves or breaks c
 
 | What | Why |
 |---|---|
-| Content ids (`material.*`, `move.*`, `status.*`, `affix.*`, …) | Referenced across JSON files and by save data (stash stacks are keyed by item id) |
+| Content ids (`material.*`, `move.*`, `status.*`, `affix.*`, `loot.*`, …) | Referenced across JSON files and by save data (stash stacks are keyed by item id) |
+| Loot **context tag** values (`active`, `passive`, `in_realm`, `elite`, `boss`, `source:*`) | Written by the code, read by `when` conditions in `loot_tables/` content — a rename silently stops gating |
 | The **values** of `ItemProperties` constants (`"hardness"`) and property ids in `properties.json` | Property names are keys in materials, saved instances and saved archetypes |
 | Modifier key ids (`combat.damage.mult`, …) | Referenced by affixes, statuses, class components |
 | Damage lane / aspect strings, tag families and values | Referenced by content and by saved archetype tags |
