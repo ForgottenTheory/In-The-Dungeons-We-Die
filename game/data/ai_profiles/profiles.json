@@ -42,5 +42,58 @@
       { "moveTag": "action:spell", "weight": 3 },
       { "moveTag": "action:attack", "weight": 1 }
     ]
+  },
+
+  // ---- Added with the enemy-breadth pass ----------------------------------------------------
+  //
+  // These lean on the validator rule that a resolved brain must be able to select from the
+  // actor's own moves. Weighting a tag here makes carrying that kind of move MANDATORY for
+  // every actor in the role — "an archer has a ranged attack" becomes a build error instead of
+  // a thing someone notices three fights later.
+
+  // Stay at range; close only because there is nothing else left to do.
+  {
+    "id": "ai.archer", "name": "Archer Brain",
+    "avoid_repeat_weight": 0.6,
+    "rules": [
+      { "moveTag": "delivery:ranged", "weight": 8 },
+      { "moveTag": "action:attack", "weight": 2 }
+    ]
+  },
+
+  // Patient, then not. Identical to the skirmisher in what it does and opposite in when: the
+  // stalker does not create the opening, it waits for one and then commits everything.
+  {
+    "id": "ai.stalker", "name": "Stalker Brain",
+    "avoid_repeat_weight": 0.3,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 3 },
+      { "moveTag": "action:attack", "weight": 9,
+        "when": [ { "kind": "targetHasStatus", "text": "status.vulnerable" } ] }
+    ]
+  },
+
+  // Turtles at half health rather than at the brink — the difference between a wall and a big
+  // body, expressed as a threshold instead of a stat.
+  {
+    "id": "ai.guardian", "name": "Guardian Brain",
+    "avoid_repeat_weight": 0.5,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 3 },
+      { "moveTag": "action:defensive", "weight": 9,
+        "when": [ { "kind": "selfHealthBelow", "value": 0.5 } ] }
+    ]
+  },
+
+  // No soft side and no favourite trick: presses with everything, and reaches for the
+  // fight-ending tools whenever they are up.
+  {
+    "id": "ai.champion", "name": "Champion Brain",
+    "avoid_repeat_weight": 0.35,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 4 },
+      { "moveTag": "mech:stagger", "weight": 6 },
+      { "moveTag": "mech:impairment", "weight": 5 }
+    ]
   }
 ]

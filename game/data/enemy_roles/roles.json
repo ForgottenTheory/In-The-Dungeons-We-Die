@@ -1,6 +1,11 @@
 [
   // Combat-archetype layer (M2′c): what a creature DOES, as deltas over any family.
   // role.brute on a goblin, an undead or a construct is the same definition.
+  //
+  // A role's `ai_profile` is load-bearing beyond behaviour: the validator checks that the
+  // RESOLVED brain can select from the actor's own moves, so a brain that weights
+  // `delivery:ranged` makes "an archer must actually have a ranged move" a build error rather
+  // than a thing someone notices in play. Roles are written to lean on that.
   {
     "id": "role.skirmisher", "name": "Skirmisher",
     "attribute_tweaks": { "dexterity": 2, "luck": 1 },
@@ -27,5 +32,52 @@
     "resolve": 45,
     "ai_profile": "ai.caster",
     "loot_table": "loot.role.caster"
+  },
+
+  // ---- Added with the enemy-breadth pass ----------------------------------------------------
+
+  {
+    // Fights at range and is punished for being reached. The health penalty is the whole
+    // bargain: an archer that survives contact is just a skirmisher with a bow.
+    "id": "role.archer", "name": "Archer",
+    "attribute_tweaks": { "dexterity": 4, "wisdom": 2, "strength": -1, "constitution": -2 },
+    "resource_tweaks": { "health": -8, "stamina": 15 },
+    "resolve": 30,
+    "ai_profile": "ai.archer",
+    "loot_table": "loot.role.archer"
+  },
+  {
+    // Assassins, rogues, the things that wait in the dark. Hits hardest into an opening it made
+    // itself, and folds when it is found.
+    "id": "role.stalker", "name": "Stalker",
+    "attribute_tweaks": { "dexterity": 6, "luck": 3, "intelligence": 1, "constitution": -3 },
+    "resource_tweaks": { "health": -10, "stamina": 20 },
+    "resolve": 25,
+    "ai_profile": "ai.stalker",
+    "loot_table": "loot.role.stalker"
+  },
+  {
+    // The wall. Where the brute is a big body swinging, the guardian is a body in the way —
+    // more armour, less damage, and a brain that turtles before it is nearly dead rather than
+    // after.
+    "id": "role.guardian", "name": "Guardian",
+    "attribute_tweaks": { "constitution": 6, "endurance": 5, "strength": 1, "dexterity": -4 },
+    "resource_tweaks": { "health": 45 },
+    "armor": 20,
+    "vulnerable": { "Crushing": 1.20, "Slashing": 0.80, "Piercing": 0.90 },
+    "resolve": 120,
+    "ai_profile": "ai.guardian",
+    "loot_table": "loot.role.guardian"
+  },
+  {
+    // Chiefs, captains, matriarchs — the named one in the room. A flat improvement on every
+    // axis rather than a specialism, because what makes a champion is that it has no soft side.
+    "id": "role.champion", "name": "Champion",
+    "attribute_tweaks": { "strength": 4, "dexterity": 3, "constitution": 4, "endurance": 3, "wisdom": 2, "luck": 2 },
+    "resource_tweaks": { "health": 60, "stamina": 25 },
+    "armor": 10,
+    "resolve": 180,
+    "ai_profile": "ai.champion",
+    "loot_table": "loot.role.champion"
   }
 ]

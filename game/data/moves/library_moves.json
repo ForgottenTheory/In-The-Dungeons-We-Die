@@ -219,5 +219,44 @@
       { "kind": "applyStatus", "text": "status.vulnerable" }
     ],
     "description": "Every guard has a seam. Point at it."
+  },
+
+  // --- Ranged PHYSICAL attacks --------------------------------------------------------------
+  //
+  // Added with the enemy-breadth pass, filling a real hole: every `delivery:ranged` move above
+  // this line is `action:spell`, so before these an "archer" could only be a caster wearing a
+  // different word. These are the first moves that are ranged without being magic.
+  //
+  // No `equippedTag` requirement on any of them, deliberately — enemies cannot satisfy one
+  // (the validator says so), and these have to serve a goblin archer and a future bow form
+  // alike. The bow does not exist yet; the moves it will grant do.
+  {
+    "id": "move.arrow_shot", "name": "Arrow Shot",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "packets": [ { "type": "Piercing", "amount": 11 } ],
+    "description": "The whole argument, delivered from somewhere else."
+  },
+  {
+    "id": "move.sling_stone", "name": "Sling Stone",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 9 },
+    "costs": [ { "resource": "stamina", "amount": 4 } ],
+    "packets": [ { "type": "Crushing", "amount": 7 } ],
+    "description": "Cheap, fast, and it does not care what you are wearing."
+  },
+  {
+    // The heavy end of ranged: slow enough to read, and it staggers when it lands.
+    "id": "move.javelin_throw", "name": "Javelin Throw",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:ranged", "delivery:projectile", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 16 },
+    "costs": [ { "resource": "stamina", "amount": 11 } ],
+    "packets": [ { "type": "Piercing", "amount": 19 } ],
+    "stagger_power": 22,
+    "description": "Thrown once, and thrown properly."
   }
 ]

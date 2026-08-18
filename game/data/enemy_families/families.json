@@ -1,5 +1,29 @@
 [
   // Physiology layer (M2′c): what a creature IS. Behaviour lives in enemy_roles/ai_profiles.
+  //
+  // ── HOW TO READ A FAMILY ────────────────────────────────────────────────────────────────────
+  //
+  // A family answers one question: *what is this body made of, and how does it fail?* It owns
+  // attributes, resources, lane resistances, damage-type vulnerability, resolve and the anatomy
+  // half of the drop. It owns NO moves and NO behaviour — an orc and an orc shaman share this
+  // entry and differ by role.
+  //
+  // `vulnerable` is keyed by damage TYPE (Slashing/Crushing/Piercing/Magic) and clamps to
+  // [0.50, 1.50]. `resistances` is keyed by LANE, and a NEGATIVE value there is a real
+  // weakness — that is how a troll burns.
+  //
+  // ── WHY THESE FAMILIES ──────────────────────────────────────────────────────────────────────
+  //
+  // Granularity is physiological, not nominal. A Hill Troll and a Frost Troll are one family
+  // (same body, same regeneration, same fear of fire) separated by role and actor. A Skeleton
+  // and a Wraith are NOT one family, because one is bone and the other is not there.
+  //
+  // Attribute scale: the goblin's 7 strength is deliberately weak, family.human sits at a flat
+  // 10 across the board and is what the scale is calibrated against, and giants run past 20.
+  // Health here is the baseline before the role's delta.
+
+  // ══ GOBLINOIDS AND GREENSKINS ═══════════════════════════════════════════════════════════════
+
   {
     "id": "family.goblin", "name": "Goblin",
     "tags": ["family:goblin"],
@@ -11,5 +35,319 @@
     // What a goblin body is made of. Rolled alongside the role's and the actor's tables, so a
     // new goblin needs only its own identity table — or none at all.
     "loot_table": "loot.family.goblin"
+  },
+
+  {
+    // Bigger, drilled, and armoured where a goblin is merely lucky. The discipline is the role's
+    // business; the frame is this entry's.
+    "id": "family.hobgoblin", "name": "Hobgoblin",
+    "tags": ["family:hobgoblin", "family:goblinoid"],
+    "attributes": { "strength": 11, "dexterity": 9, "intelligence": 6, "constitution": 10, "wisdom": 6, "endurance": 10, "luck": 4 },
+    "resources": { "health": 55, "mana": 0, "stamina": 50 },
+    "resistances": { "toxin": 0.15 },
+    "resolve": 65,
+    "loot_table": "loot.family.hobgoblin"
+  },
+
+  {
+    "id": "family.orc", "name": "Orc",
+    "tags": ["family:orc", "family:greenskin"],
+    "attributes": { "strength": 15, "dexterity": 8, "intelligence": 5, "constitution": 14, "wisdom": 5, "endurance": 13, "luck": 3 },
+    "resources": { "health": 75, "mana": 0, "stamina": 60 },
+    // Thick hide, and a pain tolerance that reads as armour until you hit bone.
+    "vulnerable": { "Piercing": 0.85, "Slashing": 1.10 },
+    "resolve": 80,
+    "loot_table": "loot.family.orc"
+  },
+
+  {
+    "id": "family.kobold", "name": "Kobold",
+    "tags": ["family:kobold", "family:reptilian"],
+    "attributes": { "strength": 6, "dexterity": 11, "intelligence": 6, "constitution": 5, "wisdom": 5, "endurance": 6, "luck": 6 },
+    "resources": { "health": 24, "mana": 10, "stamina": 40 },
+    "resistances": { "heat": 0.20 },
+    "resolve": 40,
+    "loot_table": "loot.family.kobold"
+  },
+
+  // ══ BIG BODIES ══════════════════════════════════════════════════════════════════════════════
+
+  {
+    // The signature is regeneration, which the role and the moves express — what the FAMILY owns
+    // is the reason it can be stopped at all. A negative lane is the cleanest statement of "this
+    // is how the fight is actually won".
+    "id": "family.troll", "name": "Troll",
+    "tags": ["family:troll", "family:giantkin"],
+    "attributes": { "strength": 17, "dexterity": 7, "intelligence": 4, "constitution": 17, "wisdom": 5, "endurance": 15, "luck": 3 },
+    "resources": { "health": 120, "mana": 0, "stamina": 70 },
+    "resistances": { "physical": 0.20, "toxin": 0.30, "heat": -0.50 },
+    "resolve": 100,
+    "loot_table": "loot.family.troll"
+  },
+
+  {
+    "id": "family.ogre", "name": "Ogre",
+    "tags": ["family:ogre", "family:giantkin"],
+    "attributes": { "strength": 18, "dexterity": 5, "intelligence": 3, "constitution": 15, "wisdom": 3, "endurance": 13, "luck": 2 },
+    "resources": { "health": 100, "mana": 0, "stamina": 55 },
+    // Enormous and slow: everything lands, and the heavy things land hardest.
+    "vulnerable": { "Crushing": 1.15, "Piercing": 1.10 },
+    "resolve": 90,
+    "loot_table": "loot.family.ogre"
+  },
+
+  {
+    "id": "family.giant", "name": "Giant",
+    "tags": ["family:giant", "family:giantkin"],
+    "attributes": { "strength": 24, "dexterity": 6, "intelligence": 8, "constitution": 22, "wisdom": 9, "endurance": 20, "luck": 4 },
+    "resources": { "health": 220, "mana": 20, "stamina": 90 },
+    "resistances": { "physical": 0.25, "cold": 0.20 },
+    "resolve": 160,
+    "loot_table": "loot.family.giant"
+  },
+
+  // ══ BEASTFOLK AND SCALED FOLK ═══════════════════════════════════════════════════════════════
+
+  {
+    // Gnolls, minotaurs, centaurs, satyrs — an animal frame walking upright. Fast and strong;
+    // the shared weakness is that almost nothing here wears armour.
+    "id": "family.beastfolk", "name": "Beastfolk",
+    "tags": ["family:beastfolk"],
+    "attributes": { "strength": 13, "dexterity": 12, "intelligence": 6, "constitution": 11, "wisdom": 7, "endurance": 13, "luck": 5 },
+    "resources": { "health": 65, "mana": 0, "stamina": 75 },
+    "resolve": 70,
+    "loot_table": "loot.family.beastfolk"
+  },
+
+  {
+    "id": "family.reptilian", "name": "Reptilian",
+    "tags": ["family:reptilian"],
+    "attributes": { "strength": 12, "dexterity": 11, "intelligence": 8, "constitution": 12, "wisdom": 8, "endurance": 11, "luck": 4 },
+    "resources": { "health": 60, "mana": 20, "stamina": 60 },
+    // Scales turn an edge; cold slows the whole animal down.
+    "resistances": { "toxin": 0.35, "cold": -0.25 },
+    "vulnerable": { "Slashing": 0.85 },
+    "resolve": 70,
+    "loot_table": "loot.family.reptilian"
+  },
+
+  {
+    "id": "family.aquatic", "name": "Aquatic",
+    "tags": ["family:aquatic"],
+    "attributes": { "strength": 11, "dexterity": 11, "intelligence": 8, "constitution": 11, "wisdom": 9, "endurance": 12, "luck": 5 },
+    "resources": { "health": 58, "mana": 25, "stamina": 65 },
+    // Wet things conduct. This is the one family a charge build simply beats.
+    "resistances": { "cold": 0.30, "charge": -0.35 },
+    "resolve": 65,
+    "loot_table": "loot.family.aquatic"
+  },
+
+  {
+    "id": "family.draconic", "name": "Draconic",
+    "tags": ["family:draconic"],
+    "attributes": { "strength": 20, "dexterity": 12, "intelligence": 14, "constitution": 19, "wisdom": 13, "endurance": 18, "luck": 7 },
+    "resources": { "health": 200, "mana": 80, "stamina": 90 },
+    // Scale is the best armour in the game, and it is not evenly good: a thrust finds the seams
+    // that an edge slides off.
+    "resistances": { "physical": 0.30, "heat": 0.40, "magic": 0.20 },
+    "vulnerable": { "Slashing": 0.75, "Piercing": 1.15 },
+    "resolve": 200,
+    "loot_table": "loot.family.draconic"
+  },
+
+  // ══ NATURAL ANIMALS ═════════════════════════════════════════════════════════════════════════
+
+  {
+    // Wolves, bears, boars, the big cats, mammoths. No armour, no magic, no restraint.
+    "id": "family.beast", "name": "Beast",
+    "tags": ["family:beast"],
+    "attributes": { "strength": 13, "dexterity": 13, "intelligence": 2, "constitution": 12, "wisdom": 8, "endurance": 14, "luck": 4 },
+    "resources": { "health": 60, "mana": 0, "stamina": 85 },
+    "resolve": 55,
+    "loot_table": "loot.family.beast"
+  },
+
+  {
+    // Spiders, scorpions, the giant insects. Chitin instead of hide, and a body plan that
+    // crushes far better than it punctures.
+    "id": "family.vermin", "name": "Vermin",
+    "tags": ["family:vermin"],
+    "attributes": { "strength": 9, "dexterity": 14, "intelligence": 1, "constitution": 8, "wisdom": 5, "endurance": 10, "luck": 3 },
+    "resources": { "health": 38, "mana": 0, "stamina": 70 },
+    "resistances": { "toxin": 0.50 },
+    "vulnerable": { "Crushing": 1.30, "Piercing": 0.85 },
+    "resolve": 35,
+    "loot_table": "loot.family.vermin"
+  },
+
+  {
+    // Many small bodies acting as one. A sword swing barely matters and a fireball ends it —
+    // which is the entire fight, stated as two vulnerabilities.
+    "id": "family.swarm", "name": "Swarm",
+    "tags": ["family:swarm", "family:vermin"],
+    "attributes": { "strength": 5, "dexterity": 15, "intelligence": 1, "constitution": 6, "wisdom": 4, "endurance": 9, "luck": 3 },
+    "resources": { "health": 45, "mana": 0, "stamina": 60 },
+    "resistances": { "physical": 0.40, "toxin": 0.25 },
+    "vulnerable": { "Slashing": 0.50, "Piercing": 0.50, "Magic": 1.40 },
+    "resolve": 25,
+    "loot_table": "loot.family.swarm"
+  },
+
+  // ══ THE DEAD ════════════════════════════════════════════════════════════════════════════════
+
+  {
+    // Bone and preserved flesh. D-02's worked example lives here: hammers do the work, and
+    // points pass through the spaces where there is no longer anything to cut.
+    "id": "family.undead", "name": "Undead",
+    "tags": ["family:undead"],
+    "attributes": { "strength": 12, "dexterity": 7, "intelligence": 4, "constitution": 13, "wisdom": 4, "endurance": 16, "luck": 1 },
+    "resources": { "health": 55, "mana": 0, "stamina": 50 },
+    "resistances": { "cold": 0.40, "toxin": 0.75, "decay": 0.50 },
+    "vulnerable": { "Crushing": 1.35, "Piercing": 0.70, "Slashing": 0.85 },
+    "resolve": 90,
+    "loot_table": "loot.family.undead"
+  },
+
+  {
+    // Wraiths, ghosts, shades. The physical lane barely applies and magic is the whole answer —
+    // the sharpest profile in the file, and deliberately so: this is the family that punishes a
+    // party carrying nothing but steel.
+    "id": "family.spirit", "name": "Spirit",
+    "tags": ["family:spirit", "family:undead"],
+    "attributes": { "strength": 8, "dexterity": 15, "intelligence": 12, "constitution": 8, "wisdom": 14, "endurance": 12, "luck": 5 },
+    "resources": { "health": 40, "mana": 60, "stamina": 40 },
+    "resistances": { "physical": 0.65, "cold": 0.40, "toxin": 0.90, "magic": -0.30 },
+    "vulnerable": { "Magic": 1.45 },
+    "resolve": 85,
+    "loot_table": "loot.family.spirit"
+  },
+
+  // ══ MADE THINGS ═════════════════════════════════════════════════════════════════════════════
+
+  {
+    // Golems, animated armour, living statues. Nothing to poison, nothing to rot, nothing to
+    // demoralise — the immunities are 1.0 rather than "very high" on purpose.
+    "id": "family.construct", "name": "Construct",
+    "tags": ["family:construct"],
+    "attributes": { "strength": 18, "dexterity": 4, "intelligence": 1, "constitution": 20, "wisdom": 1, "endurance": 20, "luck": 1 },
+    "resources": { "health": 130, "mana": 0, "stamina": 100 },
+    "resistances": { "physical": 0.35, "toxin": 1.0, "decay": 1.0, "cold": 0.30 },
+    "vulnerable": { "Crushing": 1.25, "Slashing": 0.70 },
+    "resolve": 200,
+    "loot_table": "loot.family.construct"
+  },
+
+  {
+    "id": "family.ooze", "name": "Ooze",
+    "tags": ["family:ooze"],
+    "attributes": { "strength": 10, "dexterity": 3, "intelligence": 1, "constitution": 16, "wisdom": 1, "endurance": 18, "luck": 1 },
+    "resources": { "health": 90, "mana": 0, "stamina": 80 },
+    // There is no anatomy to sever, so cutting one is close to pointless. Burning it is not.
+    "resistances": { "physical": 0.45, "toxin": 1.0, "corrosion": 0.80, "heat": -0.30 },
+    "vulnerable": { "Slashing": 0.50, "Piercing": 0.50, "Crushing": 0.90 },
+    "resolve": 120,
+    "loot_table": "loot.family.ooze"
+  },
+
+  // ══ GROWING THINGS ══════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "family.plant", "name": "Plant",
+    "tags": ["family:plant"],
+    "attributes": { "strength": 16, "dexterity": 5, "intelligence": 5, "constitution": 18, "wisdom": 11, "endurance": 19, "luck": 3 },
+    "resources": { "health": 110, "mana": 30, "stamina": 70 },
+    "resistances": { "physical": 0.20, "toxin": 0.60, "heat": -0.60, "cold": 0.15 },
+    "vulnerable": { "Slashing": 1.20 },
+    "resolve": 110,
+    "loot_table": "loot.family.plant"
+  },
+
+  {
+    "id": "family.fungal", "name": "Fungal",
+    "tags": ["family:fungal"],
+    "attributes": { "strength": 10, "dexterity": 6, "intelligence": 5, "constitution": 14, "wisdom": 10, "endurance": 15, "luck": 3 },
+    "resources": { "health": 70, "mana": 40, "stamina": 60 },
+    "resistances": { "toxin": 0.85, "decay": 0.60, "heat": -0.40 },
+    "resolve": 75,
+    "loot_table": "loot.family.fungal"
+  },
+
+  // ══ THINGS FROM ELSEWHERE ═══════════════════════════════════════════════════════════════════
+
+  {
+    // One family for every element. WHICH element is the actor's business: a fire and an ice
+    // elemental differ by their moves and one flipped lane, not by their anatomy — so splitting
+    // this into six families would duplicate everything to express a single override.
+    "id": "family.elemental", "name": "Elemental",
+    "tags": ["family:elemental"],
+    "attributes": { "strength": 14, "dexterity": 11, "intelligence": 10, "constitution": 15, "wisdom": 12, "endurance": 18, "luck": 3 },
+    "resources": { "health": 95, "mana": 70, "stamina": 90 },
+    "resistances": { "physical": 0.40, "toxin": 1.0, "decay": 1.0 },
+    "vulnerable": { "Magic": 1.25, "Slashing": 0.75 },
+    "resolve": 130,
+    "loot_table": "loot.family.elemental"
+  },
+
+  {
+    "id": "family.fey", "name": "Fey",
+    "tags": ["family:fey"],
+    "attributes": { "strength": 6, "dexterity": 17, "intelligence": 13, "constitution": 7, "wisdom": 15, "endurance": 10, "luck": 12 },
+    "resources": { "health": 35, "mana": 90, "stamina": 60 },
+    "resistances": { "magic": 0.35, "charge": 0.20 },
+    // The old bargain: magic slides off, and plain worked metal does not.
+    "vulnerable": { "Slashing": 1.20, "Piercing": 1.20 },
+    "resolve": 60,
+    "loot_table": "loot.family.fey"
+  },
+
+  {
+    "id": "family.fiend", "name": "Fiend",
+    "tags": ["family:fiend"],
+    "attributes": { "strength": 17, "dexterity": 14, "intelligence": 15, "constitution": 16, "wisdom": 12, "endurance": 16, "luck": 6 },
+    "resources": { "health": 120, "mana": 100, "stamina": 80 },
+    "resistances": { "heat": 0.70, "toxin": 0.40, "magic": 0.25, "cold": -0.30 },
+    "resolve": 150,
+    "loot_table": "loot.family.fiend"
+  },
+
+  {
+    // Horrors, mimics, doppelgangers — bodies that do not agree on what a body is. The only
+    // family with no exploitable weakness anywhere in its profile, which is the whole idea:
+    // there is no trick, you simply have to be strong enough.
+    "id": "family.aberration", "name": "Aberration",
+    "tags": ["family:aberration"],
+    "attributes": { "strength": 14, "dexterity": 10, "intelligence": 11, "constitution": 15, "wisdom": 9, "endurance": 15, "luck": 4 },
+    "resources": { "health": 100, "mana": 55, "stamina": 70 },
+    "resistances": { "physical": 0.20, "toxin": 0.50, "magic": 0.15 },
+    "resolve": 120,
+    "loot_table": "loot.family.aberration"
+  },
+
+  // ══ PEOPLE ══════════════════════════════════════════════════════════════════════════════════
+
+  {
+    // Bandits, cultists, deserters, corrupted knights. A flat 10 in everything: this is the
+    // reference the rest of the file is calibrated against, and the only family that reliably
+    // carried manufactured gear before it died.
+    "id": "family.human", "name": "Human",
+    "tags": ["family:human", "family:humanoid"],
+    "attributes": { "strength": 10, "dexterity": 10, "intelligence": 10, "constitution": 10, "wisdom": 10, "endurance": 10, "luck": 5 },
+    "resources": { "health": 50, "mana": 30, "stamina": 55 },
+    "resolve": 60,
+    "loot_table": "loot.family.human"
+  },
+
+  {
+    // Werewolves and their cousins: a human that stopped being one. Regeneration belongs to the
+    // moves; the family owns the hide that shrugs off steel and the old weakness to what is not
+    // steel at all.
+    "id": "family.lycanthrope", "name": "Lycanthrope",
+    "tags": ["family:lycanthrope", "family:beast", "family:humanoid"],
+    "attributes": { "strength": 16, "dexterity": 15, "intelligence": 8, "constitution": 15, "wisdom": 9, "endurance": 16, "luck": 5 },
+    "resources": { "health": 90, "mana": 20, "stamina": 90 },
+    "resistances": { "physical": 0.30, "toxin": 0.35 },
+    "vulnerable": { "Magic": 1.20 },
+    "resolve": 105,
+    "loot_table": "loot.family.lycanthrope"
   }
 ]

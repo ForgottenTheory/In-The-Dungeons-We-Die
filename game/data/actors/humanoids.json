@@ -1,0 +1,144 @@
+[
+  // Wave 1 of the enemy-breadth pass: the speaking, scheming, tool-using half.
+  //
+  // An actor is deliberately thin — name + family + role + moveset. Everything numeric composes
+  // from the layers (M2′c), which is why a file of thirty enemies has no stat blocks in it.
+  //
+  // ── PICKING A MOVESET IS NOT FREE ──────────────────────────────────────────────────────────
+  //
+  // The validator checks that the RESOLVED brain can select from the moves listed here, so the
+  // moveset has to match the role:
+  //
+  //   skirmisher  needs move.expose_weakness + an action:attack move
+  //   brute       needs action:attack + mech:stagger + move.brace
+  //   caster      needs move.venom_bolt + move.wither + action:spell + action:attack
+  //   archer      needs delivery:ranged + action:attack
+  //   stalker     needs action:attack
+  //   guardian    needs action:attack + action:defensive
+  //   champion    needs action:attack + mech:stagger + mech:impairment
+  //
+  // And enemies cannot satisfy `equippedTag`, so move.heavy_strike, move.shield_bash,
+  // move.sunder, move.skewer, move.whirlwind and move.execute are OFF LIMITS here — they are
+  // player weapon moves. The validator will tell you, but it is quicker to know.
+  //
+  // No actor below carries its own `loot_table`: family + role already pays, and an identity
+  // table is for the ones worth seeking out specifically. Those come with the named bosses.
+
+  // ══ GOBLINOIDS ══════════════════════════════════════════════════════════════════════════════
+  // (actor.goblin_raider / _brute / _hexer predate this pass and keep their own files.)
+
+  { "id": "actor.goblin_archer", "name": "Goblin Archer", "family": "family.goblin", "role": "role.archer",
+    "moves": ["move.arrow_shot", "move.quick_stab"] },
+
+  { "id": "actor.goblin_rogue", "name": "Goblin Rogue", "family": "family.goblin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.goblin_slash"] },
+
+  { "id": "actor.goblin_berserker", "name": "Goblin Berserker", "family": "family.goblin", "role": "role.brute",
+    "moves": ["move.goblin_smash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.goblin_shaman", "name": "Goblin Shaman", "family": "family.goblin", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.goblin_slash"] },
+
+  { "id": "actor.goblin_chief", "name": "Goblin Chief", "family": "family.goblin", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.goblin_slash"] },
+
+  { "id": "actor.hobgoblin_soldier", "name": "Hobgoblin Soldier", "family": "family.hobgoblin", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.hobgoblin_captain", "name": "Hobgoblin Captain", "family": "family.hobgoblin", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.bugbear", "name": "Bugbear", "family": "family.hobgoblin", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.kobold_skirmisher", "name": "Kobold Skirmisher", "family": "family.kobold", "role": "role.skirmisher",
+    "moves": ["move.quick_stab", "move.expose_weakness"] },
+
+  { "id": "actor.kobold_slinger", "name": "Kobold Slinger", "family": "family.kobold", "role": "role.archer",
+    "moves": ["move.sling_stone", "move.quick_stab"] },
+
+  // ══ ORCS ════════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.orc_warrior", "name": "Orc Warrior", "family": "family.orc", "role": "role.skirmisher",
+    "moves": ["move.iron_slash", "move.expose_weakness"] },
+
+  { "id": "actor.orc_berserker", "name": "Orc Berserker", "family": "family.orc", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.orc_archer", "name": "Orc Archer", "family": "family.orc", "role": "role.archer",
+    "moves": ["move.arrow_shot", "move.javelin_throw", "move.iron_slash"] },
+
+  { "id": "actor.orc_shaman", "name": "Orc Shaman", "family": "family.orc", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.rusty_slash"] },
+
+  { "id": "actor.orc_warchief", "name": "Orc Warchief", "family": "family.orc", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.half_orc_deserter", "name": "Half-Orc Deserter", "family": "family.orc", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  // ══ BIG BODIES ══════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.ogre_brute", "name": "Ogre Brute", "family": "family.ogre", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.ogre_chieftain", "name": "Ogre Chieftain", "family": "family.ogre", "role": "role.champion",
+    "moves": ["move.crash", "move.expose_weakness", "move.overhead_crush"] },
+
+  { "id": "actor.ettin", "name": "Ettin", "family": "family.ogre", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  // Every troll is this actor plus a realm. The regeneration is the family's fire weakness read
+  // from the other side — you either burn it or you do this all day.
+  { "id": "actor.hill_troll", "name": "Hill Troll", "family": "family.troll", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.cave_troll", "name": "Cave Troll", "family": "family.troll", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.troll_shaman", "name": "Troll Shaman", "family": "family.troll", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.quick_stab"] },
+
+  { "id": "actor.hill_giant", "name": "Hill Giant", "family": "family.giant", "role": "role.brute",
+    "moves": ["move.crash", "move.overhead_crush", "move.brace"] },
+
+  { "id": "actor.stone_giant", "name": "Stone Giant", "family": "family.giant", "role": "role.guardian",
+    "moves": ["move.overhead_crush", "move.stoneskin"] },
+
+  { "id": "actor.frost_giant", "name": "Frost Giant", "family": "family.giant", "role": "role.champion",
+    "moves": ["move.crash", "move.frost_lance", "move.overhead_crush"] },
+
+  // ══ PEOPLE ══════════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.bandit", "name": "Bandit", "family": "family.human", "role": "role.skirmisher",
+    "moves": ["move.rusty_slash", "move.expose_weakness"] },
+
+  { "id": "actor.bandit_archer", "name": "Bandit Archer", "family": "family.human", "role": "role.archer",
+    "moves": ["move.arrow_shot", "move.quick_stab"] },
+
+  { "id": "actor.bandit_captain", "name": "Bandit Captain", "family": "family.human", "role": "role.champion",
+    "moves": ["move.overhead_crush", "move.expose_weakness", "move.iron_slash"] },
+
+  { "id": "actor.assassin", "name": "Assassin", "family": "family.human", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.rusty_slash"] },
+
+  { "id": "actor.cultist", "name": "Cultist", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.quick_stab"] },
+
+  { "id": "actor.dark_knight", "name": "Dark Knight", "family": "family.human", "role": "role.guardian",
+    "moves": ["move.iron_slash", "move.brace"] },
+
+  { "id": "actor.necromancer", "name": "Necromancer", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.drain", "move.quick_stab"] },
+
+  { "id": "actor.witch", "name": "Witch", "family": "family.human", "role": "role.caster",
+    "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.quick_stab"] },
+
+  // ══ LYCANTHROPES ════════════════════════════════════════════════════════════════════════════
+
+  { "id": "actor.werewolf", "name": "Werewolf", "family": "family.lycanthrope", "role": "role.brute",
+    "moves": ["move.overhead_crush", "move.crash", "move.brace"] },
+
+  { "id": "actor.wererat", "name": "Wererat", "family": "family.lycanthrope", "role": "role.stalker",
+    "moves": ["move.quick_stab", "move.unarmed"] }
+]

@@ -1,0 +1,492 @@
+[
+  // ── Family and role tables for the enemy-breadth pass ──────────────────────────────────────
+  //
+  // Same three-layer composition as `enemies.json` (D26): family = what the body is made of,
+  // role = what the archetype was carrying, actor = what makes this one worth hunting. These
+  // are the first two layers for every family and role added by the breadth pass.
+  //
+  // D28 holds without exception here: every entry is an INPUT. Nothing in this file is a
+  // finished weapon or a wearable piece — what the Guardian was holding arrives as scrap iron
+  // and the sword it becomes is fabricated at the bench.
+  //
+  // Every family carries `loot.shared.rank_spoils`, which pays nothing until the kill actually
+  // has an elite or boss rank. One line, and the whole file is rank-ready.
+
+  // ══ GOBLINOIDS AND GREENSKINS ═══════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.hobgoblin",
+    "name": "Hobgoblin",
+    "tags": ["source:creature", "source:goblinoid"],
+    "alwaysDrops": [
+      { "itemId": "material.goblin_hide", "minQuantity": 1, "maxQuantity": 3 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.scrap_iron", "chance": 0.45, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.tattered_cloth", "chance": 0.30 }
+    ]
+  },
+
+  {
+    "id": "loot.family.orc",
+    "name": "Orc",
+    "tags": ["source:creature", "source:greenskin"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.creature_remains" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.animal_bone", "chance": 0.50, "minQuantity": 1, "maxQuantity": 3 },
+      { "itemId": "material.beast_heart", "chance": 0.20 },
+      { "itemId": "material.scrap_iron", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 }
+    ]
+  },
+
+  {
+    "id": "loot.family.kobold",
+    "name": "Kobold",
+    "tags": ["source:creature", "source:reptilian"],
+    "alwaysDrops": [
+      { "itemId": "material.lizard_meat", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.sunscale", "chance": 0.22 },
+      { "itemId": "material.salvage_pile", "chance": 0.25 }
+    ]
+  },
+
+  // ══ BIG BODIES ══════════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.troll",
+    "name": "Troll",
+    "tags": ["source:creature", "source:giantkin"],
+    "alwaysDrops": [
+      { "itemId": "material.beast_heart", "minQuantity": 1, "maxQuantity": 1 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      // The regenerating tissue is the reason anyone hunts one.
+      { "itemId": "material.beast_liver", "chance": 0.40 },
+      { "itemId": "material.animal_bone", "chance": 0.45, "minQuantity": 2, "maxQuantity": 4 }
+    ]
+  },
+
+  {
+    "id": "loot.family.ogre",
+    "name": "Ogre",
+    "tags": ["source:creature", "source:giantkin"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.creature_remains" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.animal_bone", "chance": 0.55, "minQuantity": 2, "maxQuantity": 5 },
+      { "itemId": "material.ivory_tusk", "chance": 0.18 }
+    ]
+  },
+
+  {
+    "id": "loot.family.giant",
+    "name": "Giant",
+    "tags": ["source:creature", "source:giantkin"],
+    "alwaysDrops": [
+      { "itemId": "material.behemoth_horn", "minQuantity": 1, "maxQuantity": 1 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.ivory_tusk", "chance": 0.40, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.granite", "chance": 0.30, "minQuantity": 1, "maxQuantity": 3 },
+      { "itemId": "material.beast_heart", "chance": 0.25 }
+    ]
+  },
+
+  // ══ BEASTFOLK AND SCALED FOLK ═══════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.beastfolk",
+    "name": "Beastfolk",
+    "tags": ["source:creature", "source:beastfolk"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.creature_remains" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.ram_horn", "chance": 0.35 },
+      { "itemId": "material.goat_horn", "chance": 0.30 },
+      { "itemId": "material.animal_bone", "chance": 0.40, "minQuantity": 1, "maxQuantity": 3 }
+    ]
+  },
+
+  {
+    "id": "loot.family.reptilian",
+    "name": "Reptilian",
+    "tags": ["source:creature", "source:reptilian"],
+    "alwaysDrops": [
+      { "itemId": "material.sunscale", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.constrictor_hide", "chance": 0.40 },
+      { "itemId": "material.serpent_venom", "chance": 0.30 },
+      { "itemId": "material.lizard_meat", "chance": 0.30 }
+    ]
+  },
+
+  {
+    "id": "loot.family.aquatic",
+    "name": "Aquatic",
+    "tags": ["source:creature", "source:aquatic"],
+    "alwaysDrops": [
+      { "itemId": "material.fish_scale", "minQuantity": 1, "maxQuantity": 3 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.fish_oil", "chance": 0.35 },
+      { "itemId": "material.deep_coral", "chance": 0.15 },
+      { "itemId": "material.siren_scale", "chance": 0.10 }
+    ]
+  },
+
+  {
+    "id": "loot.family.draconic",
+    "name": "Draconic",
+    "tags": ["source:creature", "source:draconic"],
+    "alwaysDrops": [
+      { "itemId": "material.drake_scale", "minQuantity": 2, "maxQuantity": 5 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.drake_hide", "chance": 0.45 },
+      { "itemId": "material.drake_bone", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.dragon_blood", "chance": 0.20 },
+      { "itemId": "material.dragon_bone", "chance": 0.12 },
+      { "itemId": "material.flame_gland", "chance": 0.18 }
+    ]
+  },
+
+  // ══ NATURAL ANIMALS ═════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.beast",
+    "name": "Beast",
+    "tags": ["source:creature", "source:beast"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.creature_remains" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.animal_blood", "chance": 0.45 },
+      { "itemId": "material.beast_heart", "chance": 0.22 },
+      { "itemId": "material.animal_bone", "chance": 0.40, "minQuantity": 1, "maxQuantity": 3 }
+    ]
+  },
+
+  {
+    "id": "loot.family.vermin",
+    "name": "Vermin",
+    "tags": ["source:creature", "source:vermin"],
+    "alwaysDrops": [
+      { "itemId": "material.chitin_plate", "minQuantity": 1, "maxQuantity": 3 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.spider_venom", "chance": 0.30 },
+      { "itemId": "material.scorpion_carapace", "chance": 0.20 },
+      { "itemId": "material.venom_gland", "chance": 0.25 }
+    ]
+  },
+
+  {
+    "id": "loot.family.swarm",
+    "name": "Swarm",
+    "tags": ["source:creature", "source:vermin", "source:swarm"],
+    "alwaysDrops": [
+      { "itemId": "material.chitin_plate", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    // A swarm has no single carcass, so it pays in volume of small parts or in nothing at all.
+    "weightedDraws": [
+      {
+        "picks": 2,
+        "entries": [
+    { "itemId": "material.leech", "weight": 15 },
+          { "itemId": "material.bat_wing", "weight": 15 },
+          { "dropsNothing": true, "weight": 40 }
+        ]
+      }
+    ]
+  },
+
+  // ══ THE DEAD ════════════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.undead",
+    "name": "Undead",
+    "tags": ["source:creature", "source:undead"],
+    "alwaysDrops": [
+      { "itemId": "material.animal_bone", "minQuantity": 1, "maxQuantity": 4 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.black_marrow", "chance": 0.30 },
+      { "itemId": "material.necrotic_blood", "chance": 0.28 },
+      { "itemId": "material.preserved_flesh", "chance": 0.35 },
+      { "itemId": "material.grave_iron", "chance": 0.15 }
+    ]
+  },
+
+  {
+    "id": "loot.family.spirit",
+    "name": "Spirit",
+    "tags": ["source:creature", "source:undead", "source:spirit"],
+    "alwaysDrops": [
+      { "itemId": "material.ectoplasm", "minQuantity": 1, "maxQuantity": 1 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    // Nothing corporeal falls. What is left is residue, which is exactly why spirits are the
+    // reagent source rather than the hide source.
+    "chanceDrops": [
+      { "itemId": "material.wraith_essence", "chance": 0.25 },
+      { "itemId": "material.death_mote", "chance": 0.30 },
+      { "itemId": "material.soul_gem", "chance": 0.06 }
+    ]
+  },
+
+  // ══ MADE THINGS ═════════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.construct",
+    "name": "Construct",
+    "tags": ["source:construct"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_heavy" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.broken_mechanism", "chance": 0.40 },
+      { "itemId": "material.stone_heart", "chance": 0.15 },
+      { "itemId": "material.relic_shard", "chance": 0.10 }
+    ]
+  },
+
+  {
+    "id": "loot.family.ooze",
+    "name": "Ooze",
+    "tags": ["source:creature", "source:ooze"],
+    "alwaysDrops": [
+      { "itemId": "material.green_slime", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.acid_slime", "chance": 0.30 },
+      { "itemId": "material.tar_slime", "chance": 0.20 },
+      { "itemId": "material.slime_mold", "chance": 0.25 }
+    ]
+  },
+
+  // ══ GROWING THINGS ══════════════════════════════════════════════════════════════════════════
+
+  {
+    "id": "loot.family.plant",
+    "name": "Plant",
+    "tags": ["source:creature", "source:plant"],
+    "alwaysDrops": [
+      { "itemId": "material.thornvine", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.elder_bark", "chance": 0.30 },
+      { "itemId": "material.livingbark_log", "chance": 0.10 },
+      { "itemId": "material.treeblight", "chance": 0.20 }
+    ]
+  },
+
+  {
+    "id": "loot.family.fungal",
+    "name": "Fungal",
+    "tags": ["source:creature", "source:fungal"],
+    "alwaysDrops": [
+      { "itemId": "material.cave_mushroom", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.rot_spore", "chance": 0.45 },
+      { "itemId": "material.blight_spore", "chance": 0.30 },
+      { "itemId": "material.living_spore", "chance": 0.15 }
+    ]
+  },
+
+  // ══ THINGS FROM ELSEWHERE ═══════════════════════════════════════════════════════════════════
+
+  {
+    // One table for every element, mirroring the single family. The elemental MOTE that matches
+    // the specific creature is the actor's own table's job — this is the part they share.
+    "id": "loot.family.elemental",
+    "name": "Elemental",
+    "tags": ["source:elemental"],
+    "alwaysDrops": [
+      { "itemId": "material.arcane_dust", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.spirit_essence", "chance": 0.35 },
+      { "itemId": "material.mana_prism", "chance": 0.08 }
+    ]
+  },
+
+  {
+    "id": "loot.family.fey",
+    "name": "Fey",
+    "tags": ["source:creature", "source:fey"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.fey_essence" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.fairy_ring", "chance": 0.25 },
+      { "itemId": "material.glimmerdust", "chance": 0.30 },
+      { "itemId": "material.dream_essence", "chance": 0.15 }
+    ]
+  },
+
+  {
+    "id": "loot.family.fiend",
+    "name": "Fiend",
+    "tags": ["source:creature", "source:fiend"],
+    "alwaysDrops": [
+      { "itemId": "material.brimstone_salt", "minQuantity": 1, "maxQuantity": 2 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.curse_dust", "chance": 0.40 },
+      { "itemId": "material.void_essence", "chance": 0.12 },
+      { "itemId": "material.soul_gem", "chance": 0.05 }
+    ]
+  },
+
+  {
+    "id": "loot.family.aberration",
+    "name": "Aberration",
+    "tags": ["source:creature", "source:aberration"],
+    "alwaysDrops": [
+      { "itemId": "material.warpspore", "minQuantity": 1, "maxQuantity": 1 },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.chaos_cap", "chance": 0.20 },
+      { "itemId": "material.mutagen_cap", "chance": 0.22 },
+      { "itemId": "material.abyssal_ink", "chance": 0.15 }
+    ]
+  },
+
+  // ══ PEOPLE ══════════════════════════════════════════════════════════════════════════════════
+
+  {
+    // The one family that reliably carried manufactured goods, so it is the one family whose
+    // table leans on salvage rather than anatomy.
+    "id": "loot.family.human",
+    "name": "Human",
+    "tags": ["source:creature", "source:humanoid"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_light" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.tattered_cloth", "chance": 0.45, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "material.scrap_iron", "chance": 0.35 },
+      { "itemId": "material.iron_key", "chance": 0.08 }
+    ]
+  },
+
+  {
+    "id": "loot.family.lycanthrope",
+    "name": "Lycanthrope",
+    "tags": ["source:creature", "source:beast", "source:humanoid"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.creature_remains" },
+      { "tableId": "loot.shared.rank_spoils" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.wolf_fang", "chance": 0.40 },
+      { "itemId": "material.direwolf_pelt", "chance": 0.25 },
+      { "itemId": "material.beast_heart", "chance": 0.30 },
+      { "itemId": "material.silver_ore", "chance": 0.10 }
+    ]
+  },
+
+  // ══ ROLES: WHAT THE ARCHETYPE WAS CARRYING ══════════════════════════════════════════════════
+
+  {
+    "id": "loot.role.archer",
+    "name": "Archer",
+    "tags": ["source:role"],
+    "chanceDrops": [
+      { "itemId": "material.hemp_fiber", "chance": 0.45, "minQuantity": 1, "maxQuantity": 3 },
+      { "itemId": "material.feather", "chance": 0.50, "minQuantity": 2, "maxQuantity": 5 },
+      { "itemId": "material.yew_log", "chance": 0.15 }
+    ]
+  },
+
+  {
+    "id": "loot.role.stalker",
+    "name": "Stalker",
+    "tags": ["source:role"],
+    "chanceDrops": [
+      { "itemId": "material.prepared_venom", "chance": 0.25 },
+      { "itemId": "material.cipher_note", "chance": 0.12 },
+      { "itemId": "material.salvage_pile", "chance": 0.30 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.knowledge_common", "weight": 25 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 10 },
+          { "dropsNothing": true, "weight": 65 }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "loot.role.guardian",
+    "name": "Guardian",
+    "tags": ["source:role"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_heavy" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.scrap_iron", "chance": 0.55, "minQuantity": 1, "maxQuantity": 3 },
+      { "itemId": "material.broken_mechanism", "chance": 0.20 }
+    ]
+  },
+
+  {
+    // The named one in the room pays like it. Still inputs only — a champion's sword arrives as
+    // the metal it was, not as a sword.
+    "id": "loot.role.champion",
+    "name": "Champion",
+    "tags": ["source:role"],
+    "alwaysDrops": [
+      { "tableId": "loot.shared.salvage_heavy" }
+    ],
+    "chanceDrops": [
+      { "itemId": "material.relic_shard", "chance": 0.18 },
+      { "itemId": "material.schematic_fragment", "chance": 0.15 }
+    ],
+    "weightedDraws": [
+      {
+        "picks": 1,
+        "entries": [
+          { "tableId": "loot.shared.crafting_catalysts", "weight": 30 },
+          { "tableId": "loot.shared.knowledge_rare", "weight": 15 },
+          { "tableId": "loot.shared.techniques_martial", "weight": 20 },
+          { "dropsNothing": true, "weight": 35 }
+        ]
+      }
+    ]
+  }
+]
