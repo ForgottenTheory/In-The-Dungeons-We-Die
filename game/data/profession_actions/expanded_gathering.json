@@ -1,0 +1,2051 @@
+[
+  {
+    "id": "action.forage_arcane",
+    "professionId": "profession.farming",
+    "name": "Forage Arcane Growth",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.mana_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.mana_cap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_bloom", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_vine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchvine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchroot", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_leaf", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_arcane_2",
+    "professionId": "profession.farming",
+    "name": "Forage Arcane Growth 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.mana_berry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.witchberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_peach", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_melon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witch_pumpkin", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_gourd", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witch_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_nettle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchshade", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_arcane_3",
+    "professionId": "profession.farming",
+    "name": "Forage Arcane Growth 3",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.magebane", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.demonbane", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.mana_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mana_lotus", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witch_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_blood",
+    "professionId": "profession.farming",
+    "name": "Forage Blood Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.blood_orange", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bloodroot", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_moss", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodbell", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodflower", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_lily", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_rose", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodthorn", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.briarheart", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_blood_2",
+    "professionId": "profession.farming",
+    "name": "Forage Blood Growth 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.heartvine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.blood_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.heartroot", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bloodleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodplum", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_apple", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_grape", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_melon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_pumpkin", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_blood_3",
+    "professionId": "profession.farming",
+    "name": "Forage Blood Growth 3",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.blood_thistle", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.blood_nettle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodshade", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bloodstem", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_celestial",
+    "professionId": "profession.farming",
+    "name": "Forage Celestial Growth",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.angelica", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.mustard", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sunflower", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.starfruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.moonwort", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sungrass", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_moss", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_moss", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mooncap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_cap", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_celestial_2",
+    "professionId": "profession.farming",
+    "name": "Forage Celestial Growth 2",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.moonbell", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sunbell", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunflower_of_dawn", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_bloom", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dawn_bloom", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.moon_lily", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_lily", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moon_rose", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starvine", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.sunvine", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_celestial_3",
+    "professionId": "profession.farming",
+    "name": "Forage Celestial Growth 3",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.moonvine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.moon_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starroot", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moonleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starleaf", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dawnleaf", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.moonberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunberry", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_celestial_4",
+    "professionId": "profession.farming",
+    "name": "Forage Celestial Growth 4",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.starberry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dawnberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.moonplum", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starfruit_of_aether", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.sunpear", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moonpear", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_grape", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_melon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_melon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_pumpkin", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_celestial_5",
+    "professionId": "profession.farming",
+    "name": "Forage Celestial Growth 5",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.moon_thistle", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.star_thistle", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.sun_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moonshade", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starshade", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moon_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_reed", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moon_lotus", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_lotus", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_lotus", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_crystal",
+    "professionId": "profession.farming",
+    "name": "Forage Crystal Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.crystal_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.crystalcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_bloom", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_lily", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_rose", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glass_rose", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.crystal_thorn", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_vine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_leaf", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_crystal_2",
+    "professionId": "profession.farming",
+    "name": "Forage Crystal Growth 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.crystal_berry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.crystal_apple", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_grape", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_melon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_gourd", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_nettle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystalstem", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystal_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_deep",
+    "professionId": "profession.farming",
+    "name": "Forage Deep Growth",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.elderberry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.kingscap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.deepcap", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.kingsvine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.kingsroot", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.deep_root", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.worldroot", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.kingsleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.kingsberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.kings_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_dragon",
+    "professionId": "profession.farming",
+    "name": "Forage Dragon Growth",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.dragon_fruit", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dragonroot", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonthorn", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonweed", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonscale_moss", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_rose", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonthorn_vine", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonvine", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_root", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonleaf", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_dragon_2",
+    "professionId": "profession.farming",
+    "name": "Forage Dragon Growth 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.dragonberry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dragon_grape", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_gourd", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonshade", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonbane", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonstem", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_lotus", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_dreaming",
+    "professionId": "profession.farming",
+    "name": "Forage Dreaming Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.glow_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dream_moss", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dreambell", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dreamflower", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dreamvine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dream_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glowroot", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.glowleaf", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.dreamberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glowberry", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_dreaming_2",
+    "professionId": "profession.farming",
+    "name": "Forage Dreaming Growth 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.dream_fig", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dream_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dreamshade", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glowstem", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.dreamstem", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dream_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glow_reed", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.dream_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_ember",
+    "professionId": "profession.farming",
+    "name": "Forage Ember Growth",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.fire_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ember_moss", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.embercap", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.firebell", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.emberflower", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.fire_lily", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_rose", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.emberthorn", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.firevine", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_root", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_ember_2",
+    "professionId": "profession.farming",
+    "name": "Forage Ember Growth 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.fireleaf", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.emberberry", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.fireplum", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dragonfruit_of_flame", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.ember_apple", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.fire_pepper", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_pumpkin", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ember_thistle", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.fire_nettle", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.embershade", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_ember_3",
+    "professionId": "profession.farming",
+    "name": "Forage Ember Growth 3",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.firestem", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.fire_reed", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_lotus", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fibre",
+    "professionId": "profession.farming",
+    "name": "Forage Fibre Growth",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.sugar_cane", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.flax", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hemp", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cotton", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.jute", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.agave", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.yucca", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cattail", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.reed", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.papyrus", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_flower",
+    "professionId": "profession.farming",
+    "name": "Forage Flower Growth",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.calendula", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dandelion", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.belladonna", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.saffron", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.safflower", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rose_hip", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.water_lily", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.black_rose", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_frost",
+    "professionId": "profession.farming",
+    "name": "Forage Frost Growth",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.frost_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.frostbell", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostflower", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_lily", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_rose", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostthorn", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostvine", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_root", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostleaf", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostplum", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_frost_2",
+    "professionId": "profession.farming",
+    "name": "Forage Frost Growth 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.frost_apple", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.frost_pepper", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_thistle", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_nettle", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostshade", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.froststem", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_reed", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_lotus", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.peppermint", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spearmint", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lemon_balm", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.black_pepper", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pumpkin", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.gourd", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cucumber", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.melon", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.watermelon", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.apple", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit_2",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth 2",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.crabapple", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.pear", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.quince", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.peach", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.plum", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cherry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.apricot", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.nectarine", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.fig", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pomegranate", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit_3",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth 3",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.persimmon", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.date", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.olive", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lemon", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lime", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.orange", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.grapefruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.citron", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pomelo", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.grape", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit_4",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth 4",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.blackberry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.raspberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.strawberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.blueberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cranberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.gooseberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cloudberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lingonberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mulberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.huckleberry", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit_5",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth 5",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.boysenberry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.salmonberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rowan_berry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.acai_berry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.coconut", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.banana", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.plantain", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pineapple", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mango", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.papaya", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_fruit_6",
+    "professionId": "profession.farming",
+    "name": "Forage Fruit Growth 6",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.guava", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.passionfruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lychee", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.jackfruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.breadfruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tamarind", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.avocado", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.prickly_pear", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.black_apple", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_grave",
+    "professionId": "profession.farming",
+    "name": "Forage Grave Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.squash", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.grave_moss", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ash_moss", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.gravecap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ashcap", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ashflower", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ash_rose", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.gravevine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ash_root", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.grave_root", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_grave_2",
+    "professionId": "profession.farming",
+    "name": "Forage Grave Growth 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ashleaf", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ashberry", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ash_fig", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.grave_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.graveshade", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ash_reed", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ash_lotus", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.grave_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_herb",
+    "professionId": "profession.farming",
+    "name": "Forage Herb Growth",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.sage", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.rosemary", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.thyme", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lavender", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mint", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.basil", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.oregano", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.marjoram", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.parsley", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cilantro", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_herb_2",
+    "professionId": "profession.farming",
+    "name": "Forage Herb Growth 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.dill", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.fennel", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tarragon", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mugwort", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.yarrow", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.valerian", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.horehound", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hyssop", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.agrimony", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.feverfew", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_herb_3",
+    "professionId": "profession.farming",
+    "name": "Forage Herb Growth 3",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.echinacea", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.plantain_herb", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hemlock", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.monkshood", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.rue", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.clove", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cinnamon", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cardamom", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.nutmeg", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.vanilla", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_herb_4",
+    "professionId": "profession.farming",
+    "name": "Forage Herb Growth 4",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.indigo", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.woad", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.madder", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hops", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.artichoke", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.asparagus", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.celery", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rhubarb", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.currant", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.blackcurrant", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_herb_5",
+    "professionId": "profession.farming",
+    "name": "Forage Herb Growth 5",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.redcurrant", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.almond", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pistachio", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pecan", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.stoneskin_herb", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_leaf",
+    "professionId": "profession.farming",
+    "name": "Forage Leaf Growth",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.sorrel", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.chicory", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.watercress", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tea", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cabbage", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.kale", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.spinach", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.toxinleaf", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_metal",
+    "professionId": "profession.farming",
+    "name": "Forage Metal Growth",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.silverleaf", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.goldleaf", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iron_moss", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironcap", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.silverthorn", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.goldthorn", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironthorn", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironvine", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.silvervine", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iron_root", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_metal_2",
+    "professionId": "profession.farming",
+    "name": "Forage Metal Growth 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.silverleaf_fern", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ironleaf", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironberry", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.golden_apple", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iron_thistle", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iron_nettle", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironstem", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.silverstem", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_root",
+    "professionId": "profession.farming",
+    "name": "Forage Root Growth",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.burdock", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ginger", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.turmeric", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.galangal", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.horseradish", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.garlic", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wild_garlic", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.onion", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.leek", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.shallot", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_root_2",
+    "professionId": "profession.farming",
+    "name": "Forage Root Growth 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.ginseng", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.licorice_root", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mandrake", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.carrot", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.parsnip", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.turnip", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.radish", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.beet", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.potato", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sweet_potato", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_root_3",
+    "professionId": "profession.farming",
+    "name": "Forage Root Growth 3",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.yam", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bitterroot", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sweetroot", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_seed",
+    "professionId": "profession.farming",
+    "name": "Forage Seed Growth",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.cacao", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.coffee", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.barley", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wheat", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rye", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.oats", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.millet", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rice", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.corn", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.buckwheat", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_seed_2",
+    "professionId": "profession.farming",
+    "name": "Forage Seed Growth 2",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.amaranth", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.quinoa", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lentil", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chickpea", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pea", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bean", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.soybean", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.peanut", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sesame", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hazelnut", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_seed_3",
+    "professionId": "profession.farming",
+    "name": "Forage Seed Growth 3",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.walnut", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.chestnut", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.acorn", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pine_nut", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.beech_nut", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_spirit",
+    "professionId": "profession.farming",
+    "name": "Forage Spirit Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.spirit_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ghostcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostbell", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostflower", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritflower", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_lily", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_rose", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostthorn", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritthorn", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_spirit_2",
+    "professionId": "profession.farming",
+    "name": "Forage Spirit Growth 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ghostvine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ghost_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_leaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_apple", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_plum", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_pepper_vine", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_spirit_3",
+    "professionId": "profession.farming",
+    "name": "Forage Spirit Growth 3",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ghost_pumpkin", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spirit_gourd", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_nettle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostshade", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghostbane", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritbane", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghoststem", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_reed", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_reed", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_spirit_4",
+    "professionId": "profession.farming",
+    "name": "Forage Spirit Growth 4",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ghost_lotus", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spirit_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_storm",
+    "professionId": "profession.farming",
+    "name": "Forage Storm Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.storm_moss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.stormcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormbell", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormflower", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_root", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormleaf", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormberry", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_nettle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormstem", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_lotus", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_venomous",
+    "professionId": "profession.farming",
+    "name": "Forage Venomous Growth",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.henbane", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.kingsbane", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.undeadbane", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.giantbane", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.venomroot", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_vine",
+    "professionId": "profession.farming",
+    "name": "Forage Vine Growth",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.hawthorn_berry", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sea_buckthorn", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.thorn_rose", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_void",
+    "professionId": "profession.farming",
+    "name": "Forage Void Growth",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.nightshade", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.voidcap", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.void_bloom", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dusk_bloom", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.night_bloom", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.shadowthorn", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.voidthorn", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.shadowvine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.void_root", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.voidleaf", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_void_2",
+    "professionId": "profession.farming",
+    "name": "Forage Void Growth 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.nightleaf", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.duskleaf", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.voidberry", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.nightberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.duskberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.void_fig", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.shadow_thistle", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.nightshade_bloom", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.voidshade", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.void_reed", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_void_3",
+    "professionId": "profession.farming",
+    "name": "Forage Void Growth 3",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.void_lotus", "quantity": 1 } ]
+  },
+  {
+    "id": "action.dredge_moss",
+    "professionId": "profession.fishing",
+    "name": "Dredge Moss Shallows",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.red_algae", "quantity": 1 } ]
+  },
+  {
+    "id": "action.harvest_arcane",
+    "professionId": "profession.forestry",
+    "name": "Harvest Arcane Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.manawood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.witchwood", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witch_hazel", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.magewood", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.runewood", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spellwood", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_blood",
+    "professionId": "profession.forestry",
+    "name": "Harvest Blood Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.bloodwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.blood_oak", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_birch", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.heartwood_tree", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bloodbark_tree", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_celestial",
+    "professionId": "profession.forestry",
+    "name": "Harvest Celestial Timber",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.moonwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sunwood", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starwood", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dawnwood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.moon_oak", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_willow", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_yew", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.aetherwood", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.starbark_tree", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_crystal",
+    "professionId": "profession.forestry",
+    "name": "Harvest Crystal Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.crystalwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.crystal_birch", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.crystalbark_tree", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_deep",
+    "professionId": "profession.forestry",
+    "name": "Harvest Deep Timber",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.kingswood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.world_tree", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.elder_tree", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.ancient_oak", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_dragon",
+    "professionId": "profession.forestry",
+    "name": "Harvest Dragon Timber",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.dragonwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dragon_cedar", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonbark_tree", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_dreaming",
+    "professionId": "profession.forestry",
+    "name": "Harvest Dreaming Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.dreamwood", "quantity": 1 } ]
+  },
+  {
+    "id": "action.harvest_ember",
+    "professionId": "profession.forestry",
+    "name": "Harvest Ember Timber",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.emberwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ember_pine", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.firebark_tree", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_frost",
+    "professionId": "profession.forestry",
+    "name": "Harvest Frost Timber",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.frostwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.frost_pine", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostbark_tree", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_grave",
+    "professionId": "profession.forestry",
+    "name": "Harvest Grave Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ash", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ashwood", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ashen_yew", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.grave_yew", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_metal",
+    "professionId": "profession.forestry",
+    "name": "Harvest Metal Timber",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.ironwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.silverwood", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.goldwood", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironbark", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iron_oak", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.silver_birch", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironbark_tree", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_spirit",
+    "professionId": "profession.forestry",
+    "name": "Harvest Spirit Timber",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.ghostwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spiritwood", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_willow", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_willow", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.soulwood", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.ghostbark_tree", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_storm",
+    "professionId": "profession.forestry",
+    "name": "Harvest Storm Timber",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.thunderwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.storm_cedar", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_timber",
+    "professionId": "profession.forestry",
+    "name": "Harvest Timber Timber",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.bay_laurel", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.juniper", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wormwood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.oak", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.birch", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.maple", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.willow", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.alder", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.beech", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.elm", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_timber_2",
+    "professionId": "profession.forestry",
+    "name": "Harvest Timber Timber 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.cedar", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.cypress", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pine", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.spruce", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.fir", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.yew", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.redwood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mahogany", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ebony", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.teak", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_timber_3",
+    "professionId": "profession.forestry",
+    "name": "Harvest Timber Timber 3",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.sandalwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.rosewood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bamboo", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cork_oak", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rubber_tree", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.frankincense_tree", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.myrrh_tree", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.camphor_tree", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cinchona", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.black_willow", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.harvest_void",
+    "professionId": "profession.forestry",
+    "name": "Harvest Void Timber",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.voidwood", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.nightwood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.duskwood", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_arcane",
+    "professionId": "profession.mining",
+    "name": "Prospect Arcane Stone",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.demon_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.runestone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.demonstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.witchstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mage_stone", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.demonsteel_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.spellsteel_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.runesteel_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.mageiron_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witchsilver_ore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_blood",
+    "professionId": "profession.mining",
+    "name": "Prospect Blood Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.blood_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bloodstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.heartstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.blood_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.heart_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.blood_diamond", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blood_ruby", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_celestial",
+    "professionId": "profession.mining",
+    "name": "Prospect Celestial Stone",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.star_metal_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.moonsteel_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunsteel_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.celestial_iron_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.moonstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.lightstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.angelstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.aetherstone_ore", "chance": 0.33, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_celestial_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Celestial Stone 2",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.light_crystal", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.star_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moon_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.celestial_crystal", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.star_quartz", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.moon_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.moon_glass", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_glass", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_celestial_3",
+    "professionId": "profession.mining",
+    "name": "Prospect Celestial Stone 3",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.astral_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.aetherium_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.moon_silver_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sun_gold_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dawn_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.twilight_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.aurora_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.blightstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sunscar_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_diamond", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_celestial_4",
+    "professionId": "profession.mining",
+    "name": "Prospect Celestial Stone 4",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.star_sapphire", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.moon_opal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.star_opal", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_clay",
+    "professionId": "profession.mining",
+    "name": "Prospect Clay Stone",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.kaolinite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.kaolin", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.white_clay", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_coal",
+    "professionId": "profession.mining",
+    "name": "Prospect Coal Stone",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.anthracite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bituminous_coal", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.peat", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_crystal",
+    "professionId": "profession.mining",
+    "name": "Prospect Crystal Stone",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.milky_quartz", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.smoky_quartz", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.rose_quartz", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.black_diamond", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.crystal_iron_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.raw_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.blue_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.red_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.green_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.black_mana_crystal", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_crystal_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Crystal Stone 2",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.white_mana_crystal", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.wild_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ancient_mana_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.condensed_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.unstable_mana_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.earth_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.wind_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.water_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bone_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dream_crystal", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_crystal_3",
+    "professionId": "profession.mining",
+    "name": "Prospect Crystal Stone 3",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.dragon_crystal", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.demon_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.chaos_crystal", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.mana_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dragon_quartz", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_glass", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.crystalsteel_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.glasssteel_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sea_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sand_crystal", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_crystal_4",
+    "professionId": "profession.mining",
+    "name": "Prospect Crystal Stone 4",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.desert_glass", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dragon_diamond", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_deep",
+    "professionId": "profession.mining",
+    "name": "Prospect Deep Stone",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.titanium_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.kingsstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.worldstone_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.deepstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.worldroot_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.primal_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.ancient_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.elder_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.titan_ore", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.deepsea_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_dragon",
+    "professionId": "profession.mining",
+    "name": "Prospect Dragon Stone",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.dragon_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dragonstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragonite_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.draconium_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wyrmsteel_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wyrmbone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dragon_ruby", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.dragon_opal", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_dreaming",
+    "professionId": "profession.mining",
+    "name": "Prospect Dreaming Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.aluminum_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.dreamstone_ore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ember",
+    "professionId": "profession.mining",
+    "name": "Prospect Ember Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.fire_opal", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.fire_clay", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.emberstone_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.flamestone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.fire_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ember_quartz", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.volcanic_glass", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.hellstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.infernal_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ember_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Ember Stone 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.magma_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.lava_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.volcanic_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ember_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.fireheart_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.molten_core_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.scorched_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.fire_diamond", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.fire_ruby", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_frost",
+    "professionId": "profession.mining",
+    "name": "Prospect Frost Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.frost_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.froststone_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ice_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.frost_quartz", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frost_glass", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.glacier_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.permafrost_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frozen_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frozen_silver_ore", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_frost_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Frost Stone 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.iceheart_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.winterstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.frost_diamond", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.frost_sapphire", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_gem",
+    "professionId": "profession.mining",
+    "name": "Prospect Gem Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.agate", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.jasper", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.carnelian", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.chalcedony", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.nephrite", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.jadeite", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.turquoise", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.lapis_lazuli", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.aquamarine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.peridot", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_gem_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Gem Stone 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.tourmaline", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spinel", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.zircon", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.amber", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.jet", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.pearlstone", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.corundum", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.coralstone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pearl_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.black_sapphire", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_gem_3",
+    "professionId": "profession.mining",
+    "name": "Prospect Gem Stone 3",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.forest_emerald", "quantity": 1 } ]
+  },
+  {
+    "id": "action.prospect_grave",
+    "professionId": "profession.mining",
+    "name": "Prospect Grave Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.grave_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ash_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ashstone_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.gravestone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.grave_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.deathstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ashen_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.plague_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_metal",
+    "professionId": "profession.mining",
+    "name": "Prospect Metal Stone",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.native_silver", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.adamantite_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.black_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.white_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.deep_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.runic_iron_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ancient_iron_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.silverite_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.goldite_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.steelstone_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_metal_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Metal Stone 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.ironwood_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.kingsgold_ore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.hematite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.magnetite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.limonite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.siderite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chalcopyrite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.malachite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.azurite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chalcocite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bornite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cuprite", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.cassiterite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.electrum_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sphalerite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.smithsonite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.pentlandite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.garnierite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cobaltite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chromium_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chromite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.manganese_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore_3",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone 3",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.pyrolusite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bauxite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ilmenite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tungsten_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.wolframite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.scheelite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.molybdenum_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.molybdenite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.antimony_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.stibnite", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore_4",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone 4",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.bismuth_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.native_bismuth", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mercury_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.arsenic_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.native_platinum", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.palladium_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.iridium_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.osmium_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.pyrite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.marcasite", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore_5",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone 5",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.fluorite", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.calcite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dolomite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.barite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.celestite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.apatite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.celestium_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.understone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cavern_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.darkstone_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_ore_6",
+    "professionId": "profession.mining",
+    "name": "Prospect Ore Stone 6",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.blackstone_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.living_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.giantstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.bronzite_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rotstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tidal_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dune_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_salt",
+    "professionId": "profession.mining",
+    "name": "Prospect Salt Stone",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.salt", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.gypsum", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.borax", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_sand",
+    "professionId": "profession.mining",
+    "name": "Prospect Sand Stone",
+    "requiredLevel": 1,
+    "baseIntervalTicks": 81,
+    "experience": 7,
+    "outputs": [ { "itemId": "material.magnetic_sand", "quantity": 1 } ]
+  },
+  {
+    "id": "action.prospect_spirit",
+    "professionId": "profession.mining",
+    "name": "Prospect Spirit Stone",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.ghost_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.spirit_iron_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghoststone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spiritstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.soulstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.spirit_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.soul_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.ghost_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_quartz", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_spirit_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Spirit Stone 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.spirit_glass", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.soul_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.necrotic_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.corpse_stone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.ghost_diamond", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.spirit_emerald", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ghost_opal", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_stone",
+    "professionId": "profession.mining",
+    "name": "Prospect Stone Stone",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.galena", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.calamine", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.rutile", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cinnabar", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.realgar", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.orpiment", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.chert", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.feldspar", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mica", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.serpentine", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_stone_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Stone Stone 2",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.phosphate_rock", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.chaos_stone", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.order_stone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.brimstone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.living_stone", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_storm",
+    "professionId": "profession.mining",
+    "name": "Prospect Storm Stone",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.storm_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.stormstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.lightning_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_quartz", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.thunder_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.lightning_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.stormsilver_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.stormsteel_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.thunderstone_ore", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_storm_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Storm Stone 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.tempest_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.storm_diamond", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.storm_sapphire", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_venomous",
+    "professionId": "profession.mining",
+    "name": "Prospect Venomous Stone",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.venomstone_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.toxic_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.acidstone_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_void",
+    "professionId": "profession.mining",
+    "name": "Prospect Void Stone",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.void_iron_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.voidstone_ore", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.shadowstone_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.shadow_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.void_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.void_glass", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.abyssal_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dusk_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.nightstone_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.umbral_ore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.prospect_void_2",
+    "professionId": "profession.mining",
+    "name": "Prospect Void Stone 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.abyssal_pearl", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.void_diamond", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.shadow_emerald", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.void_opal", "chance": 0.36, "quantity": 1 }
+    ]
+  }
+]

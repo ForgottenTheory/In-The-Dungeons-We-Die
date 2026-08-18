@@ -31,7 +31,7 @@ public class ProfessionEcosystemTests
     [Fact]
     public void TheRosterMeetsItsStatedScale()
     {
-        Assert.Equal(194, Actions.Count);
+        Assert.Equal(311, Actions.Count);
         Assert.Equal(32, Actions.GetAll().Sum(a => a.Opportunities.Count));
         Assert.Equal(12, TestPaths.LoadStore<TrainingObstacleDefinition>("training_obstacles").Count);
         Assert.Equal(1448, TestPaths.LoadStore<MaterialDefinition>("materials").Count);

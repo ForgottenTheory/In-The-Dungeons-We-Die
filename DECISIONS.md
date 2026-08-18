@@ -278,3 +278,13 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **What the tests found.** Reachability had to be asserted *per depth*, not per realm: descending is not an edge, it drops the party at `EntranceForDepth(depth + 1)`, so a whole-realm walk reported all seven of the Dark Forest's depth-2 nodes as stranded. The model was wrong, not the content — and the corrected rule now also proves every depth has its own way out.
 
 **Consequences:** the new materials are **not gatherable** — no profession action produces them, and wiring ~890 into the profession ladders is its own pass. Nothing in the library is balanced. `ProfessionEcosystemTests` pins the count so the docs cannot drift from it again.
+
+**D35 addendum — the library is gatherable.** All 889 expansion materials now have a source: **117 new gathering actions** across Farming (57), Mining (42), Forestry (17) and Fishing (1), taking the roster from 194 actions to **311**.
+
+**Bucketed by theme, not by material.** One action per material would be 889 actions, and a ladder nobody can read is not a ladder. Each action gathers a *family*: one guaranteed output plus up to nine chance outputs from the same theme, so "Forage Ember Growth" hands back the ember moss, cap, flower and root together — which is how they grow. An earlier cut bucketed by theme *and* form and produced 227 actions, many of them one item long; that is a list, not a ladder.
+
+**Deliberately no new loot tables.** `LootEcosystemTests.EveryLootSourceHandsBackSomethingASystemNames` requires every loot *table* to yield something a named system wants, and "wanted" is decided by form-slot tags — metal, wood, crystal, gem, stone, fiber. A table of pure herbs would fail it. Outputs and bonus outputs are not tables, so the herbs reach the player without tripping a rule aimed at a different problem; they remain usable because the transformation bench accepts any material as a reagent.
+
+**Gate by the hardest thing in the bucket.** Required level comes from the bucket's rarest member — common 1, uncommon 12, rare 30, very_rare 50, exceptional 70 — so you do not stumble onto Voidleaf at level one. The five bands are populated 17 / 26 / 33 / 22 / 19.
+
+**A pre-existing gap this surfaced, and did not fix.** `NoNewMaterialArrivesWithoutASource` counts raw materials nothing can hand the player: **229**, every one of them predating this expansion. They were authored across several milestones and never wired to anything. The test is a **ratchet**, not a clean bill of health — it pins the number so it cannot grow, and the 229 stay on the backlog as real work.

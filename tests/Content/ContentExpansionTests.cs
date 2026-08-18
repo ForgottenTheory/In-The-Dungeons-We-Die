@@ -86,6 +86,63 @@ public class ContentExpansionTests
         Assert.True(exceptional * 20 <= all.Count, $"{exceptional} exceptional materials is too many to be exceptional.");
     }
 
+    // ---- Everything the expansion added can actually be obtained -------------------------------
+
+    /// <summary>Everything a profession action, a loot table or a byproduct can hand the player.</summary>
+    private static HashSet<string> Obtainable()
+    {
+        var obtainable = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var action in TestPaths.LoadStore<Dungeons.Professions.ProfessionActionDefinition>("profession_actions").GetAll())
+        {
+            foreach (var output in action.Outputs) obtainable.Add(output.ItemId);
+            foreach (var bonus in action.BonusOutputs) obtainable.Add(bonus.ItemId);
+            foreach (var opportunity in action.Opportunities)
+            {
+                foreach (var output in opportunity.Outputs) obtainable.Add(output.ItemId);
+                foreach (var bonus in opportunity.BonusOutputs) obtainable.Add(bonus.ItemId);
+            }
+        }
+
+        foreach (var table in TestPaths.LoadStore<Dungeons.Loot.LootTableDefinition>("loot_tables").GetAll())
+        foreach (var entry in table.AlwaysDrops.Concat(table.ChanceDrops)
+                     .Concat(table.WeightedDraws.SelectMany(draw => draw.Entries)))
+            if (entry.ItemId is { Length: > 0 } id)
+                obtainable.Add(id);
+
+        foreach (var byproduct in TestPaths.LoadStore<ByproductDefinition>("byproducts").GetAll())
+            obtainable.Add(byproduct.Id);
+
+        return obtainable;
+    }
+
+    /// <summary>
+    /// <b>A ratchet, not a clean bill of health.</b> 229 raw materials have no source — every one of
+    /// them predating the plant/ore expansion. They were authored over several milestones and
+    /// never wired to anything, so they sit in the library unreachable. Fixing them is its own
+    /// pass, and it is a real backlog item rather than a rounding error.
+    ///
+    /// <para>What this test buys is that the number cannot <em>grow</em>: the ~890 materials the
+    /// expansion added are all reachable from a profession action, and any future material that
+    /// arrives without a source fails here instead of quietly joining the backlog.</para>
+    /// </summary>
+    [Fact]
+    public void NoNewMaterialArrivesWithoutASource()
+    {
+        var obtainable = Obtainable();
+
+        var stranded = Materials().GetAll()
+            .Where(m => m.Tags.Contains("state:raw", StringComparer.OrdinalIgnoreCase))
+            .Where(m => !obtainable.Contains(m.Id))
+            .Select(m => m.Id)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(stranded.Count <= 229,
+            $"{stranded.Count} raw materials have no source, up from the 229 legacy ones. " +
+            $"New offenders are in: {string.Join(", ", stranded.Take(15))}");
+    }
+
     // ---- Every realm is a place you can actually walk ------------------------------------------
 
     /// <summary>
