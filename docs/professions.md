@@ -218,7 +218,7 @@ metal, gems, a key, or somebody's paperwork.
 
 ## 6. Content counts
 
-**20 professions · 311 actions · 32 opportunities · 12 obstacles · 1448 materials** (79 added by
+**20 professions · 348 actions · 32 opportunities · 12 obstacles · 1448 materials** (79 added by
 this pass). Save schema **v7**. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins
 these, so the numbers in this table cannot quietly drift.
 

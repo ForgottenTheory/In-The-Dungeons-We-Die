@@ -1042,7 +1042,7 @@ professions**; the design lives in `docs/professions.md`.
 `PassiveProfessionRunner.cs`, `OfflineProgressCalculator.cs`, `FarmingPlots.cs`,
 `TrainingCourse.cs` · plus `Presentation/AssayLens.cs`.
 
-**DATA** — `professions/` (20) · `profession_actions/` (311 actions, 32 nested opportunities) ·
+**DATA** — `professions/` (20) · `profession_actions/` (348 actions, 32 nested opportunities) ·
 `training_obstacles/` (12).
 
 **RUNTIME FLOW**

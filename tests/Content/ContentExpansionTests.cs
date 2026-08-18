@@ -117,17 +117,17 @@ public class ContentExpansionTests
     }
 
     /// <summary>
-    /// <b>A ratchet, not a clean bill of health.</b> 229 raw materials have no source — every one of
-    /// them predating the plant/ore expansion. They were authored over several milestones and
-    /// never wired to anything, so they sit in the library unreachable. Fixing them is its own
-    /// pass, and it is a real backlog item rather than a rounding error.
+    /// <b>Every raw material in the library can be obtained.</b> Not a ratchet any more: the
+    /// count is zero and the assertion is exact, so a material authored without a source fails
+    /// the build rather than joining a backlog nobody re-reads.
     ///
-    /// <para>What this test buys is that the number cannot <em>grow</em>: the ~890 materials the
-    /// expansion added are all reachable from a profession action, and any future material that
-    /// arrives without a source fails here instead of quietly joining the backlog.</para>
+    /// <para>"Obtained" means a profession action hands it over, a loot table drops it, or it is
+    /// a byproduct. Where a material comes from is a design decision the test does not make —
+    /// anatomy belongs on the creature it came off, and <b>essence must come out of a Realm</b>,
+    /// because a profession that hands it over at the Hideout removes the reason to go.</para>
     /// </summary>
     [Fact]
-    public void NoNewMaterialArrivesWithoutASource()
+    public void EveryRawMaterialHasASource()
     {
         var obtainable = Obtainable();
 
@@ -138,9 +138,8 @@ public class ContentExpansionTests
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToList();
 
-        Assert.True(stranded.Count <= 229,
-            $"{stranded.Count} raw materials have no source, up from the 229 legacy ones. " +
-            $"New offenders are in: {string.Join(", ", stranded.Take(15))}");
+        Assert.True(stranded.Count == 0,
+            $"{stranded.Count} raw materials have no source: {string.Join(", ", stranded.Take(15))}");
     }
 
     // ---- Every realm is a place you can actually walk ------------------------------------------

@@ -120,7 +120,9 @@ coherent run.
    asserted by test. Realms ship as walkable rosters with **no encounters wired** — deliberate.
    **Gatherable ✅.** 117 new gathering actions (194 → **311**) put every one of the 889 behind
    Farming, Mining, Forestry or Fishing, bucketed by theme and gated by the rarest member.
-   **Still unbalanced**, and 229 legacy raw materials still have no source at all (ratcheted).
+   **Legacy gap closed ✅ (D36).** The 229 stranded legacy materials are wired too — 348 actions
+   plus anatomy on six enemy family tables, with essence routed to Realm drops rather than
+   professions. `EveryRawMaterialHasASource` is now exact. **Still unbalanced.**
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -141,5 +143,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**985** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**985** now, every raw material sourced) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

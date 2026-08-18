@@ -1,0 +1,515 @@
+[
+  {
+    "id": "action.forage_wild_arcane",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Arcane",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.glimmerbloom", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.shimmermold", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_blood",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Blood",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.bloodmoss", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bloodvine", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_burning",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Burning",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.cinderroot", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.emberfungus", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.firethorn_herb", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.magma_orchid", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.sulfurcap", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_desert",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Desert",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.cactus_fiber", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.cactus_flesh", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cactus_needle", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.dunebloom", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ironcactus_flesh", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ironcactus_needle", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_fouled",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Fouled",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.mirewort", "quantity": 1 } ]
+  },
+  {
+    "id": "action.forage_wild_frozen",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Frozen",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.frost_lichen", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.frost_mold", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostberry", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.frostcap", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostmint", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.frostpetal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.winterroot", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_grave",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Grave",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.blight_slime", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.blightcanker", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.bonevine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.deathcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.gutrot_mushroom", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.soul_spore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_metal",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Metal",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ash_spore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bloom_spore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mindspore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.puffball_spore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_storm",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Storm",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.stormroot", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.thunder_orchid", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_void",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Void",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.gloomfruit", "quantity": 1 } ]
+  },
+  {
+    "id": "action.forage_wild_wild",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Wild",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.ashvine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.black_mold", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.chamomile", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.crawling_slime", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.date_fruit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.date_pit", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.deadroot", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.dreamcap", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_wild_2",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Wild 2",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.flax_fiber", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.foxglove", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.ginseng_root", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.glassroot", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.glowcap", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.green_mold", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.inkcap", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.lotus", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_wild_3",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Wild 3",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.mirage_lily", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.razorvine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.reed_fiber", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.silkvine_fiber", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.strangler_moss", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.stranglevine", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunblossom", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.sunthorn", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.forage_wild_wild_4",
+    "professionId": "profession.farming",
+    "name": "Forage Wild Wild 4",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.tanglecap", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.tanglefruit", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.veil_fungus", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.witch_mold", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.draw_fouled",
+    "professionId": "profession.fishing",
+    "name": "Draw Fouled",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.stagnant_water", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.swamp_water", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.draw_frozen",
+    "professionId": "profession.fishing",
+    "name": "Draw Frozen",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.glacial_water", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.meltwater", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.draw_wild",
+    "professionId": "profession.fishing",
+    "name": "Draw Wild",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.brine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.mineral_spring_water", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.sea_grass", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.seawater", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tideglass", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.fell_blood",
+    "professionId": "profession.forestry",
+    "name": "Fell Blood",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.bloodsap", "quantity": 1 } ]
+  },
+  {
+    "id": "action.fell_fouled",
+    "professionId": "profession.forestry",
+    "name": "Fell Fouled",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.bogwillow_log", "quantity": 1 } ]
+  },
+  {
+    "id": "action.fell_wild",
+    "professionId": "profession.forestry",
+    "name": "Fell Wild",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.amber_resin", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ash_log", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.birch_log", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.cork_bark", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.driftwood", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.latex", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.mahogany_log", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.palm_log", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.fell_wild_2",
+    "professionId": "profession.forestry",
+    "name": "Fell Wild 2",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.teak_log", "quantity": 1 } ]
+  },
+  {
+    "id": "action.quarry_arcane",
+    "professionId": "profession.mining",
+    "name": "Quarry Arcane",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.arcane_core", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.echo_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.echo_shard", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.ley_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.starmetal_ore", "chance": 0.36, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_blood",
+    "professionId": "profession.mining",
+    "name": "Quarry Blood",
+    "requiredLevel": 30,
+    "baseIntervalTicks": 110,
+    "experience": 54,
+    "outputs": [ { "itemId": "material.bloodstone", "quantity": 1 } ]
+  },
+  {
+    "id": "action.quarry_burning",
+    "professionId": "profession.mining",
+    "name": "Quarry Burning",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.ember_gas", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.ember_heart", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.emberstone", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.heatglass", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.sulfur_vapor", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_burning_2",
+    "professionId": "profession.mining",
+    "name": "Quarry Burning 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.volcanic_ash", "quantity": 1 } ]
+  },
+  {
+    "id": "action.quarry_desert",
+    "professionId": "profession.mining",
+    "name": "Quarry Desert",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.black_sand", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.quicksand", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.sand", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.sandstone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.silica_sand", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_fouled",
+    "professionId": "profession.mining",
+    "name": "Quarry Fouled",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.mirepitch", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sludge", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.swamp_gas", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.toxic_sludge", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_frozen",
+    "professionId": "profession.mining",
+    "name": "Quarry Frozen",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.frost_mist", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.iceglass_crystal", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.permafrost", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.pumice", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_gem",
+    "professionId": "profession.mining",
+    "name": "Quarry Gem",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.citrine", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.diamond", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.emerald", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.garnet", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.jade", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.moonstone", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.onyx", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.opal", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_gem_2",
+    "professionId": "profession.mining",
+    "name": "Quarry Gem 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.ruby", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.sapphire", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.sunstone", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.topaz", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_grave",
+    "professionId": "profession.mining",
+    "name": "Quarry Grave",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.grave_soil", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.tomb_salt", "chance": 0.42, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_metal",
+    "professionId": "profession.mining",
+    "name": "Quarry Metal",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.adamantine_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.cobalt_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.deepiron_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.gold_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.lead_ore", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.nickel_ore", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.orichalcum_ore", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.platinum_ore", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_metal_2",
+    "professionId": "profession.mining",
+    "name": "Quarry Metal 2",
+    "requiredLevel": 70,
+    "baseIntervalTicks": 150,
+    "experience": 118,
+    "outputs": [ { "itemId": "material.quicksilver_ore", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.terra_core", "chance": 0.33, "quantity": 1 },
+      { "itemId": "material.zinc_ore", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_seep",
+    "professionId": "profession.mining",
+    "name": "Quarry Seep",
+    "requiredLevel": 12,
+    "baseIntervalTicks": 92,
+    "experience": 25,
+    "outputs": [ { "itemId": "material.ashen_soil", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.bitumen", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.crude_oil", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.linseed_oil", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.naphtha", "chance": 0.42, "quantity": 1 },
+      { "itemId": "material.pitch", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.tar", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_void",
+    "professionId": "profession.mining",
+    "name": "Quarry Void",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.void_quartz", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.voidstone", "chance": 0.39, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_wild",
+    "professionId": "profession.mining",
+    "name": "Quarry Wild",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.aqua_fortis", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.chalk", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.earth_mote", "chance": 0.39, "quantity": 1 },
+      { "itemId": "material.graphite", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.living_crystal", "chance": 0.36, "quantity": 1 },
+      { "itemId": "material.marble", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.mud", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.niter", "chance": 0.45, "quantity": 1 }
+    ]
+  },
+  {
+    "id": "action.quarry_wild_2",
+    "professionId": "profession.mining",
+    "name": "Quarry Wild 2",
+    "requiredLevel": 50,
+    "baseIntervalTicks": 130,
+    "experience": 86,
+    "outputs": [ { "itemId": "material.quicklime", "quantity": 1 } ],
+    "bonusOutputs": [
+      { "itemId": "material.red_clay", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.shale", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.soapstone", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.steam_vapor", "chance": 0.45, "quantity": 1 },
+      { "itemId": "material.vitriol", "chance": 0.42, "quantity": 1 }
+    ]
+  }
+]

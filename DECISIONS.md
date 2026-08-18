@@ -288,3 +288,18 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **Gate by the hardest thing in the bucket.** Required level comes from the bucket's rarest member — common 1, uncommon 12, rare 30, very_rare 50, exceptional 70 — so you do not stumble onto Voidleaf at level one. The five bands are populated 17 / 26 / 33 / 22 / 19.
 
 **A pre-existing gap this surfaced, and did not fix.** `NoNewMaterialArrivesWithoutASource` counts raw materials nothing can hand the player: **229**, every one of them predating this expansion. They were authored across several milestones and never wired to anything. The test is a **ratchet**, not a clean bill of health — it pins the number so it cannot grow, and the 229 stay on the backlog as real work.
+
+### D36 — Every raw material has a source, and where it comes from is a design decision
+*(Adopted 2026-08-18, closing the gap D35 opened.)*
+
+**The 229 stranded legacy materials are wired.** Actions 311 → **348**, plus drops added to six enemy family tables. `EveryRawMaterialHasASource` is now an **exact** assertion rather than a ratchet: the count is zero, and a material authored without a source fails the build.
+
+**Three destinations, chosen by what the thing is:**
+
+1. **Anatomy goes on the creature it came off.** 51 materials — panther fang, mammoth tusk, ghoul claw, scorpion venom — became chance drops on `loot.family.beast/vermin/aquatic/draconic/reptilian/undead`. D28 already says enemies drop inputs; a "Forage Panther Growth" action would have been absurd and would have quietly made hunting pointless.
+2. **Essence comes out of a Realm.** 21 of the stranded materials carry essence, and the first cut put them behind Farming/Mining/Fishing — which `C2cAuditTests` caught immediately. That audit is not bookkeeping: **a profession that hands essence over at the Hideout removes the reason to enter a Realm at all.** They moved to `loot.family.elemental` (motes, cores, shards, essences), `loot.family.plant` (frostbark, frostpine), `loot.family.undead` (holy water) and `loot.family.ooze` (witchbog brine). Four actions lost their only output in the process and were deleted rather than shipped empty.
+3. **Everything else is gathered**, keyed off what it physically is — logs and resins to Forestry, ores/stone/gems/liquids/gases to Mining, waters to Fishing, plants and fungi to Farming.
+
+**A latent bug this surfaced.** The loot file already carried a trailing comma inside `loot.family.beast`'s `chanceDrops`, tolerated only because the loader runs with `AllowTrailingCommas`. Appending to that array produced `,,` and broke the parse. Both the double comma and every trailing comma in the file are now gone.
+
+**Consequences:** the library is fully reachable for the first time. **None of it is balanced** — 348 actions carry formula-derived intervals and XP, and the 0.12 anatomy drop chances are a first guess.

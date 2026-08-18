@@ -116,7 +116,7 @@
     ],
     "chanceDrops": [
       { "itemId": "material.ram_horn", "chance": 0.35 },
-      { "itemId": "material.goat_horn", "chance": 0.30 },
+      { "itemId": "material.goat_horn", "chance": 0.30 }
     ]
   },
 
@@ -131,7 +131,9 @@
     "chanceDrops": [
       { "itemId": "material.constrictor_hide", "chance": 0.40 },
       { "itemId": "material.serpent_venom", "chance": 0.30 },
-      { "itemId": "material.lizard_meat", "chance": 0.30 }
+      { "itemId": "material.lizard_meat", "chance": 0.30 },
+      { "itemId": "material.chilled_blood", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.dart_frog_toxin", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -146,7 +148,13 @@
     "chanceDrops": [
       { "itemId": "material.fish_oil", "chance": 0.35 },
       { "itemId": "material.deep_coral", "chance": 0.15 },
-      { "itemId": "material.siren_scale", "chance": 0.10 }
+      { "itemId": "material.siren_scale", "chance": 0.10 },
+      { "itemId": "material.frog_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.seal_blubber", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.seal_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.titan_frog_gland", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.toad_skin", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.whale_oil", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -163,7 +171,14 @@
       { "itemId": "material.drake_bone", "chance": 0.35, "minQuantity": 1, "maxQuantity": 2 },
       { "itemId": "material.dragon_blood", "chance": 0.20 },
       { "itemId": "material.dragon_bone", "chance": 0.12 },
-      { "itemId": "material.flame_gland", "chance": 0.18 }
+      { "itemId": "material.flame_gland", "chance": 0.18 },
+      { "itemId": "material.basilisk_eye", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.emberasp_venom", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.sandwyrm_fang", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.sandwyrm_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.sandwyrm_scale", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.wyrm_meat", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.wyvern_egg", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -181,6 +196,21 @@
     "chanceDrops": [
       { "itemId": "material.animal_blood", "chance": 0.45 },
       { "itemId": "material.beast_heart", "chance": 0.22 },
+      { "itemId": "material.ash_beast_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.froststag_antler", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.froststag_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.goat_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.griffin_talon", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.mammoth_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.mammoth_tusk", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.mirewolf_blood", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.mirewolf_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.panther_claw", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.panther_fang", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.panther_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.plume_feather", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.raptor_claw", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.rockworm_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -195,7 +225,17 @@
     "chanceDrops": [
       { "itemId": "material.spider_venom", "chance": 0.30 },
       { "itemId": "material.scorpion_carapace", "chance": 0.20 },
-      { "itemId": "material.venom_gland", "chance": 0.25 }
+      { "itemId": "material.venom_gland", "chance": 0.25 },
+      { "itemId": "material.blindcrawler_chitin", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.brainrot_parasite", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.cave_leech_blood", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.cordyceps", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.fire_beetle_shell", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.jade_beetle_shell", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.leech_gland", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.scorpion_claw", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.scorpion_queen_venom", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.scorpion_venom", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -234,7 +274,19 @@
       { "itemId": "material.black_marrow", "chance": 0.30 },
       { "itemId": "material.necrotic_blood", "chance": 0.28 },
       { "itemId": "material.preserved_flesh", "chance": 0.35 },
-      { "itemId": "material.grave_iron", "chance": 0.15 }
+      { "itemId": "material.grave_iron", "chance": 0.15 },
+      { "itemId": "material.banshee_vapor", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.bone_ash", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.corpse_mold", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.corpseflower", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.embalming_fluid", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.ghoul_claw", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.ghoul_flesh", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.ghoul_hide", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.grave_dust", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.miasma", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.soul_ash", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.holy_water", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -283,7 +335,8 @@
     "chanceDrops": [
       { "itemId": "material.acid_slime", "chance": 0.30 },
       { "itemId": "material.tar_slime", "chance": 0.20 },
-      { "itemId": "material.slime_mold", "chance": 0.25 }
+      { "itemId": "material.slime_mold", "chance": 0.25 },
+      { "itemId": "material.witchbog_brine", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -300,7 +353,9 @@
     "chanceDrops": [
       { "itemId": "material.elder_bark", "chance": 0.30 },
       { "itemId": "material.livingbark_log", "chance": 0.10 },
-      { "itemId": "material.treeblight", "chance": 0.20 }
+      { "itemId": "material.treeblight", "chance": 0.20 },
+      { "itemId": "material.frostbark", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.frostpine_log", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
@@ -333,7 +388,24 @@
     ],
     "chanceDrops": [
       { "itemId": "material.spirit_essence", "chance": 0.35 },
-      { "itemId": "material.mana_prism", "chance": 0.08 }
+      { "itemId": "material.mana_prism", "chance": 0.08 },
+      { "itemId": "material.celestial_dust", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.ember_essence", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.fire_mote", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.frost_core", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.frost_mote", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.glacial_heart", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.hailstone", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.phoenix_ash", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.radiant_mote", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.storm_core", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.storm_mote", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.storm_vapor", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.sunflare_shard", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.tempest_essence", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.thunder_shard", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.void_shard", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "material.winter_essence", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
 
