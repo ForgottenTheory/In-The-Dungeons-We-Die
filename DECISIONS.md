@@ -247,3 +247,16 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **A bug this uncovered.** `form.warspear` granted `move.skewer`, which requires `equippedTag: sword` — a tag no spear carries — so Skewer sat in the spear's moveset unusable for the whole of C2a. A new validator rule now refuses any form granting a move gated on a tag the form does not carry, mirroring the actor-side `equippedTag` rule. The spear got `move.spear_thrust` instead.
 
 **Consequences:** nine new moves, each gated on its archetype's own tag, because since E4 a weapon *is* its moves — what separates a maul from a greatsword is not a damage number on the form, it is that only one of them can Pulverize. Ranged weapons are now expressible at all, which they were not before the enemy pass added the first non-magical ranged attacks. **None of it is balanced**, and it stays with the parked backlog.
+
+**D34 addendum — the second archetype wave.** The exotic and martial-arts entries in the weapon list did not fit the first ten forms, and forcing them onto one would have been the "same form with a new name" mistake in reverse. Six more archetypes, each earning its place by what it **refuses** to read:
+
+- **Halberd** — the Warspear's opposite. A spear flexes on the thrust and reads its haft for flex; a halberd is a weight on a lever and wants the haft stiff, so it reads *no* flexibility off the haft at all. A test pins that, because the day it stops being true the pair has collapsed into one weapon.
+- **Shortsword** — reads hardness *and* flexibility off one blade. Short blades bend rather than break and a brittle one snaps, which no other blade form says.
+- **Javelin** — thrown, so mass is entirely a cost (0.20) while the point still has to be hard.
+- **Sling** — reads **no hardness whatsoever**. It is cord and a pouch; the stone is not part of the weapon.
+- **Whip** — flexibility off the lash at 1.35, the hardest any form reads flexibility off a single component. The Longbow still reads more in *total* and should: being the flexibility weapon is the bow's identity, and the whip's is being one flexible thing on a handle.
+- **Knuckles** — mass at 0.10, the smallest weapon in the game. The form for a material you have almost none of.
+
+**Two claims I wrote were false and the tests caught both.** The whip was first authored as out-reading every weapon on flexibility (the Warspear ties it on total) and then as "the hardest any form reads any property" (the Maul reads mass at 1.40). The fix was to narrow the claim to what is true rather than inflate a number to match the prose — a stat weight exists to make the item behave, not to win an argument in a comment.
+
+**Consequences:** 23 forms, 16 of them weapons; every name in the design list is placed. Four new archetype moves (Hew, Flurry, Lash, Pummel). Nunchaku became a Flail variant rather than an archetype, because mechanically that is what it is.

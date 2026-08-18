@@ -112,6 +112,9 @@ coherent run.
    `name_variants`, picked deterministically from the item signature and cosmetic by
    construction. Nine archetype moves. A new rule catches forms granting moves they cannot fire
    — which is how the Warspear's dead Skewer was found.
+   **Weapon list complete ✅ (D34 addendum).** 23 forms, **16 weapons**; every name in the
+   design list is placed. Six more archetypes — Halberd, Shortsword, Javelin, Sling, Whip,
+   Knuckles — each earning its place by what it refuses to read.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -132,5 +135,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**969** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**971** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

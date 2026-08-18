@@ -195,6 +195,73 @@ public class WeaponFormTests
         Assert.True(SwordHardness("material.lead_ingot") < SwordHardness("material.iron_ingot"));
     }
 
+    /// <summary>
+    /// The second archetype wave's identity claims, which are all about what a form <em>refuses</em>
+    /// to read.
+    ///
+    /// <para>A Sling reads no hardness at all — it is cord and a pouch, and the stone is not part
+    /// of the weapon. A Whip reads flexibility harder than anything else in the file, including
+    /// the bow's limb. Knuckles read the least mass of any weapon. Each of those is the reason
+    /// the form exists rather than being a variant name on something else, so each is asserted.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void TheLightWeaponsEarnTheirPlaceByWhatTheyRefuseToRead()
+    {
+        var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms");
+
+        double WeightOf(string formId, string stat) =>
+            forms.GetById(formId).StatMap.TryGetValue(stat, out var reads)
+                ? reads.Sum(read => read.Weight)
+                : 0;
+
+        // A sling is cord and a pouch. Hardness would be a claim about the ammunition.
+        Assert.Equal(0, WeightOf("form.sling", "hardness"));
+        Assert.True(WeightOf("form.sling", "flexibility") > 0);
+
+        // The whip leans on ONE component harder than any form leans on anything: the lash is
+        // the whole weapon. The Longbow still reads more flexibility in TOTAL (limb plus string),
+        // and should — being the flexibility weapon is the bow's identity, and the whip's is
+        // being a single flexible thing on a handle.
+        double HeaviestSingleRead(string formId, string stat) =>
+            forms.GetById(formId).StatMap.TryGetValue(stat, out var reads)
+                ? reads.Max(read => read.Weight)
+                : 0;
+
+        var whipLash = HeaviestSingleRead("form.whip", "flexibility");
+        foreach (var other in forms.GetAll().Where(form => form.Id != "form.whip"))
+            Assert.True(whipLash > HeaviestSingleRead(other.Id, "flexibility"),
+                $"{other.Id} reads flexibility off one slot at least as hard as the whip reads its lash.");
+
+        Assert.True(WeightOf("form.longbow", "flexibility") > WeightOf("form.whip", "flexibility"),
+            "the bow must still be the flexibility weapon overall.");
+
+        // Knuckles are the smallest weapon there is.
+        var knuckleMass = WeightOf("form.knuckles", "mass");
+        foreach (var other in Weapons().Where(form => form.Id != "form.knuckles"))
+            Assert.True(knuckleMass < WeightOf(other.Id, "mass"),
+                $"{other.Id} reads no more mass than a pair of knuckles.");
+    }
+
+    /// <summary>
+    /// The Halberd exists as the Warspear's opposite: a spear flexes on the thrust and reads its
+    /// haft for flex, while a halberd is a weight on a lever and wants the haft stiff. If the
+    /// halberd ever reads flex off its haft, the pair has collapsed into one weapon.
+    /// </summary>
+    [Fact]
+    public void TheHalberdIsTheSpearsOppositeAndNotACopyOfIt()
+    {
+        var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms");
+
+        var spearHaftFlex = forms.GetById("form.warspear").StatMap["flexibility"]
+            .Where(read => read.Slot == "haft").Sum(read => read.Weight);
+        var halberdHaftFlex = forms.GetById("form.halberd").StatMap["flexibility"]
+            .Where(read => read.Slot == "haft").Sum(read => read.Weight);
+
+        Assert.True(spearHaftFlex > 0, "the spear must read flex off its haft — that is its whole identity.");
+        Assert.Equal(0, halberdHaftFlex);
+    }
+
     /// <summary>Weapons are the bulk of the form file now, so the "no two forms are the same
     /// form" rule is re-checked over just them — a copy-pasted axe is the easy mistake.</summary>
     [Fact]

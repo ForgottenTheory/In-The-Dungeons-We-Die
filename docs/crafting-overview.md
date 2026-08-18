@@ -19,7 +19,7 @@
 Every combination of substrate, reagents and process produces a real, named, stackable result —
 always, computed by one universal algebra. There is **no recipe table and no per-combination rule
 anywhere in the codebase.** Authored content is eight processes, sixteen traits, seven essences,
-seventeen forms, four byproducts and a name grammar. Everything else is computed.
+twenty-three forms, four byproducts and a name grammar. Everything else is computed.
 
 The consequence that matters for design: **unusual experimentation yields legitimate results
 rather than "nothing happens".** That is the entire reason the system exists.
@@ -407,7 +407,7 @@ authored at all**.
 
 ## 7.1 What a form declares
 
-**Seventeen ship** (`game/data/forms/forms.json`), covering all nine slots with ten weapons:
+**Twenty-three ship** (`game/data/forms/forms.json`), covering all nine slots with sixteen weapons:
 **Longsword** (edge / core / binding), **Warspear** (point / haft / grip), **Buckler** (face —
 and it declares the `parry` tag that grants the parry command), **Helm** (crown / lining),
 **Vest** (shell), **Gauntlets** (glove / plating), **Treads** (sole / upper), **Focus** (stone /

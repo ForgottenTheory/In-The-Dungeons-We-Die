@@ -362,5 +362,54 @@
     "packets": [ { "type": "Piercing", "amount": 30 } ],
     "stagger_power": 20,
     "description": "Slow to load and utterly indifferent to what it hits."
+  },
+
+  // --- The second archetype wave -------------------------------------------------------------
+  {
+    "id": "move.hew", "name": "Hew",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 14, "recoveryTicks": 20 },
+    "costs": [ { "resource": "stamina", "amount": 13 } ],
+    "requires": [ { "kind": "equippedTag", "text": "halberd" } ],
+    "packets": [ { "type": "Slashing", "amount": 20 } ],
+    "stagger_power": 26,
+    "max_targets": 2,
+    "description": "A axe on the end of a long lever. The lever is the dangerous part."
+  },
+  {
+    "id": "move.flurry", "name": "Flurry",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 8 },
+    "costs": [ { "resource": "stamina", "amount": 7 } ],
+    "requires": [ { "kind": "equippedTag", "text": "shortsword" } ],
+    "packets": [ { "type": "Slashing", "amount": 6 }, { "type": "Piercing", "amount": 6 } ],
+    "description": "Three decisions in the time most people make one."
+  },
+  {
+    // Reach without weight — the whip's whole identity, and the reason it impairs rather than
+    // kills. Almost no damage, and it takes the arm you needed.
+    "id": "move.lash", "name": "Lash",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 13 },
+    "costs": [ { "resource": "stamina", "amount": 7 } ],
+    "requires": [ { "kind": "equippedTag", "text": "whip" } ],
+    "packets": [ { "type": "Slashing", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "Finds the gap between armour plates, and the person inside them."
+  },
+  {
+    "id": "move.pummel", "name": "Pummel",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 4, "recoveryTicks": 6 },
+    "costs": [ { "resource": "stamina", "amount": 4 } ],
+    "requires": [ { "kind": "equippedTag", "text": "knuckles" } ],
+    "packets": [ { "type": "Crushing", "amount": 7 } ],
+    "description": "Nothing between your hand and the problem but a little shaped metal."
   }
 ]

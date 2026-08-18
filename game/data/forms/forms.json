@@ -13,7 +13,7 @@
   //              wasted in another, and it is what `ItemPotential.MaterialInfluence` weights
   //              when it decides which modifiers are even eligible.
   //
-  // ── WHY THESE NINE ──────────────────────────────────────────────────────────────────────────
+  // ── WHY THESE FORMS ─────────────────────────────────────────────────────────────────────────
   //
   // Each form exists to exercise a different part of the material system, not to add variety:
   //
@@ -113,7 +113,7 @@
     // move.spear_thrust, not move.skewer: Skewer requires the `sword` tag, which a spear does
     // not carry, so it sat here unusable for the whole of C2a. A validator rule now catches it.
     "moves": ["move.spear_thrust", "move.quick_stab"],
-    "name_variants": ["Pike", "Lance", "Boar Spear", "Awl Pike", "Dory", "Sarissa", "Yari", "Hooked Spear", "Hunting Spear", "Trident", "Military Fork", "Ranseur", "Spetum", "Partisan", "Corseque"],
+    "name_variants": ["Spear", "Pike", "Lance", "Boar Spear", "Awl Pike", "Dory", "Sarissa", "Yari", "Hooked Spear", "Hunting Spear", "Trident", "Military Fork", "Ranseur", "Spetum", "Partisan", "Corseque"],
     "description": "Reach, and the discipline to use it. Most of a spear is the part nobody looks at."
   },
 
@@ -372,8 +372,212 @@
     },
     "trait_cap": 3,
     "moves": ["move.flail_crush", "move.crash"],
-    "name_variants": ["Two-Handed Flail", "Chain Sickle", "Kusarigama", "Meteor Hammer"],
+    "name_variants": ["Two-Handed Flail", "Chain Sickle", "Kusarigama", "Meteor Hammer", "Nunchaku"],
     "description": "It arrives after you think it has, and from a direction you did not pick."
+  },
+
+  {
+    // The CHOPPING polearm, as against the Warspear's thrusting one. Same length of wood, wholly
+    // different question: a spear reads flexibility off its haft because it flexes on the thrust,
+    // while a halberd reads MASS off a head on the end of a lever and wants the haft stiff.
+    // The two exist as a pair for the same reason the Longsword and the Warspear do.
+    "id": "form.halberd",
+    "name": "Halberd",
+    "type": "Weapon",
+    "tags": ["weapon", "halberd", "polearm"],
+    "slots": {
+      "head": {
+        "requires_tags": ["form:metal", "form:stone", "form:crystal"],
+        "mass_share": 0.45,
+        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 0.7, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "haft": {
+        "requires_tags": ["form:wood", "form:metal", "form:bone"],
+        "mass_share": 0.45,
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.7, "structural": 0.8 }
+      },
+      "langets": {
+        "requires_tags": ["form:metal", "form:fiber", "form:hide"],
+        "mass_share": 0.10,
+        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.4, "arcane": 0.4, "structural": 0.7 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "head",    "property": "hardness",    "weight": 0.80 } ],
+      "mass":        [ { "slot": "head",    "property": "mass",        "weight": 0.85 }, { "slot": "haft", "property": "mass", "weight": 0.35 } ],
+      "flexibility": [ { "slot": "langets", "property": "flexibility", "weight": 0.25 } ]
+    },
+    "trait_cap": 4,
+    "moves": ["move.hew", "move.overhead_crush"],
+    "name_variants": ["Glaive", "Bardiche", "Pollaxe", "Bec de Corbin", "Bill", "Billhook", "Voulge", "Guisarme", "Fauchard", "Lochaber Axe", "Sparth Axe", "Naginata", "Guandao", "War Scythe", "Polehammer", "Swordstaff", "Scythe", "Pitchfork", "Shovel", "Shepherd's Crook"],
+    "description": "An axe that decided the problem was standing too close."
+  },
+
+  {
+    // Between the Dagger and the Longsword, and it earns the gap by reading BOTH hardness and
+    // flexibility off the blade: short blades bend rather than break, and a brittle one snaps.
+    // Carries the `sword` tag, so every sword move works on it.
+    "id": "form.shortsword",
+    "name": "Shortsword",
+    "type": "Weapon",
+    "tags": ["weapon", "sword", "shortsword", "metal"],
+    "slots": {
+      "blade": {
+        "requires_tags": ["form:metal", "form:crystal", "form:bone"],
+        "mass_share": 0.65,
+        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 0.9, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+      },
+      "guard": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.5, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 0.8 }
+      },
+      "grip": {
+        "requires_tags": ["form:hide", "form:leather", "form:fiber", "form:cloth"],
+        "mass_share": 0.20,
+        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "blade", "property": "hardness",    "weight": 0.70 } ],
+      "flexibility": [ { "slot": "blade", "property": "flexibility", "weight": 0.45 } ],
+      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.55 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.flurry", "move.iron_slash", "move.quick_stab"],
+    "name_variants": ["Gladius", "Xiphos", "Wakizashi", "Katzbalger", "Butterfly Sword", "Hook Sword", "Pata", "Cleaver", "Sickle"],
+    "description": "Long enough to matter, short enough to bring indoors."
+  },
+
+  {
+    // Thrown, and therefore the only weapon whose mass is entirely a COST — a javelin you cannot
+    // throw far is a short bad spear. Mass is read at 0.20 across the whole item, the lowest of
+    // any weapon here, and the point still has to be hard.
+    "id": "form.javelin",
+    "name": "Javelin",
+    "type": "Weapon",
+    "tags": ["weapon", "javelin", "thrown", "spear"],
+    "slots": {
+      "point": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn", "form:crystal"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 1.0, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "shaft": {
+        "requires_tags": ["form:wood", "form:fiber", "form:bone"],
+        "mass_share": 0.55,
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+      },
+      "fletching": {
+        "requires_tags": ["form:fiber", "form:hide", "form:cloth"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.4, "vital": 0.7, "arcane": 0.4, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "point",     "property": "hardness",    "weight": 0.85 } ],
+      "flexibility": [ { "slot": "shaft",     "property": "flexibility", "weight": 0.60 }, { "slot": "fletching", "property": "flexibility", "weight": 0.25 } ],
+      "mass":        [ { "slot": "*",         "property": "mass",        "weight": 0.20 } ]
+    },
+    "trait_cap": 2,
+    "moves": ["move.javelin_throw"],
+    "name_variants": ["Pilum", "Plumbata", "Harpoon", "Chakram", "Shuriken", "Hunga Munga", "Mambele", "Atlatl"],
+    "description": "You get one. Make the arm count."
+  },
+
+  {
+    // The cheapest weapon in the game and the only one that reads NO hardness at all — a sling is
+    // cord and a pouch, and what it does is decided entirely by how well the cord returns. The
+    // stone is not part of the weapon, which is exactly why the poorest character can own one.
+    "id": "form.sling",
+    "name": "Sling",
+    "type": "Weapon",
+    "tags": ["weapon", "sling"],
+    "slots": {
+      "cord": {
+        "requires_tags": ["form:fiber", "form:hide", "form:leather"],
+        "mass_share": 0.60,
+        "trait_expression": { "thermal": 0.2, "charge": 0.4, "toxic": 0.4, "vital": 0.8, "arcane": 0.5, "structural": 0.5 }
+      },
+      "cradle": {
+        "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
+        "mass_share": 0.40,
+        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.4, "structural": 0.4 }
+      }
+    },
+    "stat_map": {
+      "flexibility": [ { "slot": "cord",   "property": "flexibility", "weight": 1.00 }, { "slot": "cradle", "property": "flexibility", "weight": 0.35 } ],
+      "mass":        [ { "slot": "*",      "property": "mass",        "weight": 0.15 } ]
+    },
+    "trait_cap": 2,
+    "moves": ["move.sling_stone"],
+    "name_variants": ["Staff Sling", "Blowgun"],
+    "description": "String, leather, and whatever was lying on the ground."
+  },
+
+  {
+    // Reach with no mass behind it. Flexibility off the lash at 1.35 is the hardest ANY form reads
+    // flexibility off a single component — more even than the bow reads its limb. The Longbow
+    // still reads more flexibility in total, and should: being the flexibility weapon is the
+    // bow's identity, and the whip's is being one flexible thing on a handle.
+    //
+    // Hardness is read only off the handle, the part that does no damage, so a whip made of good
+    // steel is a bad whip.
+    "id": "form.whip",
+    "name": "Whip",
+    "type": "Weapon",
+    "tags": ["weapon", "whip"],
+    "slots": {
+      "lash": {
+        "requires_tags": ["form:hide", "form:leather", "form:fiber"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.8, "vital": 0.8, "arcane": 0.5, "structural": 0.4 }
+      },
+      "handle": {
+        "requires_tags": ["form:wood", "form:bone", "form:metal", "form:horn"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 0.7 }
+      }
+    },
+    "stat_map": {
+      "flexibility": [ { "slot": "lash",   "property": "flexibility", "weight": 1.35 } ],
+      "hardness":    [ { "slot": "handle", "property": "hardness",    "weight": 0.25 } ],
+      "mass":        [ { "slot": "*",      "property": "mass",        "weight": 0.20 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.lash"],
+    "name_variants": ["Urumi", "Sjambok"],
+    "description": "Arrives from further away than anyone standing there expects."
+  },
+
+  {
+    // Worn rather than held, and the smallest weapon in the game: mass at 0.10, and the only
+    // weapon whose stat map reads nothing but hardness and mass off two tiny components. It is
+    // the form for a material you have almost none of.
+    "id": "form.knuckles",
+    "name": "Knuckles",
+    "type": "Weapon",
+    "tags": ["weapon", "knuckles"],
+    "slots": {
+      "shell": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn", "form:crystal", "form:stone"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 0.9, "charge": 0.9, "toxic": 0.7, "vital": 0.3, "arcane": 0.5, "structural": 1.0 }
+      },
+      "wrap": {
+        "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness": [ { "slot": "shell", "property": "hardness", "weight": 0.95 } ],
+      "mass":     [ { "slot": "*",     "property": "mass",     "weight": 0.10 } ]
+    },
+    "trait_cap": 2,
+    "moves": ["move.pummel"],
+    "name_variants": ["Cestus", "Tekko", "Tekko-Kagi", "Baghnakh", "Deer Horn Knives", "Sai", "Tonfa", "War Fan", "Macuahuitl"],
+    "description": "The oldest weapon there is, with an opinion added."
   },
 
   // ══ OFFHAND ═════════════════════════════════════════════════════════════════════════════════

@@ -442,7 +442,7 @@ Equipment Form  +  Material(s) in named slots  →  Equipment Instance
   reaction bench has: a **pre-commit projection** computed by the same code path that mints the
   real item.
 
-**Built forms: 17 across all 9 slots** ✅, each existing to exercise a different part of the
+**Built forms: 23 across all 9 slots** ✅, each existing to exercise a different part of the
 material system rather than to add variety:
 
 | Form | Slot | What it tests |
@@ -457,6 +457,12 @@ material system rather than to add variety:
 | **Crossbow** | Weapon | the bow's opposite answer: hardness off the *mechanism*, the smallest slot in the file |
 | **Quarterstaff** | Weapon | one slot, three reads — the teaching form, where a single material decides everything |
 | **Flail** | Weapon | the only form that wants a component to be **floppy**: flexibility off the chain |
+| **Halberd** | Weapon | the Warspear's opposite — a spear flexes on the thrust and reads its haft for flex; a halberd is a weight on a lever and wants the haft **stiff** |
+| **Shortsword** | Weapon | reads hardness *and* flexibility off one blade — short blades bend rather than break, and a brittle one snaps |
+| **Javelin** | Weapon | thrown, so mass is **entirely a cost** (0.20, the second lowest in the file) and the point still has to be hard |
+| **Sling** | Weapon | reads **no hardness at all** — it is cord and a pouch, and the stone is not part of the weapon |
+| **Whip** | Weapon | flexibility off the lash at **1.35**, the hardest any form reads flexibility off one component. Hardness is read only off the handle, which does no damage |
+| **Knuckles** | Weapon | the smallest weapon there is: mass at **0.10**. The form for a material you have almost none of |
 | **Buckler** | Offhand | the simplest possible form; declares `parry` |
 | **Helm** | Head | the only armour that reads **insulation** hard — where a fur lining beats a better metal |
 | **Vest** | Body | the hardness/flexibility trade-off |

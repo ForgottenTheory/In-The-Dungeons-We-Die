@@ -67,7 +67,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
-    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail"]
+    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail", "form.shortsword", "form.halberd", "form.knuckles"]
   },
   {
     "id": "station.apothecary",
@@ -94,21 +94,21 @@
     "name": "Tannery",
     "description": "Lye, a scraping beam and drying frames. Drake leather stays drake; nothing here is flattened into a tier.",
     "professions": ["profession.leatherworking"],
-    "blueprints": ["form.vest", "form.gauntlets", "form.treads"]
+    "blueprints": ["form.vest", "form.gauntlets", "form.treads", "form.whip"]
   },
   {
     "id": "station.loom",
     "name": "Loom",
     "description": "Fibre, thread, cloth. Slow, quiet, and the only source of anything soft enough to wear.",
     "professions": ["profession.tailoring"],
-    "blueprints": ["form.vest", "form.gauntlets"]
+    "blueprints": ["form.vest", "form.gauntlets", "form.sling"]
   },
   {
     "id": "station.fletchers_bench",
     "name": "Fletcher's Bench",
     "description": "Shafts, staves, strings and vanes. The haft is most of a spear, which is why the spear is made here and not at the Forge.",
     "professions": ["profession.fletching"],
-    "blueprints": ["form.warspear", "form.longbow", "form.crossbow", "form.quarterstaff"]
+    "blueprints": ["form.warspear", "form.longbow", "form.crossbow", "form.quarterstaff", "form.halberd", "form.javelin", "form.sling"]
   },
   {
     "id": "station.workbench",
