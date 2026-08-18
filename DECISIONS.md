@@ -324,3 +324,20 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **A test I got wrong, and what it taught.** `DeeperGroundPaysBetter` first measured *distinct drops reachable* and failed — depth 1 has more nodes and nests into the broad shared tables, so the shallows won on breadth while paying in bark and scrap. **Breadth is not reward.** Rewritten to measure average rarity: depth 1 scores 0.78, depth 3 scores 1.75.
 
 **Consequences:** four validator rules (a camp with no restore, a merchant with no price or stock, a shrine with no words, a hazard that costs nothing — each loads cleanly and does nothing when stood on), plus one that refuses a hidden node no visible node connects to. **Nothing is balanced**: hazard damage, restore fractions, the 40-coin price and all five knowledge thresholds are first guesses.
+
+### D38 — The Dark Forest's first balance pass: coherence, not feel
+*(Adopted 2026-08-18. Sheet: `DarkForestBalanceTests.RenderTheBalanceSheet`.)*
+
+**What this pass is and is not.** `HANDOFF.md` carries a standing decision — *do not retune before the user reports play feel* — and it is right: nobody has played this realm, so no number here is claimed to be fun. What was done instead is **coherence**: measuring the realm's numbers against each other and against a fresh character, and fixing what is provably wrong. Feel is still the user's to report.
+
+**The measurement first.** A fresh character (the shipped default build, uniform-5) is **59 HP / 55 STA / 69 MP**. Against that: hazards cost 6 / 12 / 20 (10% / 20% / 34% of health), camps restore 50% and 65%, fights run 30 → 36 → 60 → 130 → 290 HP, the trader asks 40 against a route that can pay 85.
+
+**Two things were provably broken, and both are now pinned by test.**
+
+1. **Depth 2's first fight was easier than depth 1's.** The Goblin Hexer resolved to **24 HP** — `role.caster` subtracts health from the goblin family's 30 — while the depth-1 Raider had 30. The first fight past the descent was a step backwards. Fixed with a per-actor `+12 health` tweak (36 HP), not by touching `role.caster`, which is shared by 91 actors across the game. `NoDeeperFightIsWeakerThanTheOnesAboveIt` now forbids the whole class of inversion.
+
+2. **The knowledge ladder was a formality.** Thresholds shipped at 6/12/20/30/42 against a measured yield of **~71 knowledge for one thorough run** — so a single first expedition unlocked everything, including the hidden routes that are supposed to be the reward for learning the place. Rescaled to 30/75/160/320/560, an arc of roughly **eight thorough runs** (0.4 / 1.1 / 2.3 / 4.5 / 7.9). The test pins the **ratio to per-run yield**, not the raw numbers, so retuning a node's grant cannot silently trivialise it again.
+
+**What the sheet says is fine.** Hazards escalate and none is survivable-but-trivial or lethal-on-arrival; each depth's total stays under one character's health. Camps give back more than their depth's hazards cost, and never a full heal. Thornheart at 290 HP is ~29 swings of an iron sword — long enough to be an event, not an afternoon. The trader's 40 sits inside the 85 the route to her can pay.
+
+**Explicitly not done:** combat pacing, XP curves, gather rates, loot weights, and every number outside this realm. Those stay in the parked backlog, and they stay there until someone plays.

@@ -6,7 +6,10 @@
   "name": "Goblin Hexer",
   "family": "family.goblin",
   "role": "role.caster",
-  "resource_tweaks": { "mana": 20 },
+  // +12 health on top of the caster role.s -6: without it the Hexer resolves to 24 HP and the
+  // FIRST fight at depth 2 is weaker than the depth-1 Raider (30). Casters are meant to be
+  // squishy, not a step backwards.
+  "resource_tweaks": { "mana": 20, "health": 12 },
   "moves": ["move.venom_bolt", "move.wither", "move.arcane_dart", "move.goblin_slash"],
   "loot_table": "loot.actor.goblin_hexer"
 }

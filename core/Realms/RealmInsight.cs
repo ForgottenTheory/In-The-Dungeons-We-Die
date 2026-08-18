@@ -41,16 +41,26 @@ public enum RealmInsight
 /// </summary>
 public static class RealmKnowledgeLevels
 {
-    /// <summary>Knowledge required for each insight. Provisional, and parked with the rest of
-    /// the balance backlog — the ORDER is the design, the numbers are a first pass.</summary>
+    /// <summary>
+    /// Knowledge required for each insight. Set against the measured yield of one thorough Dark
+    /// Forest run (~71), so the ladder spans roughly <b>eight thorough runs</b> end to end:
+    /// 0.4 / 1.1 / 2.3 / 4.5 / 7.9.
+    ///
+    /// <para>The first cut shipped at 6/12/20/30/42 and a single first run cleared the whole
+    /// ladder — including the hidden routes that are supposed to be the reward for learning the
+    /// place. <c>DarkForestBalanceTests</c> now pins the ratio rather than the numbers, so
+    /// retuning the per-node grants cannot silently trivialise this again.</para>
+    ///
+    /// <para>Still a first pass on FEEL — nobody has played it. The ORDER is the design.</para>
+    /// </summary>
     public static readonly IReadOnlyDictionary<RealmInsight, int> Required =
         new Dictionary<RealmInsight, int>
         {
-            [RealmInsight.EnemyWeaknesses] = 6,
-            [RealmInsight.Hazards] = 12,
-            [RealmInsight.RichNodes] = 20,
-            [RealmInsight.HiddenRoutes] = 30,
-            [RealmInsight.ExtractionRoutes] = 42,
+            [RealmInsight.EnemyWeaknesses] = 30,
+            [RealmInsight.Hazards] = 75,
+            [RealmInsight.RichNodes] = 160,
+            [RealmInsight.HiddenRoutes] = 320,
+            [RealmInsight.ExtractionRoutes] = 560,
         };
 
     public static bool Reveals(int knowledge, RealmInsight insight) =>

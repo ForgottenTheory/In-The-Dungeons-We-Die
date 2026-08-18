@@ -127,7 +127,9 @@ coherent run.
    Camp, Shrine, Merchant and Hazard node kinds, three hidden nodes, an elite (Grask) and the
    first boss (Thornheart). **Realm Knowledge now unlocks five insights** — options, never
    damage. Deeper pays rarer: average drop rarity 0.78 at depth 1, 1.75 at depth 3.
-   **Not balanced**, and the realm has never been seen running in the editor.
+   **First balance pass ✅ (D38).** Coherence, not feel: measured against a 59 HP fresh
+   character. Fixed a depth-2 fight weaker than depth 1 (Hexer 24 → 36 HP) and a knowledge
+   ladder one run completed (thresholds ×~10, now ~8 thorough runs). **Feel is still unplayed.**
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -148,5 +150,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**995** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**1004** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.
