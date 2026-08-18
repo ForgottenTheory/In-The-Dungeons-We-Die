@@ -645,7 +645,7 @@ the mathematics; `MaterialTransformationEngine` is the orchestration.
 **IMPORTANT FILES** — `core/Crafting/EquipmentAssemblyEngine.cs`,
 `core/Crafting/EquipmentBlueprintDefinition.cs` (`BlueprintSlot`, `StatContribution`, `EquipmentAssemblyTuning`)
 
-**DATA** — `game/data/forms/forms.json` (**9 forms across 9 slots**: Longsword + Warspear
+**DATA** — `game/data/forms/forms.json` (**17 forms across 9 slots**: Longsword + Warspear
 (Weapon), Buckler (Offhand), Helm (Head), Vest (Body), Gauntlets (Hands), Treads (Feet), Focus
 (Trinket), Ring (Ring1 **or** Ring2 — one form fills both, D33)). Each exists to exercise a different part of the material system — the file's own
 header says which, and `tests/Crafting/FormBreadthTests.cs` holds it to that.

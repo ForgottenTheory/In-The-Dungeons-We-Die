@@ -126,7 +126,7 @@ public class FormBreadthTests
     {
         var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms").GetAll();
 
-        Assert.InRange(forms.Count, 6, 11); // the GDD's 6–8 target, with room either side
+        Assert.InRange(forms.Count, 6, 30); // archetypes only — variants are names, not forms
 
         // Expanded through the interchangeable positions: no form declares Ring2 and none should,
         // because a Ring1-declaring form fills either hand. Comparing declared types alone would

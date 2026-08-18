@@ -1046,14 +1046,32 @@ public static class ContentValidator
                         problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown slot '{read.Slot}'."));
                 }
 
+            var tags = new HashSet<string>(form.Tags, StringComparer.OrdinalIgnoreCase);
+
             foreach (var grant in form.Moves)
+            {
                 if (!moves.Contains(grant.Id))
+                {
                     problems.Add(new("forms", $"{form.Id} grants unknown move '{grant.Id}'."));
+                    continue;
+                }
+
+                // A granted move gated on equipment this form does not carry can NEVER fire. It
+                // sits in the moveset looking available forever, which is the actor-side
+                // equippedTag rule wearing a different hat — and it shipped: the Warspear
+                // granted the sword-gated Skewer for the whole of C2a.
+                foreach (var condition in moves.GetById(grant.Id).Requires)
+                {
+                    if (!string.Equals(condition.Kind, Dungeons.Rules.RuleVocabulary.EquippedTag, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (!tags.Contains(condition.Text))
+                        Problem($"grants '{grant.Id}', which requires the '{condition.Text}' tag — this form does not carry it, so the move could never fire.");
+                }
+            }
 
             if (form.Type == EquipmentSlot.Weapon && form.Moves.Count == 0)
                 Problem("is a weapon that grants no moves — since E4 a weapon IS its moves.");
 
-            var tags = new HashSet<string>(form.Tags, StringComparer.OrdinalIgnoreCase);
             if (form.Type == EquipmentSlot.Weapon && !tags.Contains("weapon"))
                 Problem("is a weapon but does not carry the 'weapon' tag, so no weapon modifier is available to it.");
             if (EquipmentSlots.GrantsArmor(form.Type) && !tags.Contains("armor") && !tags.Contains("shield"))

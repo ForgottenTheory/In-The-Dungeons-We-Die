@@ -258,5 +258,109 @@
     "packets": [ { "type": "Piercing", "amount": 19 } ],
     "stagger_power": 22,
     "description": "Thrown once, and thrown properly."
+  },
+
+  // --- Archetype weapon moves ----------------------------------------------------------------
+  //
+  // One defining move per weapon archetype, each gated on the tag its own form carries. The gate
+  // is the point: a weapon IS its moves (E4), so what separates a maul from a greatsword is not
+  // the damage number on the form, it is that only one of them can Pulverize.
+  //
+  // Every gate here is matched by a form tag — the validator now refuses a form that grants a
+  // move it cannot satisfy, which is how the Warspear's dead Skewer was found.
+  {
+    "id": "move.spear_thrust", "name": "Spear Thrust",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 12 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "requires": [ { "kind": "equippedTag", "text": "spear" } ],
+    "packets": [ { "type": "Piercing", "amount": 12 } ],
+    "description": "Reach is a weapon. The point is only the end of it."
+  },
+  {
+    "id": "move.backstab", "name": "Backstab",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 4, "recoveryTicks": 7 },
+    "costs": [ { "resource": "stamina", "amount": 5 } ],
+    "requires": [ { "kind": "equippedTag", "text": "dagger" } ],
+    "packets": [ { "type": "Piercing", "amount": 9 } ],
+    "description": "Fast, close, and entirely without ceremony."
+  },
+  {
+    "id": "move.cleave", "name": "Cleave",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "delivery:area"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 13, "recoveryTicks": 20 },
+    "costs": [ { "resource": "stamina", "amount": 14 } ],
+    "requires": [ { "kind": "equippedTag", "text": "greatsword" } ],
+    "packets": [ { "type": "Slashing", "amount": 21 } ],
+    "max_targets": 3,
+    "description": "One arc, and everything standing in it."
+  },
+  {
+    "id": "move.rend", "name": "Rend",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 15 },
+    "costs": [ { "resource": "stamina", "amount": 9 } ],
+    "requires": [ { "kind": "equippedTag", "text": "axe" } ],
+    "packets": [ { "type": "Slashing", "amount": 16 } ],
+    "description": "An axe does not cut so much as take."
+  },
+  {
+    "id": "move.pulverize", "name": "Pulverize",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 15, "recoveryTicks": 22 },
+    "costs": [ { "resource": "stamina", "amount": 16 } ],
+    "requires": [ { "kind": "equippedTag", "text": "maul" } ],
+    "packets": [ { "type": "Crushing", "amount": 27 } ],
+    "stagger_power": 40,
+    "description": "Armour is a suggestion. This is the counter-argument."
+  },
+  {
+    "id": "move.flail_crush", "name": "Flail Crush",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 17 },
+    "costs": [ { "resource": "stamina", "amount": 11 } ],
+    "requires": [ { "kind": "equippedTag", "text": "flail" } ],
+    "packets": [ { "type": "Crushing", "amount": 17 } ],
+    "stagger_power": 24,
+    "description": "It goes around the shield, because it is not rigid enough to be stopped by one."
+  },
+  {
+    "id": "move.staff_sweep", "name": "Staff Sweep",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:melee", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "stamina", "amount": 6 } ],
+    "requires": [ { "kind": "equippedTag", "text": "staff" } ],
+    "packets": [ { "type": "Crushing", "amount": 10 } ],
+    "stagger_power": 18,
+    "description": "Take the legs. Everything else follows."
+  },
+  {
+    "id": "move.aimed_shot", "name": "Aimed Shot",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 16, "recoveryTicks": 14 },
+    "costs": [ { "resource": "stamina", "amount": 10 } ],
+    "requires": [ { "kind": "equippedTag", "text": "bow" } ],
+    "packets": [ { "type": "Piercing", "amount": 22 } ],
+    "description": "The long draw. Everything depends on the arm holding still."
+  },
+  {
+    "id": "move.bolt_shot", "name": "Bolt Shot",
+    "kind": "Attack",
+    "tags": ["action:attack", "delivery:ranged", "delivery:projectile", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 20, "recoveryTicks": 24 },
+    "costs": [ { "resource": "stamina", "amount": 8 } ],
+    "requires": [ { "kind": "equippedTag", "text": "crossbow" } ],
+    "packets": [ { "type": "Piercing", "amount": 30 } ],
+    "stagger_power": 20,
+    "description": "Slow to load and utterly indifferent to what it hits."
   }
 ]

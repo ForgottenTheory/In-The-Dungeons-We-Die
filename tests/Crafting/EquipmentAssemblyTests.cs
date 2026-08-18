@@ -162,7 +162,14 @@ public class EquipmentAssemblyTests
         Assert.Equal("trait.emberveined", onEdge.Expressed[0].Id);
         Assert.Equal(60, onEdge.Expressed[0].Magnitude);
         Assert.Equal(16, onEdge.Expressed.Single(t => t.Id == "trait.verdant").Magnitude);
-        Assert.StartsWith("Emberveined Traited Longsword", onEdge.Name); // §16.5 naming
+        // §16.5 naming: trait adjective + material root + the form's noun. The noun is whichever
+        // of the Longsword's names this item's signature selects — a Kilij IS a longsword — so
+        // the grammar is asserted rather than one spelling of it.
+        Assert.StartsWith("Emberveined Traited ", onEdge.Name);
+        var longsword = harness.Content.Forms.GetById("form.longsword");
+        Assert.Contains(
+            onEdge.Name["Emberveined Traited ".Length..],
+            longsword.NameVariants.Append(longsword.Name));
 
         // Placement matters (§16.2): the same material as the CORE gates emberveined to
         // 60×0.3 → 18 while verdant's 80×0.3 → 24 now DOMINATES — the core's trait expression
@@ -173,7 +180,12 @@ public class EquipmentAssemblyTests
         Assert.True(onCore.Success, onCore.Failure.ToString());
         Assert.Equal(18, onCore.Expressed.Single(t => t.Id == "trait.emberveined").Magnitude);
         Assert.Equal(24, onCore.Expressed.Single(t => t.Id == "trait.verdant").Magnitude);
-        Assert.StartsWith("Verdant Iron Longsword", onCore.Name);
+        // The claim here is that the trait adjective and the material root both flipped — the
+        // noun is again whichever of the form's names the signature picked.
+        Assert.StartsWith("Verdant Iron ", onCore.Name);
+        Assert.Contains(
+            onCore.Name["Verdant Iron ".Length..],
+            longsword.NameVariants.Append(longsword.Name));
         Assert.NotEqual(onEdge.Item!.BaseDefinitionId, onCore.Item!.BaseDefinitionId);
     }
 

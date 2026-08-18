@@ -67,7 +67,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
-    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring"]
+    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail"]
   },
   {
     "id": "station.apothecary",
@@ -108,7 +108,7 @@
     "name": "Fletcher's Bench",
     "description": "Shafts, staves, strings and vanes. The haft is most of a spear, which is why the spear is made here and not at the Forge.",
     "professions": ["profession.fletching"],
-    "blueprints": ["form.warspear"]
+    "blueprints": ["form.warspear", "form.longbow", "form.crossbow", "form.quarterstaff"]
   },
   {
     "id": "station.workbench",
@@ -116,7 +116,7 @@
     "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
     "professions": ["profession.artifice"],
     "crafting_actions": ["process.grind"],
-    "blueprints": ["form.buckler", "form.focus", "form.ring"]
+    "blueprints": ["form.buckler", "form.focus", "form.ring", "form.crossbow", "form.dagger"]
   },
   {
     "id": "station.runic_altar",

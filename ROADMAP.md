@@ -105,6 +105,10 @@ coherent run.
    and a ninth form, the Ring, reading `conductivity`/`affinity` — the two properties no form
    read before it. One form fills both positions via `EquipmentSlots.InterchangeablePositions`;
    authoring a second near-identical ring form to fill `Ring2` is explicitly rejected.
+   **Weapons ✅ (D34).** 9 → **17 forms, ten of them weapons**; ~120 further weapon names ship as
+   `name_variants`, picked deterministically from the item signature and cosmetic by
+   construction. Nine archetype moves. A new rule catches forms granting moves they cannot fire
+   — which is how the Warspear's dead Skewer was found.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
    rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
@@ -125,5 +129,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**954** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**968** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

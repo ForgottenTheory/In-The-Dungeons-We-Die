@@ -54,6 +54,20 @@ public sealed class EquipmentBlueprintDefinition : IDefinition
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Other names this same form may be called. A Falchion, a Scimitar and a Sabre are one
+    /// blueprint — the same slots, the same reads, the same moves — so they are names here
+    /// rather than five near-identical forms that the "no two forms are the same form" rule
+    /// would rightly reject.
+    ///
+    /// <para>The pick is <b>deterministic from the item's signature</b>, not random: the same
+    /// materials in the same form always mint the same name, in preview and at the bench alike.
+    /// A variant is cosmetic by construction — nothing reads it, so it can never become a
+    /// mechanical difference by accident.</para>
+    /// </summary>
+    [JsonPropertyName("name_variants")]
+    public IReadOnlyList<string> NameVariants { get; init; } = Array.Empty<string>();
+
     public EquipmentSlot Type { get; init; } = EquipmentSlot.Weapon;
 
     public Dictionary<string, BlueprintSlot> Slots { get; init; } = new();

@@ -442,13 +442,21 @@ Equipment Form  +  Material(s) in named slots  →  Equipment Instance
   reaction bench has: a **pre-commit projection** computed by the same code path that mints the
   real item.
 
-**Built forms: 9 across all 9 slots** ✅, each existing to exercise a different part of the
+**Built forms: 17 across all 9 slots** ✅, each existing to exercise a different part of the
 material system rather than to add variety:
 
 | Form | Slot | What it tests |
 |---|---|---|
 | **Longsword** (3 slots) | Weapon | the calibration reference — hardness off the edge |
 | **Warspear** (3 slots) | Weapon | the counter-example — flexibility off the *haft*, which is 60% of it, so the iron that makes a great sword makes a mediocre spear |
+| **Dagger** | Weapon | almost no mass read anywhere — the one weapon where a rare, light, hard material is not wasted on a big lump of steel |
+| **Greatsword** | Weapon | reads mass at **1.20** across the whole item — the first form that *wants* to be heavy |
+| **Battle Axe** | Weapon | head-heavy: mass is read off the **head alone**, so a dense head on a light haft beats the same metal spread evenly |
+| **Maul** | Weapon | mass off the head at **1.40**, the highest weight in the file. Lead is a bad sword and a fine maul |
+| **Longbow** | Weapon | **the sharpest counter-example in the game** — flexibility off the limb at 1.10, hardness at 0.20. A bow limbed in iron is a bad bow |
+| **Crossbow** | Weapon | the bow's opposite answer: hardness off the *mechanism*, the smallest slot in the file |
+| **Quarterstaff** | Weapon | one slot, three reads — the teaching form, where a single material decides everything |
+| **Flail** | Weapon | the only form that wants a component to be **floppy**: flexibility off the chain |
 | **Buckler** | Offhand | the simplest possible form; declares `parry` |
 | **Helm** | Head | the only armour that reads **insulation** hard — where a fur lining beats a better metal |
 | **Vest** | Body | the hardness/flexibility trade-off |
@@ -460,6 +468,14 @@ material system rather than to add variety:
 A worn loadout's mitigation is the **sum of its pieces**, and how much each contributes is
 authored (a helm reads hardness at a lower weight than a vest) rather than coded as a per-slot
 multiplier.
+
+**~180 weapon names live on ten weapon forms, as `name_variants`.** A Falchion, a Scimitar and a
+Sabre are one blueprint — same slots, same reads, same moves — so they are *names*, not forms.
+Which one an item gets is derived from its **signature**, so it is deterministic (the preview
+promises the noun the bench mints) and identical for identical materials. A variant is cosmetic
+by construction: nothing reads it, so it can never quietly become a mechanical difference. If a
+weapon needs to *behave* differently, it needs a form, and the "no two forms are the same form"
+rule decides whether it has earned one.
 
 **The two ring positions are the one place the slot is not decided by the item.** Every ring
 definition names `Ring1` — a definition must name one slot — so the second ring you put on would

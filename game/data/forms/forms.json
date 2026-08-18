@@ -68,6 +68,10 @@
     },
     "trait_cap": 4,
     "moves": ["move.iron_slash", "move.heavy_strike"],
+    // Every one-handed straight or curved blade in the library. They differ by fashion and by
+    // where they were made, not by what the stat map reads off them — so they are names, and
+    // adding them cost nothing but this line.
+    "name_variants": ["Arming Sword", "Broadsword", "Falchion", "Scimitar", "Sabre", "Rapier", "Estoc", "Khopesh", "Kopis", "Falcata", "Dao", "Jian", "Katana", "Tachi", "Shotel", "Kilij", "Yatagan", "Talwar", "Firangi", "Messer", "Spatha", "Shamshir", "Pulwar", "Nimcha", "Flyssa", "Takoba", "Ida", "Backsword"],
     "description": "A proper blade. The material decides what kind of proper."
   },
 
@@ -106,8 +110,270 @@
       "flexibility": [ { "slot": "haft",  "property": "flexibility", "weight": 0.9 }, { "slot": "grip", "property": "flexibility", "weight": 0.3 } ]
     },
     "trait_cap": 4,
-    "moves": ["move.skewer", "move.quick_stab"],
+    // move.spear_thrust, not move.skewer: Skewer requires the `sword` tag, which a spear does
+    // not carry, so it sat here unusable for the whole of C2a. A validator rule now catches it.
+    "moves": ["move.spear_thrust", "move.quick_stab"],
+    "name_variants": ["Pike", "Lance", "Boar Spear", "Awl Pike", "Dory", "Sarissa", "Yari", "Hooked Spear", "Hunting Spear", "Trident", "Military Fork", "Ranseur", "Spetum", "Partisan", "Corseque"],
     "description": "Reach, and the discipline to use it. Most of a spear is the part nobody looks at."
+  },
+
+  {
+    // The small blade. Almost no mass anywhere in the stat map, which is what makes it the one
+    // weapon where a rare, light, hard material is not wasted on a big lump of steel.
+    "id": "form.dagger",
+    "name": "Dagger",
+    "type": "Weapon",
+    "tags": ["weapon", "dagger", "metal"],
+    "slots": {
+      "blade": {
+        "requires_tags": ["form:metal", "form:crystal", "form:bone"],
+        "mass_share": 0.75,
+        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.6, "structural": 0.9 }
+      },
+      "hilt": {
+        "requires_tags": ["form:hide", "form:fiber", "form:wood", "form:leather"],
+        "mass_share": 0.25,
+        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness": [ { "slot": "blade", "property": "hardness", "weight": 0.9 } ],
+      "mass":     [ { "slot": "*",     "property": "mass",     "weight": 0.35 } ]
+    },
+    "trait_cap": 2,
+    "moves": ["move.backstab", "move.quick_stab"],
+    "name_variants": ["Rondel Dagger", "Dirk", "Stiletto", "Kris", "Katar", "Push Dagger", "Parrying Dagger", "Main-Gauche", "Baselard", "Bollock Dagger", "Misericorde", "Jambiya", "Khanjar", "Kukri", "Qama", "Kindjal", "Sica", "Seax", "Cinquedea", "Skinning Knife", "Throwing Knife"],
+    "description": "Small enough to carry everywhere, which is most of the argument for it."
+  },
+
+  {
+    // The heavy end of the sword family: it carries the `sword` tag, so every sword move works,
+    // and Cleave on top. Mass is read at OVER 1.0 off the whole item — the only form in the file
+    // that wants to be heavy, which flips the usual "dense metal is a cost" pressure.
+    "id": "form.greatsword",
+    "name": "Greatsword",
+    "type": "Weapon",
+    "tags": ["weapon", "sword", "greatsword", "metal"],
+    "slots": {
+      "blade": {
+        "requires_tags": ["form:metal", "form:crystal"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 0.8, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+      },
+      "crossguard": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.5, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 0.9 }
+      },
+      "grip": {
+        "requires_tags": ["form:hide", "form:fiber", "form:leather", "form:cloth"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "blade", "property": "hardness",    "weight": 0.75 } ],
+      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 1.20 } ],
+      "flexibility": [ { "slot": "blade", "property": "flexibility", "weight": 0.25 } ]
+    },
+    "trait_cap": 4,
+    "moves": ["move.cleave", "move.heavy_strike", "move.iron_slash"],
+    "name_variants": ["Zweihander", "Flamberge", "Claymore", "Bastard Sword", "Nodachi", "Kriegsmesser", "Dadao", "Rhomphaia", "Espadon"],
+    "description": "Two hands, and a good reason for both."
+  },
+
+  {
+    // Head-heavy on purpose: mass is read off the HEAD alone rather than the whole item, so a
+    // dense head on a light haft beats the same metal spread evenly. The opposite bookkeeping to
+    // the Longsword, which reads mass across everything.
+    "id": "form.battleaxe",
+    "name": "Battle Axe",
+    "type": "Weapon",
+    "tags": ["weapon", "axe", "metal"],
+    "slots": {
+      "head": {
+        "requires_tags": ["form:metal", "form:stone", "form:crystal"],
+        "mass_share": 0.60,
+        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 0.7, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "haft": {
+        "requires_tags": ["form:wood", "form:fiber", "form:bone", "form:metal"],
+        "mass_share": 0.40,
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+      }
+    },
+    "stat_map": {
+      "hardness": [ { "slot": "head", "property": "hardness", "weight": 0.85 } ],
+      "mass":     [ { "slot": "head", "property": "mass",     "weight": 0.90 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.rend", "move.overhead_crush"],
+    "name_variants": ["Hand Axe", "Bearded Axe", "Dane Axe", "Francisca", "Tabar", "Sagaris", "Throwing Axe", "Hatchet", "Wood Axe", "Woodcutter's Axe", "Parashu", "Bhuj", "Falx"],
+    "description": "Weight where the work happens, and nowhere else."
+  },
+
+  {
+    // Where heavy is the whole point. Mass is read off the head at 1.4 — the highest weight in
+    // the file — so this is the one form a lead or gold head is not a joke on.
+    "id": "form.maul",
+    "name": "Maul",
+    "type": "Weapon",
+    "tags": ["weapon", "maul", "hammer"],
+    "slots": {
+      "head": {
+        "requires_tags": ["form:metal", "form:stone", "form:crystal"],
+        "mass_share": 0.70,
+        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 0.4, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "haft": {
+        "requires_tags": ["form:wood", "form:metal", "form:bone"],
+        "mass_share": 0.30,
+        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.5, "arcane": 0.5, "structural": 0.8 }
+      }
+    },
+    "stat_map": {
+      "mass":        [ { "slot": "head", "property": "mass",        "weight": 1.40 } ],
+      "hardness":    [ { "slot": "head", "property": "hardness",    "weight": 0.50 } ],
+      "flexibility": [ { "slot": "haft", "property": "flexibility", "weight": 0.30 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.pulverize", "move.crash"],
+    "name_variants": ["Warhammer", "Mace", "Flanged Mace", "Morning Star", "Club", "Cudgel", "War Club", "Knobkerrie", "Kanabo", "Tetsubo", "Goedendag", "Lucerne Hammer", "Mere", "Blacksmith Hammer", "Mining Hammer", "War Pick", "Horseman's Pick", "Zaghnal", "Pickaxe"],
+    "description": "No edge, no subtlety, no argument."
+  },
+
+  {
+    // THE flexibility weapon, and the sharpest counter-example in the file: a bow limbed in iron
+    // is a terrible bow. Hardness barely registers and mass is a cost, so every instinct the
+    // Longsword teaches is wrong here — which is exactly why yew, horn and sinew exist.
+    "id": "form.longbow",
+    "name": "Longbow",
+    "type": "Weapon",
+    "tags": ["weapon", "bow"],
+    "slots": {
+      "limb": {
+        "requires_tags": ["form:wood", "form:horn", "form:bone", "form:fiber"],
+        "mass_share": 0.65,
+        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.8, "arcane": 0.7, "structural": 0.9 }
+      },
+      "string": {
+        "requires_tags": ["form:fiber", "form:hide", "form:cloth"],
+        "mass_share": 0.20,
+        "trait_expression": { "thermal": 0.2, "charge": 0.4, "toxic": 0.4, "vital": 0.7, "arcane": 0.4, "structural": 0.4 }
+      },
+      "grip": {
+        "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:wood"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+      }
+    },
+    "stat_map": {
+      "flexibility": [ { "slot": "limb", "property": "flexibility", "weight": 1.10 }, { "slot": "string", "property": "flexibility", "weight": 0.40 } ],
+      "hardness":    [ { "slot": "limb", "property": "hardness",    "weight": 0.20 } ],
+      "mass":        [ { "slot": "*",    "property": "mass",        "weight": 0.25 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.aimed_shot", "move.arrow_shot"],
+    "name_variants": ["Shortbow", "Recurve Bow", "Composite Bow", "War Bow", "Hunting Bow"],
+    "description": "Stores everything you put into it, and gives it all back at once."
+  },
+
+  {
+    // The bow's opposite answer to the same problem: where a bow needs a limb that bends and
+    // returns, a crossbow spends hardness on a MECHANISM and holds the draw for you. Reads
+    // hardness off the smallest slot in the file, which is a real placement puzzle.
+    "id": "form.crossbow",
+    "name": "Crossbow",
+    "type": "Weapon",
+    "tags": ["weapon", "crossbow"],
+    "slots": {
+      "prod": {
+        "requires_tags": ["form:metal", "form:wood", "form:horn", "form:bone"],
+        "mass_share": 0.45,
+        "trait_expression": { "thermal": 0.6, "charge": 0.6, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 1.0 }
+      },
+      "stock": {
+        "requires_tags": ["form:wood", "form:bone", "form:metal"],
+        "mass_share": 0.40,
+        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+      },
+      "mechanism": {
+        "requires_tags": ["form:metal", "form:bone", "form:horn"],
+        "mass_share": 0.15,
+        "trait_expression": { "thermal": 0.7, "charge": 0.8, "toxic": 0.2, "vital": 0.2, "arcane": 0.6, "structural": 1.0 }
+      }
+    },
+    "stat_map": {
+      "hardness":    [ { "slot": "mechanism", "property": "hardness",    "weight": 0.70 }, { "slot": "prod", "property": "hardness", "weight": 0.30 } ],
+      "flexibility": [ { "slot": "prod",      "property": "flexibility", "weight": 0.55 } ],
+      "mass":        [ { "slot": "*",         "property": "mass",        "weight": 0.80 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.bolt_shot"],
+    "name_variants": ["Heavy Crossbow", "Hand Crossbow", "Repeating Crossbow", "Arbalest"],
+    "description": "Holds the draw so you do not have to. Everything else about it is that trade."
+  },
+
+  {
+    // One slot, one material, three reads — the simplest weapon in the file and the only one
+    // where a single choice decides everything. The teaching form: fabricate one, then fabricate
+    // it again in something else and read the difference with nothing else in the way.
+    "id": "form.quarterstaff",
+    "name": "Quarterstaff",
+    "type": "Weapon",
+    "tags": ["weapon", "staff", "polearm"],
+    "slots": {
+      "shaft": {
+        "requires_tags": ["form:wood", "form:metal", "form:bone", "form:crystal"],
+        "mass_share": 1.0,
+        "trait_expression": { "thermal": 0.5, "charge": 0.7, "toxic": 0.3, "vital": 0.7, "arcane": 0.9, "structural": 0.8 }
+      }
+    },
+    "stat_map": {
+      "flexibility": [ { "slot": "shaft", "property": "flexibility", "weight": 0.80 } ],
+      "mass":        [ { "slot": "shaft", "property": "mass",        "weight": 0.60 } ],
+      "hardness":    [ { "slot": "shaft", "property": "hardness",    "weight": 0.40 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.staff_sweep", "move.quick_stab"],
+    "name_variants": ["Bo Staff", "Shillelagh", "Eku", "Walking Staff"],
+    "description": "A stick, until someone who knows what they are doing picks it up."
+  },
+
+  {
+    // Mass in the head, flexibility in the CHAIN — the only form that wants a component to be
+    // floppy. A rigid chain is a bad flail, which is a sentence no other form in the file could
+    // produce.
+    "id": "form.flail",
+    "name": "Flail",
+    "type": "Weapon",
+    "tags": ["weapon", "flail"],
+    "slots": {
+      "head": {
+        "requires_tags": ["form:metal", "form:stone", "form:crystal"],
+        "mass_share": 0.50,
+        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 0.5, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+      },
+      "chain": {
+        "requires_tags": ["form:metal", "form:fiber", "form:hide"],
+        "mass_share": 0.25,
+        "trait_expression": { "thermal": 0.5, "charge": 0.8, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 0.6 }
+      },
+      "haft": {
+        "requires_tags": ["form:wood", "form:metal", "form:bone"],
+        "mass_share": 0.25,
+        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.6, "arcane": 0.5, "structural": 0.7 }
+      }
+    },
+    "stat_map": {
+      "mass":        [ { "slot": "head",  "property": "mass",        "weight": 1.00 } ],
+      "hardness":    [ { "slot": "head",  "property": "hardness",    "weight": 0.60 } ],
+      "flexibility": [ { "slot": "chain", "property": "flexibility", "weight": 0.75 } ]
+    },
+    "trait_cap": 3,
+    "moves": ["move.flail_crush", "move.crash"],
+    "name_variants": ["Two-Handed Flail", "Chain Sickle", "Kusarigama", "Meteor Hammer"],
+    "description": "It arrives after you think it has, and from a direction you did not pick."
   },
 
   // ══ OFFHAND ═════════════════════════════════════════════════════════════════════════════════

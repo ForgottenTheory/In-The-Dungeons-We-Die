@@ -297,8 +297,10 @@ public sealed class EquipmentAssemblyEngine
         // The heaviest slot names the item: an iron-edged longsword is an "Iron Longsword".
         var primarySlotName = form.Slots.OrderByDescending(s => s.Value.MassShare)
             .ThenBy(s => s.Key, StringComparer.Ordinal).First().Key;
-        var name = ComposeName(form, components[primarySlotName].Material, expressed);
+        // Signature first: the form noun may be one of several name variants, and which one is
+        // derived from the signature so preview and mint can never disagree.
         var signature = ComputeSignature(form, components, stats);
+        var name = ComposeName(form, components[primarySlotName].Material, expressed, signature);
 
         // ---- The ItemPotential (affixes.md §2.1) — computed here, stored on the instance, never
         // recomputed. MaterialStrength is the mass-share-weighted mean of the components (a mean, so
@@ -326,14 +328,41 @@ public sealed class EquipmentAssemblyEngine
     private string ComposeName(
         EquipmentBlueprintDefinition blueprint,
         MaterialDefinition primaryMaterial,
-        IReadOnlyList<TraitInstance> expressed)
+        IReadOnlyList<TraitInstance> expressed,
+        string signature)
     {
         var root = primaryMaterial.Name.Split(' ')[0];
+        var noun = FormNoun(blueprint, signature);
         var dominant = expressed.OrderByDescending(t => t.Magnitude).FirstOrDefault();
         var adjective = dominant is null ? null
             : _content.Traits.TryGetById(dominant.Id, out var def) ? def.Name : null;
-        return adjective is null ? $"{root} {blueprint.Name}" : $"{adjective} {root} {blueprint.Name}";
+        return adjective is null ? $"{root} {noun}" : $"{adjective} {root} {noun}";
     }
+
+    /// <summary>
+    /// The form's noun, which may be one of its <see cref="EquipmentBlueprintDefinition.NameVariants"/>.
+    ///
+    /// <para>Chosen from the signature rather than the RNG, because the signature already means
+    /// "this exact item kind": the same materials in the same form always read the same way, so
+    /// two identical blades are never a Falchion and a Scimitar, and the pre-commit projection
+    /// promises the name the bench will actually mint.</para>
+    /// </summary>
+    private static string FormNoun(EquipmentBlueprintDefinition blueprint, string signature)
+    {
+        if (blueprint.NameVariants.Count == 0)
+            return blueprint.Name;
+
+        var options = new List<string>(blueprint.NameVariants.Count + 1) { blueprint.Name };
+        options.AddRange(blueprint.NameVariants);
+
+        // ComputeSignature ends in eight hex characters of SHA-256 — already well distributed,
+        // so it needs spreading rather than re-hashing.
+        var hash = Convert.ToUInt32(signature[^SignatureHexLength..], 16);
+        return options[(int)(hash % (uint)options.Count)];
+    }
+
+    /// <summary>How many hex characters <see cref="ComputeSignature"/> ends with.</summary>
+    private const int SignatureHexLength = 8;
 
     /// <summary>Same form + same component archetypes + same stats = the same item kind —
     /// material archetype ids already encode their whole state, so this stays short.</summary>
