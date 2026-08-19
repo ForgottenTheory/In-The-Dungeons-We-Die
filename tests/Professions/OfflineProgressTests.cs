@@ -100,7 +100,7 @@ public class OfflineProgressTests
     {
         var system = new ProfessionSystem(Store(Chopping()), new Inventory(), new FakeRandom())
         {
-            MasteryBenefits = TestPaths.ShippedMasteryLadder(),
+            Benefits = ProfessionBenefits.FromMasteryLadder(TestPaths.ShippedMasteryLadder()),
         };
         var oneHour = 60 * 60.0;
         var naiveCompletions = (int)(oneHour * ProfessionTuning.TicksPerSecond / 100);
@@ -109,6 +109,35 @@ public class OfflineProgressTests
 
         Assert.True(report.CompletedActions > naiveCompletions,
             $"expected mastery to buy more than the naive {naiveCompletions}, got {report.CompletedActions}");
+    }
+
+    /// <summary>
+    /// Preservation and doubling fire while away, because an absence runs the same
+    /// <see cref="ProfessionSystem.Execute"/> live passive play does — asserted directly rather
+    /// than trusted by transitivity, since "offline quietly misses one of the mastery benefits"
+    /// is exactly the sort of thing nobody would notice.
+    /// </summary>
+    [Fact]
+    public void PreservationAndDoublingFireWhileAway()
+    {
+        var inventory = new Inventory();
+        inventory.Add("material.oak_log", 40);
+
+        // Mastered to the ceiling, so both unlocks (20 and 40) are live, and every chance roll
+        // lands — this is a statement about which levers apply, not a sample.
+        var system = new ProfessionSystem(Store(Sawing()), inventory, new FakeRandom(@default: 0.0))
+        {
+            Benefits = ProfessionBenefits.FromMasteryLadder(TestPaths.ShippedMasteryLadder()),
+        };
+        system.GetProgress("profession.forestry").AddMastery("action.saw_oak_planks", MasteryLeveling.MaxLevel);
+
+        var report = OfflineProgressCalculator.Apply(system, "action.saw_oak_planks", SecondsFor(5));
+
+        // Completion count is left to the ladder — mastery also shortens the interval, so
+        // pinning it here would make this test fail every time the interval rung is retuned.
+        Assert.True(report.CompletedActions > 0);
+        Assert.Equal(40, inventory.GetQuantity("material.oak_log")); // preserved: nothing consumed
+        Assert.Equal(report.CompletedActions * 4, inventory.GetQuantity("material.oak_plank")); // doubled: 2 → 4
     }
 
     [Fact]

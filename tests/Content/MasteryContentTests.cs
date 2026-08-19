@@ -17,7 +17,7 @@ public class MasteryContentTests
 {
     private static MasteryBenefitDefinition Rung(
         string id = "mastery.test",
-        MasteryBenefitKind kind = MasteryBenefitKind.IntervalReduction,
+        ProfessionBenefitKind kind = ProfessionBenefitKind.IntervalReduction,
         int unlockLevel = 1,
         double perLevel = 0.005,
         double max = 0.4,
@@ -49,7 +49,7 @@ public class MasteryContentTests
     [Fact]
     public void ACompleteLadderIsAccepted()
     {
-        var ladder = Enum.GetValues<MasteryBenefitKind>()
+        var ladder = Enum.GetValues<ProfessionBenefitKind>()
             .Select(kind => Rung($"mastery.{kind}", kind))
             .ToArray();
 
@@ -115,7 +115,7 @@ public class MasteryContentTests
     public void APartialLadderIsRejected()
     {
         Assert.Contains(
-            ProblemsFor(Rung(kind: MasteryBenefitKind.IntervalReduction)),
+            ProblemsFor(Rung(kind: ProfessionBenefitKind.IntervalReduction)),
             p => p.Message.Contains("no general rung"));
     }
 

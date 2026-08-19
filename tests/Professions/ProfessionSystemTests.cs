@@ -123,7 +123,7 @@ public class ProfessionSystemTests
     public void EffectiveInterval_ReflectsMastery()
     {
         var (system, _) = Build(Chop);
-        system.MasteryBenefits = TestPaths.ShippedMasteryLadder();
+        system.Benefits = ProfessionBenefits.FromMasteryLadder(TestPaths.ShippedMasteryLadder());
         Assert.Equal(100, system.EffectiveIntervalTicks("action.chop_oak"));
 
         system.GetProgress("profession.forestry").AddMastery("action.chop_oak", 20);

@@ -48,7 +48,7 @@ public class ActionResolverTests
         // where passive base 0.2 alone would fail.
         var yield = ActionResolver.Resolve(
             ChopOak(), mastery: 40, performance: 0, new FakeRandom(@default: 0.25),
-            masteryBenefits: TestPaths.ShippedMasteryLadder());
+            professionBenefits: ProfessionBenefits.FromMasteryLadder(TestPaths.ShippedMasteryLadder()));
 
         Assert.Contains(yield.Produced, s => s.ItemId == "material.oak_bark");
     }

@@ -35,6 +35,13 @@ public sealed class ContentBundle
     /// <summary>The shared mastery ladder — what repeating one action buys (Phase 8).</summary>
     public DataStore<MasteryBenefitDefinition> MasteryBenefits { get; init; } = new();
 
+    /// <summary>Cross-profession and global bonuses (Phase 10) — the second source of the same
+    /// six quantities the mastery ladder pays into.</summary>
+    public DataStore<ProfessionSynergyDefinition> Synergies { get; init; } = new();
+
+    /// <summary>Auto-combat brains (Phase 10): the player's side of the AI-profile machinery.</summary>
+    public DataStore<AutoCombatProfileDefinition> AutoCombatProfiles { get; init; } = new();
+
     /// <summary>Hideout stations — the player-facing entry points into the professions,
     /// the crafting bench and equipment assembly. Routing only; they own no rules.</summary>
     public DataStore<StationDefinition> Stations { get; init; } = new();

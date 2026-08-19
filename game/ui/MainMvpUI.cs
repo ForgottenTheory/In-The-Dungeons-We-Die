@@ -45,6 +45,7 @@ public partial class MainMvpUI : Control
     // --- Hideout ------------------------------------------------------------
     private Label _professionSummaryLabel = null!;
     private Label _passiveStatusLabel = null!;
+    private AwaySummaryPanel _awaySummary = null!;
     private PanelContainer _opportunityCard = null!;
     private Label _opportunityTitle = null!;
     private Label _opportunityPrompt = null!;
@@ -128,9 +129,14 @@ public partial class MainMvpUI : Control
         else
         {
             _passiveBar.Value = _game.PassiveProgress * 100.0;
-            _passiveStatusLabel.Text = _game.IsPassiveRunning
-                ? $"Passive: {_game.ActionName(_game.CurrentPassiveActionId!)}"
-                : "Passive: (idle)";
+
+            // Three states, not two: a selection that ran out of materials is WAITING, and the
+            // player needs to be able to tell that from having chosen nothing (Phase 10).
+            _passiveStatusLabel.Text = _game.CurrentPassiveActionId is not { } selected
+                ? "Passive: (idle)"
+                : _game.IsPassiveWaiting
+                    ? $"Waiting: {_game.ActionName(selected)} (no materials)"
+                    : $"Passive: {_game.ActionName(selected)}";
         }
 
         if (_game.IsCombatActive)
@@ -311,6 +317,11 @@ public partial class MainMvpUI : Control
     {
         root.AddChild(SectionTitle("Hideout"));
 
+        // What happened while the game was closed, at the top because on the session where it
+        // has anything to say it is the first thing that matters.
+        _awaySummary = new AwaySummaryPanel(_game);
+        root.AddChild(_awaySummary);
+
         // --- The activity strip: what is running, and what is on offer ----------
         var passiveRow = Row();
         root.AddChild(passiveRow);
@@ -325,9 +336,10 @@ public partial class MainMvpUI : Control
         passiveRow.AddChild(_timingBar);
 
         var offlineNote = Wrapping(Muted);
-        offlineNote.Text = "Whatever is running when you save keeps going while the game is closed — same rate, "
-                          + "no opportunities. Levelling never needs you at the keyboard. Active play aims for the "
-                          + "middle of the sweep.";
+        offlineNote.Text = "Whatever is selected when you save keeps going while the game is closed — same rate, "
+                          + "no opportunities. Levelling never needs you at the keyboard. It also keeps the "
+                          + "selection when the materials run out and picks it back up when there are more, so "
+                          + "only Stop actually stops it. Active play aims for the middle of the sweep.";
         root.AddChild(offlineNote);
 
         _opportunityCard = Card(BuildOpportunityPanel());
@@ -659,6 +671,8 @@ public partial class MainMvpUI : Control
         };
         actionRow.AddChild(trace);
 
+        BuildAutoCombatRow(root);
+
         _hitLogLabel = new Label();
         _hitLogLabel.AddThemeFontOverride("font",
             new SystemFont { FontNames = new[] { "Consolas", "monospace" } });
@@ -666,6 +680,52 @@ public partial class MainMvpUI : Control
         _hitLogCard.Visible = false;
         root.AddChild(_hitLogCard);
     }
+
+    /// <summary>
+    /// The auto-combat controls (Phase 10). A toggle and a brain, and a line saying plainly what
+    /// handing the fight over costs — automation is meant to be a legible trade, not a hidden
+    /// nerf, so the reaction latency is stated rather than discovered.
+    /// </summary>
+    private void BuildAutoCombatRow(VBoxContainer root)
+    {
+        var row = Row();
+        root.AddChild(row);
+
+        var toggle = new CheckButton { Text = "Auto-combat", ButtonPressed = _game.AutoCombatEnabled };
+        toggle.Toggled += on => _game.SetAutoCombatEnabled(on);
+        row.AddChild(toggle);
+
+        var profiles = _game.AutoCombatProfiles;
+        var picker = new OptionButton { CustomMinimumSize = new Vector2(160, 0) };
+        for (var index = 0; index < profiles.Count; index++)
+            picker.AddItem(profiles[index].Name, index);
+
+        var active = _game.ActiveAutoCombatProfile();
+        if (active is not null)
+        {
+            picker.Selected = Math.Max(0, profiles.ToList().FindIndex(profile => profile.Id == active.Id));
+            _game.SetAutoCombatProfile(active.Id); // so the picker and the pilot start in step
+        }
+
+        picker.ItemSelected += index =>
+        {
+            var chosen = _game.AutoCombatProfiles[(int)index];
+            _game.SetAutoCombatProfile(chosen.Id);
+            _autoCombatNote.Text = AutoCombatNote(chosen);
+        };
+        row.AddChild(picker);
+
+        _autoCombatNote = Wrapping(Muted);
+        _autoCombatNote.Text = active is null ? string.Empty : AutoCombatNote(active);
+        root.AddChild(_autoCombatNote);
+    }
+
+    private Label _autoCombatNote = null!;
+
+    private static string AutoCombatNote(AutoCombatProfileDefinition profile) =>
+        $"{profile.Description}  It reacts in {profile.ReactionTicks} ticks, so it blocks and dodges "
+        + "reliably and can never land a Perfect Block or a Parry — that is automation's only "
+        + "disadvantage. Gear that widens defensive windows is worth more to it than to you.";
 
     private void BuildInventorySection(VBoxContainer root)
     {

@@ -30,6 +30,13 @@ public static class ProfessionTuning
     /// still stumble onto something; at 1 it is worth this much more.</summary>
     public const double OpportunityChancePerformanceScale = 1.0;
 
+    /// <summary>
+    /// How often a standing training selection that ran out of materials looks again (2s at 20
+    /// ticks/s). Cheap enough to be frequent, slow enough that a permanently-starved selection
+    /// is not a per-tick check for the rest of the session.
+    /// </summary>
+    public const int PassiveRetryIntervalTicks = 40;
+
     // --- Offline progression -------------------------------------------------
 
     /// <summary>
@@ -52,7 +59,7 @@ public static class ProfessionTuning
     /// can ever cost nothing.
     ///
     /// <para>The <em>magnitude</em> of the reduction is content now
-    /// (<see cref="MasteryBenefitKind.IntervalReduction"/>); what stays here is the rounding and
+    /// (<see cref="ProfessionBenefitKind.IntervalReduction"/>); what stays here is the rounding and
     /// the floor, which are rules rather than balance.</para>
     /// </summary>
     public static int EffectiveIntervalTicks(int baseIntervalTicks, double reduction)
@@ -63,15 +70,17 @@ public static class ProfessionTuning
 
     /// <summary>
     /// Chance for one active attempt to surface an opportunity with base chance
-    /// <paramref name="baseChance"/>, given what mastery already adds.
+    /// <paramref name="baseChance"/>, given what the player's progress already adds
+    /// (<paramref name="addedChance"/> — mastery in this action plus any synergy that reaches
+    /// this profession).
     ///
     /// <para>Passive never calls this — the discovery roll happens only on the active path, which
     /// is what makes "fewer rare outcomes" structural rather than a tuning number.</para>
     /// </summary>
-    public static double OpportunityDiscoveryChance(double baseChance, double masteryBonus, double performance)
+    public static double OpportunityDiscoveryChance(double baseChance, double addedChance, double performance)
     {
         var fromPerformance = baseChance * (1.0 + (performance * OpportunityChancePerformanceScale));
-        return Math.Clamp(fromPerformance + masteryBonus, 0.0, 1.0);
+        return Math.Clamp(fromPerformance + addedChance, 0.0, 1.0);
     }
 
     /// <summary>Effective risk of pursuing, after experience has talked it down.</summary>

@@ -162,7 +162,7 @@ Progression runs on **multiple independent tracks**. There is deliberately no si
 | Realm Knowledge (per realm) | Yes | No | ✅ Five insights unlock at 6/12/20/30/42: enemy weaknesses, hazards, rich nodes, **hidden routes**, extraction routes. Options only — never damage |
 | Crafting discoveries | Yes | No | ✅ |
 | Equipment owned | Yes | Gear is safe by default | ✅ |
-| Character level & attributes | Yes | No | 📐 growth weights exist; **nothing awards XP** |
+| Character level & attributes | Yes | No | ✅ Realm work only — defeating and extracting; the Hideout awards none (D40) |
 | **Unsecured Realm loot** | **No** | **Yes** | ✅ |
 
 **Horizontal over vertical**: progress should unlock options, routes and material combinations —
@@ -176,8 +176,10 @@ lower ceiling, fewer rare outcomes. Active rewards real performance, never merel
 Active Mode" — which is why active play carries the Discover → Pursue decision (§5) and passive
 structurally cannot roll for one.
 
-📐 Designed, not built: preservation · doubling · mastery unlocks · cross-skill bonuses ·
-global passives.
+✅ Built since: preservation and doubling (mastery unlocks at 20/40) · mastery-gated
+opportunities · **cross-profession synergies** and **global total-level bonuses** (D41), all
+paying into the same six quantities through one seam. 📐 Still designed-not-built: profession
+tools (E6) — the third source of those same six.
 
 ---
 
@@ -196,9 +198,12 @@ level-gated ladders, and one execute path behind all twenty.
 **Three modes, and the difference between them is structural, not a number:**
 
 - **Passive** — automatic, reliable, lower yield, and it *never rolls for opportunities*.
-- **Offline** — a first-class path, not a courtesy. Whatever passive action is running when you
-  close the game keeps running, at the same rate, through the same execute path. **Levelling
-  never requires being at the keyboard.** Capped at 12h.
+- **Offline** — a first-class path, not a courtesy. Whatever training is selected when you close
+  the game keeps running, at the same rate, through the same execute path. **Levelling never
+  requires being at the keyboard.** Capped at 12h. The selection is *standing*: running out of
+  materials makes it wait and resume when there are more, so only Stop stops it. You come back to
+  a **summary** — completions, what you now have, XP, and which professions levelled — and it
+  says plainly when the cap or an empty chest cut the payout short.
 - **Active** — a timing score, plus **Discover → Pursue / Ignore**: an active attempt can
   surface an offer (a rich vein, a shape under the boat, an unattended satchel, an unmarked side
   path). Pursuing costs real time on the shared tick engine and can be lost to risk. Declining
@@ -760,12 +765,19 @@ chosen to **exercise a distinct combat mechanic** rather than for variety's own 
 material library — hide, bone, gland, venom — so Beast Lore harvesting feeds crafting, which
 feeds equipment, which feeds the next run. 📐
 
-## 11.9 Auto-combat 📐 and positioning ❓
+## 11.9 Auto-combat ✅ and positioning ❓
 
-- **Auto-combat uses the same rules.** Automation chooses actions; the domain resolves them
-  normally. There is deliberately no separate "fake" combat calculator. It is disadvantaged by
-  *reaction latency*, never by a damage penalty. The profile machinery exists (enemies use it);
-  pointing it at the player does not.
+- **Auto-combat uses the same rules — and it is now built (Phase 10, D41).** Automation chooses
+  actions; the domain resolves them normally. There is deliberately no separate "fake" combat
+  calculator. The pilot hands the *player* combatant one of three authored brains and then presses
+  the same buttons a hand would.
+- **Its only disadvantage is reaction latency**, never a damage penalty. It must commit a stance
+  8 ticks before impact, so it blocks and dodges reliably and can never land a Perfect Block or a
+  Parry — and anything faster than it can react to simply lands. Window-widening gear is therefore
+  worth *more* to an automated build than to a present player, which is a real, discoverable
+  difference between playstyles.
+- **Still live-only.** It plays fights you are watching. Fully unattended Realm runs — travel,
+  extraction decisions, the risk of losing the bag — are a different problem and are not built.
 - **Positioning** is explicitly deferred without a decision on whether it is ever coming. Adding
   it later multiplies the design space of every move and every enemy.
 
@@ -1024,7 +1036,8 @@ progression track nothing reads, D29.2) · profession tools (E6) · UI (debug co
 the Realm Preparation screen).
 
 *Mastery, Realm Knowledge and character XP left this list in Phase 8 (D40); loot and the enemy
-roster left it in M6.*
+roster left it in M6; auto-combat, cross-profession synergies and global bonuses left it in
+Phase 10 (D41).*
 
 ## 📐 DESIGNED — decided and specified, not built
 
@@ -1032,7 +1045,7 @@ Crafting operations + Overreach + Anomalous modifiers · Exotic and Signature mo
 signature reactions · consumable forms · the Codex & Assay layer · profession tools + the yield
 pipeline · form acquisition (ladders + schematics) · loot tables with the D28 input-only rule ·
 relic materials and sealed uniques · realm affixes and tiers · elite
-and boss variants · auto-combat · offline progress · character XP and levels.
+and boss variants.
 
 ## ❓ UNRESOLVED — do not assume an answer exists
 

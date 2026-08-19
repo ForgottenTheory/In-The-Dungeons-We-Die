@@ -33,11 +33,12 @@ public sealed class ProfessionSystem
     private readonly Dictionary<string, ProfessionProgress> _progress = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// What mastery is currently worth. Settable rather than constructor-only because the host
-    /// builds the profession system before content validation finishes, and because a test that
-    /// does not care about mastery should not have to supply a ladder.
+    /// What the player's progress is currently worth to their work — the mastery ladder and the
+    /// synergy table folded into one answer. Settable rather than constructor-only because the
+    /// host builds the profession system before content validation finishes, and because a test
+    /// that does not care about benefits should not have to supply a ladder.
     /// </summary>
-    public MasteryBenefits MasteryBenefits { get; set; } = MasteryBenefits.None;
+    public ProfessionBenefits Benefits { get; set; } = ProfessionBenefits.None;
 
     public ProfessionSystem(
         DataStore<ProfessionActionDefinition> actions,
@@ -110,7 +111,7 @@ public sealed class ProfessionSystem
     {
         var action = _actions.GetById(actionId);
         var mastery = GetProgress(action.ProfessionId).GetMastery(actionId);
-        var reduction = MasteryBenefits.ValueOf(MasteryBenefitKind.IntervalReduction, action.ProfessionId, mastery);
+        var reduction = Benefits.ValueOf(ProfessionBenefitKind.IntervalReduction, action.ProfessionId, mastery);
         return ProfessionTuning.EffectiveIntervalTicks(action.BaseIntervalTicks, reduction);
     }
 
@@ -185,7 +186,7 @@ public sealed class ProfessionSystem
 
         var bag = _inventoryProvider();
         var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.Resolve(action, mastery, performance, _random, isActive, MasteryBenefits);
+        var yield = ActionResolver.Resolve(action, mastery, performance, _random, isActive, Benefits);
 
         // Preservation is spent here rather than inside the resolver, because whether the inputs
         // were owed at all is this layer's question: a Farming harvest paid for its seed at
@@ -285,7 +286,7 @@ public sealed class ProfessionSystem
 
         var progress = GetProgress(action.ProfessionId);
         var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.ResolvePursuit(opportunity, mastery, _random, action.ProfessionId, MasteryBenefits);
+        var yield = ActionResolver.ResolvePursuit(opportunity, mastery, _random, action.ProfessionId, Benefits);
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 

@@ -19,9 +19,13 @@ Every profession has the same anatomy, and there is exactly one code path behind
 | Level, XP, per-action mastery | `ProfessionProgress` (runtime, persisted) |
 | Mastery points → level (0–99) | `MasteryLeveling` — linear on purpose; see D40 |
 | What mastery buys | `game/data/mastery/` → `MasteryBenefits` — six rungs, all content |
+| What OTHER progress buys | `game/data/synergies/` → `ProfessionSynergies` — cross-profession and global, same six |
+| The two folded into one answer | `ProfessionBenefits` — the single question the execute path asks |
 | An action ladder | `ProfessionActionDefinition` — level gate, interval, inputs, outputs, bonus outputs, XP |
 | Passive + active execution | `ProfessionSystem.Execute` — **one** path, so the two can never drift |
 | Offline payout | `OfflineProgressCalculator` — the *same* execute path |
+| The standing selection | `PassiveProfessionRunner` — Idle / Working / Waiting; survives running dry |
+| What an absence earned | `AwayProgress` → `AwayReport`, worded by `Presentation/AwayReadout` |
 | Balance constants | `ProfessionTuning` |
 
 Two professions add a system of their own, because their loop genuinely is not a repeating
@@ -39,12 +43,32 @@ often.**
 never rolls for opportunities at all. That is enforced by construction, not by a tuning number:
 the discovery roll only happens on the active path (`ActionResolver.Resolve`, `isActive`).
 
-**Offline is a first-class parallel path, not a courtesy.** Whatever passive action is running
-when the game closes keeps running while it is closed, at exactly the same rate as live passive
-play, because it runs through the same `Execute`. Levelling never requires being at the
-keyboard. Bounded at both ends: `MaxOfflineTicks` (12h) and `MaxOfflineCompletions`. Mastery
-earned partway through an absence shortens the completions still to come, exactly as a live
-passive runner does when it re-reads the interval each cycle.
+**Offline is a first-class parallel path, not a courtesy.** Whatever action is selected when the
+game closes keeps running while it is closed, at exactly the same rate as live passive play,
+because it runs through the same `Execute`. Levelling never requires being at the keyboard.
+Bounded at both ends: `MaxOfflineTicks` (12h) and `MaxOfflineCompletions`. Mastery earned partway
+through an absence shortens the completions still to come, exactly as a live passive runner does
+when it re-reads the interval each cycle.
+
+**The selection is standing, and it waits (Phase 10).** An action that runs out of materials used
+to stop and be forgotten — so "leave it running and come back" ended the first time a chest of ore
+ran dry, silently, on exactly the sessions idle progress exists for. `PassiveProfessionRunner` now
+keeps `SelectedActionId` through a stall, sits in `Waiting`, and resumes by itself when the
+materials return. **Temporary problems wait; permanent ones refuse** — selecting an action you
+cannot afford *yet* is a legal standing choice, while a level gate is still a refusal. Only Stop
+clears it.
+
+**Coming back is a summary, not a scroll.** `AwayProgress.Resolve` aggregates one absence —
+completions, crops lifted, items merged per id, XP, mastery, and **which professions levelled** —
+and `Presentation/AwayReadout` owns every word of it, so the console line and the panel cannot
+describe the same absence differently. It aggregates and never resolves: every number came out of
+`Execute`. It is also honest about the two different ways a payout gets cut short, in two
+different sentences, because "you were gone too long" and "you ran out of oak" are different
+problems and only one is worth acting on.
+
+**What the absence cannot do.** No opportunities (structural — only the active path rolls), no
+materials it did not have, and nothing past the cap. Offline's lower ceiling is a property of the
+code, not a number someone can retune away.
 
 **Active** adds a timing score *and* the layer that actually makes it a different activity:
 
@@ -211,6 +235,24 @@ Runecrafting → rune → Artifice's clockwork core, and the bench as a reagent
 Artifice → glass, parchment, lenses → Cartography and Assay
 ```
 
+### Synergies — the chains pay twice (Phase 10, D41)
+
+A **synergy** is progress in one place paying off in another: `game/data/synergies/` holds 13
+cross-profession rows and 2 global ones, and they feed the *same six quantities* the mastery
+ladder does (`ProfessionBenefitKind`), through the same `ProfessionBenefits` seam. Adding them
+changed no line of `ActionResolver` or `ProfessionSystem`.
+
+**A synergy must follow a chain that already exists above.** Mining pays Smithing preservation
+because ore actually walks from one to the other; a synergy between two professions that never
+touch would be a number pretending to be a relationship, and the player would learn to read the
+table instead of the game. Source and target must differ — a profession paying for its own level
+is a mastery rung with extra steps, and a self-amplifying one, so the validator refuses it.
+
+A row with **no source** reads the player's **total** profession level across the roster: that is
+the global/account passive, earned by breadth rather than granted as a constant. Both global rows
+unlock late (totals of 200 and 400) and pay little per level, because breadth should not out-earn
+mastery of the action actually being performed.
+
 **No fake resources.** Profession outputs use the existing material library wherever one fits.
 Thieving deliberately produces no currency: there is no economy yet, and a coin nothing spends
 would be exactly the invented resource the design forbids — so a thief walks off with precious
@@ -220,8 +262,10 @@ metal, gems, a key, or somebody's paperwork.
 
 ## 6. Content counts
 
-**20 professions · 348 actions · 32 opportunities · 12 obstacles · 1448 materials** (79 added by
-this pass). Save schema **v7**. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins
+**20 professions · 348 actions · 32 opportunities · 12 obstacles · 15 synergies · 1448 materials**
+(79 added by the P4 pass). Save schema **v11** — Phase 10 added no field: `PassiveActionId` now
+carries the standing selection rather than the running action, which is the same key meaning the
+same thing slightly more honestly. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins
 these, so the numbers in this table cannot quietly drift.
 
 ---
@@ -234,7 +278,11 @@ these, so the numbers in this table cannot quietly drift.
   now — deliberately ahead of the slots.
 - **Bow and projectile forms** land with form acquisition; Fletching makes the parts today.
 - **Course bonuses are declared, not consumed.** `CourseBonusKeys` values are aggregated and
-  displayed, but Realm travel, hazards and extraction do not read them yet.
+  displayed, but Realm travel, hazards and extraction do not read them yet. They are **not** the
+  same thing as synergies: a synergy pays into the six profession-benefit quantities, while a
+  course bonus is standing utility inside a Realm.
 - **Cartography's knowledge gains are all `realm.dark_forest`** — the only realm that exists.
+- **Synergy rates and both global unlock thresholds are placeholders**, like every other number
+  in this document.
 - **Everything here is breadth, not balance.** Intervals, XP, chances and level gates are
   provisional and belong to the balance pass.

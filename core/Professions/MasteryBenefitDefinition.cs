@@ -4,18 +4,24 @@ using Dungeons.Content;
 namespace Dungeons.Professions;
 
 /// <summary>
-/// What mastering an action can buy. A closed vocabulary, like <c>RealmLocationType</c> — each
-/// member has exactly one consumer in the execution path, and adding one means writing that
-/// consumer.
+/// The six quantities profession work can be improved in. A closed vocabulary, like
+/// <c>RealmLocationType</c> — each member has exactly one consumer in the execution path, and
+/// adding one means writing that consumer.
+///
+/// <para><b>Not "what mastery buys" — what anything buys.</b> Mastery was the first source
+/// (<see cref="MasteryBenefitDefinition"/>) and is no longer the only one: Phase 10 added
+/// cross-profession and global <see cref="ProfessionSynergyDefinition"/>s that pay into the
+/// same six. <see cref="ProfessionBenefits"/> is where the sources meet, which is why nothing
+/// downstream had to learn a second vocabulary.</para>
 ///
 /// <para><b>These names match the <c>profession.*</c> modifier keys</b>
 /// (<c>profession.interval.mult</c>, <c>preserve.chance</c>, <c>double.chance</c>, …) on purpose.
 /// Those keys are declared and unread; they belong to E6's yield pipeline, where worn tools will
-/// feed the same six quantities. Naming them the same thing now is what lets E6 merge mastery
-/// and tools into one pipeline instead of renaming a vocabulary the save and the content already
-/// carry.</para>
+/// feed the same six quantities. Naming them the same thing now is what lets E6 merge tools in
+/// as a third source instead of renaming a vocabulary the save and the content already carry.
+/// <b>The member names are persistent identifiers</b> — they are the JSON <c>kind</c> values.</para>
 /// </summary>
-public enum MasteryBenefitKind
+public enum ProfessionBenefitKind
 {
     /// <summary>Fraction taken off the action's interval. The work gets quicker.</summary>
     IntervalReduction,
@@ -50,7 +56,7 @@ public sealed class MasteryBenefitDefinition : IDefinition
 {
     public string Id { get; init; } = string.Empty;
 
-    public MasteryBenefitKind Kind { get; init; }
+    public ProfessionBenefitKind Kind { get; init; }
 
     /// <summary>The profession this row is scoped to, or null for every profession.</summary>
     [JsonPropertyName("profession")]

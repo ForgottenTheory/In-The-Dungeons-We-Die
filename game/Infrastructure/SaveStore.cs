@@ -25,6 +25,11 @@ public sealed class SaveStore
         file.StoreString(_serializer.Serialize(data));
     }
 
+    /// <summary>Whether a save file exists at all. Read by the autosave-on-quit guard: writing
+    /// over somebody's save is a worse failure than losing an unsaved session, so a session that
+    /// has never saved does not start saving itself on the way out.</summary>
+    public bool Exists() => FileAccess.FileExists(SavePath);
+
     public SaveData? Load()
     {
         if (!FileAccess.FileExists(SavePath))

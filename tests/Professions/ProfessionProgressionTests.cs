@@ -82,12 +82,12 @@ public class ProfessionProgressionTests
     {
         var ladder = TestPaths.ShippedMasteryLadder();
 
-        Assert.Equal(0.0, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 0), 6);
-        Assert.Equal(0.10, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 20), 6);
-        Assert.Equal(0.25, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 50), 6);
+        Assert.Equal(0.0, ladder.ValueOf(ProfessionBenefitKind.IntervalReduction, "profession.forestry", 0), 6);
+        Assert.Equal(0.10, ladder.ValueOf(ProfessionBenefitKind.IntervalReduction, "profession.forestry", 20), 6);
+        Assert.Equal(0.25, ladder.ValueOf(ProfessionBenefitKind.IntervalReduction, "profession.forestry", 50), 6);
 
-        var mastered = ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 200);
-        Assert.Equal(ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", MasteryLeveling.MaxLevel), mastered, 6);
+        var mastered = ladder.ValueOf(ProfessionBenefitKind.IntervalReduction, "profession.forestry", 200);
+        Assert.Equal(ladder.ValueOf(ProfessionBenefitKind.IntervalReduction, "profession.forestry", MasteryLeveling.MaxLevel), mastered, 6);
         Assert.InRange(mastered, 0.45, 0.5);
     }
 }

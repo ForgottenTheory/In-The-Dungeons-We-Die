@@ -33,8 +33,10 @@ public sealed class ResolvedYield
 /// execution, so the two can never drift into separate balance models (docs/architecture.md §20,
 /// docs/professions.md §4).</para>
 ///
-/// <para><b>Every mastery magnitude arrives through <see cref="MasteryBenefits"/></b> rather than
-/// as a constant here — that is what makes the mastery ladder a JSON edit.</para>
+/// <para><b>Every benefit magnitude arrives through <see cref="ProfessionBenefits"/></b> rather
+/// than as a constant here — that is what makes the mastery ladder and the synergy table JSON
+/// edits, and what let Phase 10 add cross-profession and global bonuses without touching a line
+/// of this file.</para>
 /// </summary>
 public static class ActionResolver
 {
@@ -44,20 +46,20 @@ public static class ActionResolver
         double performance,
         IRandomSource random,
         bool isActive = false,
-        MasteryBenefits? masteryBenefits = null)
+        ProfessionBenefits? professionBenefits = null)
     {
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(random);
         performance = Math.Clamp(performance, 0.0, 1.0);
-        var benefits = masteryBenefits ?? MasteryBenefits.None;
+        var benefits = professionBenefits ?? ProfessionBenefits.None;
 
         // Rolled before anything else so the RNG stream does not shift depending on whether
         // the attempt landed — seeded tests would otherwise be impossible to reason about.
         var landed = action.SuccessChance >= 1.0 || random.NextDouble() < action.SuccessChance;
 
         var produced = new List<ItemStack>();
-        var masteryBonus = benefits.ValueOf(MasteryBenefitKind.BonusOutputChance, action.ProfessionId, mastery);
-        var doublingChance = benefits.ValueOf(MasteryBenefitKind.OutputDoubling, action.ProfessionId, mastery);
+        var extraBonusOutputChance = benefits.ValueOf(ProfessionBenefitKind.BonusOutputChance, action.ProfessionId, mastery);
+        var doublingChance = benefits.ValueOf(ProfessionBenefitKind.OutputDoubling, action.ProfessionId, mastery);
         var activeBonus = performance * ProfessionTuning.ActiveBonusChanceAtFullPerformance;
         var doubled = 0;
 
@@ -78,7 +80,7 @@ public static class ActionResolver
 
             foreach (var bonus in action.BonusOutputs)
             {
-                var chance = bonus.Chance + masteryBonus + activeBonus;
+                var chance = bonus.Chance + extraBonusOutputChance + activeBonus;
                 if (random.NextDouble() < chance)
                     produced.Add(bonus.Stack);
             }
@@ -110,9 +112,9 @@ public static class ActionResolver
         ProfessionActionDefinition action,
         int mastery,
         IRandomSource random,
-        MasteryBenefits benefits)
+        ProfessionBenefits benefits)
     {
-        var chance = benefits.ValueOf(MasteryBenefitKind.InputPreservation, action.ProfessionId, mastery);
+        var chance = benefits.ValueOf(ProfessionBenefitKind.InputPreservation, action.ProfessionId, mastery);
         return chance > 0 && random.NextDouble() < chance;
     }
 
@@ -129,16 +131,16 @@ public static class ActionResolver
         int mastery,
         double performance,
         IRandomSource random,
-        MasteryBenefits benefits)
+        ProfessionBenefits benefits)
     {
-        var masteryBonus = benefits.ValueOf(MasteryBenefitKind.OpportunityChance, action.ProfessionId, mastery);
+        var extraDiscoveryChance = benefits.ValueOf(ProfessionBenefitKind.OpportunityChance, action.ProfessionId, mastery);
 
         foreach (var opportunity in action.Opportunities)
         {
             if (MasteryLeveling.LevelFor(mastery) < opportunity.RequiredMasteryLevel)
                 continue;
 
-            var chance = ProfessionTuning.OpportunityDiscoveryChance(opportunity.DiscoveryChance, masteryBonus, performance);
+            var chance = ProfessionTuning.OpportunityDiscoveryChance(opportunity.DiscoveryChance, extraDiscoveryChance, performance);
             if (random.NextDouble() < chance)
                 return opportunity;
         }
@@ -155,13 +157,13 @@ public static class ActionResolver
         int mastery,
         IRandomSource random,
         string? professionId = null,
-        MasteryBenefits? masteryBenefits = null)
+        ProfessionBenefits? professionBenefits = null)
     {
         ArgumentNullException.ThrowIfNull(opportunity);
         ArgumentNullException.ThrowIfNull(random);
-        var benefits = masteryBenefits ?? MasteryBenefits.None;
+        var benefits = professionBenefits ?? ProfessionBenefits.None;
 
-        var riskReduction = benefits.ValueOf(MasteryBenefitKind.OpportunityRisk, professionId, mastery);
+        var riskReduction = benefits.ValueOf(ProfessionBenefitKind.OpportunityRisk, professionId, mastery);
         var risk = ProfessionTuning.EffectiveRisk(opportunity.RiskWeight, riskReduction);
         var landed = risk <= 0.0 || random.NextDouble() >= risk;
 
@@ -171,10 +173,10 @@ public static class ActionResolver
             foreach (var output in opportunity.Outputs)
                 produced.Add(output);
 
-            var masteryBonus = benefits.ValueOf(MasteryBenefitKind.BonusOutputChance, professionId, mastery);
+            var extraBonusOutputChance = benefits.ValueOf(ProfessionBenefitKind.BonusOutputChance, professionId, mastery);
             foreach (var bonus in opportunity.BonusOutputs)
             {
-                if (random.NextDouble() < bonus.Chance + masteryBonus)
+                if (random.NextDouble() < bonus.Chance + extraBonusOutputChance)
                     produced.Add(bonus.Stack);
             }
         }

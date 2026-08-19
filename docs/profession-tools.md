@@ -19,11 +19,16 @@ var xp = action.Experience * (1 + performance × ActiveXpBonus);
 
 That is it. No interval modifiers, no preservation, no doubling, no quality, no rare weighting.
 
-> **Updated after Phase 8 (D40).** Half of this section's gaps are closed. Mastery now buys
-> interval reduction, input preservation, output doubling, rare-find chance and opportunity
-> odds/risk, all from `game/data/mastery/` — see GDD §7.3. **What remains for E6 is the tool
-> half**, and `MasteryBenefitKind` deliberately uses the same six names as the `profession.*`
-> modifier keys so the two sources can merge into one pipeline without a rename.
+> **Updated after Phase 8 (D40) and Phase 10 (D41).** Half of this section's gaps are closed.
+> Mastery buys interval reduction, input preservation, output doubling, rare-find chance and
+> opportunity odds/risk from `game/data/mastery/` (GDD §7.3), and cross-profession and global
+> bonuses pay into the same six quantities from `game/data/synergies/`.
+>
+> **What remains for E6 is the tool half — and the seam is already built.** Phase 10 introduced
+> `ProfessionBenefits`, which folds every source of those six quantities into the one question
+> `ActionResolver` and `ProfessionSystem` ask. Worn tools are a **third field on it** and no change
+> at all downstream. `ProfessionBenefitKind` still deliberately uses the same six names as the
+> `profession.*` modifier keys, so the merge needs no rename.
 
 | Gap | Status |
 |---|---|

@@ -364,12 +364,12 @@ Melvor Idle is the explicit architectural reference. Target layers:
 | Level-based unlocks | **Built** — actions gate on profession level |
 | Mastery-based unlocks | **Built** — `required_mastery` on an opportunity; below it the offer is not rolled at all |
 | Equipment affecting skills (tools) | Planned (E6) — the one Melvor layer still missing |
-| Cross-skill bonuses | Planned |
-| Global/account passives | Planned |
-| Offline progression | **Built** (P4) |
+| Cross-skill bonuses | **Built** (Phase 10, D41) — `synergies/`, 13 rows following existing material chains |
+| Global/account passives | **Built** (Phase 10, D41) — a synergy with no source reads **total** profession level |
+| Offline progression | **Built** (P4) — with auto-repeat and a return summary added in Phase 10 |
 | Progression milestones | Needs Design |
 
-> **The ladder is content**, in `game/data/mastery/`: six `MasteryBenefitKind` rungs, each with an
+> **The ladder is content**, in `game/data/mastery/`: six `ProfessionBenefitKind` rungs, each with an
 > unlock level, a per-level rate and a cap. A balance pass is a JSON edit. **None of it is
 > balanced** — the numbers are the placeholders they were before they moved.
 
@@ -494,16 +494,26 @@ modifier key itself, so no combination of haste sources can bypass it. **BUILT**
 recorded debt: D-20 tightened the interval floor to **0.55** and the shipped registry still says
 0.25 — an unapplied decision awaiting a balance pass, not an open question.
 
-## 5.7 Auto-combat
+## 5.7 Auto-combat — **BUILT (Phase 10, D41)**
 
-Passive Realm runs will eventually need automatic combat. **Auto-combat uses the same rules** —
-automation chooses actions, the domain resolves them normally. There is deliberately no separate
-"fake" combat calculator, so passive and active never become two unrelated balance models.
+**Auto-combat uses the same rules** — automation chooses actions, the domain resolves them
+normally. There is deliberately no separate "fake" combat calculator, so passive and active never
+become two unrelated balance models.
 
-**PLANNED — and closer than it was:** enemies now run weighted AI rules over the shared
-condition vocabulary (E4), and auto-combat is designed as *the player driven by the same profile
-shape*, disadvantaged by reaction latency rather than a damage penalty (D-07). The profile
-machinery exists; pointing it at the player does not.
+**And it is literally the player driven by the same profile shape.** `AutoCombatPilot.Engage` puts
+an authored brain's rules onto the player `Combatant.Ai` and asks `CombatEncounter.ChooseMoveFor`
+— the method every enemy has always used. It then presses the same buttons a hand would:
+`UseMove`, `Block`, `Dodge`. Three brains ship (Steady, Aggressive, Cautious), and their rules
+match moves by **tag**, because a player's moveset comes from their weapon.
+
+**Its whole disadvantage is reaction latency (D-07), never a damage penalty.** A hand `R` ticks
+behind the eye must commit a stance `R` ticks before impact, and every tight window is measured
+from when the stance went up — so at `R = 8` it blocks and dodges reliably and can never land a
+Perfect Block or a Parry. An attack arriving sooner than `2R` after it appears cannot be answered
+at all. `docs/damage-and-defense.md` §5.1.1 has the table.
+
+**Live only.** It runs inside the real encounter on the real tick engine. Fully unattended Realm
+runs — travel, extraction decisions, the run inventory — are a separate problem and are not built.
 
 ## 5.8 Positioning — deferred
 

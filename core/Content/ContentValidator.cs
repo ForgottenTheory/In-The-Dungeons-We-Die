@@ -92,6 +92,8 @@ public static class ContentValidator
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, content.LootTables, problems);
         ValidateTrainingObstacles(content.TrainingObstacles, problems);
         ValidateMasteryLadder(content.MasteryBenefits, content.Professions, problems);
+        ValidateProfessionSynergies(content.Synergies, content.Professions, problems);
+        ValidateAutoCombatProfiles(content.AutoCombatProfiles, content.Moves, problems);
         ValidateStations(content, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.LootTables, problems);
@@ -1225,7 +1227,7 @@ public static class ContentValidator
         DataStore<ProfessionDefinition> professions,
         List<ContentProblem> problems)
     {
-        var seen = new HashSet<(MasteryBenefitKind, string?)>();
+        var seen = new HashSet<(ProfessionBenefitKind, string?)>();
 
         foreach (var rung in ladder.GetAll())
         {
@@ -1263,10 +1265,123 @@ public static class ContentValidator
         if (ladder.Count == 0)
             return;
 
-        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        foreach (var kind in Enum.GetValues<ProfessionBenefitKind>())
         {
             if (!ladder.GetAll().Any(rung => rung.Kind == kind && rung.ProfessionId is null))
                 problems.Add(new("mastery", $"no general rung for {kind}; that benefit does nothing for any profession."));
+        }
+    }
+
+    /// <summary>
+    /// The cross-profession and global bonus table (Phase 10).
+    ///
+    /// <para>Written before the data it checks, on the precedent Phase 8 set: the mastery
+    /// ladder's caps were wrong on their first run and the validator said so immediately. The
+    /// dangerous mistake here is the same shape — a cap the source level can never reach is a
+    /// promise the table cannot keep — plus two that are specific to synergies: a source that
+    /// is also the target (a self-amplifying loop dressed as a synergy) and a duplicated scope
+    /// (which reads as one bonus and pays twice).</para>
+    /// </summary>
+    private static void ValidateProfessionSynergies(
+        DataStore<ProfessionSynergyDefinition> synergies,
+        DataStore<ProfessionDefinition> professions,
+        List<ContentProblem> problems)
+    {
+        var seen = new HashSet<(ProfessionBenefitKind, string?, string?)>();
+
+        // A global synergy reads the sum of every profession's level, so its ceiling is the
+        // roster's. With no roster loaded (a fixture bundle) there is nothing to measure
+        // against, and the reachability check is skipped rather than guessed at.
+        var rosterSize = professions.Count;
+        var highestTotalLevel = rosterSize * ProfessionLeveling.MaxLevel;
+
+        foreach (var synergy in synergies.GetAll())
+        {
+            if (synergy.PerLevel <= 0)
+                problems.Add(new("synergies", $"{synergy.Id} grants {synergy.PerLevel} per level; a synergy that pays nothing is not a synergy."));
+
+            if (synergy.Max <= 0)
+                problems.Add(new("synergies", $"{synergy.Id} is capped at {synergy.Max}; it can never be worth anything."));
+
+            if (synergy.SourceProfession is { Length: > 0 } source && !professions.Contains(source))
+                problems.Add(new("synergies", $"{synergy.Id} is paid for by unknown profession '{source}'."));
+
+            if (synergy.TargetProfession is { Length: > 0 } target && !professions.Contains(target))
+                problems.Add(new("synergies", $"{synergy.Id} pays into unknown profession '{target}'."));
+
+            if (synergy.SourceProfession is not null
+                && string.Equals(synergy.SourceProfession, synergy.TargetProfession, StringComparison.Ordinal))
+                problems.Add(new("synergies",
+                    $"{synergy.Id} pays '{synergy.SourceProfession}' for its own level; that is a mastery rung, not a synergy."));
+
+            var highestSourceLevel = synergy.IsGlobalSource ? highestTotalLevel : ProfessionLeveling.MaxLevel;
+
+            if (synergy.UnlockLevel < 1 || (highestSourceLevel > 0 && synergy.UnlockLevel > highestSourceLevel))
+                problems.Add(new("synergies",
+                    $"{synergy.Id} unlocks at source level {synergy.UnlockLevel}, outside 1–{highestSourceLevel}; it could never switch on."));
+
+            if (synergy.PerLevel > 0 && highestSourceLevel > 0 && synergy.Max > highestSourceLevel * synergy.PerLevel)
+                problems.Add(new("synergies",
+                    $"{synergy.Id} caps at {synergy.Max} but reaches only {highestSourceLevel * synergy.PerLevel:0.###} at source level {highestSourceLevel}."));
+
+            if (!seen.Add((synergy.Kind, synergy.SourceProfession, synergy.TargetProfession)))
+                problems.Add(new("synergies",
+                    $"{synergy.Id} is a second {synergy.Kind} synergy for the same source and target; the pair would pay twice for one line the player reads."));
+
+            if (string.IsNullOrWhiteSpace(synergy.Description))
+                problems.Add(new("synergies", $"{synergy.Id} has no description; the player reads this table."));
+        }
+    }
+
+    /// <summary>
+    /// Auto-combat brains (Phase 10).
+    ///
+    /// <para>The rule worth having is the last one: <b>D-07 says automation is disadvantaged by
+    /// reaction latency, never by a damage penalty</b> — which only holds if the latency is
+    /// actually longer than the tight windows. A profile with a 2-tick reaction would parry, and
+    /// the whole "active play earns its advantage by being present" argument would quietly stop
+    /// being true. That is a content mistake nobody would notice by reading, so it is checked.</para>
+    /// </summary>
+    private static void ValidateAutoCombatProfiles(
+        DataStore<AutoCombatProfileDefinition> profiles,
+        DataStore<MoveDefinition> moves,
+        List<ContentProblem> problems)
+    {
+        foreach (var profile in profiles.GetAll())
+        {
+            if (profile.Rules.Count == 0)
+                problems.Add(new("auto_combat", $"{profile.Id} has no offensive rules; it would stand still and be hit."));
+
+            foreach (var rule in profile.Rules)
+            {
+                ValidateAiRule(profile.Id, "auto_combat", rule, problems);
+
+                // Only the id form can be checked: a tag rule is answered by whatever the
+                // player happens to be carrying, which is the point of the tag form.
+                if (rule.Move is { Length: > 0 } moveId && string.IsNullOrEmpty(rule.MoveTag) && !moves.Contains(moveId))
+                    problems.Add(new("auto_combat", $"{profile.Id} names unknown move '{moveId}'."));
+            }
+
+            foreach (var rule in profile.Defence)
+            {
+                if (rule.Weight <= 0)
+                    problems.Add(new("auto_combat", $"{profile.Id} defence rule for {rule.Stance} has non-positive weight."));
+
+                foreach (var condition in rule.When)
+                    if (!Dungeons.Rules.RuleVocabulary.Conditions.Contains(condition.Kind))
+                        problems.Add(new("auto_combat", $"{profile.Id} defence uses unknown condition '{condition.Kind}'."));
+            }
+
+            if (profile.ReactionTicks < AutoCombatTuning.MinimumReactionTicks)
+                problems.Add(new("auto_combat",
+                    $"{profile.Id} reacts in {profile.ReactionTicks} ticks, inside the {CombatTuning.PerfectBlockWindowTicks}-tick " +
+                    $"Perfect Block and {CombatTuning.ParryWindowTicks}-tick Parry windows. Automation must never reach those (D-07)."));
+
+            if (profile.AvoidRepeatWeight is < 0 or > 1)
+                problems.Add(new("auto_combat", $"{profile.Id} has avoid_repeat_weight {profile.AvoidRepeatWeight}, outside 0–1."));
+
+            if (string.IsNullOrWhiteSpace(profile.Description))
+                problems.Add(new("auto_combat", $"{profile.Id} has no description; the player chooses between these."));
         }
     }
 

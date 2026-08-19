@@ -17,7 +17,7 @@ public sealed class MasteryBenefits
     /// ladder to exist.</summary>
     public static readonly MasteryBenefits None = new(Array.Empty<MasteryBenefitDefinition>());
 
-    private readonly Dictionary<(MasteryBenefitKind Kind, string? ProfessionId), MasteryBenefitDefinition> _rungs = new();
+    private readonly Dictionary<(ProfessionBenefitKind Kind, string? ProfessionId), MasteryBenefitDefinition> _rungs = new();
 
     public MasteryBenefits(IEnumerable<MasteryBenefitDefinition> ladder)
     {
@@ -40,7 +40,7 @@ public sealed class MasteryBenefits
     /// <paramref name="masteryPoints"/>. Zero below the rung's unlock level, and zero when the
     /// ladder has no rung for this kind at all.
     /// </summary>
-    public double ValueOf(MasteryBenefitKind kind, string? professionId, int masteryPoints)
+    public double ValueOf(ProfessionBenefitKind kind, string? professionId, int masteryPoints)
     {
         if (!TryFindRung(kind, professionId, out var rung))
             return 0.0;
@@ -54,12 +54,12 @@ public sealed class MasteryBenefits
 
     /// <summary>The mastery level at which <paramref name="kind"/> first does anything, or null
     /// when the ladder has no such rung. What the "next unlock" line reads.</summary>
-    public int? UnlockLevelOf(MasteryBenefitKind kind, string? professionId) =>
+    public int? UnlockLevelOf(ProfessionBenefitKind kind, string? professionId) =>
         TryFindRung(kind, professionId, out var rung) ? rung.UnlockLevel : null;
 
     /// <summary>A profession's own rung wins over the general one — the "later layer wins per
     /// key" rule, stated once.</summary>
-    private bool TryFindRung(MasteryBenefitKind kind, string? professionId, out MasteryBenefitDefinition rung)
+    private bool TryFindRung(ProfessionBenefitKind kind, string? professionId, out MasteryBenefitDefinition rung)
     {
         if (professionId is not null && _rungs.TryGetValue((kind, professionId), out rung!))
             return true;

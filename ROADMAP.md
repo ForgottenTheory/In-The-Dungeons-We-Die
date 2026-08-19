@@ -158,6 +158,23 @@ coherent run.
    rule, on the learned-list precedent. **This is the one track `ProgressionEcosystemTests`
    exempts by name.** Also a minimal build-selection screen (the build is debug-cycled today) —
    character XP and levels themselves landed in Phase 8.
+   **Phase 10 — offline + automation ✅ (D41).** The two halves of the game finally coexist.
+   **Professions:** `ProfessionBenefits` folds the mastery ladder and a new **synergy table**
+   (`synergies/` — 13 cross-profession rows following existing material chains, plus 2 global rows
+   that read **total** profession level) into the one question the execute path asks — so
+   cross-skill and account passives arrived with **no change** to `ActionResolver` or
+   `ProfessionSystem`, and E6's tools are a third field on the same seam.
+   **Auto-repeat:** the passive selection is standing — it waits when the materials run out and
+   resumes by itself; only Stop clears it. Temporary problems wait, permanent ones refuse.
+   **The return:** `AwayProgress` + `Presentation/AwayReadout` + a summary panel — completions,
+   crops, merged items, XP, **levels gained**, and an honest sentence about what cut the payout
+   short. Autosave on quit (guarded), because offline time is measured from the save stamp.
+   **Auto-combat (GDD §5.7, D-07):** `AutoCombatPilot` puts an authored brain on the *player*
+   combatant and asks `CombatEncounter.ChooseMoveFor` — the enemy method — then presses the same
+   buttons a hand would. **No second resolver and no damage multiplier**: its whole handicap is
+   `reaction_ticks`, which forces a stance `R` ticks early and therefore outside every tight
+   window. `MasteryBenefitKind` → `ProfessionBenefitKind` (members untouched). **Save unchanged at
+   v11.** Still unbalanced: synergy rates, global thresholds, all three brains.
 6. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
    Yield Log ("mostly free once scoped modifiers exist" — they do). **P4 already ships the
    components** (Smithing's tool head, Artifice's haft/mechanisms/lenses) and the Agility
@@ -167,12 +184,12 @@ coherent run.
 
 ## After the slice (unordered)
 Realm breadth (affixes, tiers, location types) · enemy roster to 8–10 + the
-elite/boss variant layer (the D26 fold seam exists) · auto-combat (player on the AI-profile
-machinery) · economy/vendors (NEEDS DESIGN — Thieving deliberately ships no currency) · Hideout ·
+elite/boss variant layer (the D26 fold seam exists) · **fully unattended Realm runs** (auto-combat
+landed in Phase 10; travel, extraction decisions and the run bag did not) · economy/vendors (NEEDS DESIGN — Thieving deliberately ships no currency) · Hideout ·
 species roster ·
 remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · crafting P4/P6 ·
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**1121** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**1190** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

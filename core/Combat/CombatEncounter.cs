@@ -320,6 +320,7 @@ public sealed class CombatEncounter
 
         PayCosts(_player, move);
         StartCooldown(_player, move);
+        _lastMoveUsed[_player] = move.Id; // feeds AvoidRepeatWeight when a pilot is choosing
 
         var executeIn = Math.Max(1, move.Timing.TimeToImpactTicks);
         _player.ReadyTick = _tick.CurrentTick + executeIn + move.Timing.RecoveryTicks;
@@ -543,19 +544,36 @@ public sealed class CombatEncounter
     }
 
     /// <summary>
+    /// Weighted move selection over the actor's AI profile (docs/moves.md §5.2), for whoever
+    /// is not choosing by hand. Returns null when everything is gated, unaffordable or on
+    /// cooldown — the caller decides whether that means hesitate or do something else.
+    ///
+    /// <para>Public because auto-combat is <b>the player run through this same method</b>
+    /// (GDD §5.7): an engaged <see cref="AutoCombatPilot"/> puts rules on
+    /// <see cref="Combatant.Ai"/> and asks. Choosing is all it gets to do — it then issues
+    /// <see cref="UseMove"/> like any other command, and the encounter resolves timing, costs,
+    /// telegraphs and damage exactly as it does for a keyboard.</para>
+    /// </summary>
+    public ResolvedMove? ChooseMoveFor(Combatant actor)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        return ChooseMove(actor);
+    }
+
+    /// <summary>
     /// Weighted move selection over the AI profile (docs/moves.md §5.2). AI chooses intent; the
     /// tick engine resolves timing. An empty profile is uniform over the moveset — exactly what
     /// the single uniform random draw this replaced did.
     /// </summary>
-    private ResolvedMove? ChooseMove(Combatant enemy)
+    private ResolvedMove? ChooseMove(Combatant actor)
     {
-        var rules = enemy.Ai.Count > 0
-            ? enemy.Ai
-            : enemy.Moveset.Select(m => new AiRuleSpec { Move = m.Id, Weight = 1.0 }).ToList();
+        var rules = actor.Ai.Count > 0
+            ? actor.Ai
+            : actor.Moveset.Select(m => new AiRuleSpec { Move = m.Id, Weight = 1.0 }).ToList();
 
-        var decision = RequirementEvent(enemy);
+        var decision = RequirementEvent(actor);
         var candidates = new List<(ResolvedMove Move, double Weight)>();
-        _lastMoveUsed.TryGetValue(enemy, out var lastMoveId);
+        _lastMoveUsed.TryGetValue(actor, out var lastMoveId);
 
         foreach (var rule in rules)
         {
@@ -568,16 +586,16 @@ public sealed class CombatEncounter
             // A rule names a move by id, or by tag — the tag form is what lets one authored
             // brain serve many bodies (M2′c). Moveset order keeps expansion deterministic.
             var matches = !string.IsNullOrEmpty(rule.MoveTag)
-                ? enemy.Moveset.Where(m => m.HasTag(rule.MoveTag!))
-                : enemy.Moveset.Where(m => string.Equals(m.Id, rule.Move, StringComparison.Ordinal));
+                ? actor.Moveset.Where(m => m.HasTag(rule.MoveTag!))
+                : actor.Moveset.Where(m => string.Equals(m.Id, rule.Move, StringComparison.Ordinal));
 
             foreach (var move in matches)
             {
-                if (!CanUse(enemy, move, out _))
+                if (!CanUse(actor, move, out _))
                     continue;
 
                 var weight = string.Equals(move.Id, lastMoveId, StringComparison.Ordinal)
-                    ? rule.Weight * enemy.AvoidRepeatWeight
+                    ? rule.Weight * actor.AvoidRepeatWeight
                     : rule.Weight;
                 if (weight <= 0)
                     continue;

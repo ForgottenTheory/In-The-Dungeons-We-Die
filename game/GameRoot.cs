@@ -78,6 +78,7 @@ public partial class GameRoot : Node
     private DataStore<EnemyFamilyDefinition> _enemyFamilies = new();
     private DataStore<CombatRoleDefinition> _enemyRoles = new();
     private DataStore<AiProfileDefinition> _aiProfiles = new();
+    private DataStore<AutoCombatProfileDefinition> _autoCombatProfiles = new();
     private DataStore<EquipmentDefinition> _equipment = new();
 
     private readonly Equipment _playerEquipment = new();
@@ -111,6 +112,11 @@ public partial class GameRoot : Node
     private SeededRandom _affixRandom = null!;
     private BuildResolver _buildResolver = null!;
     private CombatEncounter _encounter = null!;
+
+    /// <summary>The encounter's seeded stream. Shared with the auto-combat pilot on purpose: one
+    /// stream means an automated fight replays from the seed like any other, and the pilot's
+    /// choices vary between fights instead of repeating the same sequence every time.</summary>
+    private SeededRandom _combatRandom = null!;
     private bool _everFought;
 
     /// <summary>
@@ -187,6 +193,7 @@ public partial class GameRoot : Node
         _enemyFamilies = content.EnemyFamilies;
         _enemyRoles = content.EnemyRoles;
         _aiProfiles = content.AiProfiles;
+        _autoCombatProfiles = content.AutoCombatProfiles;
         _equipment = content.Equipment;
 
         var rules = new RuleRegistry(new ICharacterRule[]
@@ -225,14 +232,20 @@ public partial class GameRoot : Node
                 tableId,
                 LootCircumstances(new[] { wasActive ? LootContextTags.Active : LootContextTags.Passive })));
 
-        // What mastery is worth is content (Phase 8). Without this the ladder loads and nothing
-        // reads it, which is the exact state mastery spent the whole project in.
-        _professions.MasteryBenefits = new MasteryBenefits(content.MasteryBenefits);
+        // What progress is worth is content: the mastery ladder (Phase 8) and the synergy table
+        // (Phase 10) fold into one answer here. Without this they load and nothing reads them,
+        // which is the exact state mastery spent the whole project in.
+        _professions.Benefits = new ProfessionBenefits(
+            new MasteryBenefits(content.MasteryBenefits),
+            new ProfessionSynergies(content.Synergies),
+            levelOf: professionId => _professions.GetProgress(professionId).Level,
+            totalLevel: () => TotalProfessionLevel);
         _passiveRunner = new PassiveProfessionRunner(_tick, _professions);
         _professions.ActionCompleted += OnActionCompleted;
         _professions.OpportunityResolved += OnOpportunityResolved;
         _professions.LeveledUp += OnLeveledUp;
         _passiveRunner.Stalled += OnPassiveStalled;
+        _passiveRunner.Resumed += OnPassiveResumed;
 
         // Farming's plots always grow into the Stash: a crop is tended at the Hideout, not
         // carried through a Realm, so it is never at risk from a death.
@@ -271,6 +284,7 @@ public partial class GameRoot : Node
         _equipmentAssembly = new EquipmentAssemblyEngine(content, () => ActiveInventory, _materialStates, _instanceIds, _affixRandom);
 
         var combatRandom = new SeededRandom(0x0C0FFEE);
+        _combatRandom = combatRandom;
         _statuses = new StatusController(content.Statuses, _events, () => _tick.CurrentTick);
 
         // E3c-2: the modifier read path. Build statics, status `while_active`, gauge bands and
@@ -483,29 +497,42 @@ public partial class GameRoot : Node
         _professionStore.TryGetById(professionId, out var def) ? def : null;
 
     public bool IsPassiveRunning => _passiveRunner.IsRunning;
-    public string? CurrentPassiveActionId => _passiveRunner.CurrentActionId;
+
+    /// <summary>True when a selection is held but its materials ran out — it is waiting, not
+    /// forgotten (Phase 10 auto-repeat).</summary>
+    public bool IsPassiveWaiting => _passiveRunner.IsWaiting;
+
+    /// <summary>The standing training selection — what the player chose, whether or not it can
+    /// run this instant.</summary>
+    public string? CurrentPassiveActionId => _passiveRunner.SelectedActionId;
     public double PassiveProgress => _passiveRunner.Progress();
+
+    /// <summary>The sum of every profession's level — what a global synergy is measured
+    /// against. The roster lives in content, so a profession never touched still counts as the
+    /// level it starts at rather than as nothing.</summary>
+    public int TotalProfessionLevel =>
+        _professionStore.GetAll().Sum(profession => _professions.GetProgress(profession.Id).Level);
 
     public void StartPassive(string actionId)
     {
-        if (_passiveRunner.Start(actionId))
-        {
-            Emit($"[Passive] Started {ActionName(actionId)}.");
-            SetRunning(true); // passive gathering only advances while the sim runs
-        }
-        else
+        if (!_passiveRunner.Start(actionId))
         {
             Emit($"[Passive] Cannot start {ActionName(actionId)} ({_professions.CheckExecutable(actionId)}).");
+            return;
         }
+
+        Emit(_passiveRunner.IsWaiting
+            ? $"[Passive] {ActionName(actionId)} selected — waiting on materials. It starts by itself when they arrive."
+            : $"[Passive] Started {ActionName(actionId)}.");
+        SetRunning(true); // passive gathering only advances while the sim runs
     }
 
     public void StopPassive()
     {
-        if (!_passiveRunner.IsRunning)
+        if (_passiveRunner.SelectedActionId is not { } actionId)
             return;
-        var name = ActionName(_passiveRunner.CurrentActionId!);
         _passiveRunner.Stop();
-        Emit($"[Passive] Stopped {name}.");
+        Emit($"[Passive] Stopped {ActionName(actionId)}.");
     }
 
     public void ActiveAttempt(string actionId, double performance)
@@ -668,24 +695,65 @@ public partial class GameRoot : Node
             return "mastery —";
 
         var professionId = _professions.GetAction(actionId).ProfessionId;
-        var benefits = _professions.MasteryBenefits;
+        var benefits = _professions.Benefits.Mastery; // this line reads what MASTERY bought, not the total
         var bought = new List<string>();
 
-        void Note(MasteryBenefitKind kind, string label)
+        void Note(ProfessionBenefitKind kind, string label)
         {
             if (benefits.ValueOf(kind, professionId, mastery) > 0)
                 bought.Add(label);
         }
 
-        Note(MasteryBenefitKind.IntervalReduction, "quicker");
-        Note(MasteryBenefitKind.BonusOutputChance, "luckier");
-        Note(MasteryBenefitKind.InputPreservation, "saves materials");
-        Note(MasteryBenefitKind.OutputDoubling, "doubles");
+        Note(ProfessionBenefitKind.IntervalReduction, "quicker");
+        Note(ProfessionBenefitKind.BonusOutputChance, "luckier");
+        Note(ProfessionBenefitKind.InputPreservation, "saves materials");
+        Note(ProfessionBenefitKind.OutputDoubling, "doubles");
 
         var next = NextMasteryUnlock(professionId, level);
         var earned = bought.Count == 0 ? string.Empty : $" — {string.Join(", ", bought)}";
         return $"mastery {level}/{MasteryLeveling.MaxLevel}{earned}{next}";
     }
+
+    /// <summary>
+    /// What the rest of the player's progress is currently doing for this profession — the
+    /// cross-profession and global bonuses, each with the level paying for it (Phase 10).
+    ///
+    /// <para>Shown because a bonus the player never sees is a bonus they do not believe in, which
+    /// is the state every progression track in this project has had to be dug out of. Only
+    /// synergies that are actually paying appear: a locked one is a promise, and the ladder is
+    /// where promises belong.</para>
+    /// </summary>
+    public IReadOnlyList<string> SynergyReadout(string professionId)
+    {
+        var benefits = _professions.Benefits;
+        var lines = new List<string>();
+
+        foreach (var synergy in benefits.Synergies.Reaching(professionId))
+        {
+            var sourceLevel = benefits.SourceLevelOf(synergy);
+            var value = synergy.ValueAt(sourceLevel);
+            if (value <= 0)
+                continue;
+
+            var source = synergy.IsGlobalSource
+                ? $"Everything you have learned (total {sourceLevel})"
+                : $"{ProfessionName(synergy.SourceProfession!)} L{sourceLevel}";
+            lines.Add($"{source} → {SynergyEffectLabel(synergy.Kind)} {value:P1}");
+        }
+
+        return lines;
+    }
+
+    private static string SynergyEffectLabel(ProfessionBenefitKind kind) => kind switch
+    {
+        ProfessionBenefitKind.IntervalReduction => "quicker by",
+        ProfessionBenefitKind.InputPreservation => "saves materials",
+        ProfessionBenefitKind.OutputDoubling => "doubles",
+        ProfessionBenefitKind.BonusOutputChance => "luckier finds",
+        ProfessionBenefitKind.OpportunityChance => "notices more",
+        ProfessionBenefitKind.OpportunityRisk => "safer chances",
+        _ => kind.ToString(),
+    };
 
     /// <summary>The next rung and what it costs, so the ladder reads as a ladder rather than as
     /// a number. Empty once everything has switched on.</summary>
@@ -693,10 +761,10 @@ public partial class GameRoot : Node
     {
         var pending = new[]
         {
-            (Kind: MasteryBenefitKind.InputPreservation, Label: "saves materials"),
-            (Kind: MasteryBenefitKind.OutputDoubling, Label: "doubles"),
+            (Kind: ProfessionBenefitKind.InputPreservation, Label: "saves materials"),
+            (Kind: ProfessionBenefitKind.OutputDoubling, Label: "doubles"),
         }
-        .Select(rung => (rung.Label, At: _professions.MasteryBenefits.UnlockLevelOf(rung.Kind, professionId)))
+        .Select(rung => (rung.Label, At: _professions.Benefits.Mastery.UnlockLevelOf(rung.Kind, professionId)))
         .Where(rung => rung.At is { } at && at > level)
         .OrderBy(rung => rung.At)
         .ToList();
@@ -1115,6 +1183,8 @@ public partial class GameRoot : Node
         _encounter.PlayerCanParry = PlayerCanParry; // gear-granted (D-26), snapshotted at Start
         _encounter.Start(player, new[] { Combatant.FromActor(resolvedActor, ResolveActorMoveset(actor)) });
         SetRunning(true); // telegraphs advance in real time
+        if (AutoCombatEnabled)
+            EngagePilot();
         CombatChanged?.Invoke();
     }
 
@@ -1147,6 +1217,89 @@ public partial class GameRoot : Node
     public void CombatBlock() => _encounter.Block();
     public void CombatDodge() => _encounter.Dodge();
     public void CombatWait() => _encounter.Wait();
+
+    // --- Auto-combat (Phase 10, GDD §5.7) -----------------------------------
+    //
+    // The pilot only ever issues the commands directly above. Everything about the fight —
+    // timing, telegraphs, costs, statuses, damage, defences, cooldowns, triggers — resolves in
+    // the one encounter, on the one tick engine, exactly as it does for a hand on the keyboard.
+
+    private AutoCombatPilot? _pilot;
+
+    public IReadOnlyList<AutoCombatProfileDefinition> AutoCombatProfiles =>
+        _autoCombatProfiles.GetAll().OrderBy(profile => profile.Id, StringComparer.Ordinal).ToList();
+
+    /// <summary>Whether the player has handed the fight over. Persisted nowhere on purpose:
+    /// letting a saved game resume in auto is a decision the player should make while looking
+    /// at the fight, not one a save file makes for them.</summary>
+    public bool AutoCombatEnabled { get; private set; }
+
+    /// <summary>Which brain plays. Null until content loads; the first profile by id otherwise.</summary>
+    public string? AutoCombatProfileId { get; private set; }
+
+    public event Action? AutoCombatChanged;
+
+    public void SetAutoCombatEnabled(bool enabled)
+    {
+        if (AutoCombatEnabled == enabled)
+            return;
+
+        AutoCombatEnabled = enabled;
+        if (enabled)
+            EngagePilot();
+        else
+            DisengagePilot();
+
+        Emit(enabled
+            ? $"[Auto] Auto-combat on ({AutoCombatProfileName()}). It reacts in {ActiveAutoCombatProfile()?.ReactionTicks ?? 0} ticks — too slow for a Perfect Block or a Parry."
+            : "[Auto] Auto-combat off.");
+        AutoCombatChanged?.Invoke();
+    }
+
+    public void SetAutoCombatProfile(string profileId)
+    {
+        if (!_autoCombatProfiles.Contains(profileId) || profileId == ActiveAutoCombatProfile()?.Id)
+            return;
+
+        AutoCombatProfileId = profileId;
+
+        // Swapping brains mid-fight takes effect immediately: the pilot holds the profile, so it
+        // is rebuilt rather than mutated.
+        if (AutoCombatEnabled)
+        {
+            DisengagePilot();
+            EngagePilot();
+        }
+
+        Emit($"[Auto] Brain set to {AutoCombatProfileName()}.");
+        AutoCombatChanged?.Invoke();
+    }
+
+    public AutoCombatProfileDefinition? ActiveAutoCombatProfile() =>
+        AutoCombatProfileId is { } id && _autoCombatProfiles.TryGetById(id, out var profile)
+            ? profile
+            : _autoCombatProfiles.GetAll().OrderBy(candidate => candidate.Id, StringComparer.Ordinal).FirstOrDefault();
+
+    public string AutoCombatProfileName() => ActiveAutoCombatProfile()?.Name ?? "none";
+
+    private void EngagePilot()
+    {
+        if (!_encounter.IsActive || ActiveAutoCombatProfile() is not { } profile)
+            return;
+
+        _pilot = new AutoCombatPilot(_encounter, _tick, profile, _combatRandom);
+        _pilot.Decided += Emit;
+        _pilot.Engage();
+    }
+
+    private void DisengagePilot()
+    {
+        if (_pilot is null)
+            return;
+        _pilot.Decided -= Emit;
+        _pilot.Disengage();
+        _pilot = null;
+    }
 
     // --- Fabrication (C2a) --------------------------------------------------
 
@@ -1368,6 +1521,8 @@ public partial class GameRoot : Node
 
     private void OnCombatEnded(CombatOutcome outcome)
     {
+        DisengagePilot(); // the fight is over; nothing should still be scheduling decisions
+
         if (outcome.Result == CombatResult.Victory)
         {
             foreach (var enemy in outcome.DefeatedEnemies)
@@ -2293,7 +2448,7 @@ public partial class GameRoot : Node
             emergentEquipment: _equipment.GetAll().Where(e => e.Id.StartsWith("equip.emergent.", StringComparison.Ordinal)),
             farmingPlots: _farmingPlots,
             trainingCourse: _trainingCourse,
-            passiveActionId: _passiveRunner.CurrentActionId,
+            passiveActionId: _passiveRunner.SelectedActionId, // the standing selection, running or waiting
             savedAtUnixSeconds: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             loadout: _loadout,
             characterProgress: _characterProgress);
@@ -2303,6 +2458,33 @@ public partial class GameRoot : Node
         if (data.PassiveActionId is not null)
             Emit($"[Save] {ActionName(data.PassiveActionId)} will keep running while you are away.");
     }
+
+    /// <summary>
+    /// Saves on the way out, so closing the window is a legitimate way to end a session.
+    ///
+    /// <para><b>Why this is needed at all.</b> Offline progress is measured from
+    /// <see cref="SaveData.SavedAtUnixSeconds"/> — the clock only starts at a save. Without an
+    /// autosave, "leave it running overnight" quietly means "remember to press Save first", and
+    /// the one time the player forgets, the night pays nothing and looks like a bug.</para>
+    ///
+    /// <para><b>Why it is guarded.</b> A session that has never had a save file must not create
+    /// one on the way out: a fresh game started for a look around would overwrite a real save.
+    /// Writing over somebody's progress is a worse failure than losing an unsaved hour.</para>
+    /// </summary>
+    public override void _Notification(int what)
+    {
+        if (what is not ((int)NotificationWMCloseRequest or (int)NotificationExitTree))
+            return;
+        if (_autosaved || InRealm) // mid-run state is unsecured by design; saving it would bank it
+            return;
+        if (!_saveStore.Exists())
+            return;
+
+        _autosaved = true;
+        SaveGame();
+    }
+
+    private bool _autosaved;
 
     public void LoadGame()
     {
@@ -2343,10 +2525,15 @@ public partial class GameRoot : Node
     }
 
     /// <summary>
-    /// Pays out the absence: the passive action the player left running, and any crop that
+    /// Pays out the absence: the training selection the player left running, and any crop that
     /// finished growing while the game was closed. Wall-clock, not ticks — the simulation clock
     /// stops when the game does, so only <see cref="SaveData.SavedAtUnixSeconds"/> can measure
     /// how long they were gone.
+    ///
+    /// <para>The arithmetic all lives in <see cref="AwayProgress"/>, which runs the same
+    /// <c>ProfessionSystem.Execute</c> live passive play does. This does the two things Core
+    /// cannot: it converts wall-clock into an elapsed span, and it moves the crop clock onto
+    /// this session's ticks first.</para>
     /// </summary>
     private void ApplyTimeAway(SaveData save)
     {
@@ -2364,25 +2551,37 @@ public partial class GameRoot : Node
 
         RebasePlantedCrops(save, ProfessionTuning.OfflineTicks(secondsAway));
 
+        LastAwayReport = AwayProgress.Resolve(
+            _professions, save.PassiveActionId, secondsAway, _farmingPlots, _tick.CurrentTick);
+
+        Emit("[Away] " + AwayReadout.OneLine(LastAwayReport, ActionName, ItemName, OfflineCapHours));
+
+        // The selection is picked back up whatever state it is in: auto-repeat means an action
+        // that ran out of materials waits for more rather than being forgotten, which is the
+        // whole point of a *standing* selection.
         if (save.PassiveActionId is { } actionId)
-        {
-            var report = OfflineProgressCalculator.Apply(_professions, actionId, secondsAway);
-            Emit(report.EarnedAnything
-                ? $"[Away] {TimeAwayPhrase(secondsAway)}: {ActionName(actionId)} ×{report.CompletedActions} → " +
-                  $"{DescribeStacks(report.Produced)} (xp +{report.XpGained}). {OfflineStopPhrase(report.StopReason)}"
-                : $"[Away] {TimeAwayPhrase(secondsAway)}: {ActionName(actionId)} produced nothing. {OfflineStopPhrase(report.StopReason)}");
+            _passiveRunner.Start(actionId);
 
-            // Picked back up whenever it still *can* run — including after an absence too short
-            // to have banked a single completion. Only an action that ran out of materials
-            // stays stopped, which is the one case the player needs to notice.
-            if (_professions.CanExecute(actionId))
-                _passiveRunner.Start(actionId);
-        }
-
-        var lifted = _farmingPlots.HarvestAllReady(_tick.CurrentTick);
-        foreach (var outcome in lifted)
-            Emit($"[Away] A crop finished: {ActionName(outcome.ActionId)} → {DescribeProduced(outcome)} (xp +{outcome.XpGained}).");
+        AwayReported?.Invoke(LastAwayReport);
     }
+
+    /// <summary>What the last absence earned, for the summary panel. Null until one is paid.</summary>
+    public AwayReport? LastAwayReport { get; private set; }
+
+    /// <summary>Raised when an absence has been paid out and is ready to be shown.</summary>
+    public event Action<AwayReport>? AwayReported;
+
+    /// <summary>The offline cap in hours, as the summary states it.</summary>
+    public static long OfflineCapHours => ProfessionTuning.MaxOfflineTicks / (TicksPerSecond * 3600);
+
+    /// <summary>The away summary as headed lines — what the panel renders.</summary>
+    public IReadOnlyList<AwayLine> AwaySummaryLines() =>
+        LastAwayReport is null
+            ? Array.Empty<AwayLine>()
+            : AwayReadout.Lines(LastAwayReport, ActionName, ProfessionName, ItemName, OfflineCapHours);
+
+    public string AwaySummaryHeadline() =>
+        LastAwayReport is null ? string.Empty : AwayReadout.Headline(LastAwayReport);
 
     /// <summary>
     /// Moves saved crops onto this session's clock, minus the time the player was away.
@@ -2403,20 +2602,9 @@ public partial class GameRoot : Node
         }));
     }
 
-    private static string TimeAwayPhrase(long secondsAway) => secondsAway switch
-    {
-        < 60 => $"{secondsAway}s away",
-        < 3600 => $"{secondsAway / 60}m away",
-        _ => $"{secondsAway / 3600.0:0.#}h away",
-    };
-
-    private static string OfflineStopPhrase(OfflineStopReason reason) => reason switch
-    {
-        OfflineStopReason.InputsExhausted => "It ran out of materials.",
-        OfflineStopReason.TimeCapped => $"Capped at {ProfessionTuning.MaxOfflineTicks / (TicksPerSecond * 3600)}h.",
-        OfflineStopReason.CompletionCapped => "Capped at the per-absence completion limit.",
-        _ => string.Empty,
-    };
+    // TimeAwayPhrase/OfflineStopPhrase lived here and now live in Presentation's AwayReadout —
+    // the console line and the summary panel say the same thing about the same absence, which
+    // they could not while one of them owned its own wording (D30, rule 7).
 
     public void ReportStatus()
     {
@@ -2617,7 +2805,10 @@ public partial class GameRoot : Node
         Emit($"[Level] {ProfessionName(up.ProfessionId)} reached level {up.NewLevel}!");
 
     private void OnPassiveStalled(ActionOutcome outcome) =>
-        Emit($"[Passive] Stopped — {ActionName(outcome.ActionId)} ({outcome.Failure}).");
+        Emit($"[Passive] {ActionName(outcome.ActionId)} is waiting — {outcome.Failure}. It resumes on its own.");
+
+    private void OnPassiveResumed(string actionId) =>
+        Emit($"[Passive] {ActionName(actionId)} picked back up.");
 
     private void OnDiscovered(string discoveryId)
     {

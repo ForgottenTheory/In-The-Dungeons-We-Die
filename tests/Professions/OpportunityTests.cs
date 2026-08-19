@@ -176,10 +176,10 @@ public class OpportunityTests
         new(TestPaths.LoadStore<MasteryBenefitDefinition>("mastery"));
 
     private static double MasteryOpportunityBonus(int mastery) =>
-        Ladder.ValueOf(MasteryBenefitKind.OpportunityChance, "profession.mining", mastery);
+        Ladder.ValueOf(ProfessionBenefitKind.OpportunityChance, "profession.mining", mastery);
 
     private static double MasteryRiskReduction(int mastery) =>
-        Ladder.ValueOf(MasteryBenefitKind.OpportunityRisk, "profession.mining", mastery);
+        Ladder.ValueOf(ProfessionBenefitKind.OpportunityRisk, "profession.mining", mastery);
 
     [Fact]
     public void MasteryAndPerformanceBothRaiseTheDiscoveryChance()

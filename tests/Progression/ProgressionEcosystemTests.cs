@@ -47,7 +47,7 @@ public class ProgressionEcosystemTests
     // --- Mastery: six benefits, all consumed --------------------------------
 
     /// <summary>
-    /// Every <see cref="MasteryBenefitKind"/> must be worth something at full mastery. The enum
+    /// Every <see cref="ProfessionBenefitKind"/> must be worth something at full mastery. The enum
     /// is a closed vocabulary whose members each have exactly one consumer in the execution path,
     /// so a kind worth zero is a consumer that can never fire.
     /// </summary>
@@ -56,7 +56,7 @@ public class ProgressionEcosystemTests
     {
         var ladder = TestPaths.ShippedMasteryLadder();
 
-        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        foreach (var kind in Enum.GetValues<ProfessionBenefitKind>())
         {
             var value = ladder.ValueOf(kind, "profession.mining", MasteryLeveling.MaxLevel);
             Assert.True(value > 0, $"mastery buys nothing for {kind}.");
@@ -221,12 +221,20 @@ public class ProgressionEcosystemTests
         var tracks = new (string Name, bool Consumed)[]
         {
             ("profession levels", TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll().Any(a => a.RequiredLevel > 1)),
-            ("per-action mastery", Enum.GetValues<MasteryBenefitKind>().All(k => TestPaths.ShippedMasteryLadder().ValueOf(k, "profession.mining", MasteryLeveling.MaxLevel) > 0)),
+            ("per-action mastery", Enum.GetValues<ProfessionBenefitKind>().All(k => TestPaths.ShippedMasteryLadder().ValueOf(k, "profession.mining", MasteryLeveling.MaxLevel) > 0)),
             ("realm knowledge", Enum.GetValues<RealmInsight>().All(RealmKnowledgeLevels.Required.ContainsKey)),
             ("character xp", CharacterLeveling.XpForExtracting > 0 && AttributeGrowth.BudgetPerLevel > 0),
             ("crafting discoveries", TestPaths.LoadStore<CraftingInteractionDefinition>("crafting_interactions").Count > 0),
             ("techniques", TestPaths.LoadStore<TechniqueDefinition>("techniques").Count > 0),
             ("assay", AssayLens.DepthFor(AssayTuning.PotentialLevel) != AssayLens.DepthFor(1)),
+
+            // Phase 10: two more sources of the same six quantities. They are on the roll-call
+            // rather than trusted because that is exactly how mastery went four milestones
+            // incrementing while nothing read it.
+            ("cross-profession synergies", TestPaths.LoadStore<ProfessionSynergyDefinition>("synergies")
+                .GetAll().Any(synergy => !synergy.IsGlobalSource && synergy.PerLevel > 0)),
+            ("global (total-level) bonuses", TestPaths.LoadStore<ProfessionSynergyDefinition>("synergies")
+                .GetAll().Any(synergy => synergy.IsGlobalSource && synergy.PerLevel > 0)),
         };
 
         foreach (var (name, consumed) in tracks)

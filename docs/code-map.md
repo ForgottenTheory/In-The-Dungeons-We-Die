@@ -1035,6 +1035,58 @@ A new *brain* is one `ai_profiles` entry. **No class or enemy-name branches anyw
 
 ---
 
+## 10.13b Auto-combat (Phase 10, D41)
+
+**PURPOSE** — Play the player's side without the player. GDD §5.7, and the D-07 consequence in
+`docs/damage-and-defense.md` §5.1.1.
+
+**IMPORTANT FILES** — `core/Combat/AutoCombatPilot.cs`, `core/Combat/AutoCombatProfileDefinition.cs`
+(also holds `DefenceRuleSpec` and `AutoCombatTuning`) · `ContentValidator.ValidateAutoCombatProfiles`.
+
+**DATA** — `auto_combat/profiles.json` (3 brains: Steady, Aggressive, Cautious).
+
+**RUNTIME FLOW**
+```
+GameRoot.SetAutoCombatEnabled(true) → EngagePilot()
+  AutoCombatPilot.Engage
+     └─ Combatant.Ai ← profile.Rules          the player IS an AI-profile actor now
+  every tick (DecisionPollTicks):
+     ├─ AnswerIncomingAttack   reads CombatEncounter.Intents (the SAME read-model the UI shows)
+     │     stance goes up at max(noticed + R, impact − R)  ← R = reaction_ticks
+     │     └─ encounter.Block() / encounter.Dodge()
+     └─ Attack                 encounter.ChooseMoveFor(player) → encounter.UseMove(id)
+```
+
+**THE ONE RULE.** *It chooses; it never resolves.* Timing, telegraphs, costs, statuses, damage,
+defences, cooldowns and triggers all run in the one encounter on the one tick engine. **There is
+no simplified offline combat calculator and there must never be one** — the moment automated play
+has its own maths, passive and active are two balance models wearing one name.
+
+**WHY IT IS WEAKER.** One number. A hand R ticks behind the eye must commit R ticks before impact,
+and every tight window is measured from when the stance went up:
+
+| Window | Ticks | R = 8 |
+|---|---|---|
+| Block | 16 | reliably |
+| Dodge | 10 | reliably |
+| Perfect Block | 4 | **never** |
+| Parry | 3 | **never** |
+
+Attacks arriving sooner than 2R after they appear are unanswerable — which is what the small
+untelegraphed-only `evade` passive is for. **No damage multiplier exists anywhere in the pilot**;
+`AutoCombatTests.AnAutomatedSwingHitsForExactlyWhatAManualOneDoes` fails the day one is added, and
+`AutoCombatTuning.MinimumReactionTicks` (derived from the windows) refuses a brain fast enough to
+parry.
+
+**DEPENDENCIES** — Combat, Simulation, Rules, Randomness.
+
+**EXTENSION POINTS** — A new brain is one JSON entry. Rules match moves **by tag**, never by id,
+because a player's moveset comes from their weapon — a test holds that for shipped content.
+
+**ENTRY POINT** — `AutoCombatPilot.Decide`.
+
+---
+
 ## 10.14 Professions
 
 **PURPOSE** — Persistent skill progression and the gathering/processing economy. **20
@@ -1043,11 +1095,12 @@ professions**; the design lives in `docs/professions.md`.
 **IMPORTANT FILES** — `ProfessionDefinition.cs`, `ProfessionActionDefinition.cs`,
 `ProfessionOpportunityDefinition.cs`, `ProfessionProgress.cs`, `ProfessionLeveling.cs`,
 `ProfessionTuning.cs`, `ActionResolver.cs`, `ProfessionSystem.cs`,
-`PassiveProfessionRunner.cs`, `OfflineProgressCalculator.cs`, `FarmingPlots.cs`,
-`TrainingCourse.cs` · plus `Presentation/AssayLens.cs`.
+`PassiveProfessionRunner.cs`, `OfflineProgressCalculator.cs`, `AwayProgress.cs`,
+`ProfessionBenefits.cs`, `ProfessionSynergies.cs`, `FarmingPlots.cs`,
+`TrainingCourse.cs` · plus `Presentation/AssayLens.cs`, `Presentation/AwayReadout.cs`.
 
 **DATA** — `professions/` (20) · `profession_actions/` (348 actions, 32 nested opportunities) ·
-`training_obstacles/` (12).
+`training_obstacles/` (12) · `mastery/` (6 rungs) · `synergies/` (15: 13 cross-profession + 2 global).
 
 **RUNTIME FLOW**
 ```
@@ -1064,16 +1117,35 @@ ProfessionSystem.Execute(actionId, performance, isActive)      ← the ONE execu
 ProfessionSystem.PursueOpportunity(actionId, opportunityId)     ← the player said yes
    └─ risk roll (mastery talks it down) → payoff or nothing, either way XP
 
-PassiveProfessionRunner: schedules the effective interval on the TickEngine, re-schedules on
-                         completion; stops (Stalled) when it cannot proceed.
+PassiveProfessionRunner: holds the STANDING selection (SelectedActionId) and schedules the
+                         effective interval on the TickEngine. Idle → Working → Waiting:
+                         running out of inputs WAITS and resumes by itself (Phase 10
+                         auto-repeat); only Stop() clears the selection.
 
 OfflineProgressCalculator.Apply(system, actionId, elapsedRealSeconds)
    └─ loops the SAME Execute at performance 0 — so offline can never drift from live passive.
       Bounded by MaxOfflineTicks (12h) and MaxOfflineCompletions.
+
+AwayProgress.Resolve(system, selectedActionId, elapsedSeconds, plots, currentTick) → AwayReport
+   └─ aggregates ONE absence: the offline payout + crops lifted + items merged per id + levels
+      gained. Aggregates, never resolves. Rendered by Presentation/AwayReadout.
 ```
 
 **Active and passive share one path.** Passive's "fewer rare outcomes" is structural, not a
 tuning number: only the active path rolls for opportunities at all.
+
+**THE BENEFIT SEAM (Phase 10).** `ProfessionBenefits` answers the one question the execution path
+asks — *what is this benefit worth, right now, for this action?* — by folding together:
+
+| Source | Reads | Content |
+|---|---|---|
+| `MasteryBenefits` | per-**action** mastery | `mastery/` |
+| `ProfessionSynergies` | another **profession's** level, or the **total** across the roster | `synergies/` |
+| *(E6)* worn tools | — | — |
+
+All three pay into the same six `ProfessionBenefitKind` quantities, so adding the second source
+changed **no line** of `ActionResolver` or `ProfessionSystem`. A synergy with no `source` is the
+global bonus and reads total level; source and target must differ (validated).
 
 **WHO OWNS THE CLOCK.** Core resolves an opportunity's gamble instantly and deterministically;
 *when* the result arrives is the client's business — `GameRoot.PursuePendingOpportunity`
@@ -1460,7 +1532,10 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Change the action lifecycle** | `CombatEncounter.Commit` / `EnterWindup` / `Execute`, and `CombatTuning` for the windows |
 | **Change what a weapon does to combat** | `core/Equipment/EquipmentResolver.cs` — the whole material → combat seam, 105 lines |
 | **Change what Realm Knowledge reveals** | `RealmKnowledgeLevels.Required` for the thresholds (pinned by ratio in `DarkForestBalanceTests`, not by value); `core/Presentation/RealmBriefing.cs` for the pre-run reading and `GameRoot.KnowledgeIntel` for the in-run one. **Never add a second threshold table** |
-| **Change what mastery buys** | `game/data/mastery/mastery_benefits.json` — it is content. A new *kind* means a `MasteryBenefitKind` member **plus its consumer** in `ActionResolver`/`ProfessionSystem`, plus a validator rule. `MasteryLeveling` owns points → level |
+| **Change what mastery buys** | `game/data/mastery/mastery_benefits.json` — it is content. A new *kind* means a `ProfessionBenefitKind` member **plus its consumer** in `ActionResolver`/`ProfessionSystem`, plus a validator rule. `MasteryLeveling` owns points → level |
+| **Change cross-profession or global bonuses** | `game/data/synergies/synergies.json` — it is content, and it pays into the same six quantities mastery does. A row with no `source` reads the player's **total** level. Source and target must differ. The seam is `ProfessionBenefits`; nothing downstream needs to know a synergy exists |
+| **Change what automated combat does** | `game/data/auto_combat/profiles.json` for the brains (tag-matched rules + weighted stances); `AutoCombatPilot` for *when* it decides. **Never add a damage modifier** — D-07 says the handicap is `reaction_ticks` and nothing else (§10.13b) |
+| **Change what the player sees on returning** | `core/Professions/AwayProgress.cs` for what an absence aggregates, `core/Presentation/AwayReadout.cs` for every word of it. The console line and the panel both read the latter |
 | **Change how the character levels** | `core/Characters/CharacterLeveling.cs` (curve + what a Realm pays); `GameRoot.AwardCharacterXp` for the sources. **Realm work only** — awarding it anywhere else collapses the layered model, and `ProgressionEcosystemTests` fails |
 | **Change what the player takes into a run** | `core/Realms/RunLoadout.cs` for the model, `LoadoutCheck` for the warnings and the starter-kit rule, `GameRoot.EnterPreparedRun` for the hand-off into the run bag. Worn gear is **not** stored here — it lives in `Equipment` (§10.16b) |
 | **Change player-facing wording** | `core/Presentation/SemanticFormat.cs`. If you need a new *fact*, add it to the relevant `XReading` first. **Never format in the UI** |
@@ -1491,6 +1566,8 @@ Some names are data, not code. Renaming them silently corrupts saves or breaks c
 | `TrainingSlot` enum **member names** | Written as strings into `SaveData.TrainingCourse` |
 | Action ids (`action.*`) | Per-action **mastery** is keyed by action id in every save |
 | `CourseBonusKeys` **values** | Keys in `training_obstacles/` content, and validated against |
+| `ProfessionBenefitKind` **member names** | The `kind` field of every `mastery/` and `synergies/` entry. (The *enum type* was renamed from `MasteryBenefitKind` in Phase 10; the members did not move) |
+| `DefensiveStance` enum **member names** | The `stance` field of every `auto_combat/` defence rule |
 | `SaveData.CurrentSchemaVersion` semantics | Bump it; never repurpose a version |
 | The `emergent.<hash>` / `equip.emergent.<hash>` scheme, and anything feeding `MaterialSignature` or the fabrication signature | Changing what is hashed re-identifies every stored archetype |
 

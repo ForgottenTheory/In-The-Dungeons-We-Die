@@ -68,7 +68,7 @@ public class MasteryTests
     [Fact]
     public void TheShippedLadderAuthorsEveryBenefitKind()
     {
-        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        foreach (var kind in Enum.GetValues<ProfessionBenefitKind>())
             Assert.True(Ladder.ValueOf(kind, Forestry, MasteryLeveling.MaxLevel) > 0,
                 $"{kind} is worth nothing at full mastery — the code that reads it is dead.");
     }
@@ -76,7 +76,7 @@ public class MasteryTests
     [Fact]
     public void EveryRungIsWorthMoreAtHigherMasteryUntilItCaps()
     {
-        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        foreach (var kind in Enum.GetValues<ProfessionBenefitKind>())
         {
             var low = Ladder.ValueOf(kind, Forestry, 50);
             var high = Ladder.ValueOf(kind, Forestry, MasteryLeveling.MaxLevel);
@@ -89,7 +89,7 @@ public class MasteryTests
     [Fact]
     public void AnEmptyLadderBuysNothing()
     {
-        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        foreach (var kind in Enum.GetValues<ProfessionBenefitKind>())
             Assert.Equal(0.0, MasteryBenefits.None.ValueOf(kind, Forestry, MasteryLeveling.MaxLevel));
     }
 
@@ -100,12 +100,12 @@ public class MasteryTests
     {
         var ladder = new MasteryBenefits(new[]
         {
-            new MasteryBenefitDefinition { Id = "general", Kind = MasteryBenefitKind.OutputDoubling, PerLevel = 0.001, Max = 1.0 },
-            new MasteryBenefitDefinition { Id = "mining", Kind = MasteryBenefitKind.OutputDoubling, ProfessionId = "profession.mining", PerLevel = 0.01, Max = 1.0 },
+            new MasteryBenefitDefinition { Id = "general", Kind = ProfessionBenefitKind.OutputDoubling, PerLevel = 0.001, Max = 1.0 },
+            new MasteryBenefitDefinition { Id = "mining", Kind = ProfessionBenefitKind.OutputDoubling, ProfessionId = "profession.mining", PerLevel = 0.01, Max = 1.0 },
         });
 
-        Assert.Equal(0.10, ladder.ValueOf(MasteryBenefitKind.OutputDoubling, "profession.mining", 10), 6);
-        Assert.Equal(0.01, ladder.ValueOf(MasteryBenefitKind.OutputDoubling, Forestry, 10), 6);
+        Assert.Equal(0.10, ladder.ValueOf(ProfessionBenefitKind.OutputDoubling, "profession.mining", 10), 6);
+        Assert.Equal(0.01, ladder.ValueOf(ProfessionBenefitKind.OutputDoubling, Forestry, 10), 6);
     }
 
     [Fact]
@@ -115,12 +115,12 @@ public class MasteryTests
         {
             new MasteryBenefitDefinition
             {
-                Id = "late", Kind = MasteryBenefitKind.InputPreservation, UnlockLevel = 20, PerLevel = 0.01, Max = 1.0,
+                Id = "late", Kind = ProfessionBenefitKind.InputPreservation, UnlockLevel = 20, PerLevel = 0.01, Max = 1.0,
             },
         });
 
-        Assert.Equal(0.0, ladder.ValueOf(MasteryBenefitKind.InputPreservation, Forestry, 19));
-        Assert.Equal(0.20, ladder.ValueOf(MasteryBenefitKind.InputPreservation, Forestry, 20), 6);
+        Assert.Equal(0.0, ladder.ValueOf(ProfessionBenefitKind.InputPreservation, Forestry, 19));
+        Assert.Equal(0.20, ladder.ValueOf(ProfessionBenefitKind.InputPreservation, Forestry, 20), 6);
     }
 
     // --- Preservation: the inputs survive -----------------------------------
@@ -134,7 +134,7 @@ public class MasteryTests
 
         var system = new ProfessionSystem(Store(ChopOak(inputs)), bag, new FixedRandom(0.0))
         {
-            MasteryBenefits = Ladder,
+            Benefits = ProfessionBenefits.FromMasteryLadder(Ladder),
         };
         system.GetProgress(Forestry).AddMastery("action.chop_oak", MasteryLeveling.MaxLevel);
 
@@ -159,7 +159,7 @@ public class MasteryTests
 
         var system = new ProfessionSystem(Store(ChopOak(inputs)), bag, new FixedRandom(0.0))
         {
-            MasteryBenefits = Ladder,
+            Benefits = ProfessionBenefits.FromMasteryLadder(Ladder),
         };
 
         var outcome = system.Execute("action.chop_oak");
@@ -178,7 +178,7 @@ public class MasteryTests
         var inputs = new[] { new ItemStack("material.oak_log", 1) };
         var system = new ProfessionSystem(Store(ChopOak(inputs)), new Inventory(), new FixedRandom(0.0))
         {
-            MasteryBenefits = Ladder,
+            Benefits = ProfessionBenefits.FromMasteryLadder(Ladder),
         };
         system.GetProgress(Forestry).AddMastery("action.chop_oak", MasteryLeveling.MaxLevel);
 
@@ -194,7 +194,7 @@ public class MasteryTests
     public void HighMasteryCanDoubleTheOutputs()
     {
         var yield = ActionResolver.Resolve(
-            ChopOak(), MasteryLeveling.MaxLevel, performance: 0, new FixedRandom(0.0), masteryBenefits: Ladder);
+            ChopOak(), MasteryLeveling.MaxLevel, performance: 0, new FixedRandom(0.0), professionBenefits: ProfessionBenefits.FromMasteryLadder(Ladder));
 
         Assert.Equal(1, yield.OutputsDoubled);
         Assert.Equal(2, yield.Produced.Count(stack => stack.ItemId == "material.oak_log"));
@@ -204,7 +204,7 @@ public class MasteryTests
     public void WithoutMasteryNothingDoubles()
     {
         var yield = ActionResolver.Resolve(
-            ChopOak(), mastery: 0, performance: 0, new FixedRandom(0.0), masteryBenefits: Ladder);
+            ChopOak(), mastery: 0, performance: 0, new FixedRandom(0.0), professionBenefits: ProfessionBenefits.FromMasteryLadder(Ladder));
 
         Assert.Equal(0, yield.OutputsDoubled);
         Assert.Single(yield.Produced);
@@ -243,7 +243,7 @@ public class MasteryTests
     {
         var yield = ActionResolver.Resolve(
             ActionOfferingAt(40), mastery: 39, performance: 1.0, new FixedRandom(0.0),
-            isActive: true, masteryBenefits: Ladder);
+            isActive: true, professionBenefits: ProfessionBenefits.FromMasteryLadder(Ladder));
 
         Assert.Null(yield.Discovered);
     }
@@ -253,7 +253,7 @@ public class MasteryTests
     {
         var yield = ActionResolver.Resolve(
             ActionOfferingAt(40), mastery: 40, performance: 1.0, new FixedRandom(0.0),
-            isActive: true, masteryBenefits: Ladder);
+            isActive: true, professionBenefits: ProfessionBenefits.FromMasteryLadder(Ladder));
 
         Assert.NotNull(yield.Discovered);
         Assert.Equal("opportunity.the_reliquary", yield.Discovered!.Id);

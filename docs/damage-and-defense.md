@@ -587,7 +587,7 @@ Dexterity have a defensive identity without touching the skill test.
 | `combat.block.window` | **new** — additive ticks, max +50% of base |
 | `combat.perfect_block.window` | **new** — additive ticks, max +6 |
 
-### 5.1.1 How auto-combat dodges **[DECIDED — D-07 consequence]**
+### 5.1.1 How auto-combat dodges **[DECIDED — D-07 consequence · BUILT Phase 10, D41]**
 
 The obvious reading of this decision is *"auto-combat has no reflexes, so it can never avoid
 anything."* That is wrong, and the correct answer makes the decision stronger.
@@ -619,6 +619,16 @@ falls out of one number on the AI profile rather than a parallel balance model.
 **Consequence for gear:** window-widening affixes are worth *more* to an auto-combat build than to
 a skilled player, because they pull the tight windows into reach of an 8-tick reaction. That is a
 genuine, discoverable gearing difference between playstyles, and it cost nothing to create.
+
+> **As built (Phase 10, `core/Combat/AutoCombatPilot.cs`).** The mechanism that produces this
+> table is one line of arithmetic: the stance is committed at `max(noticed + R, impact − R)`.
+> Committing `R` early is what puts every tight window out of reach — they are all measured from
+> the moment the stance went up. The `noticed + R` half adds a second consequence for free: an
+> attack arriving sooner than `2R` after it appears **cannot be answered at all**, which is
+> exactly why the small untelegraphed-only `evade` passive survived this decision.
+>
+> `AutoCombatTuning.MinimumReactionTicks` is derived from the Perfect Block and Parry windows, so
+> a profile fast enough to reach them is a **load error**. Retuning a window retunes the floor.
 
 ## 5.2 Block **[EXISTING/PRESERVE + DECIDED split — D-06]**
 

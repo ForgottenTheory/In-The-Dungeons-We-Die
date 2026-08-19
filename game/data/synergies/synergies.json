@@ -1,0 +1,196 @@
+[
+  // ── CROSS-PROFESSION AND GLOBAL BONUSES ───────────────────────────────────────────────────────
+  //
+  // The Melvor layer GDD §4.1 has carried as "Planned": progress in one place paying off in
+  // another. Every one of these pays into the SAME six quantities the mastery ladder does
+  // (ProfessionBenefitKind), through the SAME ProfessionBenefits seam — which is why adding them
+  // needed no change at all to ActionResolver or ProfessionSystem.
+  //
+  // ── THE AUTHORING RULE ────────────────────────────────────────────────────────────────────────
+  //
+  // A synergy must follow a chain the professions ALREADY have (docs/professions.md §5). Mining
+  // pays Smithing because ore actually walks from one to the other; a synergy between two
+  // professions that never touch would be a number pretending to be a relationship, and the
+  // player would learn to read the table instead of the game.
+  //
+  // Source and target must differ — the validator refuses a profession paying for its own level,
+  // because that is a mastery rung with extra steps, and a self-amplifying one.
+  //
+  // ── THE GLOBAL ROWS ───────────────────────────────────────────────────────────────────────────
+  //
+  // A row with no "source" reads the player's TOTAL profession level (20 × 99 = 1980 at the
+  // ceiling). That is what makes a global bonus something earned across the whole roster rather
+  // than a constant hidden in a tuning class. They unlock late and pay little per level on
+  // purpose: a global bonus is the reward for breadth, and breadth should not out-earn the
+  // mastery of the action actually being performed.
+  //
+  // ── WHY THE CAPS ARE NOT ROUND ────────────────────────────────────────────────────────────────
+  //
+  // Same rule the mastery ladder follows: each "max" is exactly what its rate reaches at the
+  // source's ceiling, because the validator refuses a cap the source can never deliver. A
+  // promise the table can never keep is worse than a smaller honest one.
+  //
+  // ── STILL UNBALANCED ──────────────────────────────────────────────────────────────────────────
+  //
+  // Every number here is a placeholder, like every other profession number in the game. Nobody
+  // has played to level 99 of anything.
+
+  // --- Gather → Process ------------------------------------------------------------------------
+
+  {
+    "id": "synergy.mining_smithing",
+    "kind": "InputPreservation",
+    "source": "profession.mining",
+    "target": "profession.smithing",
+    "unlock_level": 10,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "Ore you dug yourself goes further at the forge — you know which rock is worth the heat."
+  },
+  {
+    "id": "synergy.forestry_fletching",
+    "kind": "InputPreservation",
+    "source": "profession.forestry",
+    "target": "profession.fletching",
+    "unlock_level": 10,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "You pick the stave off the standing tree, so less of it ends up as shavings."
+  },
+  {
+    "id": "synergy.hunting_beast_lore",
+    "kind": "BonusOutputChance",
+    "source": "profession.hunting",
+    "target": "profession.beast_lore",
+    "unlock_level": 10,
+    "per_level": 0.0005,
+    "max": 0.0495,
+    "description": "A clean kill leaves more of the animal worth opening."
+  },
+  {
+    "id": "synergy.beast_lore_leatherworking",
+    "kind": "InputPreservation",
+    "source": "profession.beast_lore",
+    "target": "profession.leatherworking",
+    "unlock_level": 10,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "Hide taken off properly cuts into more than hide torn off in a hurry."
+  },
+  {
+    "id": "synergy.fishing_cooking",
+    "kind": "BonusOutputChance",
+    "source": "profession.fishing",
+    "target": "profession.cooking",
+    "unlock_level": 5,
+    "per_level": 0.0005,
+    "max": 0.0495,
+    "description": "You have gutted enough of these to know what else is inside them."
+  },
+  {
+    "id": "synergy.farming_tailoring",
+    "kind": "InputPreservation",
+    "source": "profession.farming",
+    "target": "profession.tailoring",
+    "unlock_level": 15,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "Fibre you grew is retted the way you meant to spin it."
+  },
+
+  // --- Process → Prepare -----------------------------------------------------------------------
+
+  {
+    "id": "synergy.farming_herblore",
+    "kind": "OutputDoubling",
+    "source": "profession.farming",
+    "target": "profession.herblore",
+    "unlock_level": 25,
+    "per_level": 0.0005,
+    "max": 0.0495,
+    "description": "A herb lifted at the right hour of the right day steeps into twice the work."
+  },
+  {
+    "id": "synergy.herblore_alchemy",
+    "kind": "IntervalReduction",
+    "source": "profession.herblore",
+    "target": "profession.alchemy",
+    "unlock_level": 15,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "The preparation is already right, so the reaction does not have to be coaxed."
+  },
+  {
+    "id": "synergy.assay_runecrafting",
+    "kind": "IntervalReduction",
+    "source": "profession.assay",
+    "target": "profession.runecrafting",
+    "unlock_level": 15,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "Reading the stone before you cut it saves every cut you would have wasted."
+  },
+  {
+    "id": "synergy.salvaging_artifice",
+    "kind": "InputPreservation",
+    "source": "profession.salvaging",
+    "target": "profession.artifice",
+    "unlock_level": 20,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "You take mechanisms apart the way they went together, so they go back together."
+  },
+  {
+    "id": "synergy.smithing_salvaging",
+    "kind": "BonusOutputChance",
+    "source": "profession.smithing",
+    "target": "profession.salvaging",
+    "unlock_level": 20,
+    "per_level": 0.0005,
+    "max": 0.0495,
+    "description": "Knowing how a thing was made tells you where it comes apart."
+  },
+  {
+    "id": "synergy.artifice_cartography",
+    "kind": "IntervalReduction",
+    "source": "profession.artifice",
+    "target": "profession.cartography",
+    "unlock_level": 20,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "Your own lenses and your own parchment. The survey goes quicker."
+  },
+  {
+    "id": "synergy.cartography_salvaging",
+    "kind": "OpportunityChance",
+    "source": "profession.cartography",
+    "target": "profession.salvaging",
+    "unlock_level": 25,
+    "per_level": 0.0005,
+    "max": 0.0495,
+    "description": "The chart says which ruin was worth building, and therefore worth digging."
+  },
+
+  // --- Global: what the whole roster is worth ---------------------------------------------------
+  //
+  // Source omitted = the sum of every profession's level. Unlock levels are totals, not single
+  // profession levels: 200 is roughly ten professions at level 20, i.e. a player who has been
+  // everywhere rather than one who has gone deep once.
+
+  {
+    "id": "synergy.practised_hand",
+    "kind": "BonusOutputChance",
+    "unlock_level": 200,
+    "per_level": 0.00005,
+    "max": 0.099,
+    "description": "A practised hand turns up what an unpractised one walks past — whatever the work is."
+  },
+  {
+    "id": "synergy.economy_of_motion",
+    "kind": "IntervalReduction",
+    "unlock_level": 400,
+    "per_level": 0.00005,
+    "max": 0.099,
+    "description": "Nothing you do is the first time you have done something like it. Everything goes a little quicker."
+  }
+]

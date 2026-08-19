@@ -22,6 +22,7 @@ public partial class ProfessionLadderPanel : VBoxContainer
     private readonly Func<double> _activeTimingPerformance;
 
     private Label _levelLabel = null!;
+    private Label _synergyLabel = null!;
     private VBoxContainer _rungs = null!;
 
     public ProfessionLadderPanel(GameRoot game, ProfessionDefinition profession, Func<double> activeTimingPerformance)
@@ -41,6 +42,12 @@ public partial class ProfessionLadderPanel : VBoxContainer
         _levelLabel = Wrapping(Muted);
         AddChild(_levelLabel);
 
+        // What the player's other professions are doing for this one (Phase 10). Only what is
+        // actually paying — a synergy that has not unlocked is a promise, and the rungs below
+        // are where promises belong.
+        _synergyLabel = Wrapping(Positive);
+        AddChild(_synergyLabel);
+
         _rungs = new VBoxContainer();
         AddChild(_rungs);
     }
@@ -49,6 +56,10 @@ public partial class ProfessionLadderPanel : VBoxContainer
     {
         var level = _game.ProfessionLevel(_profession.Id);
         _levelLabel.Text = $"{_profession.Description}   ({_profession.Category}, L{level})";
+
+        var synergies = _game.SynergyReadout(_profession.Id);
+        _synergyLabel.Text = synergies.Count == 0 ? string.Empty : "Helped by: " + string.Join("  ·  ", synergies);
+        _synergyLabel.Visible = synergies.Count > 0;
 
         ClearChildren(_rungs);
 

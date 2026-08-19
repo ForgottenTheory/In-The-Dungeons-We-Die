@@ -34,6 +34,7 @@ public class ProfessionEcosystemTests
         Assert.Equal(348, Actions.Count);
         Assert.Equal(32, Actions.GetAll().Sum(a => a.Opportunities.Count));
         Assert.Equal(12, TestPaths.LoadStore<TrainingObstacleDefinition>("training_obstacles").Count);
+        Assert.Equal(15, TestPaths.LoadStore<ProfessionSynergyDefinition>("synergies").Count);
         Assert.Equal(1448, TestPaths.LoadStore<MaterialDefinition>("materials").Count);
     }
 

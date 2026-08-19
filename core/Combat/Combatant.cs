@@ -62,12 +62,22 @@ public sealed class Combatant
     /// </summary>
     public IReadOnlyList<ResolvedMove> Moveset { get; set; }
 
-    /// <summary>Weighted move selection for enemies and (later) auto-combat. Empty = uniform.</summary>
-    public IReadOnlyList<AiRuleSpec> Ai { get; }
+    /// <summary>
+    /// Weighted move selection. Empty = uniform.
+    ///
+    /// <para>Settable, and that is the whole of auto-combat's offensive half: an engaged
+    /// <see cref="AutoCombatPilot"/> hands the <em>player</em> combatant a brain, and
+    /// <c>CombatEncounter.ChooseMoveFor</c> — the same method enemies have always used — starts
+    /// answering for them. GDD §5.7's "the player driven by the same profile shape" is literally
+    /// true in the code rather than a second implementation that resembles it. Cleared again
+    /// when the pilot disengages, so a hand back on the keyboard is a hand back in control.</para>
+    /// </summary>
+    public IReadOnlyList<AiRuleSpec> Ai { get; set; }
 
     /// <summary>Weight multiplier on whichever move this combatant used last, in [0, 1] (M2′c).
-    /// 1 = indifferent to repeats; 0 = never the same move twice running.</summary>
-    public double AvoidRepeatWeight { get; init; } = 1.0;
+    /// 1 = indifferent to repeats; 0 = never the same move twice running. Settable for the same
+    /// reason <see cref="Ai"/> is: it arrives with the brain.</summary>
+    public double AvoidRepeatWeight { get; set; } = 1.0;
 
     /// <summary>Drop tables rolled when this combatant is defeated — family, role and actor
     /// merged into one haul by <see cref="Dungeons.Loot.LootResolver"/>.</summary>

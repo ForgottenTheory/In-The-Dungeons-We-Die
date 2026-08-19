@@ -1,0 +1,95 @@
+[
+  // ── AUTO-COMBAT BRAINS ────────────────────────────────────────────────────────────────────────
+  //
+  // GDD §5.7: auto-combat is THE PLAYER DRIVEN BY THE SAME PROFILE SHAPE as an enemy. The
+  // "rules" below are AiRuleSpec — the exact type in ai_profiles/profiles.json — and they are
+  // answered by the exact method enemies use (CombatEncounter.ChooseMoveFor). There is no second
+  // combat resolver anywhere; the pilot only presses buttons.
+  //
+  // ── WHY THE RULES ARE TAG-MATCHED, NOT ID-MATCHED ─────────────────────────────────────────────
+  //
+  // A player's moveset comes from their weapon (the Fighter's whole identity, GDD §3.4), so a
+  // brain that named move ids would work with one sword and stand still holding another. Tags
+  // are what let one brain serve every loadout — the same argument the enemy brains make for
+  // serving many bodies.
+  //
+  // ── reaction_ticks IS THE WHOLE HANDICAP (D-07) ───────────────────────────────────────────────
+  //
+  // 8 ticks is 0.4s at 20 ticks/s; a present player reacts in roughly 2–5. Because a pilot must
+  // commit its stance reaction_ticks BEFORE impact, and every tight window is measured from when
+  // the stance went up, 8 ticks lands reliably inside the 16-tick Block and 10-tick Dodge windows
+  // and NEVER inside the 4-tick Perfect Block or 3-tick Parry. The validator refuses any profile
+  // quick enough to reach those, because a fast one would quietly repeal the decision.
+  //
+  // There is deliberately no damage multiplier here, and there must never be one.
+  //
+  // ── STILL UNBALANCED ──────────────────────────────────────────────────────────────────────────
+  //
+  // Weights are placeholders like every other combat number in the project.
+
+  {
+    "id": "auto.steady",
+    "name": "Steady",
+    "description": "Trades, and puts the shield up for everything. The safe way to be somewhere else.",
+    "reaction_ticks": 8,
+    "avoid_repeat_weight": 0.6,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 5 },
+      { "moveTag": "mech:stagger", "weight": 3 },
+      { "moveTag": "action:spell", "weight": 2 }
+    ],
+    "defence": [
+      { "stance": "Block", "weight": 10 },
+
+      // Out of stamina, blocking is not an option the encounter will honour — and a refused
+      // command is a wasted reaction. Dodging costs more, so this is not a saving; it is the
+      // brain preferring the cheaper failure.
+      { "stance": "Dodge", "weight": 3,
+        "when": [ { "kind": "resourceBelow", "text": "stamina", "value": 0.25 } ] }
+    ]
+  },
+
+  {
+    "id": "auto.aggressive",
+    "name": "Aggressive",
+    "description": "Answers only what would really hurt, and spends everything else on the enemy. Faster, and it will get you killed.",
+    "reaction_ticks": 8,
+    "avoid_repeat_weight": 0.4,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 8 },
+      { "moveTag": "mech:stagger", "weight": 6 },
+      { "moveTag": "action:spell", "weight": 4 },
+      { "moveTag": "action:attack", "weight": 12,
+        "when": [ { "kind": "targetHasStatus", "text": "status.vulnerable" } ] }
+    ],
+    "defence": [
+      // Nothing at full health: the whole profile is the bet that killing it first is cheaper
+      // than surviving it. Below half, it starts paying attention.
+      { "stance": "Block", "weight": 8,
+        "when": [ { "kind": "selfHealthBelow", "value": 0.5 } ] }
+    ]
+  },
+
+  {
+    "id": "auto.cautious",
+    "name": "Cautious",
+    "description": "Reads every telegraph and gets out of the way. Slow, and it comes home.",
+    "reaction_ticks": 8,
+    "avoid_repeat_weight": 0.7,
+    "rules": [
+      { "moveTag": "action:attack", "weight": 4 },
+      { "moveTag": "action:defensive", "weight": 3,
+        "when": [ { "kind": "selfHealthBelow", "value": 0.5 } ] },
+      { "moveTag": "action:spell", "weight": 2 }
+    ],
+    "defence": [
+      { "stance": "Dodge", "weight": 6 },
+      { "stance": "Block", "weight": 6 },
+
+      // Low on stamina both stances are unaffordable soon; blocking is the cheaper of the two,
+      // so it becomes the only one worth committing to.
+      { "stance": "Block", "weight": 10,
+        "when": [ { "kind": "resourceBelow", "text": "stamina", "value": 0.35 } ] }
+    ]
+  }
+]
