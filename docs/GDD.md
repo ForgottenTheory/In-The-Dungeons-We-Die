@@ -1,8 +1,11 @@
 # In The Dungeons We Die — Game Design Document
 
-> **Consolidated GDD.** Written against the project as it actually stands (revised after the
-> effect-foundation build E0–E4; 602 passing tests). Where older documents conflict with newer
-> decisions, the newer decision is recorded here and the older one is marked superseded.
+> **Consolidated GDD.** Written against the project as it actually stands — last full sync
+> **2026-08-19**, after the M6 loop-closers, Phases 6–10 (the finished Dark Forest, Realm
+> preparation, the progression pass, offline + automation) and the D29.3 resolution;
+> **1,191 passing tests, 0 build warnings, save schema v11**. Where older documents conflict
+> with newer decisions, the newer decision is recorded here and the older one is marked
+> superseded.
 >
 > **Status marks:** **BUILT** (in the game, tested) · **PLANNED** (designed and settled, not yet
 > built) · **NEEDS DESIGN** (little or no design exists). Anything undecided is marked rather
@@ -61,31 +64,35 @@ citations, lawsuits, medical warnings and workplace incidents rather than fantas
 # 2. Core Gameplay Loop
 
 ```
-HIDEOUT
-  ├─ Train professions (active or passive/idle)
+HIDEOUT                                                          [ALL BUILT]
+  ├─ Train professions (active, passive, or offline — the selection is standing)
   ├─ Gather and process resources
   ├─ Experiment in the crafting bench → discover an emergent material
-  ├─ Fabricate that material into equipment            [PLANNED]
-  ├─ Choose Species + Base + Prefix + Suffix
-  └─ Prepare the run: loadout, supplies, briefing       [BUILT]
+  ├─ Fabricate that material into equipment → modifiers roll from its Genome
+  ├─ Choose Base + Prefix + Suffix (Char Lab; Species is fixed pending §3.9)
+  └─ Prepare the run: loadout, packed supplies, knowledge-redacted briefing
         ↓
-REALM RUN
-  ├─ Enter → explore a spatial location graph
+REALM RUN                                                        [ALL BUILT]
+  ├─ Enter (at a deeper door, once Knowledge earns it) → explore the graph
   ├─ Gather biome resources (time passes; risk accrues)
-  ├─ Fight varied enemies using your moveset            [PLANNED]
-  ├─ Harvest creature anatomy → crafting inputs         [PLANNED]
+  ├─ Fight with your moveset on the clock — incl. an elite and a boss
+  ├─ Creature anatomy drops as crafting inputs (composed loot tables)
   └─ Reach a depth checkpoint
         ↓
-   ┌─ EXTRACT ──→ loot secured to Stash
-   └─ GO DEEPER ─→ better rewards, escalating danger
+   ┌─ EXTRACT ──→ loot (and gold) secured to Stash
+   └─ GO DEEPER ─→ rarer rewards, escalating danger
         ↓
    (death forfeits unsecured loot; progression survives)
         ↓
 BACK TO HIDEOUT — better materials, better professions, another stupid experiment
 ```
 
-The loop is **closed but not yet continuous**: every stage exists in some form, but equipment
-fabrication and combat depth are the two links that don't yet carry weight.
+**The loop is closed and runs end to end today**, both halves of it: the attended half
+(prepare → enter → fight → extract → transform → fabricate → roll → equip → go again) and the
+idle half (a standing passive selection that keeps working offline, waits out material shortages,
+and reports what happened when you return). The links that are still thin are **profession tools**
+(E6 — the trades work, worn tools don't exist) and **form acquisition** (D29.2 — schematic items
+drop and bind to nothing yet).
 
 ---
 
@@ -170,7 +177,8 @@ no bespoke machinery.
 
 ⚠ **Fighter's engine is stale.** "Moveset comes from the weapon" was universalized for *everyone*
 in E4 — every build's moveset composes weapon-first now. Fighter needs a new identity hook that
-is not a license. **NEEDS DESIGN** (§18 #15), targeted at M2′.
+is not a license. **NEEDS DESIGN** (§18 #15) — deliberately deferred out of M2′ (user call,
+2026-08-16); the move library ships without a Fighter kit.
 
 **Gauge behaviour taxonomy** (a design lens for balance, not a hard rule): Build & Spend ·
 Charge & Hold · Sustain & Ramp · Deplete & Recover · Debt & Collect.
@@ -336,6 +344,7 @@ everything.
 | Crafting discoveries / codex | Yes | No |
 | Equipment owned | Yes | Gear is safe by default |
 | **Unsecured Realm loot** | **No** | **Yes** |
+| **Gold** | Banked coin persists | **Coin in the run bag is lost** — it lives on the inventory (save v8) and obeys the extraction model like everything else |
 
 **Horizontal over vertical.** Progression should unlock new tactical options, recipes, material
 combinations, routes and preparation strategies — not merely bigger numbers.
@@ -364,7 +373,7 @@ Melvor Idle is the explicit architectural reference. Target layers:
 | Level-based unlocks | **Built** — actions gate on profession level |
 | Mastery-based unlocks | **Built** — `required_mastery` on an opportunity; below it the offer is not rolled at all |
 | Equipment affecting skills (tools) | Planned (E6) — the one Melvor layer still missing |
-| Cross-skill bonuses | **Built** (Phase 10, D41) — `synergies/`, 13 rows following existing material chains |
+| Cross-skill bonuses | **Built** (Phase 10, D41) — `synergies/`, 15 rows: 13 cross-profession (each following an existing material chain) + the 2 global rows below |
 | Global/account passives | **Built** (Phase 10, D41) — a synergy with no source reads **total** profession level |
 | Offline progression | **Built** (P4) — with auto-repeat and a return summary added in Phase 10 |
 | Progression milestones | Needs Design |
@@ -462,15 +471,19 @@ lane at all** — unresistable, and structurally unamplifiable in exchange.
 supernatural affixes, modifies ailments, and tags effects for conditional logic — *identity and
 metadata, never a mitigation calculation.*
 
-**Resistance order:** sum → exposure → cap (75%, 90% with rare max-res affixes) → **inversion** →
-penetration → floor (−100%). Overcapping absorbs debuffs but not penetration, so resistances
-display as `capped / raw`.
+**Resistance order:** sum → exposure → cap (75%) → **inversion** → penetration (max 0.5, applied
+**after** the cap) → floor (−100%). Overcapping absorbs debuffs but not penetration, so
+resistances display as `capped / raw`. *(The designed rare max-res raise to 90% exists only as a
+declared constant today — `MaxResistanceCeiling` is read by nothing until its affixes ship;
+inversion and exposure content are E7.)*
 
 **Defence layers:** evasion (timed) · block (timed, mitigation) · **perfect block** (tight window,
 avoidance, refunds Guard) · **parry** (gear-granted — a form must declare it — avoidance plus a
-counter-window) · **armour** (`armour/(armour + 5×packet)`, so it is strong against attrition and
-weak against spikes, while resistance is the reverse) · resistance · lane avoidance (rare,
-hard-capped) · **Barrier** · damage-taken modifiers · **Resolve** (controls).
+counter-window) · **armour** (`armour/(armour + K·packet)` — diminishing, strong against
+attrition and weak against spikes while resistance is the reverse; the shipped constant is
+**K = 1.0**, and the 5× variant quoted in `docs/damage-and-defense.md` is a recorded tuning
+intent awaiting the balance pass) · resistance · lane avoidance (rare, hard-capped) ·
+**Barrier** · damage-taken modifiers · **Resolve** (controls).
 
 **Blocking** is an intentional timed decision that costs stamina; holding block forever must
 never be optimal. **Dodging** trades action time and stamina for avoidance. Both are timed
@@ -490,9 +503,13 @@ EffectiveInterval = max(MinimumInterval, BaseInterval × modifiers)
 ```
 
 Hard minimums prevent degenerate zero-time actions — this is now enforced as data on the
-modifier key itself, so no combination of haste sources can bypass it. **BUILT**, with one
-recorded debt: D-20 tightened the interval floor to **0.55** and the shipped registry still says
-0.25 — an unapplied decision awaiting a balance pass, not an open question.
+modifier key itself, so no combination of haste sources can bypass it. The D-20 decision is
+applied: the shipped registry floors `combat.interval.mult` at **0.55**
+(windup/recovery/telegraph multipliers floor at 0.25 each). **One honesty note:** combat
+consumes only `combat.windup.mult` today — moves author their own timings, and the
+interval/telegraph/recovery keys are declared with their clamps but not yet read by any
+pipeline stage. The clamps exist so the first consumer inherits the rule instead of
+re-deciding it.
 
 ## 5.7 Auto-combat — **BUILT (Phase 10, D41)**
 
@@ -522,23 +539,29 @@ melee range, ranged distance, area effects, hazards, protection and targeting. *
 deferred**; the current model is single-position. Deferring is a conscious choice — adding it
 later multiplies the design space of every move and every enemy.
 
-## 5.9 Statuses — **BUILT (E2–E4)** · Hazards — **PLANNED**
+## 5.9 Statuses — **BUILT (E2–E4)** · Hazards — **PARTIAL**
 
 > **Settled by D-08 – D-10.** Full specification in `docs/statuses.md`.
 
-Hazards operate on ticks and telegraph their resolution so players can react (poison clouds,
-fire, falling debris, trap tiles, freezing pulses). **Hazards remain PLANNED** — nothing places
-one in a Realm yet.
+Hazards exist today as **Realm hazard nodes** (Phase 6): crossing one costs health once, on
+arrival — dangerous ground, not an action — and the Hazards knowledge insight is what lets a
+player see them before standing in them. The richer designed form — **ticking, telegraphed
+hazards inside combat** (poison clouds, fire, falling debris, freezing pulses) — remains
+**PLANNED**; nothing places one in an encounter yet.
 
 **Statuses are fully data-driven** — one definition type, no bespoke class per ailment — in four
 categories whose rules differ:
 
-| Category | Ships in v1 |
+| Category | Ships today |
 |---|---|
-| **Ailments** (damage over time) | Bleed · Poison · Burn |
-| **Impairments** (debuff, no damage) | Chill · Shock · Corroded · Weaken |
-| **Controls** (prevent or redirect action) | Stun · Freeze · Fear · Silence |
-| **States** (tactical markers) | Vulnerable · Guarded · Barrier |
+| **Ailments** (damage over time) — 5 | Bleed · Poison · Burn · Toxin · Latched |
+| **Impairments** (debuff, no damage) — 6 | Chill · Shock · Corroded · Weaken · Dissonance · Illuminated |
+| **Controls** (prevent or redirect action) — 4 | Stun · Freeze · Fear · Silence |
+| **States** (tactical markers) — 14 | Vulnerable · Guarded · Barrier · Recalled Move · Phased · Rooted Growth · Planted Charge · Feint Ready · Filed Intent · Liability (×2) · Fault · Spreading · Stoneskin |
+
+Six lanes map to a signature ailment at the encounter seam (physical → Bleed, heat → Burn,
+toxin → Poison, cold → Chill, charge → Shock, corrosion → Corroded); magic and decay
+deliberately have none.
 
 **Burn supersedes Ignite** and **Chill supersedes Slow** — shipping both of either pair means one
 is strictly a worse version of the other. Root, Wither and Brittle are deferred.
@@ -555,14 +578,15 @@ earn, then earn again more expensively. **Stagger folds in** as buildup toward S
 cannot Stun-lock *and* Freeze-lock. Player-facing text still reads "12% chance to Freeze"; the
 Resolve bar shows the truth.
 
-**All of the above is BUILT**: 28 status definitions (the 14 core plus **all 14**
-previously-dangling authored ids — `status.recalled_move` went live with the Move system),
-DoT ticks that cannot proc anything (proc-safety rule 4), `while_active` modifiers that combat
-actually reads (Chill genuinely slows windups; Corroded genuinely strips armour), Resolve with
-shared buildup, control immunity and per-encounter escalation, and stagger folding into Stun
-buildup exactly as designed. **One PLANNED remainder:** ailment application *chances* have no
-source until E5 affixes grant them, so Bleed/Burn/Poison do not yet fire from ordinary hits —
-the plumbing and the post-mitigation magnitude rule are in and tested.
+**All of the above is BUILT**: **29 status definitions** across the four categories (the 14
+core, the previously-dangling authored set — `status.recalled_move` went live with the Move
+system — and later library additions), DoT ticks that cannot proc anything (proc-safety rule 4),
+`while_active` modifiers that combat actually reads (Chill genuinely slows windups; Corroded
+genuinely strips armour), Resolve with shared buildup, control immunity and per-encounter
+escalation, and stagger folding into Stun buildup exactly as designed. The old remainder is
+closed: **ailment application chances have their source** — R4b's affixes grant them (a rolled
+"12% chance to Poison" is a modifier on gear), and moves may carry them as effect riders — so
+Bleed/Burn/Poison fire from ordinary hits whenever the build or the weapon says so.
 
 ---
 
@@ -602,16 +626,19 @@ that demonstration. `MoveKind` exists for dispatch and filtering; behaviour neve
 - **The Mnemonic loop closes**: `status.recalled_move` stores the executing move's id; Recall
   replays it instantly through `recallMove`, bounded by its cooldown.
 
-**M2′ is BUILT — the library and its acquisition:**
+**M2′ is BUILT — the library and its acquisition — and M6 grew it:**
 
-- **27 moves ship** (the 9 E4 moves + 16 library moves + 2 enemy-flavoured universals), soft-
-  gated only: costs, `equippedTag`, cooldowns — never class (D25). Coverage: all four damage
-  types, six aspects, ten statuses exercised, interrupt and heal handlers, a gauge-cost
-  exemplar (Crash spends 40 Momentum), and one arcane-lane "always lands" spell.
+- **43 moves ship** (the 9 E4 moves, the M2′ library, and M6's weapon-archetype moves — one per
+  new weapon form family), soft-gated only: costs, `equippedTag`, cooldowns — never class (D25).
+  Coverage: all four damage types, six aspects, ten statuses exercised, interrupt and heal
+  handlers, a gauge-cost exemplar (Crash spends 40 Momentum), and one arcane-lane "always lands"
+  spell. A validator rule rejects any form granting a move it cannot fire.
 - **Technique items** (`technique.*`, 19 shipped) teach moves into a **persisted learned list**
   (save v5, learn-order-preserving, once-per-move — a duplicate refuses without consuming).
   Learned moves join moveset composition as their own grant source with `learned` provenance.
-  Loot/vendor faucets arrive with M6; a debug grant button is the interim source.
+  **Loot faucets are live (M6)** — technique items drop from the shared martial/arcane technique
+  tables (killing the Hexer is how a martial build finds a spell); a debug grant button remains
+  for testing.
 - **One vocabulary extension:** `EffectSpec` takes an optional per-effect `target` override
   (rule payloads and move riders alike) — Drain lands decay on the enemy while its heal rider
   names `TriggerSource`. Lifesteal shapes are authorable everywhere now.
@@ -623,28 +650,34 @@ Move-count growth from here is ordinary content work; E5's affix pools author th
 
 ---
 
-# 7. Professions
+# 7. Professions — **BUILT (all 20)**
 
-Persistent, Melvor-inspired progression. Trainable in the Hideout and, where appropriate, inside
-Realms — where time passing carries real risk.
+Persistent, Melvor-inspired progression. Trainable at the Hideout's twenty stations and, where
+appropriate, inside Realms — where time passing carries real risk. Full system doc:
+`docs/professions.md`.
 
-## 7.1 Designed roster (19)
+## 7.1 The shipped roster (20) — **BUILT (P4)**
 
-**Gathering** — Mining · Forestry · Fishing · Herblore · Farming
-**Crafting** — Smithing · Alchemy · Cooking · Enchanting · Fletching · Tailoring · Medicine
-**Utility** — Beast Lore · Sleight of Hand · Agility · Campcraft · Wayfinding · Devotion ·
-Summoning
+| Category | Professions |
+|---|---|
+| **Gathering (7)** | Mining · Forestry · Fishing · Farming · Hunting · Beast Lore · Salvaging |
+| **Processing (9)** | Smithing · Herblore · Alchemy · Cooking · Leatherworking · Tailoring · Fletching · Artifice · Runecrafting |
+| **Utility (4)** | Thieving · Agility · Cartography · Assay |
 
-**Built: 8** — Mining, Forestry, Fishing, Herblore, Smithing, Alchemy, Cooking, Beast Lore —
-**26 actions** against the real material library (the P1–P3 pass hit §7.1's recommended slice
-target exactly). Mining landed first and the startup iron-ore seed is deleted; a test pins that
-some action produces `material.iron_ore` so it can never quietly return. Cooking/Alchemy
-outputs that didn't exist were authored as **prepared materials** (`form:meal`/`form:tincture`,
-carrying `growth` — the recovery property that will gate them as healing consumables later).
-Intervals/XP are relative placeholders for the balance pass; a test asserts the professions
-cross-feed in ≥ 4 chains.
+**348 actions · 36 nested opportunities · 12 training obstacles**, one execute path behind all
+twenty (active and passive literally call the same method), success chance below 1.0 only for
+Hunting and Thieving, and everything gated by profession level on the ladder.
 
-## 7.2 Interconnection is the point
+> **Superseded:** the original 19-name design roster (Enchanting, Medicine, Sleight of Hand,
+> Campcraft, Wayfinding, Devotion, Summoning). The P4 pass replaced it — Sleight of Hand became
+> **Thieving**, Wayfinding became **Cartography**, Enchanting's territory went to **Runecrafting**
+> and **Artifice**, and Campcraft/Devotion/Summoning/Medicine did not survive. The intent
+> (interconnection, active/passive, mastery) carried over intact.
+
+Every interval and XP value is a relative placeholder for the balance pass — breadth, not
+balance, by standing decision.
+
+## 7.2 Interconnection is the point — enforced by test
 
 Professions must not exist in an isolated fake economy:
 
@@ -655,8 +688,18 @@ Smithing → infuses iron with treated bark
         → Barkbound Iron
 ```
 
-Mining feeds the ore ecosystem; Forestry feeds biome flora; Beast Lore feeds creature anatomy;
-Smithing and Alchemy feed the emergent crafting engine.
+`ProfessionEcosystemTests` makes the ecosystem a fence rather than an intent: every Processing
+profession consumes another profession's output; **no profession is a dead end** (Cooking is the
+one named exception, exempt until consumable forms land); Hunting produces carcasses and **only
+Beast Lore opens them**; only Cartography teaches Realm Knowledge; every plantable seed has a
+wild source; every opportunity out-pays its own action.
+
+```
+Mining → Smithing → ingots → Artifice → lenses → Assay reads deeper
+Hunting → carcass → Beast Lore → hide → Leatherworking → fabrication
+Cartography → survey chart → Salvaging finds the ruin worth digging
+Assay → property dossier → the three deepest crafting actions require one
+```
 
 ## 7.3 Mastery — **BUILT** (Phase 8, D40)
 
@@ -681,19 +724,77 @@ Six benefits, all authored in `game/data/mastery/` and all consumed:
 Preservation and doubling carry an unlock level on purpose: they **start happening** rather than
 creeping up from zero, and both are announced in the log when they fire.
 
-**The mastery-gated opportunity is the action-specific unlock.** Four of the game's highest-risk
-offers — The Reliquary, The Strongbox, the storm-charged bull, the unstable ember pocket — carry
-`required_mastery`. Below it they are **not rolled at all**: "a novice cannot find this" is a fact
-about the code, not a very small probability.
+**The mastery-gated opportunity is the action-specific unlock.** Five of the game's highest-risk
+offers carry `required_mastery` — Thieving's Strongbox (25) and Reliquary (40), Hunting's
+storm-charged bull (30), and two of Mining's deep finds (30). Below the gate they are **not
+rolled at all**: "a novice cannot find this" is a fact about the code, not a very small
+probability.
 
 > **Still unbalanced.** Every magnitude is the placeholder it was before it became content.
 
-## 7.4 Offline progress — designed, not built
+## 7.4 Offline progress — **BUILT** (P4; auto-repeat + the return summary in Phase 10, D41)
 
-```
-CompletedActions = floor(ElapsedTime / EffectiveInterval)
-```
-subject to resource, inventory and action caps, aggregated rather than tick-replayed.
+Offline is a first-class path, not a courtesy, and it **cannot drift from live play by
+construction**: `OfflineProgressCalculator` loops the same `ProfessionSystem.Execute` the
+attended game calls, at performance 0, re-reading the effective interval every completion (so
+mastery earned while away shortens the rest of the absence). Caps: **12 hours** of offline time
+and 20,000 completions per absence, both stated honestly in the return summary when they bite.
+
+- **The selection is standing (Phase 10).** Running out of materials makes the passive runner
+  *wait* and resume by itself when inputs reappear; only Stop clears it. Temporary problems
+  wait; permanent ones refuse.
+- **The return is a read-model.** `AwayProgress` aggregates one absence — completions, crops
+  lifted, items merged per id, XP, mastery, levels gained — and the presentation layer owns
+  every word of the summary panel, in the player's units (items and hours, never ticks).
+- **Autosave on quit**, guarded: it refuses when no save exists yet and inside a Realm, because
+  offline time is measured from the save stamp.
+
+## 7.5 The active layer — Discover → Pursue / Ignore — **BUILT** (P4, reshaped by D29.3)
+
+Active play's structural advantage is the **opportunity**: an active attempt may surface an
+offer (a rich vein, a shape under the boat, an unattended satchel, an unmarked side path) that
+passive play *never rolls for at all*. Pursuing costs real time on the shared tick engine and
+can be lost to risk; declining costs nothing; mastery raises the odds and talks the risk down.
+**36 opportunities ship**, four of them gated by `required_mastery` — below the gate the offer
+is not rolled, so "a novice cannot find this" is a fact about the code.
+
+> **D29.3 (settled — do not reopen): profession essence is active-only.** Essence reaches a
+> profession **only as an opportunity payload**. No action output, bonus output or profession
+> drop table carries it — a structural fence, not an allowlist — so essence cannot be banked
+> while idle. Essence is extraction's export; the Realms remain its faucet.
+
+## 7.6 Synergies and global bonuses — **BUILT** (Phase 10, D41)
+
+One benefit seam, three sources. `ProfessionBenefits` folds the mastery ladder and the synergy
+table into the single question the execute path asks — *what is this benefit worth, right now,
+for this action?* — so cross-profession and account-wide bonuses landed with **zero change** to
+the execution code, and E6's worn tools become a third field on the same seam.
+
+- **13 cross-profession rows**, each following a material chain the professions already have
+  (Smithing helps Mining, Beast Lore helps Hunting…). Source and target must differ — validated.
+- **2 global rows** that read the player's **total** profession level — the account-passive
+  layer.
+- Synergies **sum** (each capped individually); a profession-scoped mastery rung *replaces* the
+  general one. Same three-field formula as the mastery ladder (unlock level, per-level rate,
+  cap), same content file shape, deliberately.
+
+## 7.7 The professions that are a system, not a list — **BUILT**
+
+- **Farming** — the only profession that runs in parallel with itself: up to **six plots**
+  (unlocked at Farming 1/5/15/30/50/70) growing on the world clock, so crops finish while the
+  game is closed. Planting pays the seed; harvest is prepaid, so it can never charge twice.
+- **Agility** — a five-slot **training course** (12 obstacles ship). The fitted configuration is
+  a standing loadout of Realm utility bonuses (`course.*` keys: travel speed, gathering speed,
+  extraction speed, hazard avoidance, opportunity safety) — declared, aggregated and displayed,
+  but **consumed by nothing until E6**. Honest scaffolding, shown as readiness rather than a
+  number that changes nothing.
+- **Assay** — the legibility skill. A material reading is computed identically at every level;
+  levelling only removes `???`: identity at 1, composition at 10, reactive behaviour at 25,
+  traits at 45, essence at 65, potential at 85. **Redaction, never power.** Assay dossiers gate
+  the three deepest crafting actions.
+- **Cartography** — the one profession that teaches **Realm Knowledge** (its actions carry
+  `realmKnowledgeGain`). All of its gains point at the Dark Forest today, because it is the only
+  realm with content behind the map.
 
 ---
 
@@ -701,10 +802,15 @@ subject to resource, inventory and action caps, aggregated rather than tick-repl
 
 ## 8.1 The material library
 
-**474 materials** on a 0–100 property scale, authored biome-by-biome as a design lens —
-temperate forest, arctic, volcanic, desert, jungle, swamp, mountain, cavern, necrotic, coastal.
-There is deliberately **no biome field**; biome was a brainstorming device for producing varied
-property profiles, not a system.
+**1,448 materials** on a 0–100 property scale — the original hand-authored core (~559 by M6)
+grown by the D35 content expansion (582 plants, 307 ores and gems, plus creature anatomy,
+salvage, reagents, runes, knowledge items and prepared goods), authored biome-by-biome as a
+design lens — temperate forest, arctic, volcanic, desert, jungle, swamp, mountain, cavern,
+necrotic, coastal. There is deliberately **no biome field**; biome was a brainstorming device
+for producing varied property profiles, not a system. The anti-tiering rule is encoded in the
+generator that produced the expansion and asserted by test, and **every raw material has a
+gathering source** (D36 — `EveryRawMaterialHasASource` is exact: 348 gathering actions plus
+anatomy on the enemy family tables cover all of it).
 
 Deliberately **mundane-majority** (oak, iron, salt, spring water) so the rare materials (Storm
 Core, Glacial Heart, Mana Prism) stand out by their property profiles rather than by tier.
@@ -753,7 +859,7 @@ The signature system, and the most complete one in the game.
 
 **The engine is a total function, not a lookup.** Every combination of substrate, reagents and
 process produces a result — always — computed by a universal algebra. There is no recipe table
-and no per-combination rule anywhere. Authored content is **seven processes**, a byproduct table
+and no per-combination rule anywhere. Authored content is **eight processes**, a byproduct table
 and a name grammar.
 
 ## 9.2 Structure of a craft
@@ -786,8 +892,13 @@ weights, gates and tag effects.
 | Quench | Smithing 5 | thermal | 0.35 | cold, hardness, flexibility |
 | Alloy | Smithing 10 | thermal | 0.45 | hardness, mass, conductivity, flexibility, affinity |
 | Forge Infusion | Smithing 15 | thermal | 0.55 | heat, charge, hardness, affinity |
+| Attune | Alchemy 10 | arcane | 0.35 | resonance, arcane — the vessel-raiser for the essence layer (**BUILT**, C1) |
 
-*(An 8th, `Attune`, raises resonance for the essence layer and is deferred.)*
+> ⚠ **Temporary (2026-08-17):** Distill and Attune are **ungated in the shipped content** so the
+> Alchemy Lab and the Runic Altar can be playtested — their designed gates above named a
+> profession neither station trains. The override is marked in `processes.json` and pinned by
+> `CraftingActionContentTests.OnlyGrindIsUngated`, which goes red the moment the exception list
+> stops matching the content.
 
 **Media** explain why an ingredient suits a process: solvent releases by `solubility`, thermal by
 `instability`, mechanical by inverse `hardness`, arcane by `resonance`. This is why Ember Sap is
@@ -882,15 +993,15 @@ Forge Infusion — Iron Ingot ← Ember Core
 ✦ First discovery: Emberlit Iron ×1
 ```
 
-## 9.9 Crafting layers — P2 traits and P3 essence **BUILT (C1)**; P4/P6 planned
+## 9.9 Crafting layers — P2/P3/P5 **BUILT**; P4 planned; P6 partial
 
 | Layer | Description | Status |
 |---|---|---|
-| **P2 — Traits** | Named, discrete, capped qualitative states (Emberveined, Bound Opposition). Cap 3, weakest displaced, authored merge rules let pairs **supersede** into stronger traits. Every trait carries a drawback | Planned |
-| **P3 — Essence** | A rare *supernatural* layer (fire/frost/storm/nature/necrotic/radiant/abyssal) distinct from mundane reactive properties. Capacity governed by `resonance`; excess becomes **strain**, not a cap — *powerful magic needs a worthy vessel* | Planned |
+| **P2 — Traits** | Named, discrete, capped qualitative states (Emberveined, Bound Opposition). Cap 3, weakest displaced, authored merge rules let pairs **supersede** into stronger traits. Every trait carries a drawback, consumes properties and charges integrity | **BUILT (C1)** — 16 traits ship |
+| **P3 — Essence** | A rare *supernatural* layer (fire/frost/storm/nature/necrotic/radiant/abyssal) distinct from mundane reactive properties. Capacity governed by `resonance`; excess becomes **strain**, not a cap — *powerful magic needs a worthy vessel* | **BUILT (C1)** — seven essences; Attune is live; strain feeds effective instability |
 | **P4 — Signature reactions** | 30–80 authored spikes matched against *abstract conditions*, never item ids. Plus ~10–20 **chain signatures** matching an ordered sequence | Planned |
-| **P5 — Fabrication** | Materials → equipment and consumables | Planned |
-| **P6 — Codex & Assay** | Discovery journal, known-rules journal, proximity hints, player renaming | Planned |
+| **P5 — Fabrication** | Materials → equipment (consumable forms are the P5c remainder) | **BUILT (C2a/C2b + M6)** — see §10.3; consumable forms Planned |
+| **P6 — Codex & Assay** | Discovery journal, known-rules journal, proximity hints, player renaming | **PARTIAL** — the Assay reveal ladder ships as a profession (§7.7) and trait-proximity hints ship at the bench; journal, codex and renaming remain Planned |
 
 **`arcane` is a property, never an essence** — it is not an element, it is the medium elements
 travel through. It gates magical effects, amplifies essence expression, loads against resonance,
@@ -905,20 +1016,35 @@ and types otherwise-untyped damage.
 - **Definitions** — what a kind of item *is*. Shared, never mutated.
 - **Instances** — a specific owned item. **Equipment only.** Materials always stack.
 
-## 10.2 Current equipment — thin
+## 10.2 Current equipment — **BUILT** (D32/D33: nine slots, worn loadout, rings)
 
-Two slots (Weapon, Armor), four hand-authored items (Rusty Sword, Iron Sword, Tattered Armor,
-Iron Armor). **Since E4 a weapon is its moves**: it authors the moves it grants (the Iron Sword
-grants Iron Slash and Heavy Strike), and re-equipping reconfigures the moveset — the Fighter's
-identity, working today. Material properties still barely reach combat: only mass →
-damage/speed (applied to the move's packets) and hardness → armour.
+**Nine worn slots** — Weapon · Offhand · Head · Body · Hands · Feet · Trinket · Ring I ·
+Ring II — with the two ring positions interchangeable (one Ring form fills either; D33). The
+`Armor` → `Body` slot rename was the project's first save migration (v9).
+
+Four hand-authored pieces remain (Rusty Sword, Iron Sword, Tattered Armor, Iron Armor) as the
+starter kit and the calibration references; everything else the player wears is **fabricated**
+(§10.3) — a derived equipment definition persisted in the save, minted as an `ItemInstance`
+with a Genome and rolled modifiers.
+
+**Since E4 a weapon is its moves**: it authors the moves it grants (the Iron Sword grants Iron
+Slash and Heavy Strike), and re-equipping reconfigures the moveset — working today. Worn
+mitigation is the **sum of the loadout**: each armour-bearing piece contributes
+hardness-derived armour (through the resolver) plus the per-lane resistances fabrication baked
+into it from its response properties, with coverage authored in the form's stat map rather than
+coded per slot.
+
+The property → combat seam (`EquipmentResolver`) still reads only **mass → damage/windup** and
+**hardness → armour** directly off an instance; fabrication lands its richer results (per-lane
+resistances, derived stats) on the definition it mints, so combat consumes them without the
+seam widening. Richer direct mappings remain the E-track intent.
 
 ## 10.2a Modifiers, genetics and the casino — **front half BUILT (R4b/R4c, 2026-08-16)**
 
 > **BUILT:** the Genome (stat-map-weighted pressure, persisted — save v6), `AffixDefinition`
 > with the three genetic levers + potency as roll-quality, §4 rolling on the seeded source,
-> **innates as a deterministic affix class** (never rerollable, U-7), 43 representative
-> affixes across offence/character/defence/resource/ailment/retaliation/avoidance/
+> **innates as a deterministic affix class** (never rerollable, U-7), **44 representative
+> affixes** across offence/character/defence/resource/ailment/retaliation/avoidance/
 > penetration/trigger/status/move-mod families, equip-lifecycle grants (scoped contributions
 > + attached rules + move-modifier grants), the §8 validator rules, seeded distribution
 > tests, the pre-roll genome translation on the fabrication preview, and a debug reroll.
@@ -996,16 +1122,23 @@ Proposed property → gameplay mappings (**for review, not final**):
 | Resonance | the caster stat; gates essence expression | — |
 | Instability | higher output variance | — |
 
-Slots should expand to roughly Weapon / Offhand / Head / Body / Hands / Feet / Trinket, with
-~6–8 forms — enough that material choice visibly matters.
+**Shipped: 23 forms across all nine slots (M6, D32–D34), sixteen of them weapons** — each form
+existing to exercise a part of the material system no other form reads (the Longbow reads
+flexibility where the Longsword reads hardness; the Maul wants mass the Dagger refuses; the Ring
+is the only reader of conductivity/affinity, the Focus the only reader of resonance/arcane).
+~180 weapon names ride ten weapon forms as `name_variants` — picked deterministically from the
+item's signature, cosmetic by construction (nothing reads a variant, so it can never quietly
+become a mechanical difference). A validator rule rejects a form granting a move it cannot fire.
 
 **Unexpressed trait magnitude becomes *dormant*** — shown in the tooltip, counted in value, and
 fully available if the material is used in a different form later. Dormant traits make one
 material interesting in several directions rather than optimal in one.
 
-> ⚠ **Known blocker.** Material properties are 0–100; equipment base properties are ~0–5 and
-> drive current combat tuning. Reconciling them is a **combat rebalance**, not a mapping change,
-> and must be budgeted as its own piece of work.
+> ✅ **The old scale blocker is resolved (C2b).** Material properties are 0–100; combat runs in
+> its own units; the reconciliation happens in fabrication and **only** there
+> (`EquipmentAssemblyTuning.CombatUnitScale`), pinned by an iron-sword parity test so the
+> calibration cannot drift silently. Whether the resulting numbers *feel* right is part of the
+> parked balance pass.
 
 **Durability** — the design assumes it; the game has none. **Recommended deferred** — the
 extraction loop already supplies the risk pressure.
@@ -1025,25 +1158,41 @@ Consumables are the natural home for *negative* emergent outcomes — a botched 
 
 Realms are **spatial location graphs**, closer to For The King 2 than to Slay the Spire node
 selection. Movement is adjacency-gated; **Depth** measures progression within a run; **Tiers**
-are escalating versions of a realm.
+are escalating versions of a realm. *(Honesty note: tiers are carried in data and on the run
+today and read by nothing — no loot entry or system gates on tier yet.)*
 
-## 11.2 The one built realm
+## 11.2 The realms that ship — one finished, 163 walkable shells
 
-**The Dark Forest** — themes of fey, toxins, giant trees, bogs, predators and hidden crossings.
-Ten locations across two depths: entrance, travel, two gathering nodes, two combat nodes, an
-event node, a descent, and an extraction portal.
+**The Dark Forest is the finished reference realm** (Phase 6, D37) — themes of fey, toxins,
+giant trees, bogs, predators and hidden crossings. **34 locations across three depths**
+(12 / 13 / 9), carrying every node kind the architecture has: entrances at each depth (the
+deep-entry doors), travel, eight gathering workings, five combat nodes (including an **elite**,
+Grask the Warlord, and the first **boss**, Thornheart the Old Growth — a plant-family boss in a
+goblin realm, so everything learned on the way down is the wrong lesson), events, descents,
+four extractions, two camps, a shrine, the Hedge Trader (a merchant), three hazards, and three
+**hidden** nodes that do not exist for a party which has not learned the routes. Deeper pays
+**rarer, not merely more** — average drop rarity 1.75 at depth 3 against 0.78 at depth 1, with
+a test asserting the direction. The first balance pass (D38) made it coherent against a 59 HP
+fresh character; **feel is still unplayed**.
 
-Designed but unbuilt realms: Tiered Deserts · Tundra · Wastelands (→ Ashlands → Volcano) ·
-Garden Maze · City of Infinite Alleys.
+**The other 163 realms are the roster** (D35): a name, a biome tag set, a tier band and a
+walkable two-depth graph (entrance → fork → descent, a way out at each depth). They deliberately
+carry **no combat or gather nodes** — wiring encounters is a later pass. The old named realm
+list (Tiered Deserts, Tundra, Wastelands, Garden Maze, City of Infinite Alleys…) lives on inside
+this roster as shells. What ships is the map, not the ambush.
 
 **Deliberate direction: make the Dark Forest much richer before adding a second realm.** Once one
 realm is genuinely good, adding realms is a content problem instead of repeatedly rebuilding
 unfinished systems.
 
-## 11.3 Location types
+## 11.3 Location types — all eleven **BUILT**
 
-Built: Entrance · Travel · Gather · Combat · Event · Descent · Extraction.
-Designed, unbuilt: Camp · Shrine · Merchant · Elite · Boss · Hidden · Hazard.
+Entrance · Travel · Gather · Combat · Event · Descent · Extraction · **Camp** (rest — restores a
+fraction, once) · **Shrine** (a narrated blessing) · **Merchant** (spends gold from the run bag)
+· **Hazard** (crossing costs health once, paid on arrival — dangerous ground, not an action).
+*Hidden* is a flag any node may carry, revealed by the Hidden Routes insight. *Elite* and *Boss*
+are **enemy ranks** (identity tags on the actor, D26), not location types — a combat node simply
+hosts one.
 
 ## 11.4 Realm Knowledge
 
@@ -1073,10 +1222,13 @@ skips depth 1's fights, its loot **and** the knowledge they would have paid.
 Realm modifiers affecting both danger and opportunity: Undead Infested · Volatile · Toxic Bloom ·
 Treasure Rich · Eternal Night · Predator's Domain · Shattered Paths · Arcane Storm.
 
-## 11.6 Campsite — **Not built**
+## 11.6 Campsite — **PARTIAL**
 
-Limited, strategically valuable field sanctuary: cook, recover, repair, craft emergency supplies,
-prepare ammunition. Modified by the Campcraft profession.
+**Camp nodes ship** (§11.3): a place in the graph that restores a fraction of the party once per
+run. The richer designed sanctuary — cook, repair, craft emergency supplies, prepare ammunition
+in the field — is not built, and its sponsoring profession (**Campcraft**) did not survive the
+P4 roster replacement, so the full concept would need a new home if it returns. **The rest
+mechanic exists; the field workshop does not.**
 
 ## 11.7 Preparation — **BUILT** (Phase 7, D39)
 
@@ -1101,7 +1253,7 @@ player owns no weapon at all (§13.1).
 
 # 12. Enemies & Encounters
 
-## 12.1 Current state — the framework is BUILT (M2′c); the roster is three
+## 12.1 Current state — framework **BUILT** (M2′c); roster **BUILT** (M6: 483 actors)
 
 **Enemy identity composes from reusable layers** — the Enemy Framework (D26):
 
@@ -1121,35 +1273,43 @@ Family (physiology)  +  Role (combat archetype)  +  Actor (identity + overrides)
   Elite/Realm/depth **variant is one more delta through the same fold**, never a duplicated
   definition.
 
-**Three shipped enemies, all pure data (~8 lines each):** the Raider (skirmisher — pressure,
-Expose Weakness openers, punish-while-vulnerable), the Brute (armoured at last — `FromActor`
-had hardcoded armour to 0 — heavy telegraphs, Overhead Crush as the stagger threat, Brace when
-hurt), and the **Hexer** (caster — venom/wither/dart entirely from the universal move library;
-the framework proof). Validation covers refs, layer conflicts, unusable moves, tag rules
-matching nothing, and D-02 vulnerability ranges.
+**The roster is complete (M6): 483 actors across 26 families and 7 roles, all pure data
+(~8 lines each).** Every name in the design list ships; wave 2 needed no new families, which is
+the layering paying for itself. Seven reusable AI brains (`ai.skirmisher/brute/caster/archer/
+stalker/guardian/champion`) serve the whole roster by matching moves **by tag** — weighting
+`delivery:ranged` is what makes "an archer must actually carry a ranged move" a load error
+rather than a play-session discovery. Validation covers refs, layer conflicts, unusable moves,
+tag rules matching nothing, and D-02 vulnerability ranges.
 
-The Brute still matters disproportionately: its telegraphed heavies are the thing proving the
-core combat idea — *"I see something dangerous coming. What do I do before it lands?"*
+**Wired into play today: the Dark Forest's five encounters** — Raider (skirmisher pressure),
+Brute (armoured, heavy telegraphs — still the proof of the core combat idea: *"I see something
+dangerous coming. What do I do before it lands?"*), Hexer (caster, and the only Realm source of
+arcane techniques), **Grask the Warlord (the first elite)** and **Thornheart the Old Growth
+(the first boss)**. The other 478 actors are authored breadth waiting on realm encounter wiring
+(§11.2) — resolvable, validated, fightable from the dev console, but placed nowhere.
 
-## 12.2 Remaining enemy breadth — PLANNED
+## 12.2 The rank layer — **BUILT** ahead of its content
 
-Loot tables · harvestable resources · biome/depth availability · the elite/boss **variant
-layer** (the fold seam exists, unbuilt) · roster growth per §12.3. AI may consider target,
-health, cooldowns, statuses and player state today; threat, position and Realm modifiers arrive
-with their systems. Unique bosses may break the composable rule where necessary.
+Elite and Boss are **identity tags on the actor** flowing through the same fold (D26), not
+variant definitions. The rank tag joins the loot context, where `loot.shared.rank_spoils` —
+nested by every family table — pays elite/boss spoils only when the tag is present. Grask and
+Thornheart carry the tags today; authoring the next elite is one tag and one line of loot.
 
-## 12.3 Target roster for the slice
+## 12.3 Roster targets — **superseded by M6**
 
-**8–10 enemies in the Dark Forest**, selected so each **exercises a distinct combat mechanic**
-rather than for variety's own sake: melee pressure, ranged pressure, heavy telegraphs, rapid
-attacks, blocking, dodging, statuses, spellcasting, interrupts, armour, resistances, unusual
-movement, group behaviour. Roughly five normal archetypes, two specials, 1–2 elites, one boss.
+The old slice target ("8–10 enemies, each exercising a distinct mechanic") is kept here for the
+principle, which still governs *which* actors get wired into realm nodes: an encounter earns its
+place by testing a distinct skill — melee pressure, ranged pressure, heavy telegraphs, statuses,
+spellcasting, armour — never by variety alone. Unique bosses may break the composable rule where
+necessary (none has needed to yet).
 
-## 12.4 Ecology
+## 12.4 Ecology — **BUILT** (M6/D36)
 
-**A creature must not merely drop "Enemy Loot".** Anatomy maps into the real material library —
-hide, bone, gland, venom — so Beast Lore harvesting feeds crafting, which feeds equipment, which
-feeds the next run.
+**A creature does not merely drop "Enemy Loot".** Enemy loot composes family + role + actor
+(§13), and the family half is anatomy mapped into the real material library — hide, bone, gland,
+venom, blood. Hunting produces carcasses; **only Beast Lore opens them**; Leatherworking wants
+the hides; fabrication wants what Leatherworking makes. The chain the section always promised is
+now enforced by the ecosystem tests.
 
 ---
 
@@ -1158,7 +1318,7 @@ feeds the next run.
 ## 13.1 The rules
 
 - Death **ends the run**.
-- **Unsecured Realm loot is lost** — materials, generated materials, drops.
+- **Unsecured Realm loot is lost** — materials, generated materials, drops, **and coin**.
 - **Equipped gear is safe** (default). A "gear at risk" difficulty toggle is designed but off.
 - **Persistent progression always survives**: professions, Realm Knowledge, discoveries, unlocks,
   the Stash.
@@ -1183,32 +1343,85 @@ That rhyme is intentional and should be preserved.
 Extraction opportunities should be **valuable decisions, not ubiquitous escape buttons**. Some
 mechanics deliberately reward refusing extraction (the "Of No Return" pattern).
 
+## 13.4 Loot — **BUILT** (M6, D31). Full doc: `docs/loot.md`
+
+**One data-driven table shape serves every payer in the game** — enemies, gathering nodes,
+event chests, profession actions. **72 tables ship** over the existing material library.
+Three drop rules as separate named lists (guaranteed drops · independent chance drops ·
+weighted draws where `dropsNothing` is a real miss), quantity ranges, depth and context-tag
+conditions, and nested shared tables instead of copied entries.
+
+- **Enemy loot composes** exactly the way the enemy does (D26): a kill rolls its family's
+  table (anatomy), its role's table (kit) and its actor's table (identity), merged into one
+  haul — so a new creature becomes lootable in one line.
+- **D28 — gear comes from the bench; realms drop inputs.** *Extraction converts risk into
+  materials; fabrication converts materials into permanence.* A test fails any table yielding
+  finished equipment. Relic materials are the designed chase (boss drops with impossible
+  property profiles that feed the genome machinery rather than bypassing it); sealed authored
+  uniques are the one fenced exception, and even they end at the bench (Fracture).
+- **The active/passive seam is structural**: gathering tables gate their richer draw on the
+  `active` context tag, so passive play cannot reach those entries at any rate.
+- **Rarity is read from the material's own tag**, never restated on the entry — one source of
+  truth, validated.
+- **Elite/boss spoils fire on the rank tag** (§12.2). **Essence never appears in a profession
+  drop table** (D29.3) and **no profession table pays coin** — both held by test.
+- **Gold** drops from tables (save v8), lives on the inventory, and obeys the extraction model
+  like everything else. Its only sink today is the Realm merchant (§15).
+
 ---
 
-# 14. The Hideout
+# 14. The Hideout — **BUILT** (stations); upgrades **NEEDS DESIGN**
 
-The persistent home base. Currently implicit — it is where crafting and profession training
-happen, with no dedicated screen or systems.
+The persistent home base is a real place now: **twenty stations, one per profession** — the
+Forge, the Apothecary, the Alchemy Lab, the Kitchen, the Tannery, the Loom, the Fletcher's
+Bench, the Workbench, the Runic Altar, the Assay Table, and one apiece for the gathering and
+utility trades (Mineshaft, Timber Yard, Fishing Dock, Garden Plots, Hunting Lodge, Bone Table,
+Salvage Yard, Thieves' Nook, Training Course, Cartographer's Desk).
 
-Intended (all **Needs Design**): Hideout upgrades · crafting stations · Farming as a Hideout-based
-renewable resource profession · storage management. (The portal/preparation screen is built — §11.7.)
+```
+Hideout → choose a station → train its ladder / transform at its bench / assemble at it
+```
+
+**A station is routing, never rules.** It says which profession ladders are trained there, which
+crafting actions its bench offers and which blueprints it can assemble — and every one of those
+resolves through the system that always owned it, under the same gate. Hosting decides *where
+you stand*, never *whether you may*; an ungated action can have two homes (Grind: a mortar at
+the Apothecary, a mill at the Workbench). Two reachability rules are enforced at load: every
+profession is hosted by exactly one station, and every crafting action and blueprint is offered
+somewhere — so new content cannot ship unreachable.
+
+Farming's plots, Agility's course and Assay's reading table appear at their stations because of
+*which profession is hosted*, never a flag. One fixed **activity strip** (the passive/waiting
+status bar, the active timing sweep, the Discover → Pursue card, and the while-you-were-away
+summary) sits above the station index, because only one activity is in flight at a time.
+
+Still **NEEDS DESIGN**: Hideout upgrades · station unlock/upgrade costs · storage management.
+(Farming as the renewable Hideout profession shipped in P4 — §7.7. The portal/preparation screen
+is built — §11.7.)
 
 ---
 
-# 15. Economy
+# 15. Economy — faucet **BUILT**, sinks **NEEDS DESIGN**
 
-**Largely undesigned.** What exists is a barter-of-materials economy: gather → process → craft →
-use.
+What exists is a barter-of-materials economy (gather → process → craft → use) plus **gold**:
+it drops from loot tables (save v8), accumulates on the inventory, is unsecured in a Realm like
+everything else, and has exactly **one sink — the Realm merchant** (the Dark Forest's Hedge
+Trader spends coin from the run bag). That ordering is deliberate: the loot pass's brief was
+*"gold simply exists as the current currency; do not design the economy yet"* — a currency
+nothing spends is harmless, while pricing things before knowing what drops is guesswork.
+**Thieving deliberately yields no coin of its own** — it takes precious metal, gems, keys and
+paperwork; coin is a Realm export, and a test holds the line alongside D29.3's essence rule.
 
 Missing and needed:
 
-- **Currency** — none exists. Respec is priced in "Realm currency" that has not been designed.
-- **Merchants / vendors** — a designed location type, unbuilt.
-- **Loot tables** — currently one guaranteed drop per enemy; no rarity, weighting or conditions.
+- **Vendors beyond the one merchant** — stock design, pricing, restocking; the location type
+  works, the economy behind it does not exist.
 - **Item valuation** — emergent items have no author to price them, so value must be *computed*
   from potency, trait rarity, essence, generation and integrity.
-- **Resource sinks** — Melvor's purchasable-upgrade axis is the obvious candidate and is
-  unconsidered so far.
+- **Resource sinks** — Melvor's purchasable-upgrade axis (Hideout/station upgrades, §14) is the
+  obvious candidate and is unconsidered so far.
+- **Respec pricing** — designed as "costly but accessible, in Realm currency"; whether that
+  currency is gold is undecided.
 
 ---
 
@@ -1217,28 +1430,48 @@ Missing and needed:
 ## 16.1 Current state
 
 One code-built developer console with a persistent header (tick/sim status, Play/Advance/Save/
-Load), a tabbed body, and an always-visible event log. Dark, code-only theme; no art or audio.
+Load), a tabbed body, and an always-visible event log beside it. Dark, code-only theme; no art
+or audio.
 
 **Tabs:** Character · Char Lab · Equipment · Hideout · Realm · Combat · Inventory.
 
-The **Hideout** tab replaced the Professions and Crafting tabs. Profession training, the
-material-transformation bench and equipment assembly are all reached the same way now — *choose a
-station, then use what that station is for* — over one fixed activity strip (passive bar, active
-timing sweep, Discover → Pursue card). Twenty stations, one per profession; see
-`docs/game-overview.md` §14.
+- The **Hideout** tab is the station host: the while-you-were-away summary card, the fixed
+  activity strip (passive/waiting status, active timing sweep, Discover → Pursue card), then a
+  station index that swaps to one station's page — ladders, bench, assembly, plots, course or
+  assay table as the station's own definition routes (§14).
+- The **Realm** tab is **two screens that swap** (D39): the preparation panel out of a run
+  (destination + deep-entry picker once earned, loadout with warnings and the starter kit,
+  consumable packing, fieldwork readiness, the knowledge-redacted briefing, one large ENTER
+  button), and the in-run panel inside one (report, one action button named for the node type,
+  Go Deeper / Extract, travel buttons, and a combat row when a fight is on).
+- The **Combat** tab shows live telegraph countdowns ("⚠ Goblin Brute: Overhead Smash — impact
+  in 1.2s"), per-combatant HP/stamina with stance markers, move buttons with provenance
+  tooltips, Attack / Block / Dodge / Parry (gear-gated) / Use Salve / Wait, a Hit-trace toggle,
+  and the **auto-combat toggle with its brain picker** (Steady / Aggressive / Cautious) and an
+  honest explanation of the reaction-latency handicap.
+- The **Char Lab** is the build-selection surface today: Base / Prefix / Suffix pickers (plus
+  Random) with a live *"What changed:"* diff — Species is not yet pickable (§3.9).
 
-> ⚠ **Unverified in the editor:** several Core-complete surfaces have never been rendered —
-> the Character Lab "Live hooks" panel, the Hit Log toggle, the gauge readout, and the E4
-> moveset readout / `CombatUseMove` command. All presentation-only; a single visual pass in
-> Godot covers them.
+> ✅ **The D30 re-voicing landed (R0–R4).** Bench, projection, fabrication and item surfaces
+> speak the semantic language by default (tiers, pips, trends, risk bands, slot-fit lines);
+> the numeric voice sits behind the bench's single **Advanced** toggle, and Assay removes
+> `???`s rather than adding numbers. Colour is the client's only contribution — the words come
+> from `Dungeons.Presentation`.
 
-> ⚠ **Being re-voiced (D30, slices R0–R4):** the bench, projection, fabrication and item
-> surfaces below currently speak simulation numbers as their primary language. The corrected
-> presentation architecture — the three-languages rule, the hybrid semantic grammar, the item
-> reveal hierarchy — is specified in `docs/presentation-architecture.md` and supersedes the
-> raw-number presentation described here wherever they conflict.
+> ⚠ **Unverified in the editor** (Godot is not on this machine's PATH; the user runs it): the
+> Phase 10 surfaces — the away panel, the auto-combat row, the three-state passive label, the
+> synergy "Helped by:" lines, autosave-on-quit — plus the older list: the whole Realm
+> Preparation screen, mastery readouts, the deep-entry picker, the rebuilt Hideout tab, the
+> R-track bench grammar and fabrication preview, the Techniques panel, the goblin fights.
 
-Two are genuinely designed rather than debug scaffolding:
+> ⚠ **Known seams, filed:** the Combat tab's Parry button is evaluated once at startup (the
+> in-run combat row re-checks correctly, so a fabricated Buckler enables Parry in a Realm but
+> not on the Combat tab until restart); "Use Salve" is hard-wired to the Healing Salve rather
+> than reading the pack; several dev faucets (Grant Test Mats, Grant Techniques, per-actor
+> fight buttons, equipment grants, Reroll) sit on player tabs by design while the game has no
+> production UI.
+
+Two surfaces are genuinely designed rather than debug scaffolding:
 
 **The Crafting Bench** — process picker (showing medium, severity, gate and the channel it
 opens), base picker, an **ordered reagent chain with reordering controls**, optional catalyst,
@@ -1301,7 +1534,7 @@ These recur across systems and have each been argued for explicitly:
 |---|---|---|
 | 1 | **Quantization bucket size** for emergent material identity | *The single highest-risk tuning number in the design.* Too coarse collapses the space; too fine floods the registry with indistinguishable neighbours. Measured at 67% collapse over 2,800 crafts — provisional, needs play |
 | 2 | **Integrity budget strength** | Currently allows ~20–40 meaningful refinements. Looser than the "commit-or-lose" fantasy implies, because the expensive cost terms are traits and signature reactions, which don't exist yet. Accept and wait, or tighten now? |
-| 3 | **The 0–100 vs 0–5 scale mismatch** | Blocks materials driving equipment. Resolving it is a combat rebalance — **scheduled into slice C2**, deliberately *after* the damage pipeline is settled so it calibrates against the final pipeline rather than a placeholder |
+| 3 | ~~**The 0–100 vs 0–5 scale mismatch**~~ | ✅ **Answered — C2b.** The reconciliation lives in fabrication and only there (`CombatUnitScale`), pinned by the iron-sword parity test. Whether the resulting numbers *feel* right belongs to the parked balance pass |
 | 4 | **Combat triangle** — melee/ranged/magic advantage? | Still open, but **leaning no**: enemy vulnerability multipliers (§5.5) already provide the counter-play without a global rule |
 | 5 | **Positioning** — in or out? | Deferred. If added later it touches every move and every enemy. Root is deferred with it; Fear gains retreat behaviour if it lands |
 | 6 | **Durability** | Recommended deferred; the design assumes it exists |
@@ -1342,84 +1575,92 @@ Decided, argued through, and stable enough to build against.
 
 ## 19.2 Exists in-game — BUILT
 
-Built, tested, and runnable today. 654 passing tests, zero build warnings.
+Built, tested, and runnable today. **1,191 passing tests, zero build warnings.** Single-slot
+save at **schema v11** (v4 emergent archetypes → v5 learned moves → v6 genome + rolled
+modifiers → v7 offline progress → v8 gold → v9 the `Armor`→`Body` slot migration → v10 the run
+loadout → v11 character XP).
 
 | System | What's real |
 |---|---|
-| **Crafting traits + essence (C1)** | 16-trait library (birth/cap/displacement/supersession, `id:tier` identity), seven typed essences with anchors/opposition, resonance capacity → strain → instability, Attune |
-| **Fabrication (C2a+C2b)** | Form templates, aperture-gated trait expression with dormancy, derived equipment archetypes persisted, 0–100 → combat-unit reconciliation pinned by iron-sword parity, per-slot component UI |
-| **Equipment breadth (Phase 4, D32)** | **8 forms across all 7 slots** (Weapon ×2, Offhand, Head, Body, Hands, Feet, Trinket); `EquipmentSlot` expanded with the `Armor` → `Body` rename and the project's first save migration (v9); worn armour is the sum of the loadout with coverage authored per form; four new form validation rules. Fabrication itself unchanged |
-| **The semantic layer (R0–R3, D30)** | `Dungeons.Presentation`: tiers/pips/wear words, trends from typed change kinds, risk bands, slot-fit readings, material readings, the typed projection lines, item cards/strips — the only path from simulation state to player-facing text; raw values behind Advanced. Bench, preview, fabrication and reveal all speak it |
-| **Affixes + Genome (R4, E5 front half)** | Genome persisted (save v6), eligibility/weight/tier + potency roll-quality, deterministic innates, seeded rolling, 43 affixes with live grants (contributions/rules/move-mods), lane-key alignment (D-07 executed), thorns/parry/evade/avoidance/penetration/barrier/status-depth mechanics, §8 validation + distribution tests |
-
-| System | What's real |
-|---|---|
-| **Tick simulation** | Deterministic shared clock driving combat and passive gathering |
-| **Materials** | 474 definitions, 21 typed properties, namespaced tags, load-time validation |
-| **Emergent crafting** | The complete P1 engine: 7 processes, the full algebra, potency, integrity, destruction, byproducts, signature registry, naming, Reaction Log, pre-commit projection |
-| **Crafting bench UI** | Process/substrate/ordered-reagent/catalyst selection with live projection |
-| **Character identity** | 15 Bases, 25 Prefixes, 50 Suffixes (10 fully expressed), 9 name formats, growth budget, gauges, channels — 18,750 resolvable builds, **hooks live in combat** |
-| **Character Lab UI** | Component swapping with a live diff |
-| **Modifier system** | 51 data-defined keys, five stacking kinds (incl. diminishing), clamps and `danger` caps as data, **scoped contributions** (local-vs-global, per-profession, per-move-tag) with the wrong-context guard, and a combat read path assembling build + status + gauge-band + timed contributions |
-| **Events & rules** | 31 events; declarative trigger rules — 17 conditions (incl. stateful world reads), 16 effects, one-roll-`effects[]`, target selectors, cooldowns, seeded chance; **full proc safety** (chain ids, depth 2, once-per-chain, ICD, `CanTrigger`, 64-effect fuse) |
-| **Effect handlers** | 11 combat handlers — damage, area, heal, status, resource, modifier, interrupt, and the four move-granting kinds; unhandled kinds visibly recorded |
-| **The hit pipeline** | Packets × lanes, traced Hit Log, diminishing armour, resistances, enemy vulnerability, crit, Perfect Block, modifier-driven INCREASED/block/damage-taken stages |
-| **Statuses** | 28 data-driven definitions across all four categories; DoTs, timed modifiers combat reads, **Resolve** (buildup, shared immunity, escalation), stagger→Stun |
-| **Moves** | `MoveDefinition` for both sides; weapon-granted movesets with provenance; 11-op move modification in fixed order; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; **27 shipped moves** (M2′) with per-effect target overrides |
-| **Techniques** | 19 technique items teaching moves into a persisted, learn-order-preserving learned list (save v5); learned grants compose with `learned` provenance; Learn UI + validator rules |
-| **Enemy framework** | Family + Role + Actor composition via `ActorResolver` (D26); reusable AI brains matching by move id or tag, `avoid_repeat_weight`; enemy armour real; 3 data-composed goblins incl. the caster Hexer |
-| **Combat** | Tick-driven encounter, telegraph → windup → execute → recovery as real states, timed block/dodge, queue-time costs/cooldowns/requirements, consumable use, death |
-| **Professions** | **8 professions, 26 actions** (P1–P3), active + passive, XP/levels, level-gated ladders, cross-feeding pinned by test; Mining killed the iron-ore seed |
-| **Realm** | Dark Forest — 10 locations, 2 depths, travel, descend, extract, forfeit-on-death |
-| **Persistence** | Single-slot save (v4) covering build, stash, instances, equipment, professions, knowledge, discoveries, emergent archetypes |
+| **Tick simulation** | One deterministic shared clock (20/s) driving combat, professions, plots, statuses and the away payout |
+| **Materials** | **1,448 definitions**, 21 typed properties, namespaced tags, load-time validation; every raw material has a gathering source (D36) |
+| **Emergent crafting** | The complete engine: **8 processes**, the full algebra, potency, integrity, destruction → byproducts, signature registry, naming, Reaction Log, pre-commit projection — plus **traits (16, C1)** and **essence (7, C1)** with resonance capacity → strain |
+| **Crafting bench UI** | Station-scoped action/substrate/ordered-reagent/catalyst selection with the semantic projection and the Advanced toggle |
+| **Fabrication** | **23 forms across all 9 slots (16 weapons, ~180 deterministic name variants)**, apertures + dormancy, derived archetypes persisted, the 0–100 → combat-unit reconciliation pinned by iron-sword parity (C2b), per-piece armour + lane resistances, ring interchangeability (D33), per-slot component UI with slot-fit readings |
+| **Genome + item modifiers** | Genome persisted (v6); eligibility/weight/tier + potency roll-quality; deterministic innates (U-7); **44 affixes** with live grants (scoped contributions, attached rules, move-modifier grants); seeded distribution tests; the pre-roll "Supports:" translation |
+| **The semantic layer (D30, R0–R4)** | `Dungeons.Presentation` — tiers/pips/wear words, trends, risk bands, slot-fit, material/item readings — the only path from simulation state to player text; raw values behind Advanced; Assay as redaction |
+| **Character identity** | 15 Bases, 25 Prefixes, 50 Suffixes (10 fully expressed), 3 Species (thin), 9 name formats, the 4.0 growth budget, gauges (8 Bases + 7 Prefixes carry one), channels — 18,750 resolvable builds with hooks live in combat |
+| **Character Lab UI** | Base/Prefix/Suffix pickers + Random with a live "What changed:" diff — the build-selection surface today |
+| **Modifier system** | **60 data-defined keys**, five stacking kinds (incl. diminishing), clamps and `danger` caps as data, scoped contributions with the wrong-context guard, one authoritative read path |
+| **Events & rules** | 35 events; declarative trigger rules — 17 conditions (incl. stateful world reads), 16 effects, one-roll-`effects[]`, target selectors, cooldowns, seeded chance; full proc safety (chain ids, depth 2, once-per-chain, ICD, `CanTrigger`, 64-effect fuse) |
+| **Effect handlers** | 11 combat handlers; unhandled kinds visibly recorded, never dropped |
+| **The hit pipeline** | Packets × lanes, traced Hit Log, diminishing armour (K = 1.0), resistance cap/floor with penetration after the cap, enemy vulnerability, crit, Perfect Block, **Parry** (gear-granted), **Evade** + lane avoidance, Barrier absorption, thorns/retaliation as content, modifier-driven INCREASED/block/damage-taken stages |
+| **Statuses** | **29 data-driven definitions** across all four categories; lane-mapped signature ailments; DoTs that cannot proc; `while_active` modifiers combat reads; **Resolve** (buildup, shared immunity, +25% escalation); stagger→Stun |
+| **Moves** | One shape for both sides; weapon-first moveset composition with provenance; 11-op modification in fixed order; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; **43 shipped moves** |
+| **Techniques** | 19 items teaching moves into a persisted learned list (v5), with live loot faucets and the Learn UI |
+| **Enemies** | Family + Role + Actor composition (D26): **483 actors / 26 families / 7 roles / 7 AI brains**; the elite (Grask) and boss (Thornheart) live with rank-gated spoils and XP multipliers; five encounters wired into the Dark Forest, the rest authored breadth awaiting realm wiring |
+| **Auto-combat (D41)** | Three brains on the *player* combatant through the enemy's own chooser; the only handicap is `reaction_ticks` (validator-floored at 5); live fights only |
+| **Combat** | Tick-driven encounter, telegraph → windup → execute → recovery as real states, timed block/dodge/parry, queue-time costs/cooldowns/requirements, consumable use, gauges, death |
+| **Professions** | **20 professions / 348 actions / 36 opportunities**, one execute path; mastery as content (6 rungs; preservation 20, doubling 40); **synergies 13 cross + 2 global** through one benefit seam; offline (12 h / 20 k caps) with auto-repeat, the away summary and guarded autosave-on-quit; Farming plots (6 at levels 1–70); the Agility course (12 obstacles; bonuses declared, unread until E6); the Assay reveal ladder; Cartography → Realm Knowledge |
+| **Hideout** | 20 stations (routing, never rules) with load-time reachability both ways; the activity strip; station pages composed from the definition |
+| **Realms** | The Dark Forest — **34 locations / 3 depths / all 11 node types / 3 hidden**, elite + boss, deeper-pays-rarer pinned; **163 walkable roster shells** (no encounters wired, deliberately); Realm Knowledge — **7 insights at 12/30/75/160/320/560/900**, including deep entry |
+| **Realm preparation (D39)** | Destination + deep-entry picker, loadout with warnings (never a bar — anti-soft-lock is a test), consumable packing that transfers into the run bag, fieldwork readiness, the knowledge-redacted briefing, the starter kit |
+| **Loot (D31)** | **72 tables**, three drop rules, composed enemy loot, the active/passive structural seam, depth gates, D28 inputs-only held by test, rarity from the material's own tag |
+| **Gold** | Drops (v8), unsecured like everything else; one sink — the Hedge Trader (40 coin, unsecured run gold) |
+| **Progression (D40)** | Nine consumed tracks with a roll-call test; character XP is Realm-only (0.25 × enemy max health, ×1.5 elite / ×2 boss, +25 per extraction; 50-step curve to 99); levelling raises ceilings and never heals |
+| **Persistence** | Single-slot `user://save.json`, schema v11, ids-and-runtime-values only (emergent archetypes are the one definition-shaped exception, by necessity) |
 
 ## 19.3 PLANNED — designed, not built
 
-Direction and specifics are settled (mostly by the 27 effect-foundation decisions); the build
-has not reached them.
+Direction and specifics are settled; the build has not reached them.
 
-- **Item modifiers, genetics, operations, Overreach** (§10.2a) — designed in full; slices
-  E5/E7. The effect vocabulary they express themselves in is already built
-- ~~Equipment fabrication~~ ✅ **BUILT (C2a+C2b)** — form templates with named slots, per-slot
-  apertures, dormancy, derived equipment archetypes persisted, and the **scale reconciliation
-  done**: stat maps land material properties on instances in combat units, pinned by an
-  iron-sword parity test. Awaiting the C2c playtest checkpoint for tuning
-- ~~Crafting P2–P3~~ ✅ **BUILT (C1)** — the 16-trait library (cap/displacement/supersession)
-  and the seven-essence layer with resonance capacity/strain and Attune
-- **Profession tools** (§10.2a) — two worn slots, same genome/affix machinery; slice E6, cheap
-  once E5 exists
-- **Crafting P4 + P5c + P6** — signature reactions, consumable forms, and the codex remain
-  specified and deferred
-- **Realm depth** — location types, affixes, campsite, preparation and Knowledge-unlocks are
-  designed and none are built
-- **Hazards** — the tick/telegraph model is designed; nothing places one
-- **Auto-combat** — the profile shape it runs on now exists (enemies use it); pointing it at
-  the player does not
-- **Offline progress** — a formula with no implementation
+- **Crafting operations + Overreach + Anomalous modifiers** (E7) — the endgame casino. The
+  validator already reserves the Anomalous proc-depth exception; zero content exists. Exotic
+  rare-rolls and **Signature affixes** (need crafting P4) sit beside it
+- **Signature reactions (P4)** and **the codex/journal/renaming half of P6** — the Assay ladder
+  and bench proximity hints ship; the book does not
+- **Consumable forms (P5c)** — retires the legacy Healing-Salve interaction path when it lands
+- **Profession tools + the yield pipeline (E6)** — the seam is ready (`ProfessionBenefits` is
+  three-source by construction; the course's bonus keys and Artifice/Smithing tool components
+  already ship, read by nothing)
+- **Form/schematic acquisition (D29.2)** — schematic items drop from eight tables and bind to
+  no form; **the one progression track nothing reads**, exempt from the roll-call test by name
+- **Combat-side hazards** — ticking, telegraphed encounter hazards; realm hazard *nodes* ship
+- **Exposure/inversion content, the max-resistance raise** (the 0.90 ceiling constant is read
+  by nothing), **stored retaliation, ignore-fraction** — E7's defensive fringe
+- **Realm affixes · the campsite workshop · encounter wiring for the 163 roster realms · realm
+  tiers doing anything** (SupportedTiers and the run's tier are carried and read by nothing)
+- **Fully unattended Realm runs** — auto-combat is live-only; travel, extraction decisions and
+  the run bag were deliberately not started
+- **Relic materials + sealed uniques** — the chase content; the boss table's `relic_shard`
+  already drops as the placeholder shape
+- **Chain content** — the `addChain` op and falloff machinery are live with zero users
+- **The "gear at risk" difficulty toggle**
 
 ## 19.3a NEEDS CONTENT — the engine is ahead of the data
 
-Built machinery waiting on authored content, not on code.
-
-- ~~The universal move library + acquisition~~ ✅ **BUILT (M2′)** — 27 moves, 19 technique
-  items, the learned list. Library growth from here is ordinary content authoring
-- **Enemy roster breadth** — the framework (D26) and three data-composed goblins exist; the
-  §12.3 target is 8–10 enemies plus the elite/boss variant layer (the fold seam exists, unbuilt)
-- **Technique-item faucets** — techniques are debug-granted until M6's loot tables; migrate the
-  Wizard/Bastion starting-grant exemplars to acquisition sources then too if desired (D25 allows
-  either)
-- **Move modifiers** — the 11-op system is live and empty; E5's affix pools are its intended
-  author
-- **Remaining 40 suffix mechanics** (~120 expressions) and the Species roster (3 thin of 10)
+- **Remaining 40 suffix mechanics** (~120 expressions) — the ten expressed prove the model
+- **The Species roster** (3 thin of a designed 10) — also a design gap, §19.4
+- **Move modifiers** — the 11-op system ships with exactly one data user (Emberbrand); E5's
+  affix pools remain its intended author at scale
+- **The full 150–250 modifier catalog** — 44 representative affixes prove every family shape
+- **Anomalous/Exotic affix content** — blocked on E7 by design
 
 ## 19.4 NEEDS DESIGN — little or no design exists
 
-- **Economy** — no currency, no vendors, no loot tables, no valuation rules, no sinks. Respec
-  pricing has no economy to price against
-- **The Hideout** — upgrades, stations, storage
+- **Economy** — one currency (gold) and one sink (the merchant) exist; vendors at scale, item
+  valuation (emergent items must be *priced by computation*), resource sinks and respec pricing
+  are all undesigned. Thieving deliberately ships no coin of its own
+- **The Hideout's meta-layer** — upgrades, station unlock/upgrade costs, storage management
+  (the stations themselves are built, §14)
+- **Species' mechanical role** — the least-developed identity layer, still fixed at Human in
+  play
+- **The Fighter's identity hook** (§18 #15) and **casting-speed scaling** (§18 #16)
+- **Build selection as a player surface** — the Char Lab picks Base/Prefix/Suffix with a live
+  diff today, but it is a dev-styled surface; the real onboarding screen (and Species choice)
+  is undesigned
+- **Mastery pools/checkpoints and progression milestones** — the two Melvor layers still open
 - **Positioning** — deferred without a decision on whether it's ever coming
-- **Build selection** — character XP and levels ship (Phase 8, D40), but the four build ids are
-  still hardcoded and cycled by a debug button; there is no screen where a player picks them
 - **Production UI** — no art, audio, animation or telegraph visuals; no plan from debug console
   to real screens
 - **Multiplayer** — noted as a long-term possibility the domain architecture supports; entirely
@@ -1437,14 +1678,16 @@ Built machinery waiting on authored content, not on code.
 | ~~`docs/current-state.md`~~ | **DELETED** (D-24a) — stale, superseded by `PROJECT_STATE.md` |
 | ~~`docs/combat-spec.md`~~ | **DELETED** (D-24a) — §15–16 and §22–25 superseded by `damage-and-defense.md`/`statuses.md`; the action-lifecycle detail folded into `moves.md` §2.3; the rest duplicated §5 above |
 | `docs/expansion-plan.md` | **Largely superseded** — its P2 shipped (D23); P3–P10 replaced by the E0–E7 slice plan. Kept for its audit |
-| Fixed crafting interactions | **Retired** — only a Healing Salve shim remains until fabrication lands |
+| Fixed crafting interactions | **Retired** — only the Healing Salve shim remains until consumable forms (P5c) land |
 
 ## Appendix: the effect-foundation package
 
-The design settled by the 27 decisions in `docs/effect-foundation.md` §12. **Slices E0–E4 are
-BUILT** (events → hit pipeline → lifecycle split + statuses → rule engine + scoped modifiers +
-handlers + stateful conditions → moves); **C1/C2 and E5–E7 remain** (traits/essence,
-fabrication + scale reconciliation, affixes, tools, Overreach).
+The design settled by the 27 decisions in `docs/effect-foundation.md` §12. **Slices E0–E4, C1,
+C2 and E5's front half are BUILT** (events → hit pipeline → lifecycle split + statuses → rule
+engine + scoped modifiers + handlers + stateful conditions → moves → traits/essence →
+fabrication + the scale reconciliation → the Genome and 44 live modifiers). **E6 and E7
+remain** (profession tools; operations + Overreach + Anomalous), plus E5's long tail (the full
+modifier catalog).
 
 | Doc | Covers |
 |---|---|
