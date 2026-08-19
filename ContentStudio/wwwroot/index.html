@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Content Studio</title>
+  <link rel="stylesheet" href="css/studio.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚒️</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand" title="Content Studio">
+        <span class="brand-mark">⚒</span>
+        <span class="brand-name">CONTENT STUDIO</span>
+      </div>
+      <button id="global-search" class="search-trigger" title="Search everything (Ctrl+K)">
+        <span class="search-icon">🔍</span>
+        <span class="search-hint">Search everything…</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+      <div class="topbar-right">
+        <span id="project-chip" class="project-chip" title="Game project">no project</span>
+        <span id="validation-chip" class="validation-chip">…</span>
+      </div>
+    </header>
+
+    <nav id="sidebar" aria-label="Content navigation"></nav>
+    <div id="sidebar-resizer" class="pane-resizer vertical"></div>
+
+    <main id="workspace" tabindex="-1"></main>
+
+    <div id="inspector-resizer" class="pane-resizer vertical"></div>
+    <aside id="inspector" aria-label="Inspector"></aside>
+
+    <footer id="statusbar">
+      <span id="status-dirty" class="status-item">0 modified</span>
+      <span id="status-errors" class="status-item">0 errors</span>
+      <span id="status-warnings" class="status-item">0 warnings</span>
+      <span class="status-spacer"></span>
+      <span id="status-message" class="status-item subtle"></span>
+      <button id="save-all" class="button primary compact" title="Save all modified files (Ctrl+S)">Save All</button>
+    </footer>
+  </div>
+
+  <div id="overlay-root"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
