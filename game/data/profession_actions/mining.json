@@ -169,7 +169,6 @@
     "baseIntervalTicks": 210,
     "experience": 58,
     "outputs": [ { "itemId": "material.emberite_ore", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.cinder_shard", "chance": 0.18, "quantity": 1 } ],
     "opportunities": [
       {
         "id": "opportunity.unstable_ember_pocket",
@@ -180,7 +179,12 @@
         "extraIntervalTicks": 240,
         "riskWeight": 0.45,
         "outputs": [ { "itemId": "material.emberite_ore", "quantity": 2 } ],
-        "bonusOutputs": [ { "itemId": "material.ember_core", "chance": 0.2, "quantity": 1 } ],
+        // D29.3: the cinder shard moved here off the action's bonus outputs. Both payouts on
+        // this opportunity are essence-bearing, and the whole opportunity is active-only.
+        "bonusOutputs": [
+          { "itemId": "material.cinder_shard", "chance": 0.45, "quantity": 1 },
+          { "itemId": "material.ember_core", "chance": 0.2, "quantity": 1 }
+        ],
         "experience": 90
       }
     ]
@@ -194,7 +198,21 @@
     "baseIntervalTicks": 210,
     "experience": 58,
     "outputs": [ { "itemId": "material.frostiron_ore", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.rime_shard", "chance": 0.18, "quantity": 1 } ]
+    "opportunities": [
+      {
+        // D29.3: the frost mirror of the ember pocket. Essence-bearing, therefore active-only.
+        "id": "opportunity.rimed_seam",
+        "required_mastery": 30,
+        "name": "Rimed Seam",
+        "prompt": "The cold coming off this face is not the weather. Work it out slowly and the seam gives up something that never melted.",
+        "discoveryChance": 0.13,
+        "extraIntervalTicks": 240,
+        "riskWeight": 0.45,
+        "outputs": [ { "itemId": "material.frostiron_ore", "quantity": 2 } ],
+        "bonusOutputs": [ { "itemId": "material.rime_shard", "chance": 0.45, "quantity": 1 } ],
+        "experience": 90
+      }
+    ]
   },
   {
     "id": "action.mine_mithril",

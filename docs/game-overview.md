@@ -192,7 +192,7 @@ tools (E6) — the third source of those same six.
 Fletching · Artifice · Runecrafting
 **Utility (4)** Thieving · Agility · Cartography · Assay
 
-**348 actions · 32 opportunities · 12 course obstacles.** XP/levels, per-action mastery,
+**348 actions · 36 opportunities · 12 course obstacles.** XP/levels, per-action mastery,
 level-gated ladders, and one execute path behind all twenty.
 
 **Three modes, and the difference between them is structural, not a number:**
@@ -1024,7 +1024,7 @@ presentation layer · the Genome + 44 modifiers with live grants · the class co
 builds) · the modifier vocabulary with scoped contributions · the event bus + trigger rules +
 proc safety · 11 effect handlers · the hit pipeline · 28 statuses with Resolve · the Move system
 and 27 moves · techniques · the enemy composition framework and 3 enemies · thorns/parry/evade/
-barrier · tick combat · 20 professions / 348 actions / 32 opportunities · Farming plots and the
+barrier · tick combat · 20 professions / 348 actions / 36 opportunities · Farming plots and the
 Agility course · offline progress · the Hideout's 20 stations · the Dark Forest · extraction and
 death · save/load (schema v7).
 

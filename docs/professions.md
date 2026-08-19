@@ -70,6 +70,10 @@ problems and only one is worth acting on.
 materials it did not have, and nothing past the cap. Offline's lower ceiling is a property of the
 code, not a number someone can retune away.
 
+**And therefore: no essence (D29.3, settled 2026-08-18).** Essence-bearing materials reach a
+profession *only* as opportunity payloads, so the supernatural tier is unreachable while idle by
+construction. See §5 for what that changed and why.
+
 **Active** adds a timing score *and* the layer that actually makes it a different activity:
 
 ### Discover → Pursue / Ignore
@@ -253,6 +257,32 @@ the global/account passive, earned by breadth rather than granted as a constant.
 unlock late (totals of 200 and 400) and pay little per level, because breadth should not out-earn
 mastery of the action actually being performed.
 
+### Essence is extraction's export (D29.3, settled 2026-08-18)
+
+**A profession may reach an essence-bearing material only through an opportunity payload.** Not
+through its outputs, not through its bonus outputs, and not through its drop table — and since
+only the active path rolls opportunities, *an absence can never bank essence*. That is a fact
+about the code rather than a probability someone can retune, which is what makes "the
+supernatural tier is what you go to a Realm for" hold under idle progression.
+
+This replaced an eleven-id allowlist of grandfathered faucets. Two of them were guaranteed
+outputs on passive rungs, which meant a 12-hour absence banked thousands of essence-bearing logs
+with no Realm exposure at all — and Phase 10's auto-repeat made that unattended too. The seven
+rungs involved kept their content and gained a decision:
+
+| Rung | The passive yield | The essence, now |
+|---|---|---|
+| Hunt Eels (Fishing 20) | eel skin | `opportunity.live_eel` — the gland |
+| Harvest Storm Kelp (34) | storm kelp | `opportunity.charged_frond` |
+| Mine Emberite (45) | emberite ore | `opportunity.unstable_ember_pocket` — shard + core |
+| Mine Frostiron (45) | frostiron ore | `opportunity.rimed_seam` |
+| Harvest Emberwood (50) | ember sap, cinderroot | `opportunity.emberwood_heartwood` — log + bark |
+| Harvest Livingbark (62) | spirit bark | `opportunity.heartwood_seam` — both logs |
+| Cut a Cultist's Purse (58) | native gold | the Reliquary |
+
+The fiction improved rather than survived: a tree gives up sap and bark to anyone who turns up,
+and its burning heartwood only to somebody who stayed and cut for it.
+
 **No fake resources.** Profession outputs use the existing material library wherever one fits.
 Thieving deliberately produces no currency: there is no economy yet, and a coin nothing spends
 would be exactly the invented resource the design forbids — so a thief walks off with precious
@@ -262,7 +292,7 @@ metal, gems, a key, or somebody's paperwork.
 
 ## 6. Content counts
 
-**20 professions · 348 actions · 32 opportunities · 12 obstacles · 15 synergies · 1448 materials**
+**20 professions · 348 actions · 36 opportunities · 12 obstacles · 15 synergies · 1448 materials**
 (79 added by the P4 pass). Save schema **v11** — Phase 10 added no field: `PassiveActionId` now
 carries the standing selection rather than the running action, which is the same key meaning the
 same thing slightly more honestly. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins

@@ -1099,7 +1099,7 @@ professions**; the design lives in `docs/professions.md`.
 `ProfessionBenefits.cs`, `ProfessionSynergies.cs`, `FarmingPlots.cs`,
 `TrainingCourse.cs` · plus `Presentation/AssayLens.cs`, `Presentation/AwayReadout.cs`.
 
-**DATA** — `professions/` (20) · `profession_actions/` (348 actions, 32 nested opportunities) ·
+**DATA** — `professions/` (20) · `profession_actions/` (348 actions, 36 nested opportunities) ·
 `training_obstacles/` (12) · `mastery/` (6 rungs) · `synergies/` (15: 13 cross-profession + 2 global).
 
 **RUNTIME FLOW**

@@ -204,70 +204,66 @@ public class C2cAuditTests
 
     // ---- D29.3 — the essence source audit ------------------------------------------------------
 
-    /// <summary>"Trace profession essence must never compete economically with Realm
-    /// extraction" (D29.3, user's phrasing). This pins the overlap between essence-authored
-    /// materials and profession outputs to the audited allowlist — today exactly one, the
-    /// shock-eel skin. Whether that faucet needs a rarity gate is a C2c playtest question;
-    /// a NEW overlap appearing silently is a content bug this test catches.</summary>
+    /// <summary>
+    /// <b>D29.3, settled 2026-08-18: profession essence is active-only.</b> "Trace profession
+    /// essence must never compete economically with Realm extraction" (the user's phrasing).
+    ///
+    /// <para>This used to be an <em>allowlist</em> of eleven grandfathered material ids, carried
+    /// unresolved for three contexts with the argument "a level-45+ rung is not competing with
+    /// extraction for the same player at the same time". Phase 10 broke that argument: two of the
+    /// eleven were <b>guaranteed outputs</b> on passive-runnable rungs, so a 12-hour absence banked
+    /// ~3,750 essence-bearing logs with no Realm exposure at all — and auto-repeat meant it no
+    /// longer even stopped when nobody was looking.</para>
+    ///
+    /// <para><b>The rule that replaced it is structural, not a list.</b> An essence-bearing
+    /// material may reach the player through a profession <em>only</em> as an opportunity payload,
+    /// and <see cref="ActionResolver"/> rolls opportunities on the active path alone. So "you
+    /// cannot bank essence while idle" is a fact about the code rather than eleven exceptions
+    /// somebody has to keep arguing for — and a new essence faucet cannot be slipped in, because
+    /// there is no list to add it to.</para>
+    ///
+    /// <para>The M6 loot path is held to the same standard, from the other side, by
+    /// <c>LootEcosystemTests.NoProfessionDropTableReachesEssence</c> — a drop table may not reach
+    /// essence at all, since a table is rolled by both paths.</para>
+    /// </summary>
     [Fact]
-    public void ProfessionFaucetsYieldEssenceOnlyFromTheAuditedAllowlist()
+    public void ProfessionEssenceIsReachableOnlyThroughTheActivePath()
     {
         var actions = TestPaths.LoadStore<ProfessionActionDefinition>("profession_actions").GetAll();
         var materials = TestPaths.LoadStore<MaterialDefinition>("materials");
-
-        // The complete audited list. Anything new appearing here must be argued through D29.3,
-        // not slipped in — which is exactly what this test caught when the 20-profession pass
-        // landed, and why the entries below carry their level gate.
-        //
-        // 2026-08-16, the original two: the shock-eel fishing rung, skin + gland — both
-        // storm-trace, both flagged for C2c's economic-noncompete check.
-        //
-        // The 20-profession pass added nine more, every one of them behind a deep gate. The
-        // argument is that a level-45-plus rung is not competing with Realm extraction for the
-        // same player at the same time: a miner who can work an emberite seam has already been
-        // extracting for a long while. All nine are still provisional and belong to the same
-        // C2c noncompete check as the eel rung.
-        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "material.eel_skin",            // Fishing 20 — the original audited rung
-            "material.shock_eel_gland",     // Fishing 20 — ditto, as a bonus output
-            "material.static_charge",       // Fishing 34, 12% bonus off storm kelp
-            "material.cinder_shard",        // Mining 45, 18% bonus off emberite
-            "material.rime_shard",          // Mining 45, 18% bonus off frostiron
-            "material.ember_core",          // Mining 45, 20% inside a 45%-risk opportunity
-            "material.emberwood_log",       // Forestry 50
-            "material.emberbark",           // Forestry 50, 25% bonus
-            "material.livingbark_log",      // Forestry 62
-            "material.spiritwood_log",      // Forestry 62, inside a 25%-risk opportunity
-            "material.soul_gem",            // Thieving 58, 10% bonus and an opportunity payout
-        };
-
-        // Opportunity payloads are profession faucets too — the whole point of one is that it
-        // pays better than the action that surfaced it, so leaving them out of this audit would
-        // have been a hole big enough to drive the entire active path through.
-        //
-        // M6 added a third faucet: an action's `loot_table`, which reaches further than the
-        // action's own JSON because tables nest. Walking it keeps this audit honest about the
-        // whole surface. (The loot path is additionally held to a ZERO-tolerance rule by
-        // LootEcosystemTests.NoProfessionDropTableReachesEssence — the allowlist above is a
-        // legacy of content that predates it, and the new path starts clean rather than
-        // inheriting eleven exceptions.)
         var lootTables = TestPaths.LoadStore<Dungeons.Loot.LootTableDefinition>("loot_tables");
 
-        var essenceOutputs = actions
-            .SelectMany(a => a.Outputs.Select(o => o.ItemId)
-                .Concat(a.BonusOutputs.Select(o => o.ItemId))
-                .Concat(a.Opportunities.SelectMany(op => op.Outputs.Select(o => o.ItemId)))
-                .Concat(a.Opportunities.SelectMany(op => op.BonusOutputs.Select(o => o.ItemId)))
-                .Concat(a.LootTableId is { Length: > 0 } table
+        bool BearsEssence(string id) =>
+            materials.TryGetById(id, out var material) && material.Essence.Count > 0;
+
+        foreach (var action in actions)
+        {
+            // The passive surface: what a completion hands over whether anyone is watching or
+            // not — including the drop table, which reaches further than the action's own JSON
+            // because tables nest.
+            var passiveYield = action.Outputs.Select(output => output.ItemId)
+                .Concat(action.BonusOutputs.Select(bonus => bonus.ItemId))
+                .Concat(action.LootTableId is { Length: > 0 } table
                     ? Dungeons.Loot.LootReachability.ItemsReachableFrom(lootTables, table)
-                    : Enumerable.Empty<string>()))
+                    : Enumerable.Empty<string>());
+
+            foreach (var itemId in passiveYield)
+                Assert.False(BearsEssence(itemId),
+                    $"{action.Id} yields essence-bearing '{itemId}' without being asked to. Essence may only " +
+                    "reach a profession through an opportunity payload, which passive and offline cannot roll (D29.3).");
+        }
+
+        // Stated positively, so the rule cannot be satisfied by removing essence from professions
+        // altogether — the active path is supposed to be able to find some.
+        var activeEssence = actions
+            .SelectMany(action => action.Opportunities)
+            .SelectMany(opportunity => opportunity.Outputs.Select(output => output.ItemId)
+                .Concat(opportunity.BonusOutputs.Select(bonus => bonus.ItemId)))
+            .Where(BearsEssence)
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Where(id => materials.TryGetById(id, out var m) && m.Essence.Count > 0)
             .ToList();
 
-        foreach (var id in essenceOutputs)
-            Assert.Contains(id, allowed);
+        Assert.NotEmpty(activeEssence);
     }
 
     /// <summary>

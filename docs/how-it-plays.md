@@ -32,7 +32,7 @@ eventually adds the fourth verse — *push the finished item once more, or stop 
 | **Anatomy** | hide, bone, gland, venom — creature parts in the real material library (GDD §12.4) | everything | common |
 | **Salvage** | enemy-wielded gear arriving as *materials* (the Brute's crude blade → scrap metal + rawhide) | smithing chains | common |
 | **Rare profiles** | unusual property-combination materials (Storm Core, Glacial Heart) | trait & essence hunting | uncommon |
-| **Essence-bearing parts** | the supernatural tier's raw input; realm-(near-)exclusive (D29.3) | Attune → infusion | rare |
+| **Essence-bearing parts** | the supernatural tier's raw input; realm sources, plus profession opportunities only (D29.3) | Attune → infusion | rare |
 | **Techniques** | items that teach moves (**BUILT**, M2′) | the moveset | uncommon |
 | **Schematics** | items that teach **forms** (D29.2) — techniques' sibling | fabrication breadth | rare |
 | **Catalysts** | not consumed; bend process rates | craft planning | uncommon |
@@ -101,7 +101,8 @@ scrap it.
 ### Stage 3 — the realm feeds the bench
 
 The first extractions land anatomy, salvage, maybe one rare profile worth planning around.
-Essence arrives (almost) only from realms (D29.3), so the first meaningful essence craft is a
+Essence arrives from realms, and from professions only through the active Discover → Pursue
+layer (D29.3, settled 2026-08-18), so the first meaningful essence craft is a
 post-extraction milestone *by construction* — the supernatural tier is extraction's reward, and
 "why do I keep running realms" now has a permanent crafting answer. Strain teaches the lesson
 in the engine's own voice: **attune first, then infuse** (BUILT, C1b) — powerful magic needs a
@@ -166,7 +167,7 @@ shape as standing at the extraction portal with full pockets.
 |---|---|
 | First-session sufficiency audit (fresh character → fabricated Longsword, professions only) | C2c checklist |
 | Trait-birth pacing numbers | C2c balance backlog |
-| Essence source audit (38 essence-authored materials vs D29.3's noncompete rule) | C2c/M6 window |
+| ~~Essence source audit (38 essence-authored materials vs D29.3's noncompete rule)~~ | ✅ Settled 2026-08-18: profession essence is active-only |
 | `forms.json` acquisition field + persisted known-forms list + validator rule | M6 (learned-list precedent) |
 | Schematic content list (which forms drop where) | M6 |
 | P4 signature-reaction exemplars | when P4 schedules |

@@ -689,7 +689,7 @@ lands** (D21).
 | 5 | **`PropertyDefinition.transferable` is unconsumed** | Structural properties are marked non-transferable, yet processes move them on-channel. Give it a job or drop it |
 | 6 | **All 44 modifiers are in distinct families** | The one-per-family rule is live but toothless until families gain second members |
 | 7 | **Every affix number is provisional** | `AffixTuning` roll counts, variance and the innate floor are breadth-not-balance, deliberately parked for the balance pass |
-| 8 | **Essence source overlap** | Two storm-trace faucets exist in Fishing (`eel_skin`, `shock_eel_gland`). Allowed as a rare outcome, but D29.3 says *"trace profession essence must never compete economically with Realm extraction"* — a playtest call, pinned by test |
+| 8 | ~~**Essence source overlap**~~ | ✅ **Settled 2026-08-18 (D29.3 resolved).** Professions reach essence **only through opportunity payloads**, which passive and offline structurally cannot roll. The eleven-id allowlist is gone; the rule is now a property of the code rather than a list of exceptions |
 | 9 | **Fabrication calibration** | `CombatUnitScale = 5.0` is parity-pinned to the authored Iron Sword, which is itself an unbalanced placeholder |
 
 ---

@@ -133,8 +133,27 @@
     "requiredLevel": 50,
     "baseIntervalTicks": 230,
     "experience": 66,
-    "outputs": [ { "itemId": "material.emberwood_log", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.emberbark", "chance": 0.25, "quantity": 1 } ]
+    // D29.3 (settled 2026-08-18): this rung used to hand over an essence-bearing log on EVERY
+    // completion, which made a 12-hour absence roughly 3,750 units of fire essence with no Realm
+    // exposure at all — the exact competition D29.3 forbids, and Phase 10's auto-repeat made it
+    // unattended as well. The tree still gives up what a tree gives up passively: sap and root.
+    // The heartwood itself, where the essence actually lives, is now something you have to stay
+    // and cut for.
+    "outputs": [ { "itemId": "material.ember_sap", "quantity": 1 } ],
+    "bonusOutputs": [ { "itemId": "material.cinderroot", "chance": 0.25, "quantity": 1 } ],
+    "opportunities": [
+      {
+        "id": "opportunity.emberwood_heartwood",
+        "name": "The Heartwood",
+        "prompt": "The outer wood is ordinary. What is burning is further in, and getting to it means felling the whole thing while it is still hot.",
+        "discoveryChance": 0.14,
+        "extraIntervalTicks": 320,
+        "riskWeight": 0.30,
+        "outputs": [ { "itemId": "material.emberwood_log", "quantity": 1 } ],
+        "bonusOutputs": [ { "itemId": "material.emberbark", "chance": 0.35, "quantity": 1 } ],
+        "experience": 110
+      }
+    ]
   },
   {
     "id": "action.harvest_livingbark",
@@ -144,8 +163,9 @@
     "requiredLevel": 62,
     "baseIntervalTicks": 260,
     "experience": 84,
-    "outputs": [ { "itemId": "material.livingbark_log", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.spirit_bark", "chance": 0.2, "quantity": 1 } ],
+    // D29.3: same correction as Emberwood. The bark comes off the living tree either way; the
+    // log — where the nature essence is — only comes to someone who stayed for it.
+    "outputs": [ { "itemId": "material.spirit_bark", "quantity": 1 } ],
     "opportunities": [
       {
         "id": "opportunity.heartwood_seam",
@@ -154,8 +174,11 @@
         "discoveryChance": 0.10,
         "extraIntervalTicks": 400,
         "riskWeight": 0.25,
-        "outputs": [ { "itemId": "material.spiritwood_log", "quantity": 1 } ],
-        "bonusOutputs": [ { "itemId": "material.spiritsap_resin", "chance": 0.35, "quantity": 1 } ],
+        "outputs": [ { "itemId": "material.livingbark_log", "quantity": 1 } ],
+        "bonusOutputs": [
+          { "itemId": "material.spiritwood_log", "chance": 0.40, "quantity": 1 },
+          { "itemId": "material.spiritsap_resin", "chance": 0.35, "quantity": 1 }
+        ],
         "experience": 120
       }
     ]

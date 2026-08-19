@@ -104,8 +104,9 @@
     "baseIntervalTicks": 230,
     "experience": 88,
     "successChance": 0.42,
+    // D29.3: the soul gem is essence-bearing, so it pays out only through the Reliquary below —
+    // which is where a cultist's soul gem belonged anyway.
     "outputs": [ { "itemId": "material.native_gold", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.soul_gem", "chance": 0.1, "quantity": 1 } ],
     "opportunities": [
       {
         "id": "opportunity.the_reliquary",

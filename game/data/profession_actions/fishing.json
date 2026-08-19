@@ -68,7 +68,21 @@
     "baseIntervalTicks": 160,
     "experience": 24,
     "outputs": [ { "itemId": "material.eel_skin", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.shock_eel_gland", "chance": 0.15, "quantity": 1 } ]
+    "opportunities": [
+      {
+        // D29.3 (settled 2026-08-18): the gland is essence-bearing, so it hangs off the ACTIVE
+        // path and nothing else. Passive never rolls an opportunity, which makes "you cannot
+        // bank essence overnight" a fact about the code rather than a small probability.
+        "id": "opportunity.live_eel",
+        "name": "Still Live",
+        "prompt": "It is not dead and it is not finished arguing. Hold it still long enough and the gland comes out whole.",
+        "discoveryChance": 0.15,
+        "extraIntervalTicks": 140,
+        "riskWeight": 0.20,
+        "outputs": [ { "itemId": "material.shock_eel_gland", "quantity": 1 } ],
+        "experience": 40
+      }
+    ]
   },
   {
     "id": "action.fish_deep_water",
@@ -106,7 +120,19 @@
     "baseIntervalTicks": 165,
     "experience": 42,
     "outputs": [ { "itemId": "material.storm_kelp", "quantity": 1 } ],
-    "bonusOutputs": [ { "itemId": "material.static_charge", "chance": 0.12, "quantity": 1 } ]
+    "opportunities": [
+      {
+        // D29.3: essence-bearing, therefore active-only.
+        "id": "opportunity.charged_frond",
+        "name": "Charged Frond",
+        "prompt": "One frond is still holding the storm that grew it. Cut it before it earths itself and the charge is yours.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 150,
+        "riskWeight": 0.25,
+        "outputs": [ { "itemId": "material.static_charge", "quantity": 1 } ],
+        "experience": 55
+      }
+    ]
   },
   {
     "id": "action.dive_the_coral_shelf",

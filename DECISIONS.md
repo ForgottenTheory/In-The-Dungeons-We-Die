@@ -415,3 +415,32 @@ Three pacing rules for how the crafting layers enter a playthrough:
 **The pilot reads only what the screen shows.** Incoming attacks come from `CombatEncounter.Intents`, the read-model the combat panel renders. A pilot reaching into the encounter's internals would be playing a different game from the one the player can see, and "automation is weaker" would stop being checkable.
 
 **Consequences:** two new content types with per-rule failing-content tests; `Combatant.Ai`/`AvoidRepeatWeight` became settable (the brain arrives at engage time and leaves at disengage); `ChooseMove` generalised from `enemy` to `actor` and gained a public `ChooseMoveFor`; `UseMove` records the player's last move so anti-repeat works for a pilot; `GameRoot` lost `TimeAwayPhrase`/`OfflineStopPhrase` to `AwayReadout`. **Auto-combat is deliberately live-only** — it runs inside the real encounter on the real tick engine, and offline Realm runs are not in this phase. **Nothing here is balanced**: the synergy rates, the global unlock thresholds and all three brains' weights are placeholders nobody has played.
+
+### D29.3 — resolved: profession essence is active-only
+*(Question raised 2026-08-16; carried unresolved for three contexts; settled 2026-08-18 by the user. Content: `profession_actions/{fishing,mining,forestry,thieving}.json`. Fence: `C2cAuditTests.ProfessionEssenceIsReachableOnlyThroughTheActivePath`.)*
+
+**The rule was always "trace profession essence must never compete economically with Realm extraction."** What existed was an *allowlist* of eleven grandfathered material ids, added by the 20-profession pass and argued rather than agreed: *a level-45+ rung is not competing with extraction for the same player at the same time — a miner who can work an emberite seam has already been extracting for a long while.*
+
+**Phase 10 broke that argument, which is what forced the question.** Two of the eleven were **guaranteed outputs**, not bonus rolls: Harvest Emberwood (Forestry 50, fire 25 every completion) and Harvest Livingbark (Forestry 62, nature 40 every completion). At a 230-tick interval the 12-hour offline cap is ~3,750 completions, so an absence banked thousands of essence-bearing logs with **no Realm exposure at all** — and auto-repeat meant it no longer even stopped when the materials ran out or when nobody was watching. The argument had assumed a player sitting at the keyboard choosing to grind; idle progression removed the sitting and the choosing.
+
+**The codebase was also already holding two standards for one question.** M6's loot layer shipped `LootEcosystemTests.NoProfessionDropTableReachesEssence` — **zero tolerance**, no profession drop table may reach essence — while eleven legacy entries authored directly on action outputs were exempt. New content was clean; old content was grandfathered; nothing reconciled them.
+
+**The resolution uses a fence the project already trusts rather than a number.** Essence may reach the player through a profession **only as an opportunity payload**, and `ActionResolver.Resolve` rolls opportunities on the active path alone. So "you cannot bank essence while idle" is a fact about the code — the same structural trick that makes passive's lower ceiling real rather than a tuning value — and it costs nothing to hold.
+
+**What moved, and what the fiction became.** Six essence-bearing bonus outputs became opportunity payloads at roughly their old expected value; two guaranteed outputs became the *reason* to pursue an opportunity, with a non-essence primary yield in their place:
+
+| Rung | Was | Is |
+|---|---|---|
+| Hunt Eels (Fishing 20) | 15% gland | `opportunity.live_eel` pays the gland |
+| Harvest Storm Kelp (Fishing 34) | 12% static charge | `opportunity.charged_frond` |
+| Mine Emberite (45) | 18% cinder shard | folded into `opportunity.unstable_ember_pocket` at 45% |
+| Mine Frostiron (45) | 18% rime shard | `opportunity.rimed_seam`, the frost mirror |
+| **Harvest Emberwood (50)** | **emberwood log every time** | ember sap + cinderroot; the log is `opportunity.emberwood_heartwood` |
+| **Harvest Livingbark (62)** | **livingbark log every time** | spirit bark; both logs are `opportunity.heartwood_seam` |
+| Cut a Cultist's Purse (58) | 10% soul gem | the Reliquary only — where a cultist's soul gem belonged anyway |
+
+The fiction improved rather than survived: a tree gives up sap and bark to anyone who turns up, and the burning heartwood to somebody who stayed and cut for it.
+
+**The allowlist is deleted, and that is the point.** The test now states the rule structurally and positively in the same breath — no passive-reachable yield may bear essence, *and* the active path must still reach some, so the rule cannot be satisfied by removing essence from professions altogether. A new essence faucet can no longer be slipped in, because there is no list to add it to. One stale entry died with it: `material.eel_skin` carries no essence and never did, and the old shape could never have caught that.
+
+**Consequences:** 32 → **36 opportunities** (the pinned scale moved with them); no code changed at all — this is entirely a content edit plus a stronger test; the eleven ids and their materials are untouched, so Realm drop tables that already pay livingbark, spiritwood and soul gems are unaffected. **The new odds are placeholders** like every other profession number.
