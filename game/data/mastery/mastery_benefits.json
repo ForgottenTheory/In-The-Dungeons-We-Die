@@ -1,0 +1,84 @@
+[
+  // ── THE MASTERY LADDER ────────────────────────────────────────────────────────────────────────
+  //
+  // What repeating one action a hundred times actually buys. One shared ladder rather than a
+  // mastery block on each of the 659 actions — that would be 659 places for a balance pass to
+  // miss one.
+  //
+  // Mastery level is mastery points, one per completed attempt, to a ceiling of 99
+  // (MasteryLeveling — deliberately linear, see its doc comment). So "per_level" reads as
+  // "per completed attempt" today, and every number below is exactly what the four hardcoded
+  // constants in ProfessionTuning used to be. THIS FILE CHANGED NOTHING ABOUT HOW AN ACTION
+  // FEELS — it moved the numbers somewhere a balance pass can reach them.
+  //
+  // ── THE TWO NEW RUNGS ─────────────────────────────────────────────────────────────────────────
+  //
+  // Preservation and doubling are the Melvor layers GDD §4.1 has carried as "Planned" since the
+  // first commit. Both have an unlock_level, which is the point: they are things that START
+  // HAPPENING, not another percentage creeping up from zero. Doubling costs more than
+  // preservation because doubling makes materials and preservation only saves them.
+  //
+  // ── WHY THE CAPS ARE NOT ROUND ────────────────────────────────────────────────────────────────
+  //
+  // Each "max" is exactly what its rate reaches at mastery 99, because the validator refuses a
+  // cap the ceiling cannot deliver — a promise the ladder can never keep is worse than a smaller
+  // honest one. So interval buys 0.495, not "half".
+  //
+  // ONE NUMBER GENUINELY MOVED: opportunity risk. Its old cap of 0.5 needed 250 completions of a
+  // single action, which the old uncapped point counter could reach and a 99-level track cannot.
+  // Capped at what 99 levels actually buy (0.198) rather than raising the rate, because raising
+  // it would be a mid-track buff — a balance decision, and balance is parked.
+  //
+  // ── STILL UNBALANCED ──────────────────────────────────────────────────────────────────────────
+  //
+  // Every number here is the placeholder it was before it moved. Nobody has played to mastery.
+
+  {
+    "id": "mastery.interval",
+    "kind": "IntervalReduction",
+    "unlock_level": 1,
+    "per_level": 0.005,
+    "max": 0.495,
+    "description": "The work goes quicker."
+  },
+  {
+    "id": "mastery.bonus_output",
+    "kind": "BonusOutputChance",
+    "unlock_level": 1,
+    "per_level": 0.0025,
+    "max": 0.2475,
+    "description": "You turn up the uncommon finds more often."
+  },
+  {
+    "id": "mastery.preservation",
+    "kind": "InputPreservation",
+    "unlock_level": 20,
+    "per_level": 0.004,
+    "max": 0.3,
+    "description": "Sometimes the materials survive the work."
+  },
+  {
+    "id": "mastery.doubling",
+    "kind": "OutputDoubling",
+    "unlock_level": 40,
+    "per_level": 0.003,
+    "max": 0.25,
+    "description": "Sometimes the work yields twice."
+  },
+  {
+    "id": "mastery.opportunity",
+    "kind": "OpportunityChance",
+    "unlock_level": 1,
+    "per_level": 0.001,
+    "max": 0.099,
+    "description": "You notice what a stranger to this work would walk past."
+  },
+  {
+    "id": "mastery.opportunity_risk",
+    "kind": "OpportunityRisk",
+    "unlock_level": 1,
+    "per_level": 0.002,
+    "max": 0.198,
+    "description": "You know which chances are worth taking."
+  }
+]

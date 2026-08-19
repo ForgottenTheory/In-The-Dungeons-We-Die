@@ -218,8 +218,9 @@ public class DarkForestBalanceTests
 
     /// <summary>
     /// <b>Every insight must be reachable.</b> A threshold no amount of play can reach is a
-    /// feature that does not exist — and the top one, extraction routes at 42, is the whole
-    /// payoff of the track.
+    /// feature that does not exist — and the top one is the whole payoff of the track. The
+    /// numbers are deliberately not restated here; <c>RealmKnowledgeLevels.Required</c> owns
+    /// them and this asserts the ratio to per-run yield instead.
     ///
     /// <para>Modelled as one thorough run: entering, walking every node, clearing every fight
     /// and event, both shrines' worth, the hazards, the descents and the extraction.</para>

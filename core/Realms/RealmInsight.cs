@@ -11,6 +11,17 @@ namespace Dungeons.Realms;
 /// </summary>
 public enum RealmInsight
 {
+    /// <summary>
+    /// Know what this place yields before walking in — the materials its ground and its
+    /// creatures actually give up.
+    ///
+    /// <para>The cheapest rung, and first on purpose: a party that has been here once should
+    /// come away knowing <em>something</em>, and "what grows here" is the thing a real
+    /// expedition learns first. It is not the same as <see cref="RichNodes"/>, which is knowing
+    /// <b>where</b> the good ground is — this is only knowing what the place is made of.</para>
+    /// </summary>
+    CommonResources,
+
     /// <summary>Read an enemy's resistances and damage-type vulnerabilities before committing.
     /// The counter was always there; this is what makes it discoverable.</summary>
     EnemyWeaknesses,
@@ -29,6 +40,18 @@ public enum RealmInsight
     /// <summary>Know where the way out is from wherever you are standing — the information the
     /// extraction decision is actually made on.</summary>
     ExtractionRoutes,
+
+    /// <summary>
+    /// Begin a run at a deeper entrance you have already learned — GDD §11.4's "portal
+    /// targeting", and the only rung that hands the player an <b>option</b> rather than a fact.
+    ///
+    /// <para>Last on the ladder because it is the one thing that can only be earned by knowing
+    /// the ways out: you cannot aim at a door you have not found. It grants no power — starting
+    /// at depth 2 skips the shallow fights, which means skipping the shallow loot and the
+    /// shallow knowledge too. It is a shortcut with a price, which is the only kind this game
+    /// hands out.</para>
+    /// </summary>
+    DeepEntry,
 }
 
 /// <summary>
@@ -43,24 +66,32 @@ public static class RealmKnowledgeLevels
 {
     /// <summary>
     /// Knowledge required for each insight. Set against the measured yield of one thorough Dark
-    /// Forest run (~71), so the ladder spans roughly <b>eight thorough runs</b> end to end:
-    /// 0.4 / 1.1 / 2.3 / 4.5 / 7.9.
+    /// Forest run (~71), so the ladder spans roughly <b>thirteen thorough runs</b> end to end:
+    /// 0.2 / 0.4 / 1.1 / 2.3 / 4.5 / 7.9 / 12.7.
     ///
     /// <para>The first cut shipped at 6/12/20/30/42 and a single first run cleared the whole
     /// ladder — including the hidden routes that are supposed to be the reward for learning the
     /// place. <c>DarkForestBalanceTests</c> now pins the ratio rather than the numbers, so
     /// retuning the per-node grants cannot silently trivialise this again.</para>
     ///
+    /// <para><b>The five middle thresholds are exactly where D38 left them.</b> Phase 8 added a
+    /// rung below (<see cref="RealmInsight.CommonResources"/>, reachable partway through a first
+    /// expedition, so nobody's first run teaches them nothing) and a rung above
+    /// (<see cref="RealmInsight.DeepEntry"/>) — bracketing the ladder rather than rescaling a
+    /// balance pass that has already been made.</para>
+    ///
     /// <para>Still a first pass on FEEL — nobody has played it. The ORDER is the design.</para>
     /// </summary>
     public static readonly IReadOnlyDictionary<RealmInsight, int> Required =
         new Dictionary<RealmInsight, int>
         {
+            [RealmInsight.CommonResources] = 12,
             [RealmInsight.EnemyWeaknesses] = 30,
             [RealmInsight.Hazards] = 75,
             [RealmInsight.RichNodes] = 160,
             [RealmInsight.HiddenRoutes] = 320,
             [RealmInsight.ExtractionRoutes] = 560,
+            [RealmInsight.DeepEntry] = 900,
         };
 
     public static bool Reveals(int knowledge, RealmInsight insight) =>

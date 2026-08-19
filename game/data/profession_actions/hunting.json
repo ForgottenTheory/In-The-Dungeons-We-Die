@@ -112,6 +112,7 @@
     "opportunities": [
       {
         "id": "opportunity.storm_charged_bull",
+        "required_mastery": 30,
         "name": "A Charged Bull",
         "prompt": "This one is carrying the storm — the air around it is standing on end. Worth far more. Considerably harder to bring down.",
         "discoveryChance": 0.11,

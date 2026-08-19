@@ -19,12 +19,18 @@ var xp = action.Experience * (1 + performance × ActiveXpBonus);
 
 That is it. No interval modifiers, no preservation, no doubling, no quality, no rare weighting.
 
-| Gap | Evidence |
+> **Updated after Phase 8 (D40).** Half of this section's gaps are closed. Mastery now buys
+> interval reduction, input preservation, output doubling, rare-find chance and opportunity
+> odds/risk, all from `game/data/mastery/` — see GDD §7.3. **What remains for E6 is the tool
+> half**, and `MasteryBenefitKind` deliberately uses the same six names as the `profession.*`
+> modifier keys so the two sources can merge into one pipeline without a rename.
+
+| Gap | Status |
 |---|---|
-| **Mastery does nothing** | GDD §7.3: *"a number that goes up and does nothing."* One `MasteryBonusChance` read. |
-| **Six `profession.*` modifier keys exist and none are read** | `interval.mult` `yield.mult` `preserve.chance` `double.chance` `xp.mult` `mastery.mult` |
-| **No tool concept at all** | `EquipmentSlot` is `{ Weapon, Armor }` |
-| **Melvor layers** | GDD §4.1 lists 15 target layers; 4 are built |
+| ~~**Mastery does nothing**~~ | ✅ **Closed (D40)** — six data-driven benefits, all consumed |
+| **Six `profession.*` modifier keys exist and none are read** | Still open — they are E6's. Mastery computes directly rather than routing through them, because routing *is* the yield pipeline |
+| **No tool concept at all** | Still open — no tool slots, no tool forms. `EquipmentSlot` now has nine members and none is a tool |
+| **Melvor layers** | GDD §4.1: 12 of 15 built. Tools, cross-skill bonuses and global passives remain |
 
 GDD §19.3 calls professions *"the least-built system relative to its documented ambition."*
 It is also **the cheapest to fix**, because once scoped modifier contributions exist

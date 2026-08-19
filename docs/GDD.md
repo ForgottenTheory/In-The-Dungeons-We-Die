@@ -67,7 +67,7 @@ HIDEOUT
   ├─ Experiment in the crafting bench → discover an emergent material
   ├─ Fabricate that material into equipment            [PLANNED]
   ├─ Choose Species + Base + Prefix + Suffix
-  └─ Prepare loadout                                    [PLANNED]
+  └─ Prepare the run: loadout, supplies, briefing       [BUILT]
         ↓
 REALM RUN
   ├─ Enter → explore a spatial location graph
@@ -356,18 +356,22 @@ Melvor Idle is the explicit architectural reference. Target layers:
 | Skill XP and levels | **Built** |
 | Action intervals | **Built** |
 | Active vs passive training | **Built** |
-| Mastery XP / levels | *Stored but unused* |
+| Mastery XP / levels | **Built** (Phase 8, D40) — points → level 1–99, deliberately linear |
 | Mastery Pool + checkpoint rewards | Needs Design |
-| Interval reduction | Planned |
-| Resource preservation | Planned |
-| Doubling / increased yield | Planned |
-| Level-based unlocks | Partial (gating exists, rewards don't) |
-| Mastery-based unlocks | Planned |
-| Equipment affecting skills (tools) | Planned |
+| Interval reduction | **Built** — `mastery.interval`, data-driven |
+| Resource preservation | **Built** — `mastery.preservation`, unlocks at mastery 20 |
+| Doubling / increased yield | **Built** — `mastery.doubling`, unlocks at mastery 40 |
+| Level-based unlocks | **Built** — actions gate on profession level |
+| Mastery-based unlocks | **Built** — `required_mastery` on an opportunity; below it the offer is not rolled at all |
+| Equipment affecting skills (tools) | Planned (E6) — the one Melvor layer still missing |
 | Cross-skill bonuses | Planned |
 | Global/account passives | Planned |
-| Offline progression | Designed, not built |
+| Offline progression | **Built** (P4) |
 | Progression milestones | Needs Design |
+
+> **The ladder is content**, in `game/data/mastery/`: six `MasteryBenefitKind` rungs, each with an
+> unlock level, a per-level rate and a cap. A balance pass is a JSON edit. **None of it is
+> balanced** — the numbers are the placeholders they were before they moved.
 
 **Additional layers worth considering, flagged but undecided:** a purchasable upgrade/shop axis
 as a resource sink; skill-completion milestones as horizontal goals; equipment set bonuses; and
@@ -438,7 +442,7 @@ other.** Active play must earn its advantage through better decisions — never 
 > rules**, **ailment application chances (affix-sourced, R4b)**, status potency/duration keys,
 > and the `capped / raw` display on the armour summary.
 > **PLANNED (E7/Exotic tier):** exposure-as-debuff content, inversion, ignore-fraction,
-> stored retaliation; the full `capped / raw` character sheet and preparation screen.
+> stored retaliation; the full `capped / raw` character sheet (the preparation screen shipped in Phase 7 with the minimal armour reading).
 
 **A hit is a list of packets**, each carrying exactly one **damage type**
 (*Slashing · Crushing · Piercing · Magic*) and zero-or-one **aspect**
@@ -644,13 +648,35 @@ Smithing → infuses iron with treated bark
 Mining feeds the ore ecosystem; Forestry feeds biome flora; Beast Lore feeds creature anatomy;
 Smithing and Alchemy feed the emergent crafting engine.
 
-## 7.3 Mastery
+## 7.3 Mastery — **BUILT** (Phase 8, D40)
 
-Per-*action* mastery, 1–99, granting interval reduction, increased yield, reduced costs, rare
-material chance and improved active interactions.
+Per-*action* mastery, 0–99, granting interval reduction, output doubling, input preservation,
+rare-find chance and better active interactions — plus **offers a novice never sees**.
 
-> **Documentation vs implementation:** mastery is tracked and increments, but **nothing reads
-> it**. It is currently a number that goes up and does nothing.
+**Mastery level is completions**, one per landed attempt, to a ceiling of 99. The curve is
+deliberately linear: bending it would have repriced every action in the game while claiming to be
+an integration pass, and the balance backlog is parked. It changes in one method.
+
+Six benefits, all authored in `game/data/mastery/` and all consumed:
+
+| Rung | Unlocks at | What it does |
+|---|---|---|
+| Interval reduction | 1 | The work goes quicker |
+| Bonus-output chance | 1 | You turn up the uncommon finds more often |
+| **Input preservation** | 20 | Sometimes the materials survive the work |
+| **Output doubling** | 40 | Sometimes the work yields twice |
+| Opportunity chance | 1 | You notice what a stranger to this work would walk past |
+| Opportunity risk | 1 | You know which chances are worth taking |
+
+Preservation and doubling carry an unlock level on purpose: they **start happening** rather than
+creeping up from zero, and both are announced in the log when they fire.
+
+**The mastery-gated opportunity is the action-specific unlock.** Four of the game's highest-risk
+offers — The Reliquary, The Strongbox, the storm-charged bull, the unstable ember pocket — carry
+`required_mastery`. Below it they are **not rolled at all**: "a novice cannot find this" is a fact
+about the code, not a very small probability.
+
+> **Still unbalanced.** Every magnitude is the placeholder it was before it became content.
 
 ## 7.4 Offline progress — designed, not built
 
@@ -1014,11 +1040,23 @@ Designed, unbuilt: Camp · Shrine · Merchant · Elite · Boss · Hidden · Haza
 Persistent per realm, earned through exploration, encounters, resources, events, extraction and
 bosses.
 
-**Knowledge unlocks information and options, not raw damage** — reveal enemy resistances,
-identify likely hazards, show resource-rich areas, reveal extraction routes, discover hidden
-locations, unlock portal targeting.
+**Knowledge unlocks information and options, not raw damage.** ✅ **All seven items on this list
+now ship** (D37, D39, D40), as a seven-rung ladder read both inside a run and — since Phase 7 —
+on the preparation screen before one:
 
-> Currently a bare counter that unlocks nothing.
+| Rung | Buys |
+|---|---|
+| Common resources | What this place is made of, walked out of its own loot tables |
+| Enemy weaknesses | Resistances, exposed lanes and vulnerable damage types |
+| Hazards | The dangerous ground, seen instead of stood in |
+| Rich nodes | Which workings are worth the run-time |
+| Hidden routes | The caches, shortcuts and side routes that were always in the graph |
+| Extraction routes | Where the ways out are from where you stand |
+| **Deep entry** | **Portal targeting: begin an expedition at a deeper door** |
+
+Deep entry is the only rung that hands over an *option* rather than a fact, and it is last
+because you cannot aim at a door you have not found. It is priced honestly: starting at depth 2
+skips depth 1's fights, its loot **and** the knowledge they would have paid.
 
 ## 11.5 Affixes — **Not built**
 
@@ -1030,11 +1068,24 @@ Treasure Rich · Eternal Night · Predator's Domain · Shattered Paths · Arcane
 Limited, strategically valuable field sanctuary: cook, recover, repair, craft emergency supplies,
 prepare ammunition. Modified by the Campcraft profession.
 
-## 11.7 Preparation — **Not built**
+## 11.7 Preparation — **BUILT** (Phase 7, D39)
 
-The portal screen should communicate known information and let the player choose equipment, food,
-consumables, ammunition and tools. **Knowledgeable preparation should materially improve
-survival** — this is a core intended reward for Realm Knowledge and profession investment.
+The portal screen communicates known information and lets the player choose their equipment and
+supplies before committing. **Knowledgeable preparation materially improves survival** — the core
+intended reward for Realm Knowledge and profession investment.
+
+What ships: the loadout (all nine slots, equipped through the normal equip path — there is no
+second copy of worn gear), a **pack** of consumables that transfers into the run at entry and is
+unsecured from that moment, field readiness for the realm's gathering trades, and a
+knowledge-redacted **briefing** — known threats with their weaknesses, hazards, rich workings,
+routes and the insight ladder. Only what has been earned is shown.
+
+Two things are deliberately absent. **Ammunition** has no system behind it. **Profession tools**
+are E6 — tool slots, tool forms and the yield pipeline that would read them do not exist, so the
+Tools panel shows profession readiness rather than a slot that changes nothing.
+
+The screen never blocks entry on missing gear; a **starter kit** is one button away whenever the
+player owns no weapon at all (§13.1).
 
 ---
 
@@ -1130,7 +1181,7 @@ The persistent home base. Currently implicit — it is where crafting and profes
 happen, with no dedicated screen or systems.
 
 Intended (all **Needs Design**): Hideout upgrades · crafting stations · Farming as a Hideout-based
-renewable resource profession · storage management · the portal/preparation screen.
+renewable resource profession · storage management. (The portal/preparation screen is built — §11.7.)
 
 ---
 
@@ -1355,10 +1406,10 @@ Built machinery waiting on authored content, not on code.
 
 - **Economy** — no currency, no vendors, no loot tables, no valuation rules, no sinks. Respec
   pricing has no economy to price against
-- **The Hideout** — upgrades, stations, storage, the portal screen
+- **The Hideout** — upgrades, stations, storage
 - **Positioning** — deferred without a decision on whether it's ever coming
-- **Character level and XP** — attribute *growth weights* exist, but nothing awards character XP
-  or levels; the build is currently hardcoded and cycled by a debug button
+- **Build selection** — character XP and levels ship (Phase 8, D40), but the four build ids are
+  still hardcoded and cycled by a debug button; there is no screen where a player picks them
 - **Production UI** — no art, audio, animation or telegraph visuals; no plan from debug console
   to real screens
 - **Multiplayer** — noted as a long-term possibility the domain architecture supports; entirely

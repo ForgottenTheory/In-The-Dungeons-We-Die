@@ -67,7 +67,7 @@ system. That is why character modifiers read like citations and workplace incide
                           │  Fabricate materials into equipment      │  ✅
                           │  Modifiers roll onto that equipment      │  ✅
                           │  Assemble your build (Base+Prefix+Suffix)│  ✅
-                          │  Choose a loadout for the run            │  📐
+                          │  Prepare the run: loadout, pack, briefing│  ✅
                           └──────────────────┬───────────────────────┘
                                              │  enter
                                              ▼
@@ -96,8 +96,10 @@ Realm → Gather → Transform Materials → Fabricate → Generate Equipment
       → Build Character → Fight → Extract → Improve → Push Deeper
 ```
 
-**The loop is closed and runs end to end today.** Its remaining thin link is *preparation* — there
-is still no loadout screen.
+**The loop is closed and runs end to end today**, preparation included: the Realm tab opens on a
+preparation screen where you set your loadout, pack supplies and read what Realm Knowledge has
+taught you, then enter (D39). What is still thin there is **profession tools** — the trades are
+shown, the worn tools are E6.
 
 ### The risk rhyme — one decision at three scales
 
@@ -803,12 +805,14 @@ unfinished systems.
 | Entrance · Travel · Gather · Combat · Event · Descent · Extraction | ✅ |
 | Camp · Shrine · Merchant · Elite · Boss · Hidden · Hazard | 📐 |
 
-**Realm Knowledge** is persistent per realm and is designed to unlock **information and options,
-not raw damage** — reveal enemy resistances, identify likely hazards, show resource-rich areas,
-reveal extraction routes. 🟡 Currently a bare counter that unlocks nothing.
+**Realm Knowledge** is persistent per realm and unlocks **information and options, not raw
+damage** — enemy resistances, likely hazards, resource-rich areas, hidden routes, extraction
+routes. ✅ Five insights on a five-rung ladder (D37/D38). Read **inside** a run as intel, and
+**before** one on the preparation screen, where the same thresholds decide what the briefing is
+allowed to show (D39).
 
 📐 Not built: realm affixes (Undead Infested, Volatile, Toxic Bloom, Arcane Storm…) · the
-campsite · the preparation/portal screen · tiers beyond 1 · procedural generation.
+campsite · tiers beyond 1 · procedural generation.
 
 ---
 
@@ -885,8 +889,7 @@ ladder is ever drawn on two screens that then drift apart.
 Farming's plots, Agility's course and Assay's reading table appear at their stations because of
 *which profession is hosted*, not because of a flag.
 
-Still undesigned: Hideout upgrades · station upgrades or unlock costs · storage management · the
-portal/preparation screen.
+Still undesigned: Hideout upgrades · station upgrades or unlock costs · storage management.
 
 ---
 
@@ -1015,17 +1018,20 @@ death · save/load (schema v7).
 
 ## 🟡 PARTIAL — real but a load-bearing piece is missing
 
-Species (3 thin of 10) · Mastery (tracked, nothing reads it) · Realm Knowledge (counts, unlocks
-nothing) · loot (one guaranteed drop, no tables) · enemy roster (3 of 8–10) · Suffixes (10 of 50
-expressed) · the Hideout (stations exist; upgrades, unlocks and storage do not) · UI (debug
-console only).
+Species (3 thin of 10) · Suffixes (10 of 50 expressed) · the Hideout (stations exist; upgrades,
+unlocks and storage do not) · **form acquisition** (schematics drop and bind to no form — the one
+progression track nothing reads, D29.2) · profession tools (E6) · UI (debug console only, plus
+the Realm Preparation screen).
+
+*Mastery, Realm Knowledge and character XP left this list in Phase 8 (D40); loot and the enemy
+roster left it in M6.*
 
 ## 📐 DESIGNED — decided and specified, not built
 
 Crafting operations + Overreach + Anomalous modifiers · Exotic and Signature modifiers ·
 signature reactions · consumable forms · the Codex & Assay layer · profession tools + the yield
 pipeline · form acquisition (ladders + schematics) · loot tables with the D28 input-only rule ·
-relic materials and sealed uniques · realm affixes, camps, hazards, preparation, tiers · elite
+relic materials and sealed uniques · realm affixes and tiers · elite
 and boss variants · auto-combat · offline progress · character XP and levels.
 
 ## ❓ UNRESOLVED — do not assume an answer exists

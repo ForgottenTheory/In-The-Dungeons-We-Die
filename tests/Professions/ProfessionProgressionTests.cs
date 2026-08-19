@@ -57,12 +57,37 @@ public class ProfessionProgressionTests
         Assert.Equal(0, p.GetMastery("action.chop_pine"));
     }
 
+    /// <summary>Rounding and the floor are rules and stay in <see cref="ProfessionTuning"/>; the
+    /// magnitude of the reduction is content (Phase 8).</summary>
     [Fact]
-    public void Mastery_ReducesIntervalWithFloor()
+    public void IntervalReductionRoundsAndIsFloored()
     {
-        Assert.Equal(100, ProfessionTuning.EffectiveIntervalTicks(100, 0));
-        Assert.Equal(90, ProfessionTuning.EffectiveIntervalTicks(100, 20));   // -10%
-        Assert.Equal(50, ProfessionTuning.EffectiveIntervalTicks(100, 200));  // capped at -50%
-        Assert.Equal(ProfessionTuning.MinimumIntervalTicks, ProfessionTuning.EffectiveIntervalTicks(6, 200));
+        Assert.Equal(100, ProfessionTuning.EffectiveIntervalTicks(100, 0.0));
+        Assert.Equal(90, ProfessionTuning.EffectiveIntervalTicks(100, 0.10));
+        Assert.Equal(50, ProfessionTuning.EffectiveIntervalTicks(100, 0.50));
+        Assert.Equal(ProfessionTuning.MinimumIntervalTicks, ProfessionTuning.EffectiveIntervalTicks(6, 0.50));
+        Assert.Equal(ProfessionTuning.MinimumIntervalTicks, ProfessionTuning.EffectiveIntervalTicks(100, 1.5));
+    }
+
+    /// <summary>
+    /// The shipped ladder shortens the work exactly as it did before the numbers became content:
+    /// 20 completions bought −10%, and they still do.
+    ///
+    /// <para>The <b>ceiling</b> is the one thing Phase 8 moved — mastery is a 1–99 track now, so
+    /// the reduction tops out at what 99 levels buy rather than at the round half the old
+    /// uncapped point counter could eventually reach.</para>
+    /// </summary>
+    [Fact]
+    public void TheShippedLadderStillShortensTheWork()
+    {
+        var ladder = TestPaths.ShippedMasteryLadder();
+
+        Assert.Equal(0.0, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 0), 6);
+        Assert.Equal(0.10, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 20), 6);
+        Assert.Equal(0.25, ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 50), 6);
+
+        var mastered = ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", 200);
+        Assert.Equal(ladder.ValueOf(MasteryBenefitKind.IntervalReduction, "profession.forestry", MasteryLeveling.MaxLevel), mastered, 6);
+        Assert.InRange(mastered, 0.45, 0.5);
     }
 }

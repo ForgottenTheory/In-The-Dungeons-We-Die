@@ -31,6 +31,29 @@ public static class LootRarities
         _ => "common",
     };
 
+    /// <summary>
+    /// The rarity a tag list declares, or null when it declares none.
+    ///
+    /// <para>The one place a <c>rarity:</c> tag is turned into a rarity. Two readers need it —
+    /// <see cref="LootResolver"/> when a drop lands, and the Realm briefing when it tells the
+    /// player what a place yields — and a second copy of this loop is how the two would
+    /// eventually disagree about what "rare" means.</para>
+    /// </summary>
+    public static LootRarity? FromTags(IEnumerable<string> tags)
+    {
+        ArgumentNullException.ThrowIfNull(tags);
+
+        foreach (var tag in tags)
+        {
+            if (Dungeons.Content.TagFamilies.TryParse(tag, out var family, out var value)
+                && string.Equals(family, Dungeons.Content.TagFamilies.Rarity.Name, StringComparison.OrdinalIgnoreCase)
+                && TryParseTagValue(value, out var tagged))
+                return tagged;
+        }
+
+        return null;
+    }
+
     /// <summary>Reads a <c>rarity:</c> tag value. False for anything outside the family.</summary>
     public static bool TryParseTagValue(string value, out LootRarity rarity)
     {

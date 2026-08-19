@@ -15,18 +15,41 @@ public sealed class RealmRun
     private readonly HashSet<string> _visited = new(StringComparer.Ordinal);
     private readonly HashSet<string> _cleared = new(StringComparer.Ordinal);
 
-    public RealmRun(RealmDefinition realm, int tier, int knowledge = 0)
+    /// <param name="startingDepth">Where the expedition begins. Deeper than 1 only once
+    /// <see cref="RealmInsight.DeepEntry"/> is earned — see <see cref="DeepestReachableEntry"/>,
+    /// which is the single place that rule lives. Clamped rather than rejected, so a stale
+    /// choice on the preparation screen starts a shallower run instead of no run at all.</param>
+    public RealmRun(RealmDefinition realm, int tier, int knowledge = 0, int startingDepth = 1)
     {
         Realm = realm ?? throw new ArgumentNullException(nameof(realm));
         Tier = tier;
         Knowledge = knowledge;
-        CurrentDepth = 1;
+        CurrentDepth = Math.Clamp(startingDepth, 1, DeepestReachableEntry(realm, knowledge));
 
-        var entrance = realm.EntranceForDepth(1)
-            ?? throw new InvalidOperationException($"Realm '{realm.Id}' has no depth-1 entrance.");
+        var entrance = realm.EntranceForDepth(CurrentDepth)
+            ?? throw new InvalidOperationException($"Realm '{realm.Id}' has no depth-{CurrentDepth} entrance.");
         CurrentLocationId = entrance.Id;
         _visited.Add(entrance.Id);
         Active = true;
+    }
+
+    /// <summary>
+    /// The deepest entrance a party carrying this much Knowledge may start at.
+    ///
+    /// <para>1 until <see cref="RealmInsight.DeepEntry"/> is earned, and then every depth the
+    /// realm actually has an entrance for. Static because the preparation screen has to ask this
+    /// <em>before</em> a run exists — which is the whole point of the insight.</para>
+    /// </summary>
+    public static int DeepestReachableEntry(RealmDefinition realm, int knowledge)
+    {
+        ArgumentNullException.ThrowIfNull(realm);
+        if (!RealmKnowledgeLevels.Reveals(knowledge, RealmInsight.DeepEntry))
+            return 1;
+
+        var deepest = 1;
+        while (realm.EntranceForDepth(deepest + 1) is not null)
+            deepest++;
+        return deepest;
     }
 
     public RealmDefinition Realm { get; }
@@ -54,12 +77,11 @@ public sealed class RealmRun
     public bool Knows(RealmInsight insight) => RealmKnowledgeLevels.Reveals(Knowledge, insight);
 
     /// <summary>
-    /// A hidden node is invisible and untravelable until Knowledge reveals the routes. This is
-    /// the single place that rule lives, so "can I see it" and "can I walk there" can never
-    /// disagree — a destination the UI lists and the run rejects would be the worst of both.
+    /// A hidden node is invisible and untravelable until Knowledge reveals the routes — the rule
+    /// itself lives on <see cref="RealmLocationDefinition.IsVisibleAt"/>, so "can I see it" and
+    /// "can I walk there" can never disagree.
     /// </summary>
-    public bool IsReachable(RealmLocationDefinition location) =>
-        !location.Hidden || Knows(RealmInsight.HiddenRoutes);
+    public bool IsReachable(RealmLocationDefinition location) => location.IsVisibleAt(Knowledge);
 
     /// <summary>Adjacent nodes at the current depth that the party can travel to.</summary>
     public IReadOnlyList<RealmLocationDefinition> Destinations() =>

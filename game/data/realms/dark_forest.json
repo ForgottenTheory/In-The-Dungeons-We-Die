@@ -20,12 +20,15 @@
   // ── WHAT REALM KNOWLEDGE CHANGES ────────────────────────────────────────────────────────────
   //
   // Three nodes here are `hidden` and simply do not exist for a party that has not learned the
-  // routes (RealmInsight.HiddenRoutes, 30 knowledge). They are not bonuses bolted on — they are
-  // the shortcut past the depth-2 hazard, the cache at depth 1, and the back way to the boss.
-  // The twentieth run walks a different map from the first, which is the whole point.
+  // routes (RealmInsight.HiddenRoutes). They are not bonuses bolted on — they are the shortcut
+  // past the depth-2 hazard, the cache at depth 1, and the back way to the boss. The twentieth
+  // run walks a different map from the first, which is the whole point.
   //
-  // Hazards are visible on the map at 12 knowledge and ambushes before it. Rich nodes are marked
-  // at 20. Enemy weaknesses read at 6. Where the exits are reads at 42.
+  // The ladder, in order: enemy weaknesses read first, then hazards become visible instead of
+  // ambushing, then the rich workings are told from the poor, then the hidden nodes, and last
+  // the exits. The THRESHOLDS live in RealmKnowledgeLevels.Required and have been retuned once
+  // already (D38) — do not restate them here, or this comment starts lying the next time they
+  // move. The Realm Preparation screen reads the same ladder before you commit to a run.
 
   "id": "realm.dark_forest",
   "name": "The Dark Forest",

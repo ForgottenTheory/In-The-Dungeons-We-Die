@@ -32,6 +32,9 @@ public sealed class ContentBundle
     public DataStore<ProfessionActionDefinition> Actions { get; init; } = new();
     public DataStore<TrainingObstacleDefinition> TrainingObstacles { get; init; } = new();
 
+    /// <summary>The shared mastery ladder — what repeating one action buys (Phase 8).</summary>
+    public DataStore<MasteryBenefitDefinition> MasteryBenefits { get; init; } = new();
+
     /// <summary>Hideout stations — the player-facing entry points into the professions,
     /// the crafting bench and equipment assembly. Routing only; they own no rules.</summary>
     public DataStore<StationDefinition> Stations { get; init; } = new();

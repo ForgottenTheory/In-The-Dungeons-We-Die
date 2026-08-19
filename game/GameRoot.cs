@@ -132,6 +132,8 @@ public partial class GameRoot : Node
     private RealmRun? _run;
     private string? _realmCombatLocationId;
     private readonly Dictionary<string, int> _realmKnowledge = new();
+    private readonly RunLoadout _loadout = new();
+    private readonly CharacterProgress _characterProgress = new();
 
     /// <summary>
     /// Where everything the player acquires currently lands: the <b>unsecured</b> run inventory
@@ -222,6 +224,10 @@ public partial class GameRoot : Node
             rollDropTable: (tableId, wasActive) => _lootResolver.Roll(
                 tableId,
                 LootCircumstances(new[] { wasActive ? LootContextTags.Active : LootContextTags.Passive })));
+
+        // What mastery is worth is content (Phase 8). Without this the ladder loads and nothing
+        // reads it, which is the exact state mastery spent the whole project in.
+        _professions.MasteryBenefits = new MasteryBenefits(content.MasteryBenefits);
         _passiveRunner = new PassiveProfessionRunner(_tick, _professions);
         _professions.ActionCompleted += OnActionCompleted;
         _professions.OpportunityResolved += OnOpportunityResolved;
@@ -296,6 +302,8 @@ public partial class GameRoot : Node
         _encounter.StateChanged += () => CombatChanged?.Invoke();
         _encounter.Ended += OnCombatEnded;
         _encounter.HitResolved += OnHitResolved;
+
+        EnsureRealmSelected();
 
         GD.Print($"[GameRoot] Ready. {_materials.Count} materials, {_professionStore.Count} professions, {_actionStore.Count} actions, {_interactions.Count} interactions.");
     }
@@ -643,6 +651,58 @@ public partial class GameRoot : Node
     public int ProfessionLevel(string professionId) => _professions.GetProgress(professionId).Level;
 
     public bool CanRunAction(string actionId) => _professions.CanExecute(actionId);
+
+    /// <summary>
+    /// One action's mastery and what it currently buys, for the ladder.
+    ///
+    /// <para>The benefits are named in gameplay language rather than as the raw fractions the
+    /// ladder stores — "quicker", "saves", "doubles" — because a row of three percentages is
+    /// simulation language on a normal play surface (D30). What the player needs to know is
+    /// which things have switched on.</para>
+    /// </summary>
+    public string MasteryReadout(string actionId)
+    {
+        var mastery = _professions.MasteryOf(actionId);
+        var level = MasteryLeveling.LevelFor(mastery);
+        if (level == 0)
+            return "mastery —";
+
+        var professionId = _professions.GetAction(actionId).ProfessionId;
+        var benefits = _professions.MasteryBenefits;
+        var bought = new List<string>();
+
+        void Note(MasteryBenefitKind kind, string label)
+        {
+            if (benefits.ValueOf(kind, professionId, mastery) > 0)
+                bought.Add(label);
+        }
+
+        Note(MasteryBenefitKind.IntervalReduction, "quicker");
+        Note(MasteryBenefitKind.BonusOutputChance, "luckier");
+        Note(MasteryBenefitKind.InputPreservation, "saves materials");
+        Note(MasteryBenefitKind.OutputDoubling, "doubles");
+
+        var next = NextMasteryUnlock(professionId, level);
+        var earned = bought.Count == 0 ? string.Empty : $" — {string.Join(", ", bought)}";
+        return $"mastery {level}/{MasteryLeveling.MaxLevel}{earned}{next}";
+    }
+
+    /// <summary>The next rung and what it costs, so the ladder reads as a ladder rather than as
+    /// a number. Empty once everything has switched on.</summary>
+    private string NextMasteryUnlock(string professionId, int level)
+    {
+        var pending = new[]
+        {
+            (Kind: MasteryBenefitKind.InputPreservation, Label: "saves materials"),
+            (Kind: MasteryBenefitKind.OutputDoubling, Label: "doubles"),
+        }
+        .Select(rung => (rung.Label, At: _professions.MasteryBenefits.UnlockLevelOf(rung.Kind, professionId)))
+        .Where(rung => rung.At is { } at && at > level)
+        .OrderBy(rung => rung.At)
+        .ToList();
+
+        return pending.Count == 0 ? string.Empty : $"; at {pending[0].At} it {pending[0].Label}";
+    }
 
     // --- Farming plots ------------------------------------------------------
 
@@ -1315,6 +1375,7 @@ public partial class GameRoot : Node
                 // The enemy's own identity tags join the circumstances, which is how an `elite`
                 // or `boss` enemy reaches its spoils without combat knowing what a rank is.
                 GrantLoot(enemy.LootTableIds, enemy.Name, LootCircumstances(enemy.Tags));
+                AwardCharacterXp(CharacterLeveling.XpForDefeating(enemy.Health.Max, EnemyRanks.Of(enemy.Tags)));
             }
         }
 
@@ -1425,6 +1486,13 @@ public partial class GameRoot : Node
     public IReadOnlyList<ItemInstance> StashEquipment =>
         _stash.Instances.Where(i => i.ItemType is ItemType.Weapon or ItemType.Armor)
             .OrderBy(i => i.DisplayName).ToList();
+
+    /// <summary>Where a piece of gear would be worn, read from its base definition. Null when
+    /// the definition no longer resolves — a fabricated archetype the save could not restore.</summary>
+    public EquipmentSlot? SlotOf(ItemInstance instance) =>
+        instance is not null && _equipment.TryGetById(instance.BaseDefinitionId, out var definition)
+            ? definition.Slot
+            : null;
 
     /// <summary>Debug: instantiate a piece of equipment and drop it in the Stash to be equipped from there.</summary>
     public void GrantToStash(string equipmentDefId)
@@ -1636,6 +1704,179 @@ public partial class GameRoot : Node
         return EquipmentResolver.ResolveWornArmor(worn);
     }
 
+    // --- Realm preparation --------------------------------------------------
+
+    /// <summary>
+    /// Where a player who has never opened the preparation screen is pointed. The Dark Forest is
+    /// the reference Realm — the only one with fights, hazards, a shrine, an elite and a boss
+    /// wired — so it is the one destination where "enter" means something. Named here for the
+    /// same reason <see cref="StarterWeaponId"/> is: a content id the client must know.
+    /// </summary>
+    private const string DefaultRealmId = "realm.dark_forest";
+
+    public event Action? LoadoutChanged;
+
+    /// <summary>The Realm the loadout is prepared for. Null only if content ships no realms.</summary>
+    public RealmDefinition? SelectedRealm =>
+        _loadout.RealmId is { } realmId && _realms.TryGetById(realmId, out var realm) ? realm : null;
+
+    public void SelectRealm(string realmId)
+    {
+        if (!_realms.Contains(realmId))
+            return;
+
+        _loadout.SelectRealm(realmId);
+        LoadoutChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Points the loadout somewhere real. Called after content load and after a save load,
+    /// because a save may name a Realm this build of the game no longer ships — and a
+    /// preparation screen with no destination is a dead end the player cannot fix.
+    /// </summary>
+    private void EnsureRealmSelected()
+    {
+        if (SelectedRealm is not null)
+            return;
+
+        var fallback = _realms.Contains(DefaultRealmId)
+            ? DefaultRealmId
+            : _realms.GetAll().OrderBy(realm => realm.Name).FirstOrDefault()?.Id;
+
+        if (fallback is not null)
+            _loadout.SelectRealm(fallback);
+    }
+
+    /// <summary>What the player is allowed to know about the selected Realm before committing.</summary>
+    public RealmBriefing? Briefing() =>
+        SelectedRealm is { } realm ? RealmBriefing.Compile(_content, realm, Knowledge(realm.Id)) : null;
+
+    /// <summary>Which trades the selected Realm asks for, measured against the party's levels.</summary>
+    public IReadOnlyList<FieldworkRequirement> Fieldwork() =>
+        SelectedRealm is { } realm
+            ? RealmFieldwork.Survey(_content, realm, Knowledge(realm.Id), ProfessionLevel)
+            : Array.Empty<FieldworkRequirement>();
+
+    /// <summary>Filled and empty slots, what is wrong, and whether the game owes a starter kit.</summary>
+    public LoadoutReport LoadoutStatus() =>
+        LoadoutCheck.Inspect(_playerEquipment, _stash, _loadout, _equipment.Contains);
+
+    /// <summary>Every consumable the player could take, with how many are banked and how many
+    /// are packed. Reads the <b>Stash</b>, never the active bag: you prepare in the Hideout.</summary>
+    public IReadOnlyList<(ConsumableDefinition Consumable, int InStash, int Packed)> ConsumableChoices =>
+        _consumables.GetAll()
+            .Where(consumable => _stash.GetQuantity(consumable.Id) > 0 || _loadout.PackedQuantity(consumable.Id) > 0)
+            .OrderBy(consumable => consumable.Name)
+            .Select(consumable => (consumable, _stash.GetQuantity(consumable.Id), _loadout.PackedQuantity(consumable.Id)))
+            .ToList();
+
+    public void PackConsumable(string itemId, int quantity = 1)
+    {
+        _loadout.Pack(itemId, quantity);
+        LoadoutChanged?.Invoke();
+    }
+
+    public void UnpackConsumable(string itemId, int quantity = 1)
+    {
+        _loadout.Unpack(itemId, quantity);
+        LoadoutChanged?.Invoke();
+    }
+
+    public void ClearPack()
+    {
+        _loadout.ClearPacked();
+        LoadoutChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The depth the next expedition starts at, and the deepest one Realm Knowledge allows.
+    ///
+    /// <para>Held on the client rather than in <see cref="RunLoadout"/> and the save: unlike the
+    /// destination and the pack, a starting depth means nothing once the run begins, and a
+    /// persisted one would quietly send a returning player straight to depth 3.</para>
+    /// </summary>
+    public int StartingDepth { get; private set; } = 1;
+
+    public int DeepestStartingDepth =>
+        SelectedRealm is { } realm ? RealmRun.DeepestReachableEntry(realm, Knowledge(realm.Id)) : 1;
+
+    public void SetStartingDepth(int depth)
+    {
+        var chosen = Math.Clamp(depth, 1, DeepestStartingDepth);
+        if (chosen == StartingDepth)
+            return;
+
+        StartingDepth = chosen;
+        LoadoutChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Hands out the starter weapon and armour, but only to a player with nothing to fight with.
+    ///
+    /// <para>This is GDD §13.1's guarantee made reachable: persistent progression survives death,
+    /// and <b>a fresh or broke character can never be bricked</b>. The check is
+    /// <see cref="LoadoutCheck"/>'s, so "broke" means no weapon worn <em>and</em> none in the
+    /// Stash — a player who simply has not equipped their sword gets told to equip it rather
+    /// than handed a rusty one.</para>
+    /// </summary>
+    public void IssueStarterKit()
+    {
+        if (!LoadoutStatus().NeedsStarterKit)
+        {
+            Emit("[Loadout] You already own something to fight with — equip it.");
+            return;
+        }
+
+        EquipStarterLoadout();
+        Emit("[Loadout] The Hideout turns out a rusty sword and some tattered armour. It is not much.");
+        CharacterChanged?.Invoke();
+        LoadoutChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Enters the prepared Realm and moves the packed supplies into the run.
+    ///
+    /// <para><b>The pack is transferred, not copied.</b> The moment the party is inside, those
+    /// salves sit in the unsecured run inventory — lost on death, carried home on extraction —
+    /// which is the same rule every other thing they hold obeys. Leaving them in the Stash and
+    /// letting combat reach back for them would have made supplies the one thing extraction
+    /// cannot cost you.</para>
+    ///
+    /// <para>This also closes a real hole: before the preparation screen existed, a Healing Salve
+    /// in the Stash was unreachable inside a Realm, because combat consumes from the active bag
+    /// and the run started empty.</para>
+    /// </summary>
+    public void EnterPreparedRun()
+    {
+        if (Character is null || InRealm)
+            return;
+
+        if (SelectedRealm is not { } realm)
+        {
+            Emit("[Realm] Choose where you are going first.");
+            return;
+        }
+
+        var manifest = LoadoutCheck.PackableFrom(_loadout, _stash);
+        EnterRealm(realm.Id, StartingDepth);
+        if (_run is null)
+            return;
+
+        foreach (var supply in manifest.Taking)
+        {
+            if (_stash.TryRemove(supply.ItemId, supply.Quantity))
+                _run.RunInventory.Add(supply);
+        }
+
+        if (manifest.Taking.Count > 0)
+            Emit($"[Loadout] Packed {DescribeStacks(manifest.Taking)} — unsecured from here on.");
+
+        foreach (var missing in manifest.Short)
+            Emit($"[Loadout] Short {missing.Quantity}× {ItemName(missing.ItemId)} — the Stash did not have it.");
+
+        InventoryChanged?.Invoke();
+    }
+
     // --- Realm --------------------------------------------------------------
 
     public IReadOnlyList<RealmDefinition> Realms => _realms.GetAll().OrderBy(r => r.Name).ToList();
@@ -1667,7 +1908,7 @@ public partial class GameRoot : Node
         };
     }
 
-    public void EnterRealm(string realmId)
+    public void EnterRealm(string realmId, int startingDepth = 1)
     {
         if (Character is null || InRealm)
             return;
@@ -1675,7 +1916,7 @@ public partial class GameRoot : Node
         var realm = _realms.GetById(realmId);
         _passiveRunner.Stop();
         Character.RestoreAll(); // rested and prepared before the expedition
-        _run = new RealmRun(realm, tier: 1, knowledge: Knowledge(realmId));
+        _run = new RealmRun(realm, tier: 1, knowledge: Knowledge(realmId), startingDepth);
         _run.RunInventory.Changed += () => InventoryChanged?.Invoke();
         AddKnowledge(realmId, RealmTuning.KnowledgePerEnter);
         Emit($"[Realm] Entered {realm.Name} (Tier {_run.Tier}, Depth {_run.CurrentDepth}).");
@@ -1933,7 +2174,7 @@ public partial class GameRoot : Node
             intel.AppendLine($"Known — ways out at this depth: {string.Join(", ", exits.Select(l => l.Name))}.");
 
         if (RealmKnowledgeLevels.Next(run.Knowledge) is { } next)
-            intel.AppendLine($"Next insight at {next.Required} knowledge: {DescribeInsight(next.Insight)}.");
+            intel.AppendLine($"Next insight at {next.Required} knowledge: {PreparationText.DescribeInsight(next.Insight)}.");
 
         return intel.ToString();
 
@@ -1987,12 +2228,46 @@ public partial class GameRoot : Node
             AddKnowledge(realmId, RealmTuning.KnowledgePerExtract);
             Emit($"[Extraction] Secured {secured.TotalQuantity} item(s){DescribeCoin(secured.Gold)} to your Stash. " +
                  "Returned to the Hideout.");
+
+            // Paid on the way out only. Dying keeps the levels already earned — persistent
+            // progression always survives (GDD §13.1) — but it does not pay for the trip.
+            AwardCharacterXp(CharacterLeveling.XpForExtracting);
         }
 
         _run = null;
         _realmCombatLocationId = null;
         RealmChanged?.Invoke();
         InventoryChanged?.Invoke();
+    }
+
+    // --- Character progression (Phase 8) ------------------------------------
+
+    public int CharacterLevel => _characterProgress.Level;
+    public long CharacterXp => _characterProgress.Xp;
+    public double CharacterLevelProgress => _characterProgress.ProgressToNextLevel;
+
+    /// <summary>
+    /// Banks character XP and, if it crossed a level, recomposes the character so the Base's
+    /// growth weights land.
+    ///
+    /// <para><b>Realm work is the only caller.</b> Professions, crafting and discoveries award
+    /// none by design — a fishing rod that raises combat attributes is the universal power level
+    /// GDD §4 exists to prevent, and it would make every other track a rounding error.</para>
+    /// </summary>
+    private void AwardCharacterXp(long amount)
+    {
+        if (amount <= 0)
+            return;
+
+        var levelUp = _characterProgress.AddXp(amount);
+        if (levelUp is null)
+        {
+            CharacterChanged?.Invoke();
+            return;
+        }
+
+        Emit($"[Character] Level {levelUp.Value.NewLevel}. The work is starting to show.");
+        RebuildCharacter(); // raises CharacterChanged, and carries the current pools across
     }
 
     private void AddKnowledge(string realmId, int amount)
@@ -2007,18 +2282,8 @@ public partial class GameRoot : Node
 
         foreach (var insight in RealmKnowledgeLevels.Unlocked(_realmKnowledge[realmId]))
             if (!RealmKnowledgeLevels.Reveals(before, insight))
-                Emit($"[Knowledge] You have learned this place well enough to {DescribeInsight(insight)}.");
+                Emit($"[Knowledge] You have learned this place well enough to {PreparationText.DescribeInsight(insight)}.");
     }
-
-    private static string DescribeInsight(RealmInsight insight) => insight switch
-    {
-        RealmInsight.EnemyWeaknesses => "read what lives here",
-        RealmInsight.Hazards => "see the dangerous ground before you stand on it",
-        RealmInsight.RichNodes => "tell the rich workings from the poor ones",
-        RealmInsight.HiddenRoutes => "find the ways nobody marked",
-        RealmInsight.ExtractionRoutes => "always know where the way out is",
-        _ => insight.ToString(),
-    };
 
     // --- Save ---------------------------------------------------------------
 
@@ -2029,7 +2294,9 @@ public partial class GameRoot : Node
             farmingPlots: _farmingPlots,
             trainingCourse: _trainingCourse,
             passiveActionId: _passiveRunner.CurrentActionId,
-            savedAtUnixSeconds: DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            savedAtUnixSeconds: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            loadout: _loadout,
+            characterProgress: _characterProgress);
         _saveStore.Save(data);
         Emit($"[Save] Saved — {data.Professions.Count} profession(s), {data.Stash.Count} stash stack(s), " +
              $"{data.StashInstances.Count} instance(s), {data.Equipment.Count} equipped, {data.Discoveries.Count} discovery(ies).");
@@ -2053,12 +2320,16 @@ public partial class GameRoot : Node
         }
 
         SaveMapper.Apply(save, _stash, _professions, _discoveries, _realmKnowledge, _playerEquipment, _instanceIds, _emergentRegistry, learnedMoves: _learnedMoves, equipmentStore: _equipment,
-            farmingPlots: _farmingPlots, trainingCourse: _trainingCourse);
+            farmingPlots: _farmingPlots, trainingCourse: _trainingCourse, loadout: _loadout, characterProgress: _characterProgress);
+        EnsureRealmSelected(); // a v9 save carries no loadout, and an old one may name a Realm we no longer ship
         if (save.Build is not null)
-        {
             _build = save.Build;
-            RebuildCharacter(); // raises CharacterChanged
-        }
+
+        // Always, not only when the build changed: the loaded character XP decides how much
+        // attribute growth to apply, so a save with levels needs recomposing even if the four
+        // build ids are the ones already in memory.
+        RebuildCharacter(); // raises CharacterChanged
+        Character?.RestoreAll(); // loading is a rest; pools carried across from the pre-load character mean nothing
 
         EquipStarterLoadout(); // fill any empty slots (fresh/old saves) so the player is never unarmed
 
@@ -2068,6 +2339,7 @@ public partial class GameRoot : Node
         InventoryChanged?.Invoke();
         DiscoveryChanged?.Invoke();
         RealmChanged?.Invoke();
+        LoadoutChanged?.Invoke();
     }
 
     /// <summary>
@@ -2164,6 +2436,12 @@ public partial class GameRoot : Node
 
         var report = new StringBuilder();
         report.AppendLine(character.DisplayName);
+        report.AppendLine(
+            $"Level {_characterProgress.Level}    XP {_characterProgress.Xp}" +
+            (_characterProgress.XpForNextLevel == 0
+                ? "    (mastered)"
+                : $"  ({_characterProgress.XpIntoCurrentLevel}/{_characterProgress.XpForNextLevel} to the next)") +
+            "    — earned in Realms, never in the Hideout");
         report.AppendLine($"Primary resource: {character.Blueprint.PrimaryResource}");
         report.AppendLine(
             $"HP {character.Health.Current}/{character.Health.Max}" +
@@ -2186,12 +2464,46 @@ public partial class GameRoot : Node
 
     // --- Internals ----------------------------------------------------------
 
+    /// <summary>
+    /// Recomposes the character from its build and its <b>current level</b>.
+    ///
+    /// <para>The level is where the Base's growth weights finally land: <c>GrowthAt</c> spreads
+    /// the same 4.0-point-per-level budget in the shape this Base declares, and that lands on top
+    /// of the starting baseline. Bases are untouched — this is the call they were written for
+    /// and never got.</para>
+    ///
+    /// <para><b>Pools carry across.</b> A fresh <see cref="Character"/> starts full, so composing
+    /// a new one mid-run would silently heal the party every time they levelled — turning a
+    /// level-up into a free potion at the worst possible moment for the extraction decision.
+    /// Levelling raises the ceiling; it never refills what is under it.</para>
+    /// </summary>
     private void RebuildCharacter()
     {
-        Character = new Character(_composer.Compose(_build, Baseline));
+        var carried = Character;
+        var growth = ResolveBuild(_build).GrowthAt(_characterProgress.Level);
+
+        var grown = Baseline;
+        foreach (var (attribute, points) in growth)
+            grown = grown.Add(attribute, points);
+
+        Character = new Character(_composer.Compose(_build, grown));
+        if (carried is not null)
+            CarryPoolsAcross(carried, Character);
+
         AttachBuildRules();
-        Emit($"[Character] Built {Character.DisplayName}.");
+        Emit($"[Character] Built {Character.DisplayName} (level {_characterProgress.Level}).");
         CharacterChanged?.Invoke();
+    }
+
+    /// <summary>Moves current pool values onto a freshly composed character, clamped to its new
+    /// maxima — a rebuild that shrinks a pool must not leave the party over-full.</summary>
+    private static void CarryPoolsAcross(Character previous, Character rebuilt)
+    {
+        foreach (var type in new[] { ResourceType.Health, ResourceType.Mana, ResourceType.Stamina })
+        {
+            var pool = rebuilt.Resource(type);
+            pool.Reduce(pool.Max - Math.Min(previous.Resource(type).Current, pool.Max));
+        }
     }
 
     /// <summary>
@@ -2317,10 +2629,23 @@ public partial class GameRoot : Node
 
     private string DescribeProduced(ActionOutcome outcome)
     {
-        if (outcome.Produced.Count == 0)
-            return "nothing";
-        return string.Join(", ", outcome.Produced.Select(s => $"+{s.Quantity} {ItemName(s.ItemId)}"));
+        var produced = outcome.Produced.Count == 0
+            ? "nothing"
+            : string.Join(", ", outcome.Produced.Select(s => $"+{s.Quantity} {ItemName(s.ItemId)}"));
+
+        // Mastery says so out loud. A benefit the player never sees fire is a benefit they do
+        // not believe in — which is how mastery spent this whole project feeling like a number
+        // that goes up and does nothing.
+        return produced + DescribeMasteryLuck(outcome);
     }
+
+    private static string DescribeMasteryLuck(ActionOutcome outcome) => (outcome.InputsPreserved, outcome.OutputsDoubled) switch
+    {
+        (true, > 0) => "  [mastery: materials saved, and doubled]",
+        (true, _) => "  [mastery: materials saved]",
+        (_, > 0) => "  [mastery: doubled]",
+        _ => string.Empty,
+    };
 
     private string ProfessionOf(string actionId) =>
         _actionStore.TryGetById(actionId, out var a) ? ProfessionName(a.ProfessionId) : "?";

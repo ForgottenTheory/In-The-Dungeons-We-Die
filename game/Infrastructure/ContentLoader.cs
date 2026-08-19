@@ -38,6 +38,7 @@ public static class ContentLoader
         Professions = LoadDefinitions<ProfessionDefinition>($"{dataRoot}/professions"),
         Actions = LoadDefinitions<ProfessionActionDefinition>($"{dataRoot}/profession_actions"),
         TrainingObstacles = LoadDefinitions<TrainingObstacleDefinition>($"{dataRoot}/training_obstacles"),
+        MasteryBenefits = LoadDefinitions<MasteryBenefitDefinition>($"{dataRoot}/mastery"),
         Stations = LoadDefinitions<Dungeons.Hideout.StationDefinition>($"{dataRoot}/stations"),
         Interactions = LoadDefinitions<CraftingInteractionDefinition>($"{dataRoot}/crafting_interactions"),
         Moves = LoadDefinitions<MoveDefinition>($"{dataRoot}/moves"),

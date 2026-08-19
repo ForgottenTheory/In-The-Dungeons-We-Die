@@ -27,6 +27,20 @@ public sealed class ProfessionOpportunityDefinition
     /// <summary>Base chance for one active attempt to surface this, before mastery and performance.</summary>
     public double DiscoveryChance { get; init; }
 
+    /// <summary>
+    /// Mastery in the surfacing action below which this offer does not exist. Zero — the default,
+    /// and what almost every opportunity carries — means anyone can stumble onto it.
+    ///
+    /// <para><b>This is the action-specific unlock, and it is an option rather than a
+    /// percentage.</b> Mastery already makes offers <em>likelier</em>; a gate makes some of them
+    /// <em>possible</em>, so a thousand swings at one rock face buys a different list of things
+    /// that can happen rather than a better number. Not rolled at all below the gate — the same
+    /// structural trick the active/passive seam uses, so "a novice cannot find this" is a fact
+    /// about the code rather than a very small probability.</para>
+    /// </summary>
+    [System.Text.Json.Serialization.JsonPropertyName("required_mastery")]
+    public int RequiredMasteryLevel { get; init; }
+
     /// <summary>Time pursuing costs on top of the action itself — the price of the decision.</summary>
     public int ExtraIntervalTicks { get; init; } = 100;
 

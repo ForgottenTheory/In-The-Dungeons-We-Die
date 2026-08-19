@@ -98,7 +98,10 @@ public class OfflineProgressTests
     [Fact]
     public void MasteryEarnedWhileAwayShortensTheRemainingIntervals()
     {
-        var system = new ProfessionSystem(Store(Chopping()), new Inventory(), new FakeRandom());
+        var system = new ProfessionSystem(Store(Chopping()), new Inventory(), new FakeRandom())
+        {
+            MasteryBenefits = TestPaths.ShippedMasteryLadder(),
+        };
         var oneHour = 60 * 60.0;
         var naiveCompletions = (int)(oneHour * ProfessionTuning.TicksPerSecond / 100);
 

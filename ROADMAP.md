@@ -130,10 +130,34 @@ coherent run.
    **First balance pass ✅ (D38).** Coherence, not feel: measured against a 59 HP fresh
    character. Fixed a depth-2 fight weaker than depth 1 (Hexer 24 → 36 HP) and a knowledge
    ladder one run completed (thresholds ×~10, now ~8 thorough runs). **Feel is still unplayed.**
+   **Phase 7 — Realm Preparation / loadouts ✅ (D39).** The bridge the loop diagram has carried
+   as `[PLANNED]` since the first commit: `Hideout → Realm Preparation → Enter Realm`. A
+   `RunLoadout` holds **only** the destination and the pack — worn `Equipment` is already the
+   gear half and is not copied. Packing closed a real hole: a Healing Salve in the Stash was
+   **unreachable inside a Realm**, because combat consumes from the run bag and the run started
+   empty; supplies now transfer at entry and are unsecured from that moment. `RealmBriefing`
+   +`RealmFieldwork` are knowledge-redacted read-models in `Dungeons.Presentation` — every gate
+   through `RealmKnowledgeLevels.Reveals`, so the screen and the in-run intel cannot disagree.
+   The Realm tab is now two screens that swap. Save **v10** (a v9 save loads with no loadout).
+   Gear problems never block entry — the anti-soft-lock fence is a test. **Profession tools are
+   deliberately absent**: they are E6, and a slot with no mechanic behind it breaks rule 7.
+   **Phase 8 — the progression pass ✅ (D40).** Every progression track now changes what the
+   player can do, and none of them merged into one power number. **Mastery**: the numbers moved
+   into `game/data/mastery/` as one shared six-rung ladder, mastery level is completions (linear,
+   ceiling 99 — a bending curve would have been a balance pass in disguise), and **preservation
+   and doubling ship as unlocks** rather than creeping percentages. `RequiredMasteryLevel` gates
+   four high-risk opportunities — below the gate they are *not rolled at all*. **Realm Knowledge**
+   gained the two GDD §11.4 items it was missing, bracketing D38's five thresholds without moving
+   them: `CommonResources` (what a place yields, walked out of existing loot tables) and
+   `DeepEntry` (portal targeting — start a run at a deeper door). **Character XP** finally has a
+   source: Realm work only, so `AttributeGrowth` and the 4.0-point budget run for the first time.
+   Levelling raises the ceiling and never heals. Save **v11**. The deliverable that outlasts the
+   pass is `ProgressionEcosystemTests` — no dead track, form acquisition exempt **by name**.
    **Still open in M6:** form acquisition (D29.2) — the schematic *items* drop today, but
    `forms.json` still needs its acquisition field, a persisted known-forms list and a validator
-   rule, on the learned-list precedent. Character XP/levels + a minimal build-selection screen
-   (the build is debug-cycled today).
+   rule, on the learned-list precedent. **This is the one track `ProgressionEcosystemTests`
+   exempts by name.** Also a minimal build-selection screen (the build is debug-cycled today) —
+   character XP and levels themselves landed in Phase 8.
 6. ⬜ **E6 — Profession tools + yield pipeline**. Tool slots, tool forms, the outcome pipeline +
    Yield Log ("mostly free once scoped modifiers exist" — they do). **P4 already ships the
    components** (Smithing's tool head, Artifice's haft/mechanisms/lenses) and the Agility
@@ -142,7 +166,7 @@ coherent run.
    the escalating-Ruin casino and Anomalous modifiers. Caps the crafting fantasy.
 
 ## After the slice (unordered)
-Realm breadth (affixes, tiers, location types, preparation screen) · enemy roster to 8–10 + the
+Realm breadth (affixes, tiers, location types) · enemy roster to 8–10 + the
 elite/boss variant layer (the D26 fold seam exists) · auto-combat (player on the AI-profile
 machinery) · economy/vendors (NEEDS DESIGN — Thieving deliberately ships no currency) · Hideout ·
 species roster ·
@@ -150,5 +174,5 @@ remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · craftin
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**1004** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**1121** now) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

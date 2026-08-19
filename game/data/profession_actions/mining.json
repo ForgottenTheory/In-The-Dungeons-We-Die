@@ -173,6 +173,7 @@
     "opportunities": [
       {
         "id": "opportunity.unstable_ember_pocket",
+        "required_mastery": 30,
         "name": "Unstable Pocket",
         "prompt": "The ore is still hot and it is moving. Cutting it free might get you an ember core; it might just get you burned.",
         "discoveryChance": 0.13,

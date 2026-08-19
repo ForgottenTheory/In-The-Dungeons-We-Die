@@ -27,4 +27,10 @@ public sealed class RealmDefinition : IDefinition
         Locations.FirstOrDefault(l => l.Type == RealmLocationType.Entrance && l.Depth == depth);
 
     public int MaxDepth => Locations.Count == 0 ? 0 : Locations.Max(l => l.Depth);
+
+    /// <summary>Every location a party carrying this much Realm Knowledge can see — the whole
+    /// realm minus the nodes that do not exist for them yet
+    /// (<see cref="RealmLocationDefinition.IsVisibleAt"/>).</summary>
+    public IEnumerable<RealmLocationDefinition> VisibleAt(int knowledge) =>
+        Locations.Where(location => location.IsVisibleAt(knowledge));
 }

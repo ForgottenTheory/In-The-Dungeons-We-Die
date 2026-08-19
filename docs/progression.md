@@ -1,10 +1,21 @@
 # Progression
 
+> **Status after Phase 8 (D40): every track below is built and read.** The implementation map is
+> `docs/code-map.md` §10.16c; the decisions and their reasoning are `DECISIONS.md` D40. The one
+> exception is form/schematic knowledge — schematics drop and bind to no form (D29.2, M6), and
+> `ProgressionEcosystemTests` exempts it by name rather than weakening the rule.
+
 ## 1. Philosophy
 
 Progression exists across multiple independent tracks.
 
 This prevents one giant Character Level from representing everything the player has accomplished.
+
+**The rule that keeps it true in the code:** *character XP comes from Realm activity only.*
+Professions, crafting and discoveries award none. The moment fishing raises combat attributes,
+every track has collapsed into one power number and this section is a comment rather than a rule.
+Progression should unlock **new actions, better information, new routes, materials, crafting
+options and build possibilities** — not only bigger numbers.
 
 ---
 
@@ -14,11 +25,13 @@ Persistent.
 
 Includes:
 
-- Level
-- Attributes
-- Class unlocks
-- Abilities
-- Passive progression
+- **Level and XP** — earned in **Realms only**: defeating something pays by its health and rank,
+  extracting pays a flat award, and **dying pays nothing**. That is the extraction decision
+  applied to progression itself.
+- **Attributes** — each level distributes the Base's own growth weights over the same 4.0-point
+  budget every Base gets. The shape is the Base's; the distance is the level's. Levelling raises
+  the ceiling and never refills what is under it.
+- Class unlocks, abilities and passive progression — still designed, not built.
 
 ---
 
@@ -28,10 +41,14 @@ Persistent.
 
 Each profession tracks:
 
-- Level
-- XP
-- Activity Mastery
-- Unlocks
+- **Level and XP** — gate which actions exist at all.
+- **Per-action Mastery** — 0–99, one point per landed attempt. Buys interval reduction and
+  rare-find chance from the first level, **input preservation at 20** and **output doubling at
+  40**, plus opportunity odds and risk. The magnitudes are content (`game/data/mastery/`), so a
+  balance pass is a JSON edit rather than a rebuild.
+- **Unlocks** — level gates on the ladder, and a mastery gate on a handful of the highest-risk
+  opportunities. Below that gate they are *not rolled at all*, so deep experience in one action
+  buys a different list of things that can happen rather than a better number.
 
 Death does not remove profession progress.
 
@@ -39,15 +56,19 @@ Death does not remove profession progress.
 
 # 4. Realm Knowledge
 
-Persistent per Realm.
+Persistent per Realm. Represents accumulated understanding — *Dark Forest Knowledge*, *City of
+Infinite Alleys Knowledge*, *Ashlands Knowledge*.
 
-Represents accumulated understanding.
+**It buys information and options, never damage.** A percentage would make Knowledge a second
+power curve and the realm would quietly get easier for reasons the player cannot see. Instead the
+realm stays exactly as lethal and the player stops walking into it blind (GDD §11.4).
 
-Examples:
+Seven rungs, read both inside a run and on the preparation screen before one: what the place is
+made of → what lives here and how it dies → where the ground turns against you → which workings
+pay → the ways nobody marked → the ways out → **and last, the right to start at a deeper door**.
 
-Dark Forest Knowledge
-City of Infinite Alleys Knowledge
-Ashlands Knowledge
+That last rung is the only one that hands over an option rather than a fact, and it is priced:
+starting deep skips the shallow fights, their loot *and* the knowledge they would have paid.
 
 ---
 

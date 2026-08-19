@@ -170,25 +170,36 @@ public class OpportunityTests
             system.PursueOpportunity("action.nonexistent", RichVein).Failure);
     }
 
+    /// <summary>The shipped ladder, so these read the real numbers rather than a fixture's
+    /// guess at them (Phase 8 moved the magnitudes into <c>game/data/mastery/</c>).</summary>
+    private static readonly MasteryBenefits Ladder =
+        new(TestPaths.LoadStore<MasteryBenefitDefinition>("mastery"));
+
+    private static double MasteryOpportunityBonus(int mastery) =>
+        Ladder.ValueOf(MasteryBenefitKind.OpportunityChance, "profession.mining", mastery);
+
+    private static double MasteryRiskReduction(int mastery) =>
+        Ladder.ValueOf(MasteryBenefitKind.OpportunityRisk, "profession.mining", mastery);
+
     [Fact]
     public void MasteryAndPerformanceBothRaiseTheDiscoveryChance()
     {
-        var flat = ProfessionTuning.OpportunityDiscoveryChance(0.10, mastery: 0, performance: 0.0);
-        var skilled = ProfessionTuning.OpportunityDiscoveryChance(0.10, mastery: 50, performance: 0.0);
-        var focused = ProfessionTuning.OpportunityDiscoveryChance(0.10, mastery: 0, performance: 1.0);
+        var flat = ProfessionTuning.OpportunityDiscoveryChance(0.10, MasteryOpportunityBonus(0), performance: 0.0);
+        var skilled = ProfessionTuning.OpportunityDiscoveryChance(0.10, MasteryOpportunityBonus(50), performance: 0.0);
+        var focused = ProfessionTuning.OpportunityDiscoveryChance(0.10, MasteryOpportunityBonus(0), performance: 1.0);
 
         Assert.Equal(0.10, flat, 6);
         Assert.True(skilled > flat);
         Assert.True(focused > flat);
-        Assert.True(ProfessionTuning.OpportunityDiscoveryChance(1.0, 99, 1.0) <= 1.0);
+        Assert.True(ProfessionTuning.OpportunityDiscoveryChance(1.0, MasteryOpportunityBonus(99), 1.0) <= 1.0);
     }
 
     [Fact]
     public void MasteryTalksRiskDown_ButNeverToZero()
     {
-        Assert.Equal(0.5, ProfessionTuning.EffectiveRisk(0.5, mastery: 0), 6);
-        Assert.True(ProfessionTuning.EffectiveRisk(0.5, mastery: 100) < 0.5);
-        Assert.True(ProfessionTuning.EffectiveRisk(0.5, mastery: 10_000) > 0.0);
+        Assert.Equal(0.5, ProfessionTuning.EffectiveRisk(0.5, MasteryRiskReduction(0)), 6);
+        Assert.True(ProfessionTuning.EffectiveRisk(0.5, MasteryRiskReduction(100)) < 0.5);
+        Assert.True(ProfessionTuning.EffectiveRisk(0.5, MasteryRiskReduction(10_000)) > 0.0);
     }
 
     /// <summary>Only the first opportunity that fires is offered: two at once would turn a

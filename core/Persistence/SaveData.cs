@@ -26,6 +26,22 @@ public sealed class TrainingCourseSlotSave
     public string ObstacleId { get; init; } = string.Empty;
 }
 
+/// <summary>
+/// The prepared run loadout (v10): where the player meant to go and what they meant to take.
+///
+/// <para>Worn equipment is <b>not</b> here — it is already persisted in <see cref="SaveData.Equipment"/>,
+/// and a loadout that carried its own copy would give the save two answers to "what is the
+/// player wearing". This holds only the two facts that had nowhere else to live.</para>
+/// </summary>
+public sealed class LoadoutSave
+{
+    public string? RealmId { get; init; }
+
+    /// <summary>Consumables the player intends to carry in. A declaration, not a reservation —
+    /// the items themselves are still counted in <see cref="SaveData.Stash"/>.</summary>
+    public List<ItemStack> Packed { get; init; } = new();
+}
+
 /// <summary>Serializable form of an <see cref="ItemInstance"/> (PropertySet flattened to a map).</summary>
 public sealed class ItemInstanceSave
 {
@@ -153,8 +169,16 @@ public sealed class SaveData
     /// <c>EquipmentSlot.Body</c> on load, for both <see cref="Equipment"/> and any fabricated
     /// archetype in <see cref="EmergentEquipment"/>. Without it a v8 save would silently lose
     /// whatever the player was wearing.</para>
+    ///
+    /// <para>v10 added <see cref="Loadout"/> — the prepared run loadout (Phase 7). A v9 save
+    /// loads with none, which is the state of a player who has never opened the preparation
+    /// screen: no destination chosen and an empty pack. No migration step.</para>
+    ///
+    /// <para>v11 added <see cref="CharacterXp"/> (Phase 8). A v10 save loads at 0, which is
+    /// character level 1 — where every character in every existing save already is, because
+    /// until now nothing awarded it. No migration step.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 9;
+    public const int CurrentSchemaVersion = 11;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
@@ -173,8 +197,19 @@ public sealed class SaveData
     /// <summary>The Agility training course's fitted obstacles (v7).</summary>
     public List<TrainingCourseSlotSave> TrainingCourse { get; init; } = new();
 
+    /// <summary>The prepared run loadout (v10). Null for a player who has never prepared.</summary>
+    public LoadoutSave? Loadout { get; init; }
+
     /// <summary>The four ids the character is composed from; null if none created yet.</summary>
     public CharacterBuild? Build { get; init; }
+
+    /// <summary>
+    /// The character's own XP (v11), earned in Realms and never in the Hideout. The level and
+    /// every attribute point that follows from it derive from this one number, so the Base's
+    /// growth weights stay the authority on <em>shape</em> and this stays the authority on
+    /// <em>how far</em>.
+    /// </summary>
+    public long CharacterXp { get; init; }
 
     /// <summary>Persistent, secured stackable inventory.</summary>
     public List<ItemStack> Stash { get; init; } = new();

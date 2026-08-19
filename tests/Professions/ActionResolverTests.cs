@@ -44,8 +44,22 @@ public class ActionResolverTests
     [Fact]
     public void Mastery_BoostsBonusChance()
     {
-        // base 0.2 + mastery(40 * 0.0025 = 0.1) = 0.3; roll 0.25 succeeds where passive base 0.2 would fail.
-        var yield = ActionResolver.Resolve(ChopOak(), mastery: 40, performance: 0, new FakeRandom(@default: 0.25));
+        // base 0.2 + the shipped ladder's bonus at mastery 40 (0.1) = 0.3; roll 0.25 succeeds
+        // where passive base 0.2 alone would fail.
+        var yield = ActionResolver.Resolve(
+            ChopOak(), mastery: 40, performance: 0, new FakeRandom(@default: 0.25),
+            masteryBenefits: TestPaths.ShippedMasteryLadder());
+
         Assert.Contains(yield.Produced, s => s.ItemId == "material.oak_bark");
+    }
+
+    /// <summary>With no ladder wired, mastery buys nothing — the benefit magnitudes are content,
+    /// not a fallback hidden in code.</summary>
+    [Fact]
+    public void WithNoLadderWired_MasteryBuysNothing()
+    {
+        var yield = ActionResolver.Resolve(ChopOak(), mastery: 40, performance: 0, new FakeRandom(@default: 0.25));
+
+        Assert.DoesNotContain(yield.Produced, s => s.ItemId == "material.oak_bark");
     }
 }

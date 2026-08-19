@@ -33,6 +33,9 @@ public partial class MainMvpUI : Control
     private string _moveButtonsKey = string.Empty;
     private Label _realmLabel = null!;
     private VBoxContainer _realmControls = null!;
+    private VBoxContainer _realmRunView = null!;
+    private RealmPreparationPanel _preparation = null!;
+    private int _realmTabIndex;
     private VBoxContainer _equipmentControls = null!;
     private VBoxContainer _techniqueControls = null!;
     private Button _runButton = null!;
@@ -80,6 +83,7 @@ public partial class MainMvpUI : Control
         _game.CombatChanged += RefreshCombat;
         _game.RealmChanged += RefreshRealm;
         _game.OpportunityOffered += ShowOpportunity;
+        _game.LoadoutChanged += RefreshPreparation;
 
         _game.ReportStatus();
         RefreshCharacter();
@@ -101,6 +105,8 @@ public partial class MainMvpUI : Control
         _game.CombatChanged -= RefreshCombat;
         _game.RealmChanged -= RefreshRealm;
         _game.OpportunityOffered -= ShowOpportunity;
+        _game.LoadoutChanged -= RefreshPreparation;
+        _tabs.TabChanged -= OnTabChanged;
     }
 
     public override void _Process(double delta)
@@ -170,9 +176,17 @@ public partial class MainMvpUI : Control
         BuildCharacterLabSection(MakeTab("Char Lab"));
         BuildEquipmentSection(MakeTab("Equipment"));
         BuildHideoutSection(MakeTab("Hideout"));
+
+        _realmTabIndex = _tabs.GetChildCount();
         BuildRealmSection(MakeTab("Realm"));
+
         BuildCombatSection(MakeTab("Combat"));
         BuildInventorySection(MakeTab("Inventory"));
+
+        // The preparation screen is left stale while it is off screen, so opening the tab is
+        // what re-reads it. See RefreshPreparation for why it is not simply refreshed on every
+        // inventory change.
+        _tabs.TabChanged += OnTabChanged;
     }
 
     private Control BuildHeader()
@@ -574,17 +588,30 @@ public partial class MainMvpUI : Control
         _labDiffLabel.Text = diff.Count == 0 ? "(pick a different component)" : string.Join("\n", diff);
     }
 
+    /// <summary>
+    /// The Realm tab is two screens that swap: <b>preparation</b> when the player is in the
+    /// Hideout, and the <b>run</b> once they are inside. That is the whole reason this tab
+    /// exists — it used to open on a list of every realm in the game with an Enter button beside
+    /// each, which is a menu, not a decision.
+    /// </summary>
     private void BuildRealmSection(VBoxContainer root)
     {
-        root.AddChild(SectionTitle("Realm"));
+        _preparation = new RealmPreparationPanel(_game);
+        root.AddChild(_preparation);
+
+        _realmRunView = new VBoxContainer();
+        _realmRunView.AddThemeConstantOverride("separation", 8);
+        root.AddChild(_realmRunView);
+
+        _realmRunView.AddChild(SectionTitle("Realm"));
         // Same height floor as the Combat card: the report re-renders per frame during a realm
         // fight, and the fight buttons live directly below it.
         _realmLabel = new Label { CustomMinimumSize = new Vector2(0, 150) };
-        root.AddChild(Card(_realmLabel));
+        _realmRunView.AddChild(Card(_realmLabel));
 
         _realmControls = new VBoxContainer();
         _realmControls.AddThemeConstantOverride("separation", 4);
-        root.AddChild(_realmControls);
+        _realmRunView.AddChild(_realmControls);
     }
 
     private void BuildCombatSection(VBoxContainer root)
@@ -770,20 +797,14 @@ public partial class MainMvpUI : Control
         return tooltip;
     }
 
+    /// <summary>The in-run controls. Entering is the preparation screen's job, so this no longer
+    /// has an out-of-realm branch.</summary>
     private void RebuildRealmControls()
     {
         ClearChildren(_realmControls);
 
         if (!_game.InRealm)
-        {
-            foreach (var realm in _game.Realms)
-            {
-                var id = realm.Id;
-                _realmControls.AddChild(MakeButton($"Enter {realm.Name}", () => _game.EnterRealm(id), Accent));
-            }
-
             return;
-        }
 
         if (_game.RealmBusy)
         {
@@ -831,6 +852,7 @@ public partial class MainMvpUI : Control
         _characterLabel.Text = _game.CharacterReport();
         RebuildEquipmentControls(); // equipped slots changed
         RebuildMoveButtons(); // a build swap can change the moveset (guarded — no-op if unchanged)
+        RefreshPreparation(); // the loadout screen shows the same slots and the same moveset
 
         // The build can also change from the Character tab (Cycle Suffix), so the Lab follows.
         // Setting OptionButton.Selected does not raise ItemSelected, so this cannot loop.
@@ -853,6 +875,7 @@ public partial class MainMvpUI : Control
         RebuildEquipmentControls(); // stash equipment may have changed
         RebuildTechniqueControls(); // technique items granted, learned, or spent
         RebuildMoveButtons(); // a weapon swap changes the granted moves (guarded — no-op if unchanged)
+        RefreshPreparation(); // banked supplies and spare gear are both read from the Stash
     }
 
     /// <summary>Stations the player is not standing in are left stale on purpose; each is
@@ -879,10 +902,44 @@ public partial class MainMvpUI : Control
             RebuildRealmControls(); // combat just ended → surface travel/extract options again
     }
 
+    /// <summary>Swaps the Realm tab between preparing and running, and re-reads whichever is
+    /// showing. The two never render at once — an Enter button beside a live run would be a
+    /// question the game has already answered.</summary>
     private void RefreshRealm()
     {
+        var inRun = _game.InRealm;
+        _preparation.Visible = !inRun;
+        _realmRunView.Visible = inRun;
+
+        if (!inRun)
+        {
+            _preparation.Refresh();
+            return;
+        }
+
         _realmLabel.Text = _game.RealmReport();
         RebuildRealmControls();
+    }
+
+    /// <summary>
+    /// The preparation screen reads equipment, the Stash and Realm Knowledge, so it follows all
+    /// three — but <b>only while it is actually on screen</b>.
+    ///
+    /// <para>Same rule as an unopened station page, for a sharper reason: a briefing resolves
+    /// every enemy in the realm through the family → role → actor fold, and passive gathering
+    /// raises <c>InventoryChanged</c> on every completed action. Rebuilding a screen nobody is
+    /// looking at, once per profession tick, would be the most expensive thing the UI does.</para>
+    /// </summary>
+    private void RefreshPreparation()
+    {
+        if (!_game.InRealm && _preparation.Visible && _tabs.CurrentTab == _realmTabIndex)
+            _preparation.Refresh();
+    }
+
+    private void OnTabChanged(long tab)
+    {
+        if (tab == _realmTabIndex)
+            RefreshPreparation();
     }
 
     private void AppendLog(string message) => _log.AddText(message + "\n");

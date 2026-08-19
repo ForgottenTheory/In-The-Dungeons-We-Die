@@ -1,9 +1,11 @@
+using Dungeons.Characters;
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Crafting;
 using Dungeons.Items;
 using Dungeons.Professions;
+using Dungeons.Realms;
 
 namespace Dungeons.Persistence;
 
@@ -29,7 +31,9 @@ public static class SaveMapper
         FarmingPlots? farmingPlots = null,
         TrainingCourse? trainingCourse = null,
         string? passiveActionId = null,
-        long savedAtUnixSeconds = 0)
+        long savedAtUnixSeconds = 0,
+        RunLoadout? loadout = null,
+        CharacterProgress? characterProgress = null)
     {
         ArgumentNullException.ThrowIfNull(stash);
         ArgumentNullException.ThrowIfNull(professions);
@@ -62,6 +66,10 @@ public static class SaveMapper
                         ObstacleId = pair.Value,
                     })
                     .ToList(),
+            Loadout = loadout is null
+                ? null
+                : new LoadoutSave { RealmId = loadout.RealmId, Packed = loadout.PackedStacks().ToList() },
+            CharacterXp = characterProgress?.Xp ?? 0,
             Build = build,
             Stash = stash.Snapshot().ToList(),
             Gold = stash.Gold,
@@ -154,7 +162,9 @@ public static class SaveMapper
         LearnedMoves? learnedMoves = null,
         DataStore<Items.EquipmentDefinition>? equipmentStore = null,
         FarmingPlots? farmingPlots = null,
-        TrainingCourse? trainingCourse = null)
+        TrainingCourse? trainingCourse = null,
+        RunLoadout? loadout = null,
+        CharacterProgress? characterProgress = null)
     {
         ArgumentNullException.ThrowIfNull(save);
 
@@ -192,6 +202,15 @@ public static class SaveMapper
         learnedMoves?.Restore(save.LearnedMoves);
 
         farmingPlots?.Restore(save.FarmingPlots.Select(plot => (plot.Index, plot.ActionId, plot.ReadyAtTick)));
+
+        // A v9 save has no loadout at all, which restores as "never prepared" — no destination
+        // and an empty pack. That is the same state a new game starts in, so there is nothing
+        // to migrate.
+        loadout?.Restore(save.Loadout?.RealmId, save.Loadout?.Packed ?? Enumerable.Empty<ItemStack>());
+
+        // A v10 save has no character XP, which restores as level 1 — where every existing
+        // character already is, because nothing awarded it until Phase 8.
+        characterProgress?.Restore(save.CharacterXp);
 
         trainingCourse?.Restore(save.TrainingCourse
             .Where(slot => Enum.TryParse<TrainingSlot>(slot.Slot, out _))

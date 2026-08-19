@@ -32,6 +32,13 @@ public sealed class ProfessionSystem
     private readonly RollActionDropTable? _rollDropTable;
     private readonly Dictionary<string, ProfessionProgress> _progress = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// What mastery is currently worth. Settable rather than constructor-only because the host
+    /// builds the profession system before content validation finishes, and because a test that
+    /// does not care about mastery should not have to supply a ladder.
+    /// </summary>
+    public MasteryBenefits MasteryBenefits { get; set; } = MasteryBenefits.None;
+
     public ProfessionSystem(
         DataStore<ProfessionActionDefinition> actions,
         Inventory inventory,
@@ -103,8 +110,15 @@ public sealed class ProfessionSystem
     {
         var action = _actions.GetById(actionId);
         var mastery = GetProgress(action.ProfessionId).GetMastery(actionId);
-        return ProfessionTuning.EffectiveIntervalTicks(action.BaseIntervalTicks, mastery);
+        var reduction = MasteryBenefits.ValueOf(MasteryBenefitKind.IntervalReduction, action.ProfessionId, mastery);
+        return ProfessionTuning.EffectiveIntervalTicks(action.BaseIntervalTicks, reduction);
     }
+
+    /// <summary>Mastery points banked in one action — what the ladder is measured against.</summary>
+    public int MasteryOf(string actionId) =>
+        _actions.TryGetById(actionId, out var action)
+            ? GetProgress(action.ProfessionId).GetMastery(actionId)
+            : 0;
 
     public ActionFailure CheckExecutable(string actionId)
     {
@@ -170,11 +184,16 @@ public sealed class ProfessionSystem
         var progress = GetProgress(action.ProfessionId);
 
         var bag = _inventoryProvider();
-        if (inputHandling == InputHandling.ConsumeNow && action.Inputs.Count > 0)
+        var mastery = progress.GetMastery(actionId);
+        var yield = ActionResolver.Resolve(action, mastery, performance, _random, isActive, MasteryBenefits);
+
+        // Preservation is spent here rather than inside the resolver, because whether the inputs
+        // were owed at all is this layer's question: a Farming harvest paid for its seed at
+        // planting time and has nothing left to preserve.
+        var preserved = yield.InputsPreserved && inputHandling == InputHandling.ConsumeNow && action.Inputs.Count > 0;
+        if (inputHandling == InputHandling.ConsumeNow && action.Inputs.Count > 0 && !preserved)
             bag.TryRemoveAll(action.Inputs); // guaranteed by CheckExecutable above
 
-        var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.Resolve(action, mastery, performance, _random, isActive);
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 
@@ -204,8 +223,10 @@ public sealed class ProfessionSystem
             ActionId = actionId,
             Success = true,
             AttemptMissed = !yield.Landed,
-            Consumed = inputHandling == InputHandling.ConsumeNow ? action.Inputs : Array.Empty<ItemStack>(),
+            Consumed = inputHandling == InputHandling.ConsumeNow && !preserved ? action.Inputs : Array.Empty<ItemStack>(),
             Produced = produced,
+            InputsPreserved = preserved,
+            OutputsDoubled = yield.OutputsDoubled,
             XpGained = yield.Xp,
             MasteryGained = masteryGained,
             Performance = performance,
@@ -264,7 +285,7 @@ public sealed class ProfessionSystem
 
         var progress = GetProgress(action.ProfessionId);
         var mastery = progress.GetMastery(actionId);
-        var yield = ActionResolver.ResolvePursuit(opportunity, mastery, _random);
+        var yield = ActionResolver.ResolvePursuit(opportunity, mastery, _random, action.ProfessionId, MasteryBenefits);
         foreach (var stack in yield.Produced)
             bag.Add(stack);
 

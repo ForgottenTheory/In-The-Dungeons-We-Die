@@ -45,6 +45,7 @@
     "opportunities": [
       {
         "id": "opportunity.the_strongbox",
+        "required_mastery": 25,
         "name": "The Strongbox",
         "prompt": "There is a bolted box under the driver's seat. Going back for it means being here when they finish counting.",
         "discoveryChance": 0.14,
@@ -108,6 +109,9 @@
     "opportunities": [
       {
         "id": "opportunity.the_reliquary",
+        // Phase 8: the worst idea you have had all week is not an idea a novice has. A gated
+        // opportunity is mastery unlocking an OPTION rather than nudging a percentage.
+        "required_mastery": 40,
         "name": "The Reliquary",
         "prompt": "They are all facing the other way, and the box on the altar is not locked. This is the worst idea you have had all week.",
         "discoveryChance": 0.10,

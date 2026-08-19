@@ -77,6 +77,17 @@ public partial class ProfessionLadderPanel : VBoxContainer
             row.AddChild(MakeButton("Passive", () => _game.StartPassive(actionId)));
             row.AddChild(MakeButton("Active", () => _game.ActiveAttempt(actionId, _activeTimingPerformance()), Accent));
 
+            // Mastery, and what it has bought. Until Phase 8 this number went up and did
+            // nothing; showing it beside what it is currently worth is what makes repeating
+            // one action legible as progression rather than as grinding.
+            var mastery = new Label
+            {
+                Text = _game.MasteryReadout(actionId),
+                CustomMinimumSize = new Vector2(300, 0),
+            };
+            mastery.AddThemeColorOverride("font_color", Muted);
+            row.AddChild(mastery);
+
             if (action.Opportunities.Count > 0)
             {
                 var marker = new Label { Text = "◆ has an opportunity" };

@@ -80,6 +80,17 @@ public sealed class RealmLocationDefinition
     public bool Hidden { get; init; }
 
     /// <summary>
+    /// Whether a party carrying this much Realm Knowledge can see this node <b>at all</b>.
+    ///
+    /// <para>The single place that rule lives. Three readers need it and they must never
+    /// disagree: the run gates travel on it (<see cref="RealmRun.IsReachable"/>), the map draws
+    /// with it, and the pre-run briefing redacts with it. A briefing that leaked a node the run
+    /// then refuses to walk to would be the worst of both.</para>
+    /// </summary>
+    public bool IsVisibleAt(int knowledge) =>
+        !Hidden || RealmKnowledgeLevels.Reveals(knowledge, RealmInsight.HiddenRoutes);
+
+    /// <summary>
     /// Hazard nodes: health taken on entering. Charged once — the ground is crossed, not fought.
     /// </summary>
     [JsonPropertyName("hazard_damage")]

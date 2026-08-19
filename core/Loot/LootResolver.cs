@@ -178,16 +178,8 @@ public sealed class LootResolver
     /// for items that have no tag to read (validation enforces the other direction).</summary>
     private LootRarity RarityOf(string itemId, LootEntryDefinition entry)
     {
-        if (_materials.TryGetById(itemId, out var material))
-        {
-            foreach (var tag in material.Tags)
-            {
-                if (TagFamilies.TryParse(tag, out var family, out var value)
-                    && string.Equals(family, TagFamilies.Rarity.Name, StringComparison.OrdinalIgnoreCase)
-                    && LootRarities.TryParseTagValue(value, out var tagged))
-                    return tagged;
-            }
-        }
+        if (_materials.TryGetById(itemId, out var material) && LootRarities.FromTags(material.Tags) is { } tagged)
+            return tagged;
 
         return entry.Rarity ?? LootRarity.Common;
     }

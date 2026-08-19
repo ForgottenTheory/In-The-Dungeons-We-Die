@@ -44,6 +44,14 @@ public sealed class ActionOutcome
     public IReadOnlyList<ItemStack> Consumed { get; init; } = Array.Empty<ItemStack>();
     public IReadOnlyList<ItemStack> Produced { get; init; } = Array.Empty<ItemStack>();
 
+    /// <summary>True when mastery saved the inputs: <see cref="Consumed"/> is empty and the
+    /// materials are still in the bag. Reported so the log can say what mastery just did —
+    /// a benefit the player never sees fire is a benefit they do not believe in.</summary>
+    public bool InputsPreserved { get; init; }
+
+    /// <summary>How many primary outputs mastery made come out twice.</summary>
+    public int OutputsDoubled { get; init; }
+
     public long XpGained { get; init; }
     public int MasteryGained { get; init; }
     public double Performance { get; init; }

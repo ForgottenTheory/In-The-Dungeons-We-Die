@@ -7,20 +7,8 @@ namespace Dungeons.Professions;
 /// </summary>
 public static class ProfessionTuning
 {
-    /// <summary>Interval reduction per mastery point.</summary>
-    public const double IntervalReductionPerMastery = 0.005;
-
-    /// <summary>Maximum fraction the interval can be reduced by mastery.</summary>
-    public const double MaxIntervalReduction = 0.5;
-
     /// <summary>Lowest an effective interval may fall, preventing zero-time actions.</summary>
     public const int MinimumIntervalTicks = 5;
-
-    /// <summary>Bonus-output chance added per mastery point.</summary>
-    public const double BonusChancePerMastery = 0.0025;
-
-    /// <summary>Maximum bonus-output chance contributed by mastery.</summary>
-    public const double MaxMasteryBonusChance = 0.25;
 
     /// <summary>Extra bonus-output chance at full active performance.</summary>
     public const double ActiveBonusChanceAtFullPerformance = 0.3;
@@ -37,22 +25,10 @@ public static class ProfessionTuning
 
     // --- Opportunities (active only) ----------------------------------------
 
-    /// <summary>Discovery chance added per mastery point in the action being performed.</summary>
-    public const double OpportunityChancePerMastery = 0.001;
-
-    /// <summary>Maximum discovery chance contributed by mastery.</summary>
-    public const double MaxMasteryOpportunityChance = 0.10;
-
     /// <summary>How strongly active performance scales an opportunity's base discovery chance.
     /// At performance 0 the base chance still applies, so an unskilled active attempt can
     /// still stumble onto something; at 1 it is worth this much more.</summary>
     public const double OpportunityChancePerformanceScale = 1.0;
-
-    /// <summary>Fraction of an opportunity's risk that high mastery can talk down.</summary>
-    public const double MaxRiskReductionFromMastery = 0.5;
-
-    /// <summary>Risk reduction per mastery point, before the cap above.</summary>
-    public const double RiskReductionPerMastery = 0.002;
 
     // --- Offline progression -------------------------------------------------
 
@@ -71,34 +47,36 @@ public static class ProfessionTuning
     /// progress is the one place Core has to convert wall-clock time into ticks.</summary>
     public const int TicksPerSecond = 20;
 
-    public static int EffectiveIntervalTicks(int baseIntervalTicks, int mastery)
+    /// <summary>
+    /// An interval after <paramref name="reduction"/> has been taken off it, floored so no action
+    /// can ever cost nothing.
+    ///
+    /// <para>The <em>magnitude</em> of the reduction is content now
+    /// (<see cref="MasteryBenefitKind.IntervalReduction"/>); what stays here is the rounding and
+    /// the floor, which are rules rather than balance.</para>
+    /// </summary>
+    public static int EffectiveIntervalTicks(int baseIntervalTicks, double reduction)
     {
-        var reduction = Math.Min(MaxIntervalReduction, mastery * IntervalReductionPerMastery);
-        var effective = (int)Math.Round(baseIntervalTicks * (1.0 - reduction));
+        var effective = (int)Math.Round(baseIntervalTicks * (1.0 - Math.Clamp(reduction, 0.0, 1.0)));
         return Math.Max(MinimumIntervalTicks, effective);
     }
 
-    public static double MasteryBonusChance(int mastery) =>
-        Math.Min(MaxMasteryBonusChance, mastery * BonusChancePerMastery);
-
     /// <summary>
-    /// Chance for one active attempt to surface <paramref name="baseChance"/>'s opportunity.
-    /// Passive never calls this — the discovery roll happens only on the active path, which
-    /// is what makes "fewer rare outcomes" structural rather than a tuning number.
+    /// Chance for one active attempt to surface an opportunity with base chance
+    /// <paramref name="baseChance"/>, given what mastery already adds.
+    ///
+    /// <para>Passive never calls this — the discovery roll happens only on the active path, which
+    /// is what makes "fewer rare outcomes" structural rather than a tuning number.</para>
     /// </summary>
-    public static double OpportunityDiscoveryChance(double baseChance, int mastery, double performance)
+    public static double OpportunityDiscoveryChance(double baseChance, double masteryBonus, double performance)
     {
         var fromPerformance = baseChance * (1.0 + (performance * OpportunityChancePerformanceScale));
-        var fromMastery = Math.Min(MaxMasteryOpportunityChance, mastery * OpportunityChancePerMastery);
-        return Math.Clamp(fromPerformance + fromMastery, 0.0, 1.0);
+        return Math.Clamp(fromPerformance + masteryBonus, 0.0, 1.0);
     }
 
-    /// <summary>Effective risk of pursuing, after mastery in the action has talked it down.</summary>
-    public static double EffectiveRisk(double riskWeight, int mastery)
-    {
-        var reduction = Math.Min(MaxRiskReductionFromMastery, mastery * RiskReductionPerMastery);
-        return Math.Clamp(riskWeight * (1.0 - reduction), 0.0, 1.0);
-    }
+    /// <summary>Effective risk of pursuing, after experience has talked it down.</summary>
+    public static double EffectiveRisk(double riskWeight, double riskReduction) =>
+        Math.Clamp(riskWeight * (1.0 - Math.Clamp(riskReduction, 0.0, 1.0)), 0.0, 1.0);
 
     /// <summary>Ticks elapsed during an absence of <paramref name="seconds"/> real seconds,
     /// clamped to <see cref="MaxOfflineTicks"/>.</summary>

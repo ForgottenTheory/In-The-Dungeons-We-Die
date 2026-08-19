@@ -293,19 +293,25 @@ Campsite use is limited and strategically important.
 
 ---
 
-# 13. Realm Preparation
+# 13. Realm Preparation — BUILT (Phase 7, D39)
 
-The Portal screen should communicate known information.
+The Portal screen communicates known information and is where the run is decided.
+See `docs/code-map.md` §10.16b for the implementation and GDD §11.7 for the design.
 
 Player chooses:
 
-- Equipment
-- Food
-- Consumables
-- Ammunition
-- Tools
+- **Equipment** ✅ — all nine slots, equipped through the normal equip path. The screen does not
+  keep its own copy of what is worn; `Equipment` is the loadout's gear half.
+- **Consumables** ✅ — packed as a standing plan, transferred into the run bag at entry and
+  unsecured from that moment. This is what makes supplies reachable inside a Realm at all.
+- **Tools** 🟡 — profession *readiness* (which trades the realm asks for, and your levels).
+  Worn tools need E6's tool slots, tool forms and yield pipeline.
+- **Food** 📐 — no separate system; food is a consumable when consumable forms ship.
+- **Ammunition** 📐 — no system behind it yet.
 
-Knowledgeable preparation should materially improve survival.
+Knowledgeable preparation materially improves survival: the briefing is redacted by Realm
+Knowledge, so the same screen shows a first-time visitor almost nothing and a veteran the
+threats' weaknesses, the hazards, the rich workings and the ways out.
 
 ---
 

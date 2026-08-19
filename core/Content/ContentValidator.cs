@@ -91,6 +91,7 @@ public static class ContentValidator
         ValidateMoves(content, problems);
         ValidateProfessionActions(content.Actions, content.Professions, content.Materials, content.Realms, content.LootTables, problems);
         ValidateTrainingObstacles(content.TrainingObstacles, problems);
+        ValidateMasteryLadder(content.MasteryBenefits, content.Professions, problems);
         ValidateStations(content, problems);
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.LootTables, problems);
@@ -1195,6 +1196,11 @@ public static class ContentValidator
         if (opportunity.ExtraIntervalTicks < 1)
             problems.Add(new("profession_actions", $"{opportunity.Id} costs {opportunity.ExtraIntervalTicks} ticks; pursuing must cost time."));
 
+        // A gate above the mastery ceiling is an offer nobody can ever be shown.
+        if (opportunity.RequiredMasteryLevel is < 0 or > MasteryLeveling.MaxLevel)
+            problems.Add(new("profession_actions",
+                $"{opportunity.Id} needs mastery {opportunity.RequiredMasteryLevel}, outside 0–{MasteryLeveling.MaxLevel}; it could never be offered."));
+
         // An opportunity that pays nothing is a decision with one right answer.
         if (opportunity.Outputs.Count == 0 && opportunity.BonusOutputs.Count == 0 && opportunity.Experience <= 0)
             problems.Add(new("profession_actions", $"{opportunity.Id} has no payoff — outputs, bonus outputs and XP are all empty."));
@@ -1206,6 +1212,62 @@ public static class ContentValidator
         foreach (var bonus in opportunity.BonusOutputs)
             if (!materials.Contains(bonus.ItemId))
                 problems.Add(new("profession_actions", $"{opportunity.Id} bonus output references unknown material '{bonus.ItemId}'."));
+    }
+
+    /// <summary>
+    /// The mastery ladder has to be a ladder. Every rule here exists because the failure it
+    /// catches is silent: a rung worth nothing per level, or capped at nothing, or unlocking
+    /// above the level ceiling, all load cleanly and quietly do nothing forever — which is
+    /// exactly the state Phase 8 was written to get mastery out of.
+    /// </summary>
+    private static void ValidateMasteryLadder(
+        DataStore<MasteryBenefitDefinition> ladder,
+        DataStore<ProfessionDefinition> professions,
+        List<ContentProblem> problems)
+    {
+        var seen = new HashSet<(MasteryBenefitKind, string?)>();
+
+        foreach (var rung in ladder.GetAll())
+        {
+            if (rung.PerLevel <= 0)
+                problems.Add(new("mastery", $"{rung.Id} grants {rung.PerLevel} per level; a rung that pays nothing is not a rung."));
+
+            if (rung.Max <= 0)
+                problems.Add(new("mastery", $"{rung.Id} is capped at {rung.Max}; it can never be worth anything."));
+
+            if (rung.UnlockLevel < 1 || rung.UnlockLevel > MasteryLeveling.MaxLevel)
+                problems.Add(new("mastery",
+                    $"{rung.Id} unlocks at mastery {rung.UnlockLevel}, outside 1–{MasteryLeveling.MaxLevel}; it could never switch on."));
+
+            // A rung whose cap needs more levels than exist is a promise the ceiling cannot keep.
+            if (rung.PerLevel > 0 && rung.Max > MasteryLeveling.MaxLevel * rung.PerLevel)
+                problems.Add(new("mastery",
+                    $"{rung.Id} caps at {rung.Max} but reaches only {MasteryLeveling.MaxLevel * rung.PerLevel:0.###} at mastery {MasteryLeveling.MaxLevel}."));
+
+            if (rung.ProfessionId is { Length: > 0 } professionId && !professions.Contains(professionId))
+                problems.Add(new("mastery", $"{rung.Id} is scoped to unknown profession '{professionId}'."));
+
+            if (!seen.Add((rung.Kind, rung.ProfessionId)))
+                problems.Add(new("mastery",
+                    $"{rung.Id} is a second {rung.Kind} rung for the same scope; one would silently win over the other."));
+
+            if (string.IsNullOrWhiteSpace(rung.Description))
+                problems.Add(new("mastery", $"{rung.Id} has no description; the player reads this ladder."));
+        }
+
+        // A PARTIAL ladder is the dangerous one: somebody authored rungs and forgot a kind, and
+        // that benefit silently does nothing forever. An EMPTY ladder is a bundle that simply
+        // carries no mastery content — every test fixture in the suite — and is left alone, the
+        // same way an empty obstacle store is. That the *shipped* game carries all six is held
+        // by `MasteryContentTests`, which is the right place for "this file must exist".
+        if (ladder.Count == 0)
+            return;
+
+        foreach (var kind in Enum.GetValues<MasteryBenefitKind>())
+        {
+            if (!ladder.GetAll().Any(rung => rung.Kind == kind && rung.ProfessionId is null))
+                problems.Add(new("mastery", $"no general rung for {kind}; that benefit does nothing for any profession."));
+        }
     }
 
     private static void ValidateTrainingObstacles(

@@ -198,10 +198,14 @@ public class DarkForestTests
     [Fact]
     public void KnowledgeUnlocksInTheIntendedOrder()
     {
+        // The arc of learning a place: what it is made of, then what lives here, then where it
+        // hurts, then where it pays, then the ways through, then the ways out — and last, once
+        // you know the doors, the right to come in through a deeper one (Phase 8, GDD §11.4).
         var order = new[]
         {
-            RealmInsight.EnemyWeaknesses, RealmInsight.Hazards, RealmInsight.RichNodes,
-            RealmInsight.HiddenRoutes, RealmInsight.ExtractionRoutes,
+            RealmInsight.CommonResources, RealmInsight.EnemyWeaknesses, RealmInsight.Hazards,
+            RealmInsight.RichNodes, RealmInsight.HiddenRoutes, RealmInsight.ExtractionRoutes,
+            RealmInsight.DeepEntry,
         };
 
         var thresholds = order.Select(i => RealmKnowledgeLevels.Required[i]).ToList();
@@ -210,7 +214,7 @@ public class DarkForestTests
         Assert.Empty(RealmKnowledgeLevels.Unlocked(0));
         Assert.Equal(order, RealmKnowledgeLevels.Unlocked(thresholds[^1]));
         Assert.Null(RealmKnowledgeLevels.Next(thresholds[^1]));
-        Assert.Equal(RealmInsight.EnemyWeaknesses, RealmKnowledgeLevels.Next(0)!.Value.Insight);
+        Assert.Equal(RealmInsight.CommonResources, RealmKnowledgeLevels.Next(0)!.Value.Insight);
     }
 
     /// <summary>Extraction routes stay unknown until earned — that ignorance is what the insight

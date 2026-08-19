@@ -125,6 +125,10 @@ The main scene. Builds every control **in code** with a code-only dark theme (no
 a persistent header, a `TabContainer` (Character · Char Lab · Equipment · **Hideout** ·
 Realm · Combat · Inventory), and an always-visible event-log panel.
 
+> **The Realm tab is two screens that swap** (D39): `RealmPreparationPanel` out of a run, the
+> report + travel/fight controls inside one. `RefreshRealm` owns the swap; `RebuildRealmControls`
+> has no out-of-realm branch any more.
+
 Its shape is uniform and worth knowing:
 
 - `BuildXSection(root)` — constructs the controls for a tab, once.
@@ -1185,6 +1189,97 @@ validated). A new **location type** needs an enum value plus a case in `GameRoot
 
 ---
 
+## 10.16b Realm preparation and the loadout (D39)
+
+**PURPOSE** — The bridge from Hideout to run: what you take, where you go, and what you already
+know about it.
+
+**IMPORTANT FILES** — `RunLoadout.cs`, `LoadoutCheck.cs` (both `core/Realms/`),
+`RealmBriefing.cs`, `RealmFieldwork.cs`, `PreparationText.cs` (all `core/Presentation/`),
+`game/ui/RealmPreparationPanel.cs`
+
+**THE MODEL IS TWO FIELDS, ON PURPOSE.** `RunLoadout` holds a **destination** and a **pack** —
+nothing else. Worn `Equipment` already *is* the gear half of a loadout, it already persists, and
+combat already resolves from it; a second copy would give the game two answers to "what is the
+player wearing". The screen edits the real equipment through `EquipFromStash`/`UnequipToStash`.
+
+**RUNTIME FLOW**
+```
+GameRoot.SelectRealm        → RunLoadout.SelectRealm
+        PackConsumable      → RunLoadout.Pack           (a declaration; the Stash still holds it)
+        Briefing()          → RealmBriefing.Compile(bundle, realm, knowledge)
+        Fieldwork()         → RealmFieldwork.Survey(...)
+        LoadoutStatus()     → LoadoutCheck.Inspect(worn, stash, loadout, definitionIsKnown)
+        IssueStarterKit     → EquipStarterLoadout       (only when no weapon exists ANYWHERE)
+        EnterPreparedRun    → EnterRealm + move LoadoutCheck.PackableFrom(...) into the run bag
+```
+
+**THREE RULES THAT MUST NOT ERODE:**
+
+1. **The door is never locked.** Every gear problem is a `LoadoutIssue` warning; `CanEnter` fails
+   only for "no realm selected". GDD §13.1 promises the player can never be stuck, and refusing
+   entry is the easy way to break that. Pinned by
+   `LoadoutCheckTests.NoAmountOfMissingGearEverStopsThePlayerEntering`.
+2. **The pack clamps, never fails.** A standing plan that outruns the Stash takes what is left.
+   Entering does **not** empty the pack — a loadout you rebuild every run is not a loadout.
+3. **Every briefing gate goes through `RealmKnowledgeLevels.Reveals`.** No second threshold
+   table, ever, or the screen and the in-run intel drift apart. Node visibility is
+   `RealmLocationDefinition.IsVisibleAt` — shared with travel, so the map and the movement agree.
+
+**WHAT PACKING FIXED** — `CombatUseConsumable` reads the *active* bag, which inside a Realm is the
+run inventory, and `EnterRealm` created it empty. A Healing Salve in the Stash was **unreachable
+during a run**. Packing transfers at entry, so supplies obey the extraction risk model for free.
+
+**PROFESSION TOOLS ARE NOT HERE** — they are E6 (tool slots, tool forms, the yield pipeline, and
+the Agility course's unread `CourseBonusKeys`). The Tools panel shows `RealmFieldwork` readiness
+instead. A tool slot with nothing reading it is a surface whose mechanic does not resolve (rule
+7). **When E6 lands, tool slots belong on this reading.**
+
+**ENTRY POINT** — `LoadoutCheck.Inspect` for the rules; `GameRoot.EnterPreparedRun` for the
+orchestration; `RealmPreparationPanel` for the screen.
+
+---
+
+## 10.16c Progression — the seven tracks (D40)
+
+**PURPOSE** — Layered progression that stays layered. Seven persistent tracks, each changing what
+the player can do, and **no single number representing all of them** (GDD §4).
+
+| Track | Where it lives | What reads it |
+|---|---|---|
+| Profession levels + XP | `ProfessionProgress`, `ProfessionLeveling` | Action gates, Farming plots, the Agility course, Assay depth |
+| **Per-action mastery** | `ProfessionProgress.Masteries`, `MasteryLeveling` | `MasteryBenefits` → interval, preservation, doubling, rare finds, opportunity odds/risk, and `required_mastery` gates |
+| **Realm Knowledge** | `_realmKnowledge` (per realm), `RealmKnowledgeLevels` | `RealmBriefing`, `GameRoot.KnowledgeIntel`, `RealmRun.IsReachable`, `RealmRun.DeepestReachableEntry` |
+| **Character XP + attributes** | `CharacterProgress`, `CharacterLeveling` | `GameRoot.RebuildCharacter` → `ResolvedBuild.GrowthAt` → the Base's own growth weights |
+| Crafting discoveries | `DiscoverySystem` | Bench interaction gating |
+| Techniques | `LearnedMoves` | Moveset composition |
+| Assay | Profession level | `AssayLens.DepthFor` → how much of a material reading is legible |
+
+**THE RULE THAT HOLDS IT TOGETHER** — **character XP comes from Realm activity only.** Nothing in
+the Hideout feeds it. If fishing raised combat attributes, every track would collapse into one
+power number and GDD §4 would be a comment rather than a rule.
+`ProgressionEcosystemTests.ProfessionWorkAwardsNoCharacterXp` fails at *compile* time if
+`ActionOutcome` ever grows the field.
+
+**MASTERY IS CONTENT** — `game/data/mastery/`, one shared six-rung ladder. Mastery level is
+completions, linear, ceiling 99: a bending curve would reprice every action in the game, which is
+a balance decision and balance is parked. Preservation (20) and doubling (40) carry unlock levels
+so they *start happening* rather than creeping up from zero.
+
+**LEVELLING NEVER HEALS** — `RebuildCharacter` composes a fresh `Character`, and a fresh one
+starts full. Pools carry across, clamped to the new maxima. Loading a save is the one deliberate
+exception, because that is a rest.
+
+**THE FENCE** — `tests/Progression/ProgressionEcosystemTests.cs` names every track and asserts
+something reads it, in the spirit of `NoProfessionIsADeadEnd`. Every gap Phase 8 closed had been
+found by *reading*, months late. **Form acquisition is exempt by name** (D29.2, M6); when it
+ships, delete the exemption and the roll-call should still pass.
+
+**ENTRY POINT** — `MasteryBenefits.ValueOf` for mastery; `CharacterLeveling` for the character;
+`RealmKnowledgeLevels.Reveals` for knowledge.
+
+---
+
 ## 10.16a Loot (`Dungeons.Loot`)
 
 **PURPOSE** — What a source drops. One table shape for every payer in the game, so "how loot
@@ -1364,6 +1459,10 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Change enemy AI** | Usually `ai_profiles/` data. For the *selection* mechanism: `CombatEncounter.ChooseMove` |
 | **Change the action lifecycle** | `CombatEncounter.Commit` / `EnterWindup` / `Execute`, and `CombatTuning` for the windows |
 | **Change what a weapon does to combat** | `core/Equipment/EquipmentResolver.cs` — the whole material → combat seam, 105 lines |
+| **Change what Realm Knowledge reveals** | `RealmKnowledgeLevels.Required` for the thresholds (pinned by ratio in `DarkForestBalanceTests`, not by value); `core/Presentation/RealmBriefing.cs` for the pre-run reading and `GameRoot.KnowledgeIntel` for the in-run one. **Never add a second threshold table** |
+| **Change what mastery buys** | `game/data/mastery/mastery_benefits.json` — it is content. A new *kind* means a `MasteryBenefitKind` member **plus its consumer** in `ActionResolver`/`ProfessionSystem`, plus a validator rule. `MasteryLeveling` owns points → level |
+| **Change how the character levels** | `core/Characters/CharacterLeveling.cs` (curve + what a Realm pays); `GameRoot.AwardCharacterXp` for the sources. **Realm work only** — awarding it anywhere else collapses the layered model, and `ProgressionEcosystemTests` fails |
+| **Change what the player takes into a run** | `core/Realms/RunLoadout.cs` for the model, `LoadoutCheck` for the warnings and the starter-kit rule, `GameRoot.EnterPreparedRun` for the hand-off into the run bag. Worn gear is **not** stored here — it lives in `Equipment` (§10.16b) |
 | **Change player-facing wording** | `core/Presentation/SemanticFormat.cs`. If you need a new *fact*, add it to the relevant `XReading` first. **Never format in the UI** |
 | **Change a number the player feels** | Find the `*Tuning` class: `CombatTuning`, `MaterialTransformationTuning`, `RefinementTuning`, `EssenceTuning`, `EquipmentAssemblyTuning`, `AffixTuning`, `ProfessionTuning`, `RealmTuning`, `EquipmentTuning`, `PresentationTuning`, `QuantizationTuning`, `MaterialStateTuning` |
 | **Add a new effect kind** | Define it in `RuleVocabulary`, implement an `IEffectHandler`, register it (combat's live in `CombatEffectHandlers.RegisterCombatHandlers`). **Propagate `invocation.Context`** |
@@ -1454,7 +1553,7 @@ Recorded so it is a decision rather than a surprise.
 | `PropertyDefinition.transferable` is unconsumed | Open question — give it a job or drop it |
 | `StatusController.ModifierTotal` is display-only | Enforced by convention, not by the type system |
 | Response properties drop on transformation | Filed, not fixed |
-| Mastery is tracked but nothing reads it; Realm Knowledge unlocks nothing | Content/feature gaps, not structural |
+| Schematics drop and bind to no form (D29.2) — the one progression track nothing reads | Content/feature gap, not structural; `ProgressionEcosystemTests` exempts it by name |
 
 ---
 

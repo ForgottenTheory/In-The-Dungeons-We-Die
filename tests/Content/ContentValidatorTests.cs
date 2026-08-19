@@ -45,6 +45,7 @@ public class ContentValidatorTests
         Professions = Load<ProfessionDefinition>("professions"),
         Actions = Load<ProfessionActionDefinition>("profession_actions"),
         TrainingObstacles = Load<TrainingObstacleDefinition>("training_obstacles"),
+        MasteryBenefits = Load<MasteryBenefitDefinition>("mastery"),
         Stations = Load<Dungeons.Hideout.StationDefinition>("stations"),
         Forms = Load<EquipmentBlueprintDefinition>("forms"),
         Interactions = Load<CraftingInteractionDefinition>("crafting_interactions"),

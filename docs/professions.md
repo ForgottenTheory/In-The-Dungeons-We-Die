@@ -17,6 +17,8 @@ Every profession has the same anatomy, and there is exactly one code path behind
 |---|---|
 | XP → level (1–99) | `ProfessionLeveling` — 100·L per level, shared by all |
 | Level, XP, per-action mastery | `ProfessionProgress` (runtime, persisted) |
+| Mastery points → level (0–99) | `MasteryLeveling` — linear on purpose; see D40 |
+| What mastery buys | `game/data/mastery/` → `MasteryBenefits` — six rungs, all content |
 | An action ladder | `ProfessionActionDefinition` — level gate, interval, inputs, outputs, bonus outputs, XP |
 | Passive + active execution | `ProfessionSystem.Execute` — **one** path, so the two can never drift |
 | Offline payout | `OfflineProgressCalculator` — the *same* execute path |
