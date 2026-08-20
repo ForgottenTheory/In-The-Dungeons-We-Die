@@ -11,7 +11,7 @@
     "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
     "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
     "costs": [ { "resource": "mana", "amount": 8 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 10 } ],
     "description": "It cannot be resisted, argued with, or insured against."
   },
   {
@@ -21,9 +21,9 @@
     "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
     "costs": [ { "resource": "mana", "amount": 12 } ],
     "packets": [
-      { "type": "Magic", "aspect": "arcane", "amount": 5 },
-      { "type": "Magic", "aspect": "arcane", "amount": 5 },
-      { "type": "Magic", "aspect": "arcane", "amount": 5 }
+      { "type": "Magic", "aspect": "kinetic", "amount": 5 },
+      { "type": "Magic", "aspect": "kinetic", "amount": 5 },
+      { "type": "Magic", "aspect": "kinetic", "amount": 5 }
     ],
     "description": "Three small certainties, in formation."
   },
@@ -33,7 +33,7 @@
     "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
     "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
     "costs": [ { "resource": "mana", "amount": 17 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 16 } ],
     "description": "A statement of raw force, notarised."
   },
   {
@@ -42,7 +42,7 @@
     "tags": ["action:spell", "delivery:ranged"],
     "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
     "costs": [ { "resource": "mana", "amount": 14 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 13 } ],
     "description": "The shortest distance between mana and consequence."
   },
   {
@@ -51,7 +51,7 @@
     "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
     "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
     "costs": [ { "resource": "mana", "amount": 20 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 21 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 21 } ],
     "description": "Power with the excuses distilled off."
   },
   {
@@ -61,7 +61,7 @@
     "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
     "costs": [ { "resource": "mana", "amount": 21 } ],
     "max_targets": 3,
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 9 } ],
     "description": "Refusal is not a recognised defence."
   },
   {
@@ -71,7 +71,7 @@
     "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
     "costs": [ { "resource": "mana", "amount": 23 } ],
     "max_targets": 3,
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 10 } ],
     "description": "Everyone nearby receives the same finding, simultaneously."
   },
   {
@@ -82,10 +82,10 @@
     "costs": [ { "resource": "mana", "amount": 24 } ],
     "cooldown_ticks": 180,
     "packets": [
-      { "type": "Magic", "aspect": "arcane", "amount": 7 },
-      { "type": "Magic", "aspect": "arcane", "amount": 7 },
-      { "type": "Magic", "aspect": "arcane", "amount": 7 },
-      { "type": "Magic", "aspect": "arcane", "amount": 7 }
+      { "type": "Magic", "aspect": "kinetic", "amount": 7 },
+      { "type": "Magic", "aspect": "kinetic", "amount": 7 },
+      { "type": "Magic", "aspect": "kinetic", "amount": 7 },
+      { "type": "Magic", "aspect": "kinetic", "amount": 7 }
     ],
     "description": "Certainty, four times, until it sticks."
   },
@@ -96,7 +96,7 @@
     "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
     "costs": [ { "resource": "mana", "amount": 16 } ],
     "cooldown_ticks": 150,
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 8 } ],
     "effects": [
       { "kind": "triggerMove", "text": "move.arcane_bolt" }
     ],
@@ -110,7 +110,7 @@
     "costs": [ { "resource": "mana", "amount": 30 } ],
     "cooldown_ticks": 300,
     "max_targets": 4,
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 12 } ],
     "description": "Weather made of pure jurisdiction."
   },
   {
@@ -358,7 +358,7 @@
     "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
     "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
     "costs": [ { "resource": "mana", "amount": 9 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 10 } ],
     "description": "It hits a moment before you expect. Every time."
   },
   {
@@ -367,7 +367,7 @@
     "tags": ["action:spell", "delivery:ranged"],
     "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
     "costs": [ { "resource": "mana", "amount": 15 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 14 } ],
     "description": "Several seconds, spent at once, at someone."
   },
   {
@@ -377,7 +377,7 @@
     "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
     "costs": [ { "resource": "mana", "amount": 17 } ],
     "cooldown_ticks": 180,
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 8 } ],
     "effects": [
       { "kind": "triggerMove", "text": "move.chrono_bolt" }
     ],

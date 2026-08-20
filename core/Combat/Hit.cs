@@ -22,13 +22,15 @@ public static class DamageAspects
 
     /// <summary>
     /// Raw force. <b>The one aspect with no resistance lane</b> (D-03a) — unresistable, and
-    /// structurally unamplifiable in exchange (§2.5.1).
+    /// structurally unamplifiable in exchange (§2.5.1). Renamed from <c>arcane</c> (D44):
+    /// "arcane" now belongs to the magic-economy identity, and kinetic is what this aspect
+    /// always was — the word freed by cutting Kinetic from the identity roster.
     /// </summary>
-    public const string Arcane = "arcane";
+    public const string Kinetic = "kinetic";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        Heat, Cold, Charge, Toxin, Corrosion, Decay, Arcane,
+        Heat, Cold, Charge, Toxin, Corrosion, Decay, Kinetic,
     };
 }
 
@@ -84,7 +86,7 @@ public sealed record Packet(DamageType Type, string? Aspect, double Amount)
     public string? Lane => Aspect switch
     {
         null => DamageLanes.Of(Type),
-        DamageAspects.Arcane => null,
+        DamageAspects.Kinetic => null,
         var aspect => aspect,
     };
 

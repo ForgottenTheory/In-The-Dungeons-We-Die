@@ -145,7 +145,7 @@
     "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
     "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 8 },
     "costs": [ { "resource": "mana", "amount": 6 } ],
-    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "kinetic", "amount": 9 } ],
     "description": "Small, quick, and impossible to argue with — arcane answers to no resistance."
   },
   {

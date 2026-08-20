@@ -612,7 +612,7 @@ Ordered so the game stays green and nothing is authored twice. Position marker k
 | Phase | Work | Status |
 |---|---|---|
 | **0 — Foundation on paper** | Identity roster ✅ · grammar vocabularies ✅ (draft) · Signature Profiles ✅ · capacity + condition + representation ✅ · reality tests ✅ (§12) · base-stat channel ✅ (§11.5) · transformation verbs ✅ · profession assignment ✅ (`docs/transformation-verbs.md` §8) | **✅ complete (2026-08-20)** |
-| 0.5 — Prep fences | Unknown-JSON-field rejection (`UnmappedMemberHandling.Disallow` or validator arm) · vocabulary sweeps (kinetic aspect, fingerprint). Save stance already decided (D49) | not started |
+| 0.5 — Prep fences | Unknown-JSON-field rejection ✅ (`DataStore` rejects unknown members — shipped with the spell-library commit) · `arcane`→`kinetic` aspect sweep ✅ (code, content, tests, combat docs) · fingerprint needs no pre-work (the new name arrives with Phase 2's code; `MaterialSignature` dies on schedule) · save stance decided (D49) | **✅ complete (2026-08-20)** |
 | 1 — Core model, coexisting | Identity + profile + grammar registries as content types (bundle → loader → validator → failing-content tests → ContentStudio registry); `MaterialDefinition` grows capacity/identities/latent/profile. Old system untouched, suite green | not started |
 | 2 — Transformation engine | The ten verbs (`docs/transformation-verbs.md`) behind the same bench surface; profile carry/merge; condition + stability enforcement; preview parity + reaction-log equivalent from day one | not started |
 | 3 — Item generation | The Signature Resolver (succeeds the genome → `ModifierGenerator` path per §14#1); effect families as payload content; per-form base reads (§11.5); item-side expression (§14#2) | not started |

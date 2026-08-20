@@ -84,7 +84,7 @@ Void: Void Bolt, Void Lance, Void Burst, Void Nova, Void Wave, Void Orb, Void Sh
 (Barrier), Void Barrier, Void Mark, Void Drain (lifesteal), Void Pulse, Void Storm,
 Abyssal Bolt.
 
-### spells_arcane.json — arcane aspect (unresistable, low) + magic lane + chrono/force — 47
+### spells_arcane.json — kinetic aspect (renamed from `arcane`, D44; unresistable, low) + magic lane + chrono/force — 47
 Arcane: Arcane Bolt, Arcane Missile (multi-packet), Arcane Lance, Arcane Burst, Arcane Nova,
 Arcane Wave, Arcane Orb, Arcane Barrage, Arcane Shield (Barrier), Arcane Barrier,
 Arcane Armor (armor + resist.magic), Mana Shield (Barrier), Mana Bolt, Mana Burst, Mana Surge

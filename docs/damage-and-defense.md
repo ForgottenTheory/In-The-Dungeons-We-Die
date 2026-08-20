@@ -22,7 +22,7 @@ sealed record Hit(
 
 sealed record Packet(
     DamageType Type,                   // Slashing | Crushing | Piercing | Magic   [code enum, D16]
-    string?    Aspect,                 // heat | cold | charge | toxin | corrosion | decay | arcane | null
+    string?    Aspect,                 // heat | cold | charge | toxin | corrosion | decay | kinetic | null
     double     Amount);
 ```
 
@@ -78,7 +78,9 @@ it is weak, not to make a bigger number (see §3.2 and Example G).
 | **Damage type** | exactly 1 per packet | *delivery* — what kind of violence this is. Drives armour applicability, weapon identity, enemy vulnerability, `increased Slashing damage`. | **code enum** (D16) — Slashing, Crushing, Piercing, Magic |
 | **Aspect** | 0 or 1 per packet | *energy* — what rides along. Drives the resistance lane, ailment eligibility, aspect-specific penetration/avoidance/inversion. | **data**, from the reactive property vocabulary |
 
-**Aspects: `heat cold charge toxin corrosion decay arcane`** (7).
+**Aspects: `heat cold charge toxin corrosion decay kinetic`** (7). *(`kinetic` was named
+`arcane` until 2026-08-20 — renamed by D44 so "arcane" belongs solely to the magic-economy
+identity; the aspect's semantics are unchanged.)*
 
 Deliberately **not** aspects:
 - **`growth`** — there is no "nature damage". Growth is the *recovery/vital* property; it gates
@@ -94,7 +96,7 @@ Deliberately **not** aspects:
 ```
 LaneOf(Slashing | Crushing | Piercing) = physical
 LaneOf(Magic)                          = magic
-Lane(aspect = arcane)                  = (none — unresistable)
+Lane(aspect = kinetic)                 = (none — unresistable)
 ```
 
 This is the whole trick, and it is why aspects are safe to add liberally.
@@ -175,22 +177,24 @@ materials. Tags cost one namespace and zero defensive stats — and because scop
 (D-12) accept any tag as a scope, `+30% increased Storm damage` falls out for free as a rarer,
 stronger sibling of `+30% increased Charge damage` without ever becoming a resistance.
 
-## 2.5 `arcane` — the unresistable aspect **[DECIDED — D-03a]**
+## 2.5 `kinetic` — the unresistable aspect **[DECIDED — D-03a; renamed from `arcane` 2026-08-20, D44]**
 
-GDD §9 is explicit: *"`arcane` is a property, never an essence — it is not an element, it is the
-medium elements travel through"*, and job 4 is *"supplies untyped force/magic damage."*
+The aspect was named `arcane` until the identity redesign claimed that word for the
+magic-economy identity (D44); *kinetic* — freed by cutting Kinetic from the identity roster —
+names what this aspect always was: raw force. GDD §9's original grounding stands: it is not an
+element, and its job is *"supplies untyped force/magic damage."*
 
-**So `arcane` is the aspect with no resistance lane.** Consequences, all intentional:
+**So `kinetic` is the aspect with no resistance lane.** Consequences, all intentional:
 
-- Arcane damage is **reliable** — no resistance, no exposure, no immunity ever applies.
-- Arcane damage is **unamplifiable** — no arcane ailment, no arcane penetration, no arcane
+- Kinetic damage is **reliable** — no resistance, no exposure, no immunity ever applies.
+- Kinetic damage is **unamplifiable** — no kinetic ailment, no kinetic penetration, no kinetic
   inversion, no essence anchors it.
 - It is mitigated only by **armour** (if the packet's type is physical), **avoidance**, and
   global `damage taken` modifiers.
 - It is the correct lane for Kineticist collision damage, Warlock Debt payments, and any effect
   that must simply *work*.
 
-This gives arcane a sharp, teachable identity and stops it being "generic magic".
+This gives kinetic a sharp, teachable identity and stops it being "generic magic".
 
 ### 2.5.1 The scaling guard — why unresistable damage does not become best-in-slot
 
@@ -198,36 +202,37 @@ Unresistable damage is the classic stat that quietly wins, because "cannot be re
 with every offensive multiplier. Leaving that to tuning would be a promise, not a design. So the
 guard is **structural and validator-enforced**:
 
-> **Arcane damage accepts flat additions and *global* increases. It never accepts a
+> **Kinetic damage accepts flat additions and *global* increases. It never accepts a
 > lane-specific `increased` modifier, and it never accepts a `more`/`less` multiplier at all.**
 
 Consequences:
 
-| | Every other lane | Arcane |
+| | Every other lane | Kinetic |
 |---|---|---|
 | Flat added | ✅ | ✅ |
 | Global `increased damage` | ✅ | ✅ |
 | Lane-specific `increased` (`+40% increased Heat damage`) | ✅ | ❌ |
 | `more` / `less` multipliers | ✅ | ❌ |
-| Ailment amplification | ✅ | ❌ (no arcane ailment) |
+| Ailment amplification | ✅ | ❌ (no kinetic ailment) |
 | Penetration / exposure / inversion | ✅ | ❌ (nothing to reduce) |
 | Conditional damage (`vs Frozen`, `while Barrier active`) | ✅ | ❌ |
 
-**The resulting shape is the intended one.** Arcane damage scales roughly *linearly* while every
-resistable lane can go multiplicative. So arcane is **strongest at low investment** — the
+**The resulting shape is the intended one.** Kinetic damage scales roughly *linearly* while every
+resistable lane can go multiplicative. So kinetic is **strongest at low investment** — the
 reliable floor you take into an unknown Realm — and **weakest at high investment**, because a
 specialist heat build eventually leaves it far behind. A build cannot "just stack unresistable
 damage" because there is nothing to stack.
 
-**Validator rules:** no affix may target a `more`/`less` key scoped to `lane:arcane`; no affix may
-declare a lane-specific `increased` in the arcane lane; arcane tier ranges on flat-add affixes may
-not exceed the corresponding resistable-lane ranges (arcane trades ceiling for reliability, it
+**Validator rules:** no affix may target a `more`/`less` key scoped to `lane:kinetic`; no affix may
+declare a lane-specific `increased` in the kinetic lane; kinetic tier ranges on flat-add affixes may
+not exceed the corresponding resistable-lane ranges (kinetic trades ceiling for reliability, it
 does not get both).
 
-> **Note on `properties.json`:** `arcane` declares `resisted_by: [{ resonance, 0.5 }]`. That
-> stays — it is **crafting-side only**, describing how a material resists arcane *influence during
-> a reaction* (`ResistanceCalculator`). It has no combat expression under D-03a, and the validator
-> should not treat it as defining a combat lane.
+> **Note on `properties.json`:** the `arcane` **property** (which keeps its name until the
+> identity migration retires the property layer) declares `resisted_by: [{ resonance, 0.5 }]`.
+> That stays — it is **crafting-side only**, describing how a material resists arcane *influence
+> during a reaction* (`ResistanceCalculator`). It has no combat expression under D-03a, and the
+> validator should not treat it as defining a combat lane.
 
 ## 2.6 The offensive modifier stack **[DECIDED]**
 
@@ -400,7 +405,7 @@ scope, not polish** — the same argument the Reaction Log won.
 | `toxin` | toxin aspect | Poison | E2 |
 | `corrosion` | corrosion aspect | Corroded | E2 |
 | `decay` | decay aspect | Wither | **lane reserved E1, content later** |
-| *(none)* | arcane aspect | — | E1 |
+| *(none)* | kinetic aspect | — | E1 |
 
 **Eight lanes.** Each has a distinct ailment identity, which is the test for whether a lane
 earns its place.

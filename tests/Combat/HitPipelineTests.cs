@@ -38,11 +38,11 @@ public class HitPipelineTests
     }
 
     [Fact]
-    public void TheArcaneAspectHasNoLaneAtAll()
+    public void TheKineticAspectHasNoLaneAtAll()
     {
         // D-03a: unresistable by construction, and structurally unamplifiable in exchange.
-        Assert.Null(new Packet(DamageType.Magic, DamageAspects.Arcane, 10).Lane);
-        Assert.Null(new Packet(DamageType.Piercing, DamageAspects.Arcane, 10).Lane);
+        Assert.Null(new Packet(DamageType.Magic, DamageAspects.Kinetic, 10).Lane);
+        Assert.Null(new Packet(DamageType.Piercing, DamageAspects.Kinetic, 10).Lane);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class HitPipelineTests
     }
 
     [Fact]
-    public void ArcaneDamageIgnoresEvenAMaximalResistance()
+    public void KineticDamageIgnoresEvenAMaximalResistance()
     {
         var attacker = Enemy("A", 50, Attrs(str: 0, intel: 0), Move("move.strike", DamageType.Slashing, 8, 2, 8, 15, stamina: 5));
         var target = Player(attrs: Attrs(con: 0), armor: new ArmorProfile
@@ -172,7 +172,7 @@ public class HitPipelineTests
         });
 
         var result = Pipeline().Resolve(
-            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Arcane, 40)), 0);
+            Attack(attacker, target, new Packet(DamageType.Magic, DamageAspects.Kinetic, 40)), 0);
 
         Assert.Equal(40, result.Amount);
         Assert.Contains(result.Log.Lines, l => l.Detail.Contains("unresistable"));

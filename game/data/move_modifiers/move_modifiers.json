@@ -69,12 +69,14 @@
     ]
   },
   {
-    // Arcane is unresistable (D-03a), so this imbue's fraction sits deliberately below the rest.
+    // Kinetic (renamed from arcane, D44) is unresistable (D-03a), so this imbue's fraction
+    // sits deliberately below the rest. The id and player name keep the arcane fiction — the
+    // imbue comes from an arcane grimoire; only the aspect string moved.
     "id": "movemod.imbue_arcane",
     "name": "Arcane Imbue",
     "match": { "tags_all": ["action:attack"] },
     "ops": [
-      { "op": "addAsExtra", "from": "physical", "to": "arcane", "fraction": 0.12 }
+      { "op": "addAsExtra", "from": "physical", "to": "kinetic", "fraction": 0.12 }
     ]
   },
   {
