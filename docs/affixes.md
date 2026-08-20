@@ -1,5 +1,12 @@
 # Item Affixes, Material Genetics & the Crafting Casino
 
+> ⚠ **SUPERSEDED AS DESIGN (2026-08-20).** The genome/pressure model and the property-keyed
+> affix pools described here are being replaced by the **Identity + Signature system** —
+> design of record: `docs/identity-foundation.md` (DECISIONS **D42–D44**). The grant/trigger
+> vocabulary this document defines **survives** — it is the target machinery of the new
+> Signature grammar; the material-genetics half is what goes. Accurate for the **code as
+> shipped** until the migration lands.
+
 > **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > **Extends `emergent-item-system.md` §16 (fabrication); does not replace it.** Amends GDD §10.
 > Labels: **[EXISTING/PRESERVE]** · **[DECIDED]** · **[UNRESOLVED]**

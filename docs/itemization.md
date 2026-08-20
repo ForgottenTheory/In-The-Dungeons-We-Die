@@ -1,5 +1,11 @@
 # Itemization — Items, Properties, Instances, Equipment
 
+> ⚠ **SUPERSEDED AS DESIGN (2026-08-20).** The property-based material/item model here is being
+> replaced by the **Identity + Signature system** — design of record:
+> `docs/identity-foundation.md` (DECISIONS **D42–D44**). The two-tier definition/instance model,
+> the `EquipmentResolver` seam and D20's stacking rule carry forward; the property layer does
+> not. Accurate for the **code as shipped** until the migration lands.
+
 > ⚠ **PARTLY SUPERSEDED.** Still accurate: §1's two-tier definition/instance model, §2's property
 > model, §3's `EquipmentResolver` seam, §4 inventory, §5 gear loss.
 > **Reversed:** §1's rule that any material whose properties diverge becomes a per-unit instance —

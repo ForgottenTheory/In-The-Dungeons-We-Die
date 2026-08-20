@@ -7,6 +7,11 @@
 > with newer decisions, the newer decision is recorded here and the older one is marked
 > superseded.
 >
+> ⚠ **Crafting redesign in progress (2026-08-20, DECISIONS D42–D44).** The material / property /
+> trait / essence crafting model this GDD describes is being replaced by the **Identity +
+> Signature system** — design of record: `docs/identity-foundation.md`. The crafting sections
+> describe the code as shipped until the migration lands; do not design against them.
+>
 > **Status marks:** **BUILT** (in the game, tested) · **PLANNED** (designed and settled, not yet
 > built) · **NEEDS DESIGN** (little or no design exists). Anything undecided is marked rather
 > than invented. §19 is the full status summary.
@@ -626,19 +631,23 @@ that demonstration. `MoveKind` exists for dispatch and filtering; behaviour neve
 - **The Mnemonic loop closes**: `status.recalled_move` stores the executing move's id; Recall
   replays it instantly through `recallMove`, bounded by its cooldown.
 
-**M2′ is BUILT — the library and its acquisition — and M6 grew it:**
+**M2′ is BUILT — the library and its acquisition — and M6 grew it. The 2026-08-19 spell-library
+expansion grew it 12×:**
 
-- **43 moves ship** (the 9 E4 moves, the M2′ library, and M6's weapon-archetype moves — one per
-  new weapon form family), soft-gated only: costs, `equippedTag`, cooldowns — never class (D25).
-  Coverage: all four damage types, six aspects, ten statuses exercised, interrupt and heal
-  handlers, a gauge-cost exemplar (Crash spends 40 Momentum), and one arcane-lane "always lands"
-  spell. A validator rule rejects any form granting a move it cannot fire.
-- **Technique items** (`technique.*`, 19 shipped) teach moves into a **persisted learned list**
+- **517 moves ship** (the 9 E4 moves, the M2′ library, M6's weapon-archetype moves, and the
+  474-spell library expansion — see `docs/spell-library.md` for the full manifest and the
+  parked-names backlog), soft-gated only: costs, `equippedTag`, cooldowns — never class (D25).
+  Coverage: all four damage types, all seven aspects, controls through Resolve buildup, heals,
+  lifesteal riders, resource pacts (health as a cost), attribute/resist/tempo buffs and curses,
+  weapon imbues via `modifyMove`, and a `grantMove` conjuration. A validator rule rejects any
+  form granting a move it cannot fire; `SpellLibraryTests` proves each mechanic family resolves.
+- **Technique items** (`technique.*`, 493 shipped) teach moves into a **persisted learned list**
   (save v5, learn-order-preserving, once-per-move — a duplicate refuses without consuming).
   Learned moves join moveset composition as their own grant source with `learned` provenance.
-  **Loot faucets are live (M6)** — technique items drop from the shared martial/arcane technique
-  tables (killing the Hexer is how a martial build finds a spell); a debug grant button remains
-  for testing.
+  **Loot faucets are live (M6) for the original 19** — they drop from the shared martial/arcane
+  technique tables (killing the Hexer is how a martial build finds a spell). **The 474 expansion
+  techniques are deliberately in no loot table yet** (user decision, 2026-08-19): distribution
+  lands with the balance pass; the debug grant button is their only faucet today.
 - **One vocabulary extension:** `EffectSpec` takes an optional per-effect `target` override
   (rule payloads and move riders alike) — Drain lands decay on the enemy while its heal rider
   names `TriggerSource`. Lifesteal shapes are authorable everywhere now.
@@ -1596,8 +1605,8 @@ loadout → v11 character XP).
 | **Effect handlers** | 11 combat handlers; unhandled kinds visibly recorded, never dropped |
 | **The hit pipeline** | Packets × lanes, traced Hit Log, diminishing armour (K = 1.0), resistance cap/floor with penetration after the cap, enemy vulnerability, crit, Perfect Block, **Parry** (gear-granted), **Evade** + lane avoidance, Barrier absorption, thorns/retaliation as content, modifier-driven INCREASED/block/damage-taken stages |
 | **Statuses** | **29 data-driven definitions** across all four categories; lane-mapped signature ailments; DoTs that cannot proc; `while_active` modifiers combat reads; **Resolve** (buildup, shared immunity, +25% escalation); stagger→Stun |
-| **Moves** | One shape for both sides; weapon-first moveset composition with provenance; 11-op modification in fixed order; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; **43 shipped moves** |
-| **Techniques** | 19 items teaching moves into a persisted learned list (v5), with live loot faucets and the Learn UI |
+| **Moves** | One shape for both sides; weapon-first moveset composition with provenance; 11-op modification in fixed order; `grantMove`/`triggerMove`/`modifyMove`/`recallMove`; the Mnemonic loop; **517 shipped moves** (474 of them the 2026-08-19 spell library, `docs/spell-library.md`) |
+| **Techniques** | **493 items** teaching moves into a persisted learned list (v5) with the Learn UI; the original 19 have live loot faucets, the 474 expansion techniques are debug-grant-only until the balance pass |
 | **Enemies** | Family + Role + Actor composition (D26): **483 actors / 26 families / 7 roles / 7 AI brains**; the elite (Grask) and boss (Thornheart) live with rank-gated spoils and XP multipliers; five encounters wired into the Dark Forest, the rest authored breadth awaiting realm wiring |
 | **Auto-combat (D41)** | Three brains on the *player* combatant through the enemy's own chooser; the only handicap is `reaction_ticks` (validator-floored at 5); live fights only |
 | **Combat** | Tick-driven encounter, telegraph → windup → execute → recovery as real states, timed block/dodge/parry, queue-time costs/cooldowns/requirements, consumable use, gauges, death |

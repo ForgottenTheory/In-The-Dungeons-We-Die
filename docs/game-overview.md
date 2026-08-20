@@ -8,6 +8,11 @@
 > reference, and the per-system docs hold the math. Nothing here overrides them.
 >
 > Last synced with the repo: **2026-08-19** (1,191 passing tests, 0 build warnings, save v11).
+>
+> ⚠ **Crafting redesign in progress (2026-08-20, DECISIONS D42–D44):** the material/crafting
+> model described here is being replaced by the **Identity + Signature system** — design of
+> record: `docs/identity-foundation.md`. Crafting sections describe the code as shipped until
+> the migration lands.
 
 ## How to read the status marks
 
@@ -634,7 +639,7 @@ a named system (a roll-call test fails any track nothing reads):
 | Realm Knowledge (per realm) | The seven insights, ending in deep entry |
 | **Character level** | Attribute growth on the Base's shape — **earned in Realms only** (kills ×1.5 elite / ×2 boss, +25 per extraction). The Hideout awards none, ever — enforced by test |
 | Crafting discoveries | The record of what you have invented |
-| Techniques | 19 items that teach moves permanently — loot-fed |
+| Techniques | 493 items that teach moves permanently — the original 19 loot-fed, the 474-spell library debug-only until the balance pass (`docs/spell-library.md`) |
 | Synergies + global bonuses | Trades helping trades; total level pays account-wide |
 | Gold | The Realm export waiting for its economy |
 | Equipment owned | The Stash and what you wear — safe by default |
@@ -657,7 +662,7 @@ mid-play):
 | Materials / Properties | 1,448 / 21 |
 | Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 23 |
 | Item modifiers (affixes) | 44 |
-| Moves / Move modifiers / Techniques | 43 / 1 / 19 |
+| Moves / Move modifiers / Techniques | 517 / 11 / 493 |
 | Statuses / Modifier keys | 29 / 60 |
 | Bases / Prefixes / Suffixes / Species / Name formats | 15 / 25 / 50 / 3 / 9 |
 | Professions / Actions / Opportunities / Obstacles | 20 / 348 / 36 / 12 |
@@ -668,7 +673,7 @@ mid-play):
 
 ✅ **BUILT** — the full loop: tick simulation · the reaction engine with traits and essence ·
 fabrication with the Genome and 44 live modifiers · the semantic presentation language · the
-class combinator · the hit pipeline, 29 statuses, Resolve · 43 moves and techniques · the
+class combinator · the hit pipeline, 29 statuses, Resolve · 517 moves and 493 techniques · the
 composed enemy roster with a live elite and boss · auto-combat · 20 professions with mastery,
 synergies, opportunities, offline + the away report · Farming plots and the Agility course ·
 20 stations · the Dark Forest with all eleven node kinds · Realm preparation and deep entry ·

@@ -1,5 +1,11 @@
 # Crafting
 
+> ⚠ **SUPERSEDED AS DESIGN (2026-08-20).** This document describes earlier crafting designs
+> (including the recipe-flavored vision that `docs/emergent-item-system.md` already replaced).
+> The design of record for materials and crafting is now the **Identity + Signature system** —
+> `docs/identity-foundation.md` (DECISIONS **D42–D44**). Kept for history; do not design or
+> author against it.
+
 ## 1. Vision
 
 Crafting is a major expression of player knowledge.

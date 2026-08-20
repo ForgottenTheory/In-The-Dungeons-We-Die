@@ -1,5 +1,11 @@
 # Emergent Item System — Design Proposal
 
+> ⚠ **SUPERSEDED AS DESIGN (2026-08-20).** The property/trait/essence model specified here is
+> being replaced by the **Identity + Signature system** — design of record:
+> `docs/identity-foundation.md` (DECISIONS **D42–D44**). Until that migration lands, this
+> document remains the accurate reference for the **code as shipped**; do not design new
+> systems or author new content against it.
+
 > **Status: ACCEPTED. P0 implemented (§20); P1–P6 not started.** This document supersedes
 > `docs/crafting.md §17`. **P0 shipped:** tag namespacing (`family:value`) across the ~470
 > materials, `PropertyDefinition` registry with roles (`game/data/properties/`), the

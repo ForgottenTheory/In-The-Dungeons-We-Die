@@ -1,5 +1,10 @@
 # Worked Examples — Builds, Tools, and Resolution Traces
 
+> ⚠ **PARTLY SUPERSEDED (2026-08-20).** The material → genome → affix chains in these examples
+> describe the outgoing property model, replaced by the **Identity + Signature system**
+> (`docs/identity-foundation.md`, DECISIONS **D42–D44**). The combat-side halves — moves,
+> statuses, triggers, resolution traces — still stand.
+
 > **DECIDED** — settled by the 27 decisions in `effect-foundation.md` §12. Not yet built. Part of the effect-foundation package (`effect-foundation.md`).
 > Proves the architecture composes. All materials are **real entries from `game/data/materials/`**;
 > all property values are illustrative but plausible. Affix numbers are placeholders.

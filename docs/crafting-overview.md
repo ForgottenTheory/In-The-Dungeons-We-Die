@@ -1,5 +1,11 @@
 # Crafting — the whole stack, as it stands
 
+> ⚠ **SUPERSEDED AS DESIGN (2026-08-20).** The property/trait/essence crafting model this
+> document describes is being replaced by the **Identity + Signature system** — design of
+> record: `docs/identity-foundation.md` (DECISIONS **D42–D44**). Until that migration lands,
+> this document remains the accurate reference for the **code as shipped**; do not design new
+> systems or author new content against it.
+
 > **What this is.** One place that explains crafting end to end: what it does, how the six layers
 > fit together, what actually ships, and what does not. Written against the repository, with every
 > count and constant read out of the content and code rather than carried over from older docs.
