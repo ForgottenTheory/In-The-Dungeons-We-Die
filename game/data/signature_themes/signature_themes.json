@@ -1,0 +1,22 @@
+[
+  // Signature grammar: themes (docs/identity-foundation.md §6.1, D43). Hidden scoring
+  // metadata ONLY — themes resonate between sources during signature scoring and are never
+  // player-facing, never a second identity system, never a simulation layer. Names exist for
+  // authoring tools alone. Freely editable; nothing pins this set.
+  { "id": "renewal", "name": "Renewal", "description": "Recovery, regrowth, coming back." },
+  { "id": "endurance", "name": "Endurance", "description": "Outlasting, bearing weight, holding." },
+  { "id": "growth", "name": "Growth", "description": "Accumulation, ramping, compounding." },
+  { "id": "hunger", "name": "Hunger", "description": "Taking, draining, feeding." },
+  { "id": "wrath", "name": "Wrath", "description": "Violence answered with violence." },
+  { "id": "stillness", "name": "Stillness", "description": "Steadiness, immovability, patience." },
+  { "id": "tempo", "name": "Tempo", "description": "Speed, rhythm, momentum." },
+  { "id": "precision", "name": "Precision", "description": "Exactness, weak points, the perfect moment." },
+  { "id": "ruin", "name": "Ruin", "description": "Breaking things down: armor, defenses, order." },
+  { "id": "light", "name": "Light", "description": "Cleansing, protection, revelation." },
+  { "id": "shadow", "name": "Shadow", "description": "Concealment, dread, striking unseen." },
+  { "id": "storm", "name": "Storm", "description": "Sudden violence, chains, discharge." },
+  { "id": "tide", "name": "Tide", "description": "Ebb and flow, cycles, inevitability." },
+  { "id": "fortune", "name": "Fortune", "description": "Luck, windfalls, second chances." },
+  { "id": "purity", "name": "Purity", "description": "Clarity, fidelity, the uncorrupted." },
+  { "id": "dread", "name": "Dread", "description": "Fear, curses, the creeping end." }
+]

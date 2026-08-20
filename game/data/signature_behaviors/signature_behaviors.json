@@ -1,0 +1,20 @@
+[
+  // Signature grammar: behavior verbs (docs/identity-foundation.md §7.3, D43). Each shipped
+  // verb gets one registered assembler when the Signature Resolver lands (Phase 3); every
+  // entry here composes machinery that already resolves — the D30 fence. Three designed
+  // verbs are deliberately ABSENT until their machinery exists: detonate (needs a
+  // consumeStatus effect kind), spread (needs area status application), bloom (needs a
+  // delayed-effect wrapper). IdentityContentTests pins this set so adding one is an act of
+  // intent, not drift.
+  { "id": "direct", "name": "Direct", "description": "Deliver the payload, plainly." },
+  { "id": "sustain", "name": "Sustain", "description": "A continuous while-worn or while-active modifier." },
+  { "id": "amplify", "name": "Amplify", "description": "Scale a quantity through a scoped modifier grant." },
+  { "id": "afflict", "name": "Afflict", "description": "Apply a status — target selectable; self-targeting is how gear curses its wielder." },
+  { "id": "retaliate", "name": "Retaliate", "description": "Aim the payload back at the attacker." },
+  { "id": "drain", "name": "Drain", "description": "Transfer a quantity from the target to the wearer." },
+  { "id": "convert", "name": "Convert", "description": "Move damage between lanes — always fraction-based (D-01)." },
+  { "id": "echo", "name": "Echo", "description": "Repeat a move or payload via a triggered move." },
+  { "id": "imbue", "name": "Imbue", "description": "Rewrite a move through the move-modifier operations." },
+  { "id": "exchange", "name": "Exchange", "description": "Pay a cost — health, mana, stamina — to deliver the payload." },
+  { "id": "store", "name": "Store", "description": "Feed a gauge; release the payload when a band or the maximum is reached." }
+]

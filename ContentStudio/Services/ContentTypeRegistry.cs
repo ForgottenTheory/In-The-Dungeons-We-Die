@@ -113,6 +113,36 @@ public static class ContentTypeRegistry
         },
         new()
         {
+            TypeId = "identities", Folder = "identities", DefinitionType = typeof(IdentityDefinition),
+            DisplayName = "Identities", SingularName = "Identity", NavigationGroup = "Crafting", IdPrefix = "identity.",
+            ListColumns = new[] { "cluster" },
+            ValidatorCategories = new[] { "identity" },
+            Description = "The identity roster (D44) — the named doors the crafting redesign moves around. Changing the roster is a design decision; a test pins its membership.",
+        },
+        new()
+        {
+            TypeId = "signature_triggers", Folder = "signature_triggers", DefinitionType = typeof(SignatureTriggerDefinition),
+            DisplayName = "Signature Triggers", SingularName = "Signature Trigger", NavigationGroup = "Crafting", IdPrefix = "",
+            ListColumns = new[] { "event", "standing" },
+            ValidatorCategories = new[] { "signature_trigger" },
+            Description = "Signature grammar: when a sentence fires. Bare-key ids; each binds to a published game event or is the one standing shape (D30 fence).",
+        },
+        new()
+        {
+            TypeId = "signature_behaviors", Folder = "signature_behaviors", DefinitionType = typeof(SignatureBehaviorDefinition),
+            DisplayName = "Signature Behaviors", SingularName = "Signature Behavior", NavigationGroup = "Crafting", IdPrefix = "",
+            ValidatorCategories = new[] { "signature_behavior" },
+            Description = "Signature grammar: how a payload is delivered. Only machinery-backed verbs ship; detonate/spread/bloom wait for their effect kinds.",
+        },
+        new()
+        {
+            TypeId = "signature_themes", Folder = "signature_themes", DefinitionType = typeof(SignatureThemeDefinition),
+            DisplayName = "Signature Themes", SingularName = "Signature Theme", NavigationGroup = "Crafting", IdPrefix = "",
+            ValidatorCategories = new[] { "signature_theme" },
+            Description = "Signature grammar: hidden scoring metadata only — themes resonate between sources and are never player-facing.",
+        },
+        new()
+        {
             TypeId = "processes", Folder = "processes", DefinitionType = typeof(CraftingActionDefinition),
             DisplayName = "Crafting Actions", SingularName = "Crafting Action", NavigationGroup = "Crafting", IdPrefix = "process.",
             ListColumns = new[] { "profession", "medium", "severity" },

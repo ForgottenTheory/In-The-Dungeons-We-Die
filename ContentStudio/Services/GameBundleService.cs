@@ -32,6 +32,10 @@ public sealed class GameBundleService
         {
             Materials = BuildStore<MaterialDefinition>(workspace, "materials", problems),
             Properties = BuildStore<PropertyDefinition>(workspace, "properties", problems),
+            Identities = BuildStore<IdentityDefinition>(workspace, "identities", problems),
+            SignatureTriggers = BuildStore<SignatureTriggerDefinition>(workspace, "signature_triggers", problems),
+            SignatureBehaviors = BuildStore<SignatureBehaviorDefinition>(workspace, "signature_behaviors", problems),
+            SignatureThemes = BuildStore<SignatureThemeDefinition>(workspace, "signature_themes", problems),
             CraftingActions = BuildStore<CraftingActionDefinition>(workspace, "processes", problems),
             Byproducts = BuildStore<ByproductDefinition>(workspace, "byproducts", problems),
             Traits = BuildStore<TraitDefinition>(workspace, "traits", problems),

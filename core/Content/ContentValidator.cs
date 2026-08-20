@@ -2,6 +2,7 @@ using Dungeons.Characters;
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Crafting;
+using Dungeons.Events;
 using Dungeons.Items;
 using Dungeons.Professions;
 using Dungeons.Realms;
@@ -45,6 +46,25 @@ public static class ContentValidator
     /// than floating-point noise (docs/crafting-overview.md, forms).</summary>
     public const double MassShareTolerance = 0.001;
 
+    /// <summary>Identity-system ranges (docs/identity-foundation.md §10–§11, D45/D46 — all
+    /// provisional until play). Capacity is the stable slot count; rank maps to the four
+    /// effect-family access rungs; base stats are the four visible physical stats on 0–10.</summary>
+    public const int MinCapacity = 1;
+    public const int MaxCapacity = 4;
+    public const int MinIdentityRank = 1;
+    public const int MaxIdentityRank = 4;
+    public const int MinBaseStat = 0;
+    public const int MaxBaseStat = 10;
+
+    /// <summary>The roster's cluster vocabulary (docs/identity-foundation.md §3, D44) — a
+    /// closed set per D16: clusters group the roster for tooling and docs, and a typo'd
+    /// cluster should fail loudly rather than create an eighth group.</summary>
+    public static readonly IReadOnlySet<string> IdentityClusters =
+        new HashSet<string>(StringComparer.Ordinal)
+        {
+            "physical", "precision", "sustain", "elemental", "magical", "occult", "fortune", "meta",
+        };
+
     /// <summary>Generic tier words the name grammar forbids (docs/emergent-item-system.md §13.1) —
     /// intensity is expressed through vocabulary, not adjectives-of-adjectives.</summary>
     public static readonly IReadOnlySet<string> ForbiddenNameWords =
@@ -76,6 +96,10 @@ public static class ContentValidator
 
         ValidateMaterials(content.Materials, knownProperties, problems);
         ValidateMaterialTags(content.Materials, problems);
+        ValidateIdentityRegistry(content.Identities, problems);
+        ValidateSignatureVocabulary(content.SignatureTriggers, content.SignatureBehaviors,
+            content.SignatureThemes, problems);
+        ValidateMaterialIdentityFields(content, problems);
         ValidateProcesses(content.CraftingActions, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateTraits(content.Traits, knownProperties, problems);
@@ -104,6 +128,141 @@ public static class ContentValidator
         ValidateAffixes(content, knownProperties, problems);
 
         return problems;
+    }
+
+    /// <summary>The identity roster (docs/identity-foundation.md §3, D44): ids carry the
+    /// <c>identity.</c> prefix, every entry is named and described, and clusters come from
+    /// the closed set. The roster's exact membership is pinned by test, not here — the
+    /// validator checks shape, the test checks intent.</summary>
+    private static void ValidateIdentityRegistry(DataStore<IdentityDefinition> identities, List<ContentProblem> problems)
+    {
+        foreach (var identity in identities.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("identity", $"{identity.Id}: {message}"));
+
+            if (!identity.Id.StartsWith("identity.", StringComparison.Ordinal))
+                Problem("id must start with 'identity.'.");
+            if (string.IsNullOrWhiteSpace(identity.Name))
+                Problem("needs a name — identities are player-facing by design (D42).");
+            if (string.IsNullOrWhiteSpace(identity.Description))
+                Problem("needs its one-sentence boundary description.");
+            if (!IdentityClusters.Contains(identity.Cluster))
+                Problem($"cluster '{identity.Cluster}' is not one of the roster clusters ({string.Join(", ", IdentityClusters)}).");
+        }
+    }
+
+    /// <summary>The Signature grammar's D30 fence (docs/identity-foundation.md §7): a trigger
+    /// binds to a real <see cref="GameEvents"/> event or is the one standing shape — never
+    /// both, never neither — and vocabulary ids are bare keys like property names, so
+    /// authored profiles read as designed (<c>"favored_triggers": ["on_block"]</c>).</summary>
+    private static void ValidateSignatureVocabulary(
+        DataStore<SignatureTriggerDefinition> triggers,
+        DataStore<SignatureBehaviorDefinition> behaviors,
+        DataStore<SignatureThemeDefinition> themes,
+        List<ContentProblem> problems)
+    {
+        static bool IsBareKey(string id) => !string.IsNullOrWhiteSpace(id) && !id.Contains('.');
+
+        foreach (var trigger in triggers.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("signature_trigger", $"{trigger.Id}: {message}"));
+
+            if (!IsBareKey(trigger.Id))
+                Problem("trigger ids are bare keys (on_block), never dotted entity ids.");
+            var hasEvent = !string.IsNullOrWhiteSpace(trigger.Event);
+            if (hasEvent == trigger.Standing)
+                Problem("must declare exactly one of 'event' or 'standing: true'.");
+            if (hasEvent && !GameEvents.All.Contains(trigger.Event!))
+                Problem($"event '{trigger.Event}' is not a published game event — a trigger may only bind to machinery that resolves (D30).");
+            if (string.IsNullOrWhiteSpace(trigger.Name))
+                Problem("needs a name.");
+        }
+
+        foreach (var behavior in behaviors.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("signature_behavior", $"{behavior.Id}: {message}"));
+
+            if (!IsBareKey(behavior.Id))
+                Problem("behavior ids are bare keys (store), never dotted entity ids.");
+            if (string.IsNullOrWhiteSpace(behavior.Name) || string.IsNullOrWhiteSpace(behavior.Description))
+                Problem("needs a name and a one-sentence description of what its assembler composes.");
+        }
+
+        foreach (var theme in themes.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("signature_theme", $"{theme.Id}: {message}"));
+
+            if (!IsBareKey(theme.Id))
+                Problem("theme ids are bare keys (renewal), never dotted entity ids.");
+            if (string.IsNullOrWhiteSpace(theme.Name))
+                Problem("needs a name (authoring tools only — themes are never player-facing, §6.1).");
+        }
+    }
+
+    /// <summary>The identity fields a material may author (docs/identity-foundation.md
+    /// §10–§11): capacity and ranks in range, every identity/latent/profile reference
+    /// resolving, no duplicates, and no identity both active and latent — each rule the
+    /// exact typo class that would otherwise fail silently at generation time.</summary>
+    private static void ValidateMaterialIdentityFields(ContentBundle content, List<ContentProblem> problems)
+    {
+        foreach (var material in content.Materials.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("material_identity", $"{material.Id}: {message}"));
+
+            if (material.Capacity is int capacity && (capacity < MinCapacity || capacity > MaxCapacity))
+                Problem($"capacity {capacity} is outside {MinCapacity}–{MaxCapacity}.");
+
+            var activeIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var grant in material.Identities)
+            {
+                if (!content.Identities.Contains(grant.Id))
+                    Problem($"identity '{grant.Id}' is not in the identity registry.");
+                if (grant.Rank < MinIdentityRank || grant.Rank > MaxIdentityRank)
+                    Problem($"identity '{grant.Id}' rank {grant.Rank} is outside {MinIdentityRank}–{MaxIdentityRank}.");
+                if (!activeIds.Add(grant.Id))
+                    Problem($"identity '{grant.Id}' is granted twice.");
+            }
+
+            if (material.Capacity is int slots && activeIds.Count > slots)
+                Problem($"authors {activeIds.Count} active identities over a capacity of {slots} — authored materials start Stable; overfill is play, not authoring (§10.3).");
+
+            var latentIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var latent in material.Latent)
+            {
+                if (!content.Identities.Contains(latent))
+                    Problem($"latent identity '{latent}' is not in the identity registry.");
+                if (!latentIds.Add(latent))
+                    Problem($"latent identity '{latent}' is listed twice.");
+                if (activeIds.Contains(latent))
+                    Problem($"identity '{latent}' is both active and latent — latent means present but inactive (§10.2).");
+            }
+
+            if (material.Base is { } baseStats)
+            {
+                void CheckStat(string name, int value)
+                {
+                    if (value < MinBaseStat || value > MaxBaseStat)
+                        Problem($"base stat {name} = {value} is outside {MinBaseStat}–{MaxBaseStat}.");
+                }
+                CheckStat("heft", baseStats.Heft);
+                CheckStat("bite", baseStats.Bite);
+                CheckStat("toughness", baseStats.Toughness);
+                CheckStat("give", baseStats.Give);
+            }
+
+            if (material.SignatureProfile is { } profile)
+            {
+                foreach (var theme in profile.Themes)
+                    if (!content.SignatureThemes.Contains(theme))
+                        Problem($"profile theme '{theme}' is not in the theme registry.");
+                foreach (var trigger in profile.FavoredTriggers)
+                    if (!content.SignatureTriggers.Contains(trigger))
+                        Problem($"profile favored trigger '{trigger}' is not in the trigger registry.");
+                foreach (var behavior in profile.FavoredBehaviors)
+                    if (!content.SignatureBehaviors.Contains(behavior))
+                        Problem($"profile favored behavior '{behavior}' is not in the behavior registry.");
+            }
+        }
     }
 
     /// <summary>The docs/affixes.md §8 rules R4b can enforce at load: every grant resolves,

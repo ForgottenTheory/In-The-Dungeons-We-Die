@@ -1,0 +1,44 @@
+[
+  // Signature grammar: triggers (docs/identity-foundation.md §7.2, D43). Ids are bare keys —
+  // authored profiles read exactly as designed ("favored_triggers": ["on_block"]). Every
+  // entry binds to a published GameEvents event (validated — the D30 fence), except the one
+  // standing shape, while_worn, which compiles to standing modifier grants instead of a rule.
+
+  // ---- Offense -------------------------------------------------------------------------------
+  { "id": "on_hit", "name": "On Hit", "event": "DamageDealt", "description": "The wearer's damage lands." },
+  { "id": "on_crit", "name": "On Critical", "event": "CriticalLanded", "description": "The wearer lands a critical strike." },
+  { "id": "on_kill", "name": "On Kill", "event": "Killed", "description": "The wearer kills an enemy." },
+
+  // ---- Defense -------------------------------------------------------------------------------
+  { "id": "on_being_struck", "name": "When Struck", "event": "DamageTaken", "description": "The wearer takes damage." },
+  { "id": "on_block", "name": "On Block", "event": "Blocked", "description": "The wearer blocks — both outcomes, per D-06; perfect blocks are distinguished by event values." },
+  { "id": "on_parry", "name": "On Parry", "event": "Parried", "description": "The wearer parries." },
+  { "id": "on_dodge", "name": "On Dodge", "event": "Dodged", "description": "The wearer dodges." },
+  { "id": "on_barrier_break", "name": "On Barrier Break", "event": "BarrierBroken", "description": "A barrier on the wearer breaks." },
+  { "id": "on_control_resisted", "name": "On Control Resisted", "event": "ControlResisted", "description": "The wearer's Resolve holds against a control." },
+
+  // ---- Sustain -------------------------------------------------------------------------------
+  { "id": "on_heal", "name": "On Heal", "event": "Healed", "description": "Healing happens — given or received, split by source conditions." },
+
+  // ---- Statuses ------------------------------------------------------------------------------
+  { "id": "on_status_applied", "name": "On Status Applied", "event": "StatusApplied", "description": "A status lands — scoped by id or category through conditions." },
+  { "id": "on_status_expired", "name": "On Status Expired", "event": "StatusExpired", "description": "A status runs out." },
+
+  // ---- Action economy ------------------------------------------------------------------------
+  { "id": "on_move", "name": "On Move", "event": "MoveExecuted", "description": "A move executes — scoped by move tags (spell, heavy…)." },
+  { "id": "on_resource_spent", "name": "On Resource Spent", "event": "ResourceSpent", "description": "Mana, stamina, or a gauge is spent." },
+  { "id": "on_interrupted", "name": "On Interrupted", "event": "ActionInterrupted", "description": "An action is interrupted." },
+
+  // ---- Encounter -----------------------------------------------------------------------------
+  { "id": "encounter_start", "name": "Encounter Start", "event": "EncounterStarted", "description": "The fight begins." },
+  { "id": "encounter_end", "name": "Encounter End", "event": "EncounterEnded", "description": "The fight ends." },
+
+  // ---- World & profession — Charmed's home turf ----------------------------------------------
+  { "id": "on_craft_completed", "name": "On Craft Completed", "event": "CraftCompleted", "description": "A craft finishes." },
+  { "id": "on_chest_opened", "name": "On Chest Opened", "event": "ChestOpened", "description": "A chest or cache opens." },
+  { "id": "on_item_received", "name": "On Item Received", "event": "ItemReceived", "description": "Loot or yield arrives." },
+  { "id": "on_extraction", "name": "On Extraction", "event": "ExtractionCompleted", "description": "The wearer extracts from a Realm." },
+
+  // ---- Standing ------------------------------------------------------------------------------
+  { "id": "while_worn", "name": "While Worn", "standing": true, "description": "Not an event: compiles to standing modifier grants through the equip pipeline." }
+]

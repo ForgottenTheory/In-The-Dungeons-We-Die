@@ -19,6 +19,10 @@ public sealed class ContentBundle
 {
     public DataStore<MaterialDefinition> Materials { get; init; } = new();
     public DataStore<PropertyDefinition> Properties { get; init; } = new();
+    public DataStore<IdentityDefinition> Identities { get; init; } = new();
+    public DataStore<SignatureTriggerDefinition> SignatureTriggers { get; init; } = new();
+    public DataStore<SignatureBehaviorDefinition> SignatureBehaviors { get; init; } = new();
+    public DataStore<SignatureThemeDefinition> SignatureThemes { get; init; } = new();
     public DataStore<CraftingActionDefinition> CraftingActions { get; init; } = new();
     public DataStore<ByproductDefinition> Byproducts { get; init; } = new();
     public DataStore<TraitDefinition> Traits { get; init; } = new();

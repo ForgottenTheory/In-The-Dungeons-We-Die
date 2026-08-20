@@ -1,0 +1,46 @@
+[
+  // The identity roster — 24 identities in 8 clusters (docs/identity-foundation.md §3, D44).
+  // This is the foundation vocabulary of the crafting redesign: an identity opens an effect
+  // family, never a single effect. The exact membership is pinned by
+  // IdentityContentTests.TheRosterIsExactlyD44s24 — changing this roster is a design
+  // decision (a D-number), never a casual content edit. Descriptions are the one-sentence
+  // boundaries; what each family CONTAINS is the payload registry's job (Phase 3).
+
+  // ---- Physical core: Dense hits, Earthen refuses to move, Hardened shrugs it off. ----------
+  { "id": "identity.dense", "name": "Dense", "cluster": "physical", "description": "Weight as force: impact, block, stagger." },
+  { "id": "identity.hardened", "name": "Hardened", "cluster": "physical", "description": "Surface toughness: armor and physical mitigation." },
+  { "id": "identity.earthen", "name": "Earthen", "cluster": "physical", "description": "Immovability: refusing to be moved or controlled." },
+
+  // ---- Precision & tempo ---------------------------------------------------------------------
+  { "id": "identity.keen", "name": "Keen", "cluster": "precision", "description": "Precision offense: crits, penetration, weak points." },
+  { "id": "identity.balanced", "name": "Balanced", "cluster": "precision", "description": "Consistency and control: tight rolls, handling, parry." },
+  { "id": "identity.swift", "name": "Swift", "cluster": "precision", "description": "Action economy: act sooner, recover faster, spend less stamina." },
+
+  // ---- Sustain & exchange --------------------------------------------------------------------
+  { "id": "identity.vital", "name": "Vital", "cluster": "sustain", "description": "The health pool itself: maximum, regeneration, healing." },
+  { "id": "identity.leeching", "name": "Leeching", "cluster": "sustain", "description": "Taking from the enemy: life and resource drain." },
+  { "id": "identity.thorned", "name": "Thorned", "cluster": "sustain", "description": "Answering harm: retaliation when struck or blocking." },
+
+  // ---- The elemental six — one per damage lane -----------------------------------------------
+  { "id": "identity.ember", "name": "Ember", "cluster": "elemental", "description": "The heat lane: burst damage over time (Burn)." },
+  { "id": "identity.frost", "name": "Frost", "cluster": "elemental", "description": "The cold lane: tempo control (Chill into Freeze)." },
+  { "id": "identity.storm", "name": "Storm", "cluster": "elemental", "description": "The charge lane: disruption and chaining (Shock)." },
+  { "id": "identity.venomous", "name": "Venomous", "cluster": "elemental", "description": "The toxin lane: attrition stacking (Poison)." },
+  { "id": "identity.corrosive", "name": "Corrosive", "cluster": "elemental", "description": "The corrosion lane: defense destruction (Corroded)." },
+  { "id": "identity.serrated", "name": "Serrated", "cluster": "elemental", "description": "Physical damage over time: wounds (Bleed)." },
+
+  // ---- Magical -------------------------------------------------------------------------------
+  { "id": "identity.warded", "name": "Warded", "cluster": "magical", "description": "Magical defense: resistances, status resistance, barriers." },
+  { "id": "identity.arcane", "name": "Arcane", "cluster": "magical", "description": "The magic economy: mana, spellpower, cast triggers." },
+  { "id": "identity.resonant", "name": "Resonant", "cluster": "magical", "description": "Stored power: charges built, held, and released." },
+
+  // ---- Living & occult -----------------------------------------------------------------------
+  { "id": "identity.verdant", "name": "Verdant", "cluster": "occult", "description": "Ramping renewal: effects that grow the longer they run." },
+  { "id": "identity.radiant", "name": "Radiant", "cluster": "occult", "description": "Light: cleansing, protection, anti-decay." },
+  { "id": "identity.umbral", "name": "Umbral", "cluster": "occult", "description": "Shadow: evasion, dread, exploiting openings." },
+  { "id": "identity.blighted", "name": "Blighted", "cluster": "occult", "description": "Decay: curses, anti-healing, spread." },
+
+  // ---- Fortune & meta ------------------------------------------------------------------------
+  { "id": "identity.charmed", "name": "Charmed", "cluster": "fortune", "description": "Fortune: yield, rarity, opportunity — the extraction economy's identity." },
+  { "id": "identity.pure", "name": "Pure", "cluster": "meta", "description": "Crafting fidelity: cleaner transfer, compatibility, capacity headroom. Modifies crafting itself, not combat." }
+]

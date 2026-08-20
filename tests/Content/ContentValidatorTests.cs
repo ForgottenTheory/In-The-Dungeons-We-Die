@@ -34,6 +34,10 @@ public class ContentValidatorTests
     {
         Materials = Load<MaterialDefinition>("materials"),
         Properties = Load<PropertyDefinition>("properties"),
+        Identities = Load<IdentityDefinition>("identities"),
+        SignatureTriggers = Load<SignatureTriggerDefinition>("signature_triggers"),
+        SignatureBehaviors = Load<SignatureBehaviorDefinition>("signature_behaviors"),
+        SignatureThemes = Load<SignatureThemeDefinition>("signature_themes"),
         CraftingActions = Load<CraftingActionDefinition>("processes"),
         Byproducts = Load<ByproductDefinition>("byproducts"),
         Traits = Load<Dungeons.Crafting.TraitDefinition>("traits"),
