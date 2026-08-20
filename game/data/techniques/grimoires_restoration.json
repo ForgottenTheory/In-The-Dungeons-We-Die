@@ -1,0 +1,37 @@
+[
+  // Restoration grimoires — one per move in spells_restoration.json. Second Wind is the one
+  // Manual here (a caught breath, not a spell). No loot table yet (balance pass).
+
+  { "id": "technique.grimoire_minor_heal", "name": "Grimoire: Minor Heal",
+    "description": "A stitch in time. It stings.", "teaches": "move.minor_heal" },
+  { "id": "technique.grimoire_healing_touch", "name": "Grimoire: Healing Touch",
+    "description": "Hands that mean it.", "teaches": "move.healing_touch" },
+  { "id": "technique.grimoire_heal", "name": "Grimoire: Heal",
+    "description": "The word, doing what it says.", "teaches": "move.heal" },
+  { "id": "technique.grimoire_mend_wounds", "name": "Grimoire: Mend Wounds",
+    "description": "For collectors of injury.", "teaches": "move.mend_wounds" },
+  { "id": "technique.grimoire_healing_light", "name": "Grimoire: Healing Light",
+    "description": "Warmth with a work ethic.", "teaches": "move.healing_light" },
+  { "id": "technique.grimoire_revitalize", "name": "Grimoire: Revitalize",
+    "description": "The body remembers how this worked.", "teaches": "move.revitalize" },
+  { "id": "technique.grimoire_healing_wave", "name": "Grimoire: Healing Wave",
+    "description": "One long swell, less wrong behind it.", "teaches": "move.healing_wave" },
+  { "id": "technique.grimoire_greater_heal", "name": "Grimoire: Greater Heal",
+    "description": "The same word, with authority.", "teaches": "move.greater_heal" },
+  { "id": "technique.grimoire_restore", "name": "Grimoire: Restore",
+    "description": "Put it back the way it was.", "teaches": "move.restore" },
+  { "id": "technique.grimoire_life_surge", "name": "Grimoire: Life Surge",
+    "description": "A dam deciding in your favour.", "teaches": "move.life_surge" },
+  { "id": "technique.manual_second_wind", "name": "Manual: Second Wind",
+    "description": "The breath you didn't know you'd saved.", "teaches": "move.second_wind" },
+  { "id": "technique.grimoire_restoration", "name": "Grimoire: Restoration",
+    "description": "Body and legs, back on the payroll.", "teaches": "move.restoration" },
+  { "id": "technique.grimoire_resurgence", "name": "Grimoire: Resurgence",
+    "description": "Sweat for spellwork.", "teaches": "move.resurgence" },
+  { "id": "technique.grimoire_vitality", "name": "Grimoire: Vitality",
+    "description": "More of you, for a while.", "teaches": "move.vitality" },
+  { "id": "technique.grimoire_lifeblood", "name": "Grimoire: Lifeblood",
+    "description": "Deeper reserves, older source.", "teaches": "move.lifeblood" },
+  { "id": "technique.grimoire_protective_light", "name": "Grimoire: Protective Light",
+    "description": "Patches as it parries.", "teaches": "move.protective_light" }
+]

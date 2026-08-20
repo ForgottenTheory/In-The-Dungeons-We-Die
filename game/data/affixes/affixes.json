@@ -654,7 +654,7 @@
       "rule": {
         "id": "reflect_mitigated", "event": "DamageMitigated",
         "when": [ { "kind": "sourceIsSelf", "text": "self" } ],
-        "effect": { "kind": "damage", "scalesWith": "amount", "target": "TriggerTarget" },
+        "effect": { "kind": "damage", "scales_with": "amount", "target": "TriggerTarget" },
         "description": "What the guard turned aside comes back."
       }
     } ],

@@ -1,0 +1,28 @@
+[
+  // Nature grimoires — one per move in spells_nature.json. No loot table yet (balance pass).
+
+  { "id": "technique.grimoire_thorn_whip", "name": "Grimoire: Thorn Whip",
+    "description": "A lash with its own opinions.", "teaches": "move.thorn_whip" },
+  { "id": "technique.grimoire_vine_lash", "name": "Grimoire: Vine Lash",
+    "description": "Green, fast, unsympathetic.", "teaches": "move.vine_lash" },
+  { "id": "technique.grimoire_thorn_volley", "name": "Grimoire: Thorn Volley",
+    "description": "The hedge fires back.", "teaches": "move.thorn_volley" },
+  { "id": "technique.grimoire_poison_ivy", "name": "Grimoire: Poison Ivy",
+    "description": "It itches through armour.", "teaches": "move.poison_ivy" },
+  { "id": "technique.grimoire_spore_cloud", "name": "Grimoire: Spore Cloud",
+    "description": "The forest's opinion, in powder form.", "teaches": "move.spore_cloud" },
+  { "id": "technique.grimoire_natures_wrath", "name": "Grimoire: Nature's Wrath",
+    "description": "The green remembers every axe.", "teaches": "move.natures_wrath" },
+  { "id": "technique.grimoire_natures_blessing", "name": "Grimoire: Nature's Blessing",
+    "description": "Taken for one of its own.", "teaches": "move.natures_blessing" },
+  { "id": "technique.grimoire_barkskin", "name": "Grimoire: Barkskin",
+    "description": "Trees have ignored axes for longer.", "teaches": "move.barkskin" },
+  { "id": "technique.grimoire_ironbark", "name": "Grimoire: Ironbark",
+    "description": "The old growth. Axes retire.", "teaches": "move.ironbark" },
+  { "id": "technique.grimoire_nature_ward", "name": "Grimoire: Nature Ward",
+    "description": "Family is not poisoned.", "teaches": "move.nature_ward" },
+  { "id": "technique.grimoire_blur", "name": "Grimoire: Blur",
+    "description": "Be approximately where they aim.", "teaches": "move.blur" },
+  { "id": "technique.grimoire_false_life", "name": "Grimoire: False Life",
+    "description": "Borrowed vitality, short lease.", "teaches": "move.false_life" }
+]

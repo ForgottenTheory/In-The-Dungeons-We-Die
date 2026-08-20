@@ -1,0 +1,427 @@
+[
+  // The curse family — hexes, marks, and the control spells that survived the D-08 rule
+  // (docs/spell-library.md §1). Debuffs are applyStatus (weaken/vulnerable/corroded) or
+  // negative grantModifier on the enemy: resist SHREDS for the Mark-of-element set, windup
+  // curses for slowness, luck down for misfortune. Fear/Silence build Resolve, never land
+  // directly; Stun-shaped spells carry stagger_power instead (D-08). Placeholder numbers.
+
+  {
+    "id": "move.curse", "name": "Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "applyStatus", "text": "status.vulnerable", "chance": 0.5 }
+    ],
+    "description": "The general-purpose grudge."
+  },
+  {
+    "id": "move.weakness_curse", "name": "Weakness Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Their best swing, refunded at a loss."
+  },
+  {
+    "id": "move.frailty_curse", "name": "Frailty Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.2, "duration_ticks": 400 }
+    ],
+    "description": "Everything that finds them, finds more of them."
+  },
+  {
+    "id": "move.slow_curse", "name": "Slow Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.3, "duration_ticks": 400 }
+    ],
+    "description": "Their swings acquire a waiting room."
+  },
+  {
+    "id": "move.silence_curse", "name": "Silence Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:control"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.silence" },
+      { "kind": "applyStatus", "text": "status.silence" }
+    ],
+    "description": "The long quiet, applied with intent."
+  },
+  {
+    "id": "move.misfortune", "name": "Misfortune",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.luck", "amount": -5, "duration_ticks": 450 }
+    ],
+    "description": "Their dice develop loyalties. Not to them."
+  },
+  {
+    "id": "move.doom", "name": "Doom",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.3, "duration_ticks": 400 }
+    ],
+    "description": "Not a threat. A schedule."
+  },
+  {
+    "id": "move.mark_of_doom", "name": "Mark of Doom",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" },
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "A target painted in a colour only endings can see."
+  },
+  {
+    "id": "move.mark_of_weakness", "name": "Mark of Weakness",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Cheap ink, deep meaning."
+  },
+  {
+    "id": "move.mark_of_pain", "name": "Mark of Pain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.15, "duration_ticks": 400 }
+    ],
+    "description": "Everything hurts them slightly more, slightly longer."
+  },
+  {
+    "id": "move.mark_of_death", "name": "Mark of Death",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" },
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Filed, stamped, and awaiting collection."
+  },
+  {
+    "id": "move.mark_of_flame", "name": "Mark of Flame",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:fire", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": -0.2, "duration_ticks": 400 }
+    ],
+    "description": "Teach their skin to welcome fire."
+  },
+  {
+    "id": "move.mark_of_frost", "name": "Mark of Frost",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": -0.2, "duration_ticks": 400 }
+    ],
+    "description": "Winter gets a key to their house."
+  },
+  {
+    "id": "move.mark_of_storm", "name": "Mark of Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.charge", "amount": -0.2, "duration_ticks": 400 }
+    ],
+    "description": "Lightning stops asking directions to them."
+  },
+  {
+    "id": "move.mark_of_shadow", "name": "Mark of Shadow",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.decay", "amount": -0.2, "duration_ticks": 400 }
+    ],
+    "description": "The dark files them under 'unlocked'."
+  },
+  {
+    "id": "move.magic_vulnerability", "name": "Magic Vulnerability",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": -0.2, "duration_ticks": 400 }
+    ],
+    "description": "Every ward they own develops a fine print problem."
+  },
+  {
+    "id": "move.elemental_weakness", "name": "Elemental Weakness",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": -0.12, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": -0.12, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.resist.charge", "amount": -0.12, "duration_ticks": 400 }
+    ],
+    "description": "Fire, frost and storm all receive the same forwarding address."
+  },
+  {
+    "id": "move.hex", "name": "Hex",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "grantModifier", "text": "attr.luck", "amount": -3, "duration_ticks": 400 }
+    ],
+    "description": "Old grammar, bad intentions."
+  },
+  {
+    "id": "move.greater_hex", "name": "Greater Hex",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "applyStatus", "text": "status.vulnerable" },
+      { "kind": "grantModifier", "text": "attr.luck", "amount": -5, "duration_ticks": 450 }
+    ],
+    "description": "The same grammar, conjugated all the way down."
+  },
+  {
+    "id": "move.witchs_mark", "name": "Witch's Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "A signature, on them, in your handwriting."
+  },
+  {
+    "id": "move.withering_curse", "name": "Withering Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 120,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "They age a season per breath."
+  },
+  {
+    "id": "move.crippling_curse", "name": "Crippling Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.25, "duration_ticks": 400 }
+    ],
+    "description": "Slower and softer, in one sentence."
+  },
+  {
+    "id": "move.vulnerability", "name": "Vulnerability",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "The seams, announced."
+  },
+  {
+    "id": "move.armor_break", "name": "Armor Break",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" },
+      { "kind": "applyStatus", "text": "status.corroded" }
+    ],
+    "description": "Straps, rivets, confidence — in that order."
+  },
+  {
+    "id": "move.soul_curse", "name": "Soul Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "applyStatus", "text": "status.vulnerable", "chance": 0.6 }
+    ],
+    "description": "Written somewhere no armour covers."
+  },
+  {
+    "id": "move.grave_curse", "name": "Grave Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 6 } ],
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.15, "duration_ticks": 400 }
+    ],
+    "description": "The grave takes an early interest."
+  },
+
+  // --- Control (the D-08 survivors) --------------------------------------------------------
+
+  {
+    "id": "move.fear", "name": "Fear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:control"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.fear" }
+    ],
+    "description": "Hand them the worst thought they own."
+  },
+  {
+    "id": "move.panic", "name": "Panic",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:control"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 210,
+    "max_targets": 3,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.fear" }
+    ],
+    "description": "One bad thought, socially transmitted."
+  },
+  {
+    "id": "move.stun", "name": "Stun",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Magic", "amount": 5 } ],
+    "stagger_power": 35,
+    "description": "A blunt word, spoken directly to the knees."
+  },
+  {
+    "id": "move.daze", "name": "Daze",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "packets": [ { "type": "Magic", "amount": 4 } ],
+    "stagger_power": 22,
+    "description": "The room spins on your instruction."
+  },
+  {
+    "id": "move.weaken", "name": "Weaken",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Less of them, effective immediately."
+  },
+  {
+    "id": "move.enfeeble", "name": "Enfeeble",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.1, "duration_ticks": 400 }
+    ],
+    "description": "Softer swings, thinner skin."
+  },
+  {
+    "id": "move.cripple", "name": "Cripple",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.2, "duration_ticks": 400 }
+    ],
+    "description": "Take the spring out of everything they planned."
+  },
+  {
+    "id": "move.mental_shock", "name": "Mental Shock",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "packets": [ { "type": "Magic", "amount": 8 } ],
+    "stagger_power": 18,
+    "description": "A thought they weren't ready for, at speed."
+  }
+]

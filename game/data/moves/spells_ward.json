@@ -1,0 +1,207 @@
+[
+  // The ward family — generic shields, barriers, and absorption (docs/spell-library.md §1).
+  // Guarded is the short brace, Barrier is the absorb pool (its applyStatus amount IS the pool),
+  // Ward is the per-lane resist grant. Reflect-style names are PARKED: retaliation exists only
+  // as affix trigger rules, and there is no grantable reflect key. Placeholder numbers.
+
+  {
+    "id": "move.shield", "name": "Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "The idea of a shield, which is most of what a shield is."
+  },
+  {
+    "id": "move.greater_shield", "name": "Greater Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 90,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" },
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 12 }
+    ],
+    "description": "The idea, with footnotes and a deposit."
+  },
+  {
+    "id": "move.barrier", "name": "Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 22 }
+    ],
+    "description": "A held breath between you and the world."
+  },
+  {
+    "id": "move.greater_barrier", "name": "Greater Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 36 }
+    ],
+    "description": "The breath, held longer and by someone stronger."
+  },
+  {
+    "id": "move.ward", "name": "Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.2, "duration_ticks": 500 }
+    ],
+    "description": "A polite notice to the uncanny: not today."
+  },
+  {
+    "id": "move.greater_ward", "name": "Greater Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.3, "duration_ticks": 500 }
+    ],
+    "description": "The notice, notarised and enforced."
+  },
+  {
+    "id": "move.protection", "name": "Protection",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.88, "duration_ticks": 450 }
+    ],
+    "description": "A standing discount on harm."
+  },
+  {
+    "id": "move.physical_barrier", "name": "Physical Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.physical", "amount": 0.15, "duration_ticks": 450 }
+    ],
+    "description": "Steel and fists both lose a share at the door."
+  },
+  {
+    "id": "move.damage_absorption", "name": "Damage Absorption",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 42 }
+    ],
+    "description": "A sponge for consequences."
+  },
+  {
+    "id": "move.absorb_magic", "name": "Absorb Magic",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 18 },
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.15, "duration_ticks": 400 }
+    ],
+    "description": "Drink what they cast. Keep the glass."
+  },
+  {
+    "id": "move.absorb_elements", "name": "Absorb Elements",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 14 },
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.12, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": 0.12, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.resist.charge", "amount": 0.12, "duration_ticks": 400 }
+    ],
+    "description": "Weather-proofing, in the widest sense."
+  },
+  {
+    "id": "move.guardian_ward", "name": "Guardian Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" },
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 4, "duration_ticks": 400 }
+    ],
+    "description": "Something stands where you stand, slightly in front."
+  },
+  {
+    "id": "move.protective_dome", "name": "Protective Dome",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 26 },
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 5, "duration_ticks": 450 }
+    ],
+    "description": "Your own weather, indoors."
+  },
+  {
+    "id": "move.aegis", "name": "Aegis",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 4, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 28 } ],
+    "cooldown_ticks": 300,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 50 }
+    ],
+    "description": "The old word for 'no', in its formal register."
+  },
+  {
+    "id": "move.fortify", "name": "Fortify",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 6, "duration_ticks": 450 }
+    ],
+    "description": "Become mildly architectural."
+  }
+]

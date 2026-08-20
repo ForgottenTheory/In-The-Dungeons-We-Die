@@ -1,0 +1,24 @@
+[
+  // Imbue grimoires — one per move in spells_imbue.json. No loot table yet (balance pass).
+
+  { "id": "technique.grimoire_weapon_flame", "name": "Grimoire: Weapon Flame",
+    "description": "Every swing carries a coal.", "teaches": "move.weapon_flame" },
+  { "id": "technique.grimoire_weapon_frost", "name": "Grimoire: Weapon Frost",
+    "description": "Wounds arrive pre-chilled.", "teaches": "move.weapon_frost" },
+  { "id": "technique.grimoire_weapon_shock", "name": "Grimoire: Weapon Shock",
+    "description": "Every hit hums.", "teaches": "move.weapon_shock" },
+  { "id": "technique.grimoire_weapon_poison", "name": "Grimoire: Weapon Poison",
+    "description": "The cut is only the beginning.", "teaches": "move.weapon_poison" },
+  { "id": "technique.grimoire_weapon_shadow", "name": "Grimoire: Weapon Shadow",
+    "description": "What it takes stays taken.", "teaches": "move.weapon_shadow" },
+  { "id": "technique.grimoire_weapon_light", "name": "Grimoire: Weapon Light",
+    "description": "It finds what armour hides.", "teaches": "move.weapon_light" },
+  { "id": "technique.grimoire_weapon_arcane", "name": "Grimoire: Weapon Arcane",
+    "description": "A share of every blow, unresistable.", "teaches": "move.weapon_arcane" },
+  { "id": "technique.grimoire_weapon_blessing", "name": "Grimoire: Weapon Blessing",
+    "description": "A tenth truer.", "teaches": "move.weapon_blessing" },
+  { "id": "technique.grimoire_vampiric_weapon", "name": "Grimoire: Vampiric Weapon",
+    "description": "Every landing blow tips a mouthful.", "teaches": "move.vampiric_weapon" },
+  { "id": "technique.grimoire_elemental_weapon", "name": "Grimoire: Elemental Weapon",
+    "description": "Three elements split the fare.", "teaches": "move.elemental_weapon" }
+]

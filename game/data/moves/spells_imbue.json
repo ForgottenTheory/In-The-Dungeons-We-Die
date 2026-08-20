@@ -1,0 +1,138 @@
+[
+  // The weapon-imbue casts (docs/spell-library.md §1). Each attaches its movemod.imbue_* to
+  // the player's attacks for a duration via modifyMove — the element rides your weapon, it
+  // never replaces it (D-01). One cast per element concept; the many synonym names from the
+  // request (Flaming Weapon, Frozen Weapon…) are recorded as skips in the manifest.
+  // Placeholder numbers.
+
+  {
+    "id": "move.weapon_flame", "name": "Weapon Flame",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:fire", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_heat", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns fire. Every swing carries a coal."
+  },
+  {
+    "id": "move.weapon_frost", "name": "Weapon Frost",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:frost", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_cold", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns winter. Wounds arrive pre-chilled."
+  },
+  {
+    "id": "move.weapon_shock", "name": "Weapon Shock",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:storm", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_charge", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns the storm. Every hit hums."
+  },
+  {
+    "id": "move.weapon_poison", "name": "Weapon Poison",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:nature", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_toxin", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns venom. The cut is only the beginning."
+  },
+  {
+    "id": "move.weapon_shadow", "name": "Weapon Shadow",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:abyssal", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_decay", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns the dark. What it takes stays taken."
+  },
+  {
+    "id": "move.weapon_light", "name": "Weapon Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_radiant", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns daylight. It finds things armour hides."
+  },
+  {
+    "id": "move.weapon_arcane", "name": "Weapon Arcane",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_arcane", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns certainty. A share of every blow cannot be resisted."
+  },
+  {
+    "id": "move.weapon_blessing", "name": "Weapon Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_blessed", "duration_ticks": 600 }
+    ],
+    "description": "A good word over the steel. It swings a tenth truer."
+  },
+  {
+    "id": "move.vampiric_weapon", "name": "Vampiric Weapon",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:trigger", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_vampiric", "duration_ticks": 600 }
+    ],
+    "description": "Your edge learns thirst. Every landing blow tips you a mouthful."
+  },
+  {
+    "id": "move.elemental_weapon", "name": "Elemental Weapon",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "modifyMove", "text": "movemod.imbue_elemental", "duration_ticks": 600 }
+    ],
+    "description": "Fire, frost and storm split the fare. Your weapon carries all three."
+  }
+]

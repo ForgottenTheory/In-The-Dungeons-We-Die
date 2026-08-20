@@ -1,0 +1,539 @@
+[
+  // The arcane spell family — pure arcane, generic magic, chrono, and force
+  // (docs/spell-library.md §1). The arcane ASPECT is unresistable and structurally
+  // unamplifiable (D-03a), so arcane-aspect numbers sit deliberately below their magic-lane
+  // peers — reliability is the payment. Chrono rides combat.windup.mult, the one timing key
+  // combat reads. Force is Crushing mass. Placeholder numbers.
+
+  {
+    "id": "move.arcane_bolt", "name": "Arcane Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "description": "It cannot be resisted, argued with, or insured against."
+  },
+  {
+    "id": "move.arcane_missile", "name": "Arcane Missile",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [
+      { "type": "Magic", "aspect": "arcane", "amount": 5 },
+      { "type": "Magic", "aspect": "arcane", "amount": 5 },
+      { "type": "Magic", "aspect": "arcane", "amount": 5 }
+    ],
+    "description": "Three small certainties, in formation."
+  },
+  {
+    "id": "move.arcane_lance", "name": "Arcane Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 16 } ],
+    "description": "A statement of raw force, notarised."
+  },
+  {
+    "id": "move.arcane_burst", "name": "Arcane Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 13 } ],
+    "description": "The shortest distance between mana and consequence."
+  },
+  {
+    "id": "move.arcane_orb", "name": "Arcane Orb",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 21 } ],
+    "description": "Power with the excuses distilled off."
+  },
+  {
+    "id": "move.arcane_wave", "name": "Arcane Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 9 } ],
+    "description": "Refusal is not a recognised defence."
+  },
+  {
+    "id": "move.arcane_nova", "name": "Arcane Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "description": "Everyone nearby receives the same finding, simultaneously."
+  },
+  {
+    "id": "move.arcane_barrage", "name": "Arcane Barrage",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 180,
+    "packets": [
+      { "type": "Magic", "aspect": "arcane", "amount": 7 },
+      { "type": "Magic", "aspect": "arcane", "amount": 7 },
+      { "type": "Magic", "aspect": "arcane", "amount": 7 },
+      { "type": "Magic", "aspect": "arcane", "amount": 7 }
+    ],
+    "description": "Certainty, four times, until it sticks."
+  },
+  {
+    "id": "move.arcane_echo", "name": "Arcane Echo",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:trigger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 8 } ],
+    "effects": [
+      { "kind": "triggerMove", "text": "move.arcane_bolt" }
+    ],
+    "description": "Cast once, land twice. The spell repeats itself on principle."
+  },
+  {
+    "id": "move.arcane_storm", "name": "Arcane Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 19 },
+    "costs": [ { "resource": "mana", "amount": 30 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 12 } ],
+    "description": "Weather made of pure jurisdiction."
+  },
+  {
+    "id": "move.arcane_mark", "name": "Arcane Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "A sigil that means 'here', to everything that hurts."
+  },
+  {
+    "id": "move.mana_bolt", "name": "Mana Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Magic", "amount": 9 } ],
+    "description": "The pool itself, thrown by the cupful."
+  },
+  {
+    "id": "move.mana_burst", "name": "Mana Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 19 } ],
+    "description": "Spend it loudly."
+  },
+  {
+    "id": "move.mana_surge", "name": "Mana Surge",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "stamina", "amount": 10 } ],
+    "cooldown_ticks": 200,
+    "effects": [
+      { "kind": "grantResource", "text": "mana", "amount": 18 }
+    ],
+    "description": "Wring the body to fill the well."
+  },
+  {
+    "id": "move.mana_infusion", "name": "Mana Infusion",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "health", "amount": 10 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantResource", "text": "mana", "amount": 24 }
+    ],
+    "description": "Blood into ink. The well refills; the hand shakes."
+  },
+  {
+    "id": "move.spell_break", "name": "Spell Break",
+    "kind": "Utility",
+    "tags": ["action:utility", "delivery:ranged"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 4, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "interrupt" }
+    ],
+    "description": "Snap the sentence in half mid-word."
+  },
+  {
+    "id": "move.counterspell", "name": "Counterspell",
+    "kind": "Utility",
+    "tags": ["action:utility", "delivery:ranged", "mech:negate"],
+    "timing": { "telegraphTicks": 0, "windupTicks": 3, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "interrupt" }
+    ],
+    "description": "The fastest word you know is 'no'."
+  },
+  {
+    "id": "move.arcane_shield", "name": "Arcane Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 23 }
+    ],
+    "description": "Force, folded flat and held up."
+  },
+  {
+    "id": "move.arcane_barrier", "name": "Arcane Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 33 }
+    ],
+    "description": "The same argument as a wall, made without bricks."
+  },
+  {
+    "id": "move.mana_shield", "name": "Mana Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 26 }
+    ],
+    "description": "Spend the well on not bleeding."
+  },
+  {
+    "id": "move.arcane_armor", "name": "Arcane Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 5, "duration_ticks": 450 },
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.15, "duration_ticks": 450 }
+    ],
+    "description": "Plate written in shorthand."
+  },
+
+  // --- Generic magic ---------------------------------------------------------------------------
+
+  {
+    "id": "move.magic_bolt", "name": "Magic Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "packets": [ { "type": "Magic", "amount": 10 } ],
+    "description": "The plain loaf of wizardry. It feeds."
+  },
+  {
+    "id": "move.magic_missile", "name": "Magic Missile",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [
+      { "type": "Magic", "amount": 5 },
+      { "type": "Magic", "amount": 5 },
+      { "type": "Magic", "amount": 5 }
+    ],
+    "description": "It never misses, in the sense that it never apologises."
+  },
+  {
+    "id": "move.magic_arrow", "name": "Magic Arrow",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [ { "type": "Magic", "amount": 15 } ],
+    "description": "Archery without the fletcher's invoice."
+  },
+  {
+    "id": "move.magic_spear", "name": "Magic Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "Reach, minus the wood."
+  },
+  {
+    "id": "move.magic_blade", "name": "Magic Blade",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "A sword for as long as the thought holds."
+  },
+  {
+    "id": "move.magic_burst", "name": "Magic Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "amount": 18 } ],
+    "description": "Raw craft, decompressed all at once."
+  },
+  {
+    "id": "move.magic_wave", "name": "Magic Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 13 } ],
+    "description": "One gesture, several regrets. None of them yours."
+  },
+  {
+    "id": "move.magic_nova", "name": "Magic Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "Craft in every direction at once. The metaphor does not survive."
+  },
+  {
+    "id": "move.magic_shield", "name": "Magic Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 22 }
+    ],
+    "description": "The oldest trick that still works."
+  },
+  {
+    "id": "move.magic_barrier", "name": "Magic Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 31 }
+    ],
+    "description": "The same trick, told with more conviction."
+  },
+
+  // --- Chrono ----------------------------------------------------------------------------------
+
+  {
+    "id": "move.chrono_bolt", "name": "Chrono Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 10 } ],
+    "description": "It hits a moment before you expect. Every time."
+  },
+  {
+    "id": "move.chrono_burst", "name": "Chrono Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 14 } ],
+    "description": "Several seconds, spent at once, at someone."
+  },
+  {
+    "id": "move.temporal_echo", "name": "Temporal Echo",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:trigger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "packets": [ { "type": "Magic", "aspect": "arcane", "amount": 8 } ],
+    "effects": [
+      { "kind": "triggerMove", "text": "move.chrono_bolt" }
+    ],
+    "description": "The moment happens again, on your side this time."
+  },
+  {
+    "id": "move.accelerate", "name": "Accelerate",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.8, "duration_ticks": 400 }
+    ],
+    "description": "Your seconds are simply better funded now."
+  },
+  {
+    "id": "move.decelerate", "name": "Decelerate",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.3, "duration_ticks": 400 }
+    ],
+    "description": "Their moments arrive by post."
+  },
+  {
+    "id": "move.temporal_shield", "name": "Temporal Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "Blows land a few seconds from now, where you no longer are."
+  },
+
+  // --- Force and gravity ------------------------------------------------------------------------
+
+  {
+    "id": "move.force_bolt", "name": "Force Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "description": "Push, formalised."
+  },
+  {
+    "id": "move.gravity_bolt", "name": "Gravity Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [
+      { "type": "Crushing", "amount": 7 },
+      { "type": "Magic", "amount": 7 }
+    ],
+    "description": "Downward, delivered horizontally."
+  },
+  {
+    "id": "move.crushing_force", "name": "Crushing Force",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Crushing", "amount": 16 } ],
+    "stagger_power": 14,
+    "description": "Weight without the courtesy of an object."
+  },
+  {
+    "id": "move.gravity_slam", "name": "Gravity Slam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "packets": [ { "type": "Crushing", "amount": 19 } ],
+    "stagger_power": 24,
+    "description": "The floor develops an urgent opinion about them."
+  },
+  {
+    "id": "move.gravity_crush", "name": "Gravity Crush",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "packets": [ { "type": "Crushing", "amount": 26 } ],
+    "stagger_power": 20,
+    "description": "Their own weight, doubled and foreclosed."
+  },
+  {
+    "id": "move.force_wave", "name": "Force Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 10 } ],
+    "stagger_power": 20,
+    "description": "A shove with a radius."
+  },
+  {
+    "id": "move.gravity_wave", "name": "Gravity Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 13 } ],
+    "stagger_power": 16,
+    "description": "Everyone's knees receive the news at once."
+  },
+  {
+    "id": "move.heavy_gravity", "name": "Heavy Gravity",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.25, "duration_ticks": 400 },
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.5 }
+    ],
+    "description": "Give them a heavier planet to work with."
+  },
+  {
+    "id": "move.singularity", "name": "Singularity",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 31 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [
+      { "type": "Crushing", "amount": 12 },
+      { "type": "Magic", "amount": 10 }
+    ],
+    "stagger_power": 22,
+    "description": "For one instant there is a point that everything agrees to attend."
+  },
+  {
+    "id": "move.force_barrier", "name": "Force Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 25 }
+    ],
+    "description": "Push, held in place and told to wait."
+  }
+]

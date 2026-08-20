@@ -1,0 +1,685 @@
+[
+  // The necrotic spell family — blood, bone, and soul (docs/spell-library.md §1). Decay
+  // packets feed the decay lane; Bleed is the physical ailment; lifesteal is a heal rider on
+  // TriggerSource (the Drain exemplar); pacts and sacrifices spend HEALTH as a cost, which
+  // pools already support. Conjure Weapon is the one shipped summon reading: grantMove.
+  // Placeholder numbers.
+
+  // --- Blood -----------------------------------------------------------------------------------
+
+  {
+    "id": "move.blood_bolt", "name": "Blood Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 3, "duration_ticks": 60, "chance": 0.3 }
+    ],
+    "description": "Somebody's vintage, returned with force."
+  },
+  {
+    "id": "move.blood_blade", "name": "Blood Blade",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:necrotic", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [
+      { "type": "Slashing", "amount": 7 },
+      { "type": "Magic", "aspect": "decay", "amount": 6 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 4, "duration_ticks": 60, "chance": 0.5 }
+    ],
+    "description": "An edge that drinks on the job."
+  },
+  {
+    "id": "move.blood_spear", "name": "Blood Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 8 },
+      { "type": "Magic", "aspect": "decay", "amount": 9 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 4, "duration_ticks": 60, "chance": 0.4 }
+    ],
+    "description": "It knows the way in. It has been inside veins before."
+  },
+  {
+    "id": "move.blood_lance", "name": "Blood Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 21 } ],
+    "description": "Crimson, committed."
+  },
+  {
+    "id": "move.blood_burst", "name": "Blood Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 18 } ],
+    "description": "Pressure, met."
+  },
+  {
+    "id": "move.hemorrhage", "name": "Hemorrhage",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Slashing", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 8, "duration_ticks": 100 },
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 8, "duration_ticks": 100 }
+    ],
+    "description": "Open the account. Let it drain."
+  },
+  {
+    "id": "move.blood_boil", "name": "Blood Boil",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Their own pulse, turned up past comfort."
+  },
+  {
+    "id": "move.blood_drain", "name": "Blood Drain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 12 } ],
+    "effects": [
+      { "kind": "heal", "amount": 6, "target": "TriggerSource" }
+    ],
+    "description": "Their red, your ledger."
+  },
+  {
+    "id": "move.life_drain", "name": "Life Drain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 16 } ],
+    "effects": [
+      { "kind": "heal", "amount": 9, "target": "TriggerSource" }
+    ],
+    "description": "The bigger straw."
+  },
+  {
+    "id": "move.vampiric_touch", "name": "Vampiric Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 11 } ],
+    "effects": [
+      { "kind": "heal", "amount": 6, "target": "TriggerSource" }
+    ],
+    "description": "A handshake with compounding interest."
+  },
+  {
+    "id": "move.vampiric_strike", "name": "Vampiric Strike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:necrotic", "mech:healing", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [
+      { "type": "Slashing", "amount": 8 },
+      { "type": "Magic", "aspect": "decay", "amount": 7 }
+    ],
+    "effects": [
+      { "kind": "heal", "amount": 6, "target": "TriggerSource" },
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 4, "duration_ticks": 60, "chance": 0.4 }
+    ],
+    "description": "Cut, collect, repeat."
+  },
+  {
+    "id": "move.sanguine_burst", "name": "Sanguine Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 15 } ],
+    "effects": [
+      { "kind": "heal", "amount": 7, "target": "TriggerSource" }
+    ],
+    "description": "The toast is to your health, on their account."
+  },
+  {
+    "id": "move.blood_rain", "name": "Blood Rain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "cooldown_ticks": 210,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 11 } ],
+    "effects": [
+      { "kind": "heal", "amount": 4, "target": "TriggerSource" }
+    ],
+    "description": "Red weather. You stand under the only dry patch."
+  },
+  {
+    "id": "move.blood_nova", "name": "Blood Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "health", "amount": 10 }, { "resource": "mana", "amount": 12 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 16 } ],
+    "description": "Paid for in the only currency that never inflates."
+  },
+  {
+    "id": "move.blood_wave", "name": "Blood Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "description": "A tide that used to belong to people."
+  },
+  {
+    "id": "move.crimson_mist", "name": "Crimson Mist",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 4, "duration_ticks": 80, "chance": 0.5 }
+    ],
+    "description": "Breathe shallow. It settles in the lungs and the ledger."
+  },
+  {
+    "id": "move.crimson_tide", "name": "Crimson Tide",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 19 },
+    "costs": [ { "resource": "mana", "amount": 29 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 17 } ],
+    "description": "The sea turns. So does the fight."
+  },
+  {
+    "id": "move.blood_sacrifice", "name": "Blood Sacrifice",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "health", "amount": 15 } ],
+    "cooldown_ticks": 180,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 30 } ],
+    "description": "Pay in advance, in person. The power notices the gesture."
+  },
+  {
+    "id": "move.blood_pact", "name": "Blood Pact",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "health", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantResource", "text": "mana", "amount": 26 }
+    ],
+    "description": "Sign in the usual place. The well fills before the wound closes."
+  },
+  {
+    "id": "move.blood_infusion", "name": "Blood Infusion",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "health", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantResource", "text": "stamina", "amount": 24 }
+    ],
+    "description": "Trade tomorrow's blood for this minute's legs."
+  },
+  {
+    "id": "move.blood_ritual", "name": "Blood Ritual",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "health", "amount": 22 } ],
+    "cooldown_ticks": 300,
+    "effects": [
+      { "kind": "grantResource", "text": "mana", "amount": 24 },
+      { "kind": "grantResource", "text": "stamina", "amount": 24 }
+    ],
+    "description": "The full ceremony. Everything refills except what paid for it."
+  },
+  {
+    "id": "move.blood_mark", "name": "Blood Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "Mark them the colour everything sharp is looking for."
+  },
+  {
+    "id": "move.blood_curse", "name": "Blood Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 3, "duration_ticks": 80, "chance": 0.5 }
+    ],
+    "description": "Their blood takes your side in every argument that follows."
+  },
+  {
+    "id": "move.blood_shield", "name": "Blood Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "health", "amount": 8 }, { "resource": "mana", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 28 }
+    ],
+    "description": "Spend a little red to keep the rest."
+  },
+  {
+    "id": "move.blood_barrier", "name": "Blood Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 32 }
+    ],
+    "description": "A wall with a pulse."
+  },
+  {
+    "id": "move.blood_armor", "name": "Blood Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "health", "amount": 6 }, { "resource": "mana", "amount": 8 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 7, "duration_ticks": 450 }
+    ],
+    "description": "Hardened at the surface, still warm underneath."
+  },
+
+  // --- Bone ------------------------------------------------------------------------------------
+
+  {
+    "id": "move.bone_spike", "name": "Bone Spike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "packets": [ { "type": "Piercing", "amount": 10 } ],
+    "description": "Somebody's femur, repurposed with prejudice."
+  },
+  {
+    "id": "move.bone_spear", "name": "Bone Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 12 },
+      { "type": "Magic", "aspect": "decay", "amount": 6 }
+    ],
+    "description": "The classic of the discipline. The dead lend structure."
+  },
+  {
+    "id": "move.bone_shards", "name": "Bone Shards",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 5 },
+      { "type": "Piercing", "amount": 5 },
+      { "type": "Piercing", "amount": 5 }
+    ],
+    "description": "A handful of endings, scattered."
+  },
+  {
+    "id": "move.bone_storm", "name": "Bone Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [
+      { "type": "Piercing", "amount": 9 },
+      { "type": "Magic", "aspect": "decay", "amount": 7 }
+    ],
+    "description": "The graveyard, airborne."
+  },
+  {
+    "id": "move.death_bolt", "name": "Death Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "description": "The punctuation mark, thrown."
+  },
+  {
+    "id": "move.grave_bolt", "name": "Grave Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 8 } ],
+    "description": "Cold, quiet, and six feet more familiar than you'd like."
+  },
+  {
+    "id": "move.death_touch", "name": "Death Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:necrotic"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 22 } ],
+    "description": "One finger's worth of the inevitable."
+  },
+  {
+    "id": "move.death_coil", "name": "Death Coil",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 15 } ],
+    "effects": [
+      { "kind": "heal", "amount": 8, "target": "TriggerSource" }
+    ],
+    "description": "It leaves them coiled around what it brings back to you."
+  },
+  {
+    "id": "move.death_nova", "name": "Death Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:necrotic"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 15 } ],
+    "description": "For one breath, everything near you is reminded how this ends."
+  },
+  {
+    "id": "move.death_mark", "name": "Death Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" },
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "An appointment, written where everything can read it."
+  },
+  {
+    "id": "move.grave_mist", "name": "Grave Mist",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "The chill off old stones, ambulatory."
+  },
+  {
+    "id": "move.death_ward", "name": "Death Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.decay", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Rot arrives, reads the sign, and moves along."
+  },
+  {
+    "id": "move.bone_armor", "name": "Bone Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 7, "duration_ticks": 450 }
+    ],
+    "description": "The dead were done with it. Waste nothing."
+  },
+  {
+    "id": "move.bone_shield", "name": "Bone Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "A lattice of borrowed ribs. They hold, briefly, again."
+  },
+
+  // --- Soul ------------------------------------------------------------------------------------
+
+  {
+    "id": "move.soul_bolt", "name": "Soul Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "description": "It goes through the armour because it was never aimed at the armour."
+  },
+  {
+    "id": "move.spirit_bolt", "name": "Spirit Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "description": "Sent with regards from the other side of the veil."
+  },
+  {
+    "id": "move.soul_spear", "name": "Soul Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 22 } ],
+    "description": "Aimed at the part of them that flinches."
+  },
+  {
+    "id": "move.spirit_lance", "name": "Spirit Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "A cold line drawn from here to hereafter."
+  },
+  {
+    "id": "move.soul_burn", "name": "Soul Burn",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "It burns nothing you can bandage."
+  },
+  {
+    "id": "move.soul_drain", "name": "Soul Drain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 13 } ],
+    "effects": [
+      { "kind": "heal", "amount": 7, "target": "TriggerSource" }
+    ],
+    "description": "Some of what they are, redirected to what you need."
+  },
+  {
+    "id": "move.soul_harvest", "name": "Soul Harvest",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:necrotic", "mech:healing"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 210,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "effects": [
+      { "kind": "heal", "amount": 5, "target": "TriggerSource" }
+    ],
+    "description": "Reap what everyone else sowed."
+  },
+  {
+    "id": "move.soul_mark", "name": "Soul Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "A notch on something they can't armour."
+  },
+  {
+    "id": "move.spirit_heal", "name": "Spirit Heal",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "effects": [
+      { "kind": "heal", "amount": 21 }
+    ],
+    "description": "The ancestors chip in. They have opinions about you dying early."
+  },
+  {
+    "id": "move.ancestors_blessing", "name": "Ancestor's Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.wisdom", "amount": 4, "duration_ticks": 500 },
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.1, "duration_ticks": 500 }
+    ],
+    "description": "The old ones lean in. Your hands remember things they knew."
+  },
+  {
+    "id": "move.ancestors_wrath", "name": "Ancestor's Wrath",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:necrotic"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 270,
+    "packets": [ { "type": "Magic", "amount": 36 } ],
+    "description": "Every grievance in the family line, delivered at once."
+  },
+  {
+    "id": "move.spectral_blade", "name": "Spectral Blade",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:necrotic"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "description": "A sword's ghost. It still remembers the job."
+  },
+  {
+    "id": "move.spectral_spear", "name": "Spectral Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:necrotic"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "amount": 19 } ],
+    "description": "Thrown by no visible arm, which is somehow worse."
+  },
+  {
+    "id": "move.soul_shield", "name": "Soul Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "Brace with something older than your bones."
+  },
+  {
+    "id": "move.soul_barrier", "name": "Soul Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "The part of you that isn't a body, standing in front of the part that is."
+  },
+  {
+    "id": "move.spirit_shield", "name": "Spirit Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:necrotic", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "Somebody's grandmother, between you and the axe."
+  },
+  {
+    "id": "move.conjure_weapon", "name": "Conjure Weapon",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:necrotic", "mech:trigger"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantMove", "text": "move.spectral_blade", "duration_ticks": 600 }
+    ],
+    "description": "Call a blade out of the air and keep it for a while. It comes when named."
+  }
+]

@@ -1,0 +1,211 @@
+[
+  // The restoration spell family (docs/spell-library.md §1). Instant heals in tiers, resource
+  // restores, and the two max-health blessings. Heal-over-time names (Regeneration, Renew…) are
+  // PARKED until a heal-tick status exists; cleanses are parked until a status-removal effect
+  // kind exists. Placeholder numbers.
+
+  {
+    "id": "move.minor_heal", "name": "Minor Heal",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "effects": [
+      { "kind": "heal", "amount": 10 }
+    ],
+    "description": "A stitch in time. Literally, and it stings."
+  },
+  {
+    "id": "move.healing_touch", "name": "Healing Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "effects": [
+      { "kind": "heal", "amount": 14 }
+    ],
+    "description": "Hands that mean it."
+  },
+  {
+    "id": "move.heal", "name": "Heal",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "effects": [
+      { "kind": "heal", "amount": 20 }
+    ],
+    "description": "The word, doing exactly what it says."
+  },
+  {
+    "id": "move.mend_wounds", "name": "Mend Wounds",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "effects": [
+      { "kind": "heal", "amount": 24 }
+    ],
+    "description": "Mend, for people who collect wounds in bulk."
+  },
+  {
+    "id": "move.healing_light", "name": "Healing Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "effects": [
+      { "kind": "heal", "amount": 26 }
+    ],
+    "description": "Warmth with a work ethic."
+  },
+  {
+    "id": "move.revitalize", "name": "Revitalize",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "effects": [
+      { "kind": "heal", "amount": 27 }
+    ],
+    "description": "The body remembers how this all worked before."
+  },
+  {
+    "id": "move.healing_wave", "name": "Healing Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "effects": [
+      { "kind": "heal", "amount": 30 }
+    ],
+    "description": "It arrives in one long swell and leaves less wrong behind."
+  },
+  {
+    "id": "move.greater_heal", "name": "Greater Heal",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "heal", "amount": 36 }
+    ],
+    "description": "The same word, said by someone with authority."
+  },
+  {
+    "id": "move.restore", "name": "Restore",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 28 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "heal", "amount": 40 }
+    ],
+    "description": "Put it back the way it was."
+  },
+  {
+    "id": "move.life_surge", "name": "Life Surge",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "heal", "amount": 34 }
+    ],
+    "description": "All at once, like a dam deciding in your favour."
+  },
+  {
+    "id": "move.second_wind", "name": "Second Wind",
+    "kind": "Utility",
+    "tags": ["action:utility", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantResource", "text": "stamina", "amount": 22 }
+    ],
+    "description": "The breath you didn't know you'd saved."
+  },
+  {
+    "id": "move.restoration", "name": "Restoration",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "heal", "amount": 22 },
+      { "kind": "grantResource", "text": "stamina", "amount": 14 }
+    ],
+    "description": "Body and legs, both back on the payroll."
+  },
+  {
+    "id": "move.resurgence", "name": "Resurgence",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "stamina", "amount": 14 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "heal", "amount": 16 },
+      { "kind": "grantResource", "text": "mana", "amount": 14 }
+    ],
+    "description": "Trade sweat for spellwork and a second act."
+  },
+  {
+    "id": "move.vitality", "name": "Vitality",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "resource.max_health", "amount": 15, "duration_ticks": 600 }
+    ],
+    "description": "More of you, for a while."
+  },
+  {
+    "id": "move.lifeblood", "name": "Lifeblood",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "resource.max_health", "amount": 20, "duration_ticks": 600 },
+      { "kind": "heal", "amount": 10 }
+    ],
+    "description": "Deeper reserves, drawn up from somewhere older."
+  },
+  {
+    "id": "move.protective_light", "name": "Protective Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:healing", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" },
+      { "kind": "heal", "amount": 10 }
+    ],
+    "description": "Light that patches as it parries."
+  }
+]

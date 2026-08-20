@@ -1,0 +1,327 @@
+[
+  // The fire spell family (spell-library expansion, docs/spell-library.md §1). Heat packets,
+  // Burn riders, and the heat ward. Numbers are conservative placeholders tuned relative to
+  // move.fireball (30 heat @ 18 mana) — absolute tuning belongs to the deferred balance pass.
+
+  {
+    "id": "move.ember_shot", "name": "Ember Shot",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 2, "duration_ticks": 45, "chance": 0.1 }
+    ],
+    "description": "A flicked coal. Cheap, fast, and warmer than an apology."
+  },
+  {
+    "id": "move.flame_bolt", "name": "Flame Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.15 }
+    ],
+    "description": "The journeyman's fire: small, straight, and reliably rude."
+  },
+  {
+    "id": "move.scorch", "name": "Scorch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:fire", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.6 }
+    ],
+    "description": "Less a blast than a branding. The mark keeps working."
+  },
+  {
+    "id": "move.ignite", "name": "Ignite",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:fire", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 5 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 6, "duration_ticks": 75 }
+    ],
+    "description": "Skip the fireworks. Set the fire and let it argue for you."
+  },
+  {
+    "id": "move.smolder", "name": "Smolder",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:dot", "essence:fire", "mech:ailment"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 5 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 3 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 90 }
+    ],
+    "description": "Barely a flame at all. Ask it again in a minute."
+  },
+  {
+    "id": "move.searing_ray", "name": "Searing Ray",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:fire"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 17 } ],
+    "description": "A straight line drawn in heat. Geometry with a grudge."
+  },
+  {
+    "id": "move.fire_lance", "name": "Fire Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 21 } ],
+    "description": "Fireball's disciplined cousin. All the heat, one point of delivery."
+  },
+  {
+    "id": "move.flame_whip", "name": "Flame Whip",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:fire"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.25 }
+    ],
+    "description": "Fire that has learned reach. It leaves lines."
+  },
+  {
+    "id": "move.burning_hands", "name": "Burning Hands",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.3 }
+    ],
+    "description": "Ten fingers, one opinion, everyone in arm's reach hears it."
+  },
+  {
+    "id": "move.blazing_orb", "name": "Blazing Orb",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 31 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.2 }
+    ],
+    "description": "A slow sun with a short temper."
+  },
+  {
+    "id": "move.combustion", "name": "Combustion",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:fire", "mech:ailment"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 28 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 6, "duration_ticks": 75, "chance": 0.5 }
+    ],
+    "description": "Skip the spark, argue combustion from first principles. The target is the proof."
+  },
+  {
+    "id": "move.molten_spear", "name": "Molten Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:fire"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 9 },
+      { "type": "Magic", "aspect": "heat", "amount": 14 }
+    ],
+    "description": "Rock with the patience boiled out of it, thrown point-first."
+  },
+  {
+    "id": "move.cinder_blast", "name": "Cinder Blast",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:fire"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 18 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.25 }
+    ],
+    "description": "Yesterday's fire, delivered with today's velocity."
+  },
+  {
+    "id": "move.magma_burst", "name": "Magma Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:fire", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 24 } ],
+    "stagger_power": 15,
+    "description": "The ground's own blood, briefly airborne and furious about it."
+  },
+  {
+    "id": "move.flame_burst", "name": "Flame Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.2 }
+    ],
+    "description": "Fire in a hurry to be everywhere at once."
+  },
+  {
+    "id": "move.flame_wave", "name": "Flame Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.2 }
+    ],
+    "description": "A tide that has never once heard of water."
+  },
+  {
+    "id": "move.ring_of_fire", "name": "Ring of Fire",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.3 }
+    ],
+    "description": "One instant of flame in every direction you were worried about."
+  },
+  {
+    "id": "move.ember_rain", "name": "Ember Rain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire", "mech:ailment"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 75, "chance": 0.5 }
+    ],
+    "description": "Weather, if weather held grudges."
+  },
+  {
+    "id": "move.ash_cloud", "name": "Ash Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 4 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "A lungful of what the fire left behind. Swings come back smaller."
+  },
+  {
+    "id": "move.cinderstorm", "name": "Cinderstorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.35 }
+    ],
+    "description": "Every spent coal in the county, recalled to active duty."
+  },
+  {
+    "id": "move.firestorm", "name": "Firestorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.4 }
+    ],
+    "description": "The sky catches. Everyone underneath is a footnote."
+  },
+  {
+    "id": "move.lava_wave", "name": "Lava Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire", "mech:stagger"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 25 } ],
+    "cooldown_ticks": 210,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 18 } ],
+    "stagger_power": 12,
+    "description": "A hillside's worth of molten stone, briefly of one mind."
+  },
+  {
+    "id": "move.volcanic_eruption", "name": "Volcanic Eruption",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:fire", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 30 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 20 } ],
+    "stagger_power": 22,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 5, "duration_ticks": 75, "chance": 0.4 }
+    ],
+    "description": "Ask the ground what it really thinks. Stand back while it answers."
+  },
+  {
+    "id": "move.inferno", "name": "Inferno",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:fire"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 32 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "heat", "amount": 22 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 6, "duration_ticks": 75, "chance": 0.5 }
+    ],
+    "description": "Fire past the point of metaphor."
+  },
+  {
+    "id": "move.flame_shield", "name": "Flame Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:fire", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 22 }
+    ],
+    "description": "Wear a small argument of fire. Blows spend themselves on it first."
+  },
+  {
+    "id": "move.heat_ward", "name": "Heat Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:fire"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Teach your skin the fire's own manners. Heat forgets how to bite."
+  }
+]

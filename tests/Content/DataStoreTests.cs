@@ -107,4 +107,42 @@ public class DataStoreTests
         Assert.Equal(2, loaded.Count);
         Assert.Equal(2, store.Count);
     }
+
+    // --- The unknown-field fence -------------------------------------------------------------
+    //
+    // Two shipped records were silently wrong for a whole milestone because a misspelled JSON
+    // key matched no property and was ignored: movemod.emberbrand authored "moveId" where
+    // MoveMatch declares "move_id" (so it modified EVERY move), and affix.reflection authored
+    // "scalesWith" where EffectSpec declares "scales_with" (so it dealt its flat roll instead
+    // of a fraction). These tests hold the fence that turned that bug class into a load error.
+
+    [Fact]
+    public void UnknownTopLevelKey_FailsToLoad()
+    {
+        var store = new DataStore<MaterialDefinition>();
+        const string misspelled = """
+            {
+              "id": "material.oak_bark",
+              "nmae": "Oak Bark"
+            }
+            """;
+
+        Assert.ThrowsAny<System.Text.Json.JsonException>(() => store.LoadOne(misspelled));
+    }
+
+    [Fact]
+    public void UnknownNestedKey_FailsToLoad_TheEmberbrandBug()
+    {
+        var store = new DataStore<Dungeons.Combat.MoveModifierDefinition>();
+        const string emberbrandAsOriginallyAuthored = """
+            {
+              "id": "movemod.emberbrand",
+              "name": "Emberbrand",
+              "match": { "moveId": "move.heavy_strike" },
+              "ops": []
+            }
+            """;
+
+        Assert.ThrowsAny<System.Text.Json.JsonException>(() => store.LoadOne(emberbrandAsOriginallyAuthored));
+    }
 }

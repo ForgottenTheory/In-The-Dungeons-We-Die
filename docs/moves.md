@@ -8,6 +8,14 @@
 
 # 1. Current state
 
+> **2026-08-19 — the spell-library expansion.** The library this document designed now holds
+> **517 moves** (474 of them spells across 16 family files, `game/data/moves/spells_*.json`),
+> one technique item per learnable move (493 total), and 11 move modifiers including the ten
+> weapon imbues. The full manifest — every requested name's fate, shipped / parked-by-blocking-
+> system / skipped-as-duplicate — is **`docs/spell-library.md`**. Expansion techniques are
+> deliberately in no loot table until the balance pass. The table below is the pre-E4 state
+> this document was written against, kept for the reasoning.
+
 | Thing | Reality |
 |---|---|
 | `AbilityDefinition` | 6 fields: id, name, damageType, baseValue, staminaCost, timing. Three exist. |

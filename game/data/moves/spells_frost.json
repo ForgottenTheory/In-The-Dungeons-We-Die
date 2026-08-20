@@ -1,0 +1,333 @@
+[
+  // The frost spell family (docs/spell-library.md §1). Cold packets, Chill riders, and the
+  // two-step Freeze gate: Freeze buildup only accumulates on a Chilled target, so every
+  // freeze-control here applies Chill in the same cast. Placeholder numbers, balance pass owns.
+
+  {
+    "id": "move.ice_shard", "name": "Ice Shard",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 8 } ],
+    "description": "Winter, in a convenient throwing size."
+  },
+  {
+    "id": "move.frost_bolt", "name": "Frost Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.5 }
+    ],
+    "description": "Cold with an address on it."
+  },
+  {
+    "id": "move.frostbite", "name": "Frostbite",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "The wound is small. The slowness is the point."
+  },
+  {
+    "id": "move.freezing_touch", "name": "Freezing Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze" }
+    ],
+    "description": "Skin to skin with the cold itself. It wants them to hold still."
+  },
+  {
+    "id": "move.ice_spike", "name": "Ice Spike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 6 },
+      { "type": "Magic", "aspect": "cold", "amount": 8 }
+    ],
+    "description": "Sharp first, cold second. Both stay."
+  },
+  {
+    "id": "move.crystalline_frost", "name": "Crystalline Frost",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.6 }
+    ],
+    "description": "Frost with architecture. It grows on whatever it lands on."
+  },
+  {
+    "id": "move.glacial_spear", "name": "Glacial Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 8 },
+      { "type": "Magic", "aspect": "cold", "amount": 14 }
+    ],
+    "description": "A glacier's opinion, abbreviated to a point."
+  },
+  {
+    "id": "move.winters_grasp", "name": "Winter's Grasp",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze", "chance": 0.5 }
+    ],
+    "description": "The season reaches out. It has all the patience you don't."
+  },
+  {
+    "id": "move.frozen_orb", "name": "Frozen Orb",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:frost"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 30 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.4 }
+    ],
+    "description": "A moon in miniature, orbiting nothing, forgiving nothing."
+  },
+  {
+    "id": "move.cold_snap", "name": "Cold Snap",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "The temperature drops its manners. Everyone slows to apologise."
+  },
+  {
+    "id": "move.frost_nova", "name": "Frost Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "Winter, announced in every direction at once."
+  },
+  {
+    "id": "move.glacial_wave", "name": "Glacial Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.5 }
+    ],
+    "description": "Slow as grief and exactly as unstoppable."
+  },
+  {
+    "id": "move.hailstorm", "name": "Hailstorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [
+      { "type": "Crushing", "amount": 7 },
+      { "type": "Magic", "aspect": "cold", "amount": 8 }
+    ],
+    "stagger_power": 10,
+    "description": "The sky throws stones and means it."
+  },
+  {
+    "id": "move.snowstorm", "name": "Snowstorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "Soft, white, and wrong in every way that matters."
+  },
+  {
+    "id": "move.ice_storm", "name": "Ice Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.5 }
+    ],
+    "description": "Rain that arrives with edges."
+  },
+  {
+    "id": "move.blizzard", "name": "Blizzard",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost", "mech:impairment"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" }
+    ],
+    "description": "A whole winter, delivered in one instalment."
+  },
+  {
+    "id": "move.frozen_chains", "name": "Frozen Chains",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 150,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze" }
+    ],
+    "description": "Links of ice, closing. The cold does the locking."
+  },
+  {
+    "id": "move.ice_prison", "name": "Ice Prison",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "cooldown_ticks": 240,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze" },
+      { "kind": "applyStatus", "text": "status.freeze" }
+    ],
+    "description": "Walls of ice, fitted while they stand in the doorway."
+  },
+  {
+    "id": "move.flash_freeze", "name": "Flash Freeze",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 210,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze" }
+    ],
+    "description": "No preamble. Just the cold, arriving all at once."
+  },
+  {
+    "id": "move.ice_tomb", "name": "Ice Tomb",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:frost", "mech:control"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 300,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill" },
+      { "kind": "applyStatus", "text": "status.freeze" },
+      { "kind": "applyStatus", "text": "status.freeze" }
+    ],
+    "description": "A monument to holding still, built around a volunteer."
+  },
+  {
+    "id": "move.avalanche", "name": "Avalanche",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost", "mech:stagger"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 3,
+    "packets": [
+      { "type": "Crushing", "amount": 12 },
+      { "type": "Magic", "aspect": "cold", "amount": 10 }
+    ],
+    "stagger_power": 20,
+    "description": "The mountain sends its regards, all of them, downhill."
+  },
+  {
+    "id": "move.glacial_collapse", "name": "Glacial Collapse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:frost"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 30 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "cold", "amount": 19 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.chill", "chance": 0.6 }
+    ],
+    "description": "Ten thousand years of ice loses its patience in one second."
+  },
+  {
+    "id": "move.ice_barrier", "name": "Ice Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:frost", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "Clear, cold, and briefly between you and everything."
+  },
+  {
+    "id": "move.frost_armor", "name": "Frost Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:frost"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 6, "duration_ticks": 450 },
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": 0.2, "duration_ticks": 450 }
+    ],
+    "description": "Plate mail grown, not forged. It fits like weather."
+  },
+  {
+    "id": "move.frost_shield", "name": "Frost Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:frost"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Make an arrangement with the cold: it passes you by."
+  }
+]

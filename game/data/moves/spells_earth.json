@@ -1,0 +1,242 @@
+[
+  // The earth spell family (docs/spell-library.md §1). Conjured stone is PHYSICAL damage —
+  // Crushing and Piercing packets, stagger, and Corroded for the armour-shattering end.
+  // No essence tag: earth is not one of the seven essences, and that is the point — armour
+  // answers these where resistances answer the elements. Placeholder numbers.
+
+  {
+    "id": "move.stone_spike", "name": "Stone Spike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "packets": [ { "type": "Piercing", "amount": 10 } ],
+    "description": "The ground grows a point and lends it to you."
+  },
+  {
+    "id": "move.earth_spike", "name": "Earth Spike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [ { "type": "Piercing", "amount": 15 } ],
+    "description": "Like Stone Spike, but the ground was angrier."
+  },
+  {
+    "id": "move.stone_lance", "name": "Stone Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Piercing", "amount": 21 } ],
+    "description": "Bedrock, sharpened and encouraged."
+  },
+  {
+    "id": "move.stone_fist", "name": "Stone Fist",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "mech:stagger"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Crushing", "amount": 13 } ],
+    "stagger_power": 14,
+    "description": "Wear the hill on your knuckles for one punch."
+  },
+  {
+    "id": "move.boulder_toss", "name": "Boulder Toss",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "packets": [ { "type": "Crushing", "amount": 22 } ],
+    "stagger_power": 20,
+    "description": "Mass, delegated."
+  },
+  {
+    "id": "move.ground_slam", "name": "Ground Slam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Crushing", "amount": 13 } ],
+    "stagger_power": 22,
+    "description": "Hit the floor hard enough and everyone standing on it agrees."
+  },
+  {
+    "id": "move.tremor", "name": "Tremor",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 6 } ],
+    "stagger_power": 20,
+    "description": "A small correction in the ground's opinion of everyone's balance."
+  },
+  {
+    "id": "move.rockfall", "name": "Rockfall",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 13 } ],
+    "stagger_power": 14,
+    "description": "Gravity's favourite spell. You just do the introductions."
+  },
+  {
+    "id": "move.sand_blast", "name": "Sand Blast",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Crushing", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable", "chance": 0.6 }
+    ],
+    "description": "A fistful of the desert, delivered to the eyes."
+  },
+  {
+    "id": "move.dust_cloud", "name": "Dust Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 3 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Nobody swings well while coughing."
+  },
+  {
+    "id": "move.sandstorm", "name": "Sandstorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:impairment"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Slashing", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.7 }
+    ],
+    "description": "The desert, airborne and abrasive about it."
+  },
+  {
+    "id": "move.fault_line", "name": "Fault Line",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 14 } ],
+    "stagger_power": 18,
+    "description": "Draw a line on the ground. The ground takes it personally."
+  },
+  {
+    "id": "move.seismic_wave", "name": "Seismic Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 16 } ],
+    "stagger_power": 15,
+    "description": "The ground clears its throat, at everyone."
+  },
+  {
+    "id": "move.crushing_earth", "name": "Crushing Earth",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "packets": [ { "type": "Crushing", "amount": 26 } ],
+    "stagger_power": 20,
+    "description": "Two hands of the world, closing."
+  },
+  {
+    "id": "move.earthen_pillar", "name": "Earthen Pillar",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Crushing", "amount": 19 } ],
+    "stagger_power": 25,
+    "description": "The floor under them remembers it used to be a mountain."
+  },
+  {
+    "id": "move.shatterstone", "name": "Shatterstone",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Crushing", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" },
+      { "kind": "applyStatus", "text": "status.corroded", "chance": 0.5 }
+    ],
+    "description": "Stone against steel. The steel keeps fewer rivets."
+  },
+  {
+    "id": "move.earthquake", "name": "Earthquake",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 19 },
+    "costs": [ { "resource": "mana", "amount": 28 } ],
+    "cooldown_ticks": 270,
+    "max_targets": 4,
+    "packets": [ { "type": "Crushing", "amount": 16 } ],
+    "stagger_power": 28,
+    "description": "Ask the world to shrug. Survive the answer."
+  },
+  {
+    "id": "move.mountains_wrath", "name": "Mountain's Wrath",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 31 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Crushing", "amount": 20 } ],
+    "stagger_power": 24,
+    "description": "Mountains forgive nothing. This is the paperwork."
+  },
+  {
+    "id": "move.rock_armor", "name": "Rock Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 8, "duration_ticks": 450 }
+    ],
+    "description": "Wear the quarry. Blows arrive pre-disappointed."
+  },
+  {
+    "id": "move.earth_shield", "name": "Earth Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "A slab of somewhere else, standing in for your ribs."
+  },
+  {
+    "id": "move.granite_barrier", "name": "Granite Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 34 }
+    ],
+    "description": "Granite does not negotiate. Borrow that for a while."
+  }
+]

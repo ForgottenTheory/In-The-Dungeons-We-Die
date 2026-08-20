@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Dungeons.Content;
 
@@ -19,6 +20,23 @@ public sealed class DataStore<T> where T : IDefinition
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
         Converters = { new JsonStringEnumConverter() },
+        // A JSON key that matches no property is a load error, never a silent shrug. Two
+        // shipped records ("moveId" on a MoveMatch, "scalesWith" on an EffectSpec) were
+        // quietly ignored for a whole milestone because this defaulted to Skip — the field
+        // read as authored and the behaviour was the default's. Types with custom converters
+        // (e.g. MoveGrantSpec) keep their own contracts; this covers everything reflection
+        // deserializes.
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers =
+            {
+                static typeInfo =>
+                {
+                    if (typeInfo.Kind == JsonTypeInfoKind.Object)
+                        typeInfo.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+                },
+            },
+        },
     };
 
     private readonly Dictionary<string, T> _byId = new(StringComparer.Ordinal);

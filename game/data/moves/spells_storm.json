@@ -1,0 +1,309 @@
+[
+  // The storm spell family (docs/spell-library.md §1). Charge packets, Shock riders, chains
+  // via max_targets (Arc Surge precedent), and thunder's stagger. Placeholder numbers.
+
+  {
+    "id": "move.spark", "name": "Spark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:storm"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 5 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 7 } ],
+    "description": "The smallest possible disagreement with the air."
+  },
+  {
+    "id": "move.static_shock", "name": "Static Shock",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.4 }
+    ],
+    "description": "A doorknob's revenge, weaponised."
+  },
+  {
+    "id": "move.storm_bolt", "name": "Storm Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.3 }
+    ],
+    "description": "Bottled weather, uncorked at someone."
+  },
+  {
+    "id": "move.lightning_strike", "name": "Lightning Strike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 16 } ],
+    "description": "From above, without appointment."
+  },
+  {
+    "id": "move.lightning_bolt", "name": "Lightning Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 22 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.35 }
+    ],
+    "description": "The classic argument: brief, bright, and correct."
+  },
+  {
+    "id": "move.electrocute", "name": "Electrocute",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 20 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock" }
+    ],
+    "description": "Not a strike — a sentence. The current does not let go early."
+  },
+  {
+    "id": "move.storm_spear", "name": "Storm Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:storm"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 8 },
+      { "type": "Magic", "aspect": "charge", "amount": 13 }
+    ],
+    "description": "A javelin that remembered it used to be weather."
+  },
+  {
+    "id": "move.ball_lightning", "name": "Ball Lightning",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:storm"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 30 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.3 }
+    ],
+    "description": "Physics filed a complaint. It was struck by the exhibit."
+  },
+  {
+    "id": "move.skyfire", "name": "Skyfire",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 210,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 38 } ],
+    "description": "Call down the one bolt the storm was saving."
+  },
+  {
+    "id": "move.forked_lightning", "name": "Forked Lightning",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:chain"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 11 } ],
+    "description": "One bolt, two opinions."
+  },
+  {
+    "id": "move.chain_lightning", "name": "Chain Lightning",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:chain", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.3 }
+    ],
+    "description": "Lightning with a guest list."
+  },
+  {
+    "id": "move.arc_lightning", "name": "Arc Lightning",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:chain"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 17 } ],
+    "description": "Arc Surge's older sibling. It finishes conversations."
+  },
+  {
+    "id": "move.thunderclap", "name": "Thunderclap",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 6 } ],
+    "stagger_power": 30,
+    "description": "The sound arrives like a verdict. Knees vote to leave."
+  },
+  {
+    "id": "move.thunderbolt", "name": "Thunderbolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 20 } ],
+    "stagger_power": 22,
+    "description": "The bolt and the sound arrive together, and both hit."
+  },
+  {
+    "id": "move.thunder_wave", "name": "Thunder Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 10 } ],
+    "stagger_power": 18,
+    "description": "A wall of sound with the storm still inside it."
+  },
+  {
+    "id": "move.shockwave", "name": "Shockwave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 12 } ],
+    "stagger_power": 24,
+    "description": "The air becomes briefly load-bearing, then becomes a weapon."
+  },
+  {
+    "id": "move.storm_surge", "name": "Storm Surge",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 17 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.5 }
+    ],
+    "description": "The storm leans in. The charge finds every seam."
+  },
+  {
+    "id": "move.rolling_thunder", "name": "Rolling Thunder",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 13 } ],
+    "stagger_power": 15,
+    "description": "Thunder that refuses to end. It keeps arriving."
+  },
+  {
+    "id": "move.thunderstorm", "name": "Thunderstorm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.4 }
+    ],
+    "description": "The whole sky takes your side, loudly."
+  },
+  {
+    "id": "move.lightning_storm", "name": "Lightning Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.5 }
+    ],
+    "description": "Statistically, lightning strikes the same place as often as it likes."
+  },
+  {
+    "id": "move.storm_call", "name": "Storm Call",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:storm"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 28 } ],
+    "cooldown_ticks": 270,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 17 } ],
+    "description": "Whistle, and the weather answers. It was waiting to be asked."
+  },
+  {
+    "id": "move.tempest", "name": "Tempest",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:storm", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 31 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 19 } ],
+    "stagger_power": 15,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.4 }
+    ],
+    "description": "Weather with a thesis. Everyone nearby is cited."
+  },
+  {
+    "id": "move.lightning_nova", "name": "Lightning Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:storm", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "charge", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.shock", "chance": 0.4 }
+    ],
+    "description": "You are the strike point. Everyone else is the radius."
+  },
+  {
+    "id": "move.storm_shield", "name": "Storm Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:storm"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.charge", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Ground yourself, in the older sense. Charge slides past."
+  },
+  {
+    "id": "move.lightning_shield", "name": "Lightning Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:storm", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 22 }
+    ],
+    "description": "A cage of live current worn on the outside."
+  },
+  {
+    "id": "move.tempest_barrier", "name": "Tempest Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:storm", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 32 }
+    ],
+    "description": "Stand in the eye. Let the wall be weather."
+  }
+]

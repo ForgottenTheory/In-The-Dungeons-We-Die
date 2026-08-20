@@ -1,0 +1,238 @@
+[
+  // The wind spell family (docs/spell-library.md §1). Air is physical here — Slashing blades
+  // and Crushing gusts on the physical lane — plus the tempo pair (Tailwind/Headwind, riding
+  // the one timing key combat reads: combat.windup.mult) and evade for the untouchable read.
+  // Placeholder numbers.
+
+  {
+    "id": "move.slicing_gust", "name": "Slicing Gust",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 8 },
+    "costs": [ { "resource": "mana", "amount": 6 } ],
+    "packets": [ { "type": "Slashing", "amount": 8 } ],
+    "description": "Air with an edge on it."
+  },
+  {
+    "id": "move.wind_bolt", "name": "Wind Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Crushing", "amount": 11 } ],
+    "description": "A punch thrown by the weather."
+  },
+  {
+    "id": "move.wind_blade", "name": "Wind Blade",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Slashing", "amount": 13 } ],
+    "description": "The sky, honed."
+  },
+  {
+    "id": "move.razor_wind", "name": "Razor Wind",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Slashing", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 5, "duration_ticks": 60, "chance": 0.5 }
+    ],
+    "description": "You hear it after it has already opened something."
+  },
+  {
+    "id": "move.air_lance", "name": "Air Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Piercing", "amount": 20 } ],
+    "description": "Compressed sky, released at a point."
+  },
+  {
+    "id": "move.tempest_slash", "name": "Tempest Slash",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Slashing", "amount": 18 } ],
+    "description": "Swing the storm like it has a handle."
+  },
+  {
+    "id": "move.gust", "name": "Gust",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "cooldown_ticks": 90,
+    "packets": [ { "type": "Crushing", "amount": 4 } ],
+    "effects": [
+      { "kind": "interrupt" }
+    ],
+    "description": "One hard shove of air. Whatever they were doing, they are not."
+  },
+  {
+    "id": "move.vacuum_burst", "name": "Vacuum Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Crushing", "amount": 18 } ],
+    "description": "Remove the air, then put it all back at once."
+  },
+  {
+    "id": "move.vacuum_sphere", "name": "Vacuum Sphere",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Crushing", "amount": 27 } ],
+    "description": "A hole in the sky, sold as a sphere. It closes on schedule."
+  },
+  {
+    "id": "move.pressure_wave", "name": "Pressure Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 9 } ],
+    "stagger_power": 22,
+    "description": "The air leans on everyone at once."
+  },
+  {
+    "id": "move.gale", "name": "Gale",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 11 } ],
+    "description": "Weather that has stopped asking."
+  },
+  {
+    "id": "move.breath_of_wind", "name": "Breath of Wind",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Crushing", "amount": 9 } ],
+    "description": "The sky exhales through you. Briefly, everyone else inhales trouble."
+  },
+  {
+    "id": "move.cyclone", "name": "Cyclone",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Slashing", "amount": 13 } ],
+    "description": "Wind that found a shape it likes."
+  },
+  {
+    "id": "move.stormwind", "name": "Stormwind",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [
+      { "type": "Crushing", "amount": 8 },
+      { "type": "Slashing", "amount": 7 }
+    ],
+    "description": "The front edge of a storm, unaccompanied by the rest."
+  },
+  {
+    "id": "move.gale_force", "name": "Gale Force",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Crushing", "amount": 14 } ],
+    "stagger_power": 20,
+    "description": "The measurement scale runs out of names for this."
+  },
+  {
+    "id": "move.tornado", "name": "Tornado",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Slashing", "amount": 15 } ],
+    "stagger_power": 16,
+    "description": "A column of sky with a work ethic."
+  },
+  {
+    "id": "move.hurricane", "name": "Hurricane",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 31 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [
+      { "type": "Crushing", "amount": 12 },
+      { "type": "Slashing", "amount": 10 }
+    ],
+    "stagger_power": 18,
+    "description": "Weather with a name and a temper to earn it."
+  },
+  {
+    "id": "move.tailwind", "name": "Tailwind",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.85, "duration_ticks": 400 }
+    ],
+    "description": "The wind at your back, in writing. Everything you start finishes sooner."
+  },
+  {
+    "id": "move.headwind", "name": "Headwind",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 1.25, "duration_ticks": 400 }
+    ],
+    "description": "Give them weather to swing through."
+  },
+  {
+    "id": "move.air_shield", "name": "Air Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.08, "duration_ticks": 400 }
+    ],
+    "description": "A cushion of moving air. Some blows simply miss the address."
+  },
+  {
+    "id": "move.cyclone_armor", "name": "Cyclone Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.12, "duration_ticks": 450 }
+    ],
+    "description": "Wear the whirlwind. Let the weather decline on your behalf."
+  }
+]

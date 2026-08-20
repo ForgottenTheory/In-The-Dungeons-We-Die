@@ -1,0 +1,341 @@
+[
+  // The shadow spell family — shadow and void (docs/spell-library.md §1). Umbral damage rides
+  // the MAGIC lane under essence:abyssal; Fear and Silence are Resolve-buildup controls (D-08);
+  // Dark Pact spends health as a cost, which pools already support. Placeholder numbers.
+
+  {
+    "id": "move.shadow_bolt", "name": "Shadow Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "description": "A piece of the dark, loaned out at interest."
+  },
+  {
+    "id": "move.dark_pulse", "name": "Dark Pulse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "description": "The dark has a heartbeat. This is one beat of it, aimed."
+  },
+  {
+    "id": "move.umbral_blade", "name": "Umbral Blade",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:abyssal"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [
+      { "type": "Slashing", "amount": 6 },
+      { "type": "Magic", "amount": 8 }
+    ],
+    "description": "An edge cut from somewhere the light gave up on."
+  },
+  {
+    "id": "move.umbral_spear", "name": "Umbral Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "Thrown darkness. It knows the way to the target by heart."
+  },
+  {
+    "id": "move.shadow_lance", "name": "Shadow Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 22 } ],
+    "description": "The gap between torches, sharpened."
+  },
+  {
+    "id": "move.void_shadow", "name": "Void Shadow",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [ { "type": "Magic", "amount": 24 } ],
+    "description": "A shadow with nothing left to be a shadow of."
+  },
+  {
+    "id": "move.nightmare", "name": "Nightmare",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:control"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.fear" }
+    ],
+    "description": "Show them the dream they don't tell anyone about."
+  },
+  {
+    "id": "move.dread", "name": "Dread",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:control"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.fear" }
+    ],
+    "description": "Nothing happens. That is the spell. Nothing keeps happening, closer."
+  },
+  {
+    "id": "move.terror", "name": "Terror",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:control"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 180,
+    "packets": [ { "type": "Magic", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.fear" },
+      { "kind": "applyStatus", "text": "status.fear" }
+    ],
+    "description": "Fear, but with the certainty attached."
+  },
+  {
+    "id": "move.silence", "name": "Silence",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:control"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.silence" }
+    ],
+    "description": "Take the words out of the room."
+  },
+  {
+    "id": "move.shadow_mark", "name": "Shadow Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "Paint the target in the dark's favourite colour."
+  },
+  {
+    "id": "move.shadow_nova", "name": "Shadow Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "For one moment, you are the only light source, and you are off."
+  },
+  {
+    "id": "move.umbral_wave", "name": "Umbral Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 13 } ],
+    "description": "Dusk arrives sideways, at speed."
+  },
+  {
+    "id": "move.nightfall", "name": "Nightfall",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "description": "The day ends early, on your say-so, on their heads."
+  },
+  {
+    "id": "move.dark_pact", "name": "Dark Pact",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:abyssal", "mech:resource"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "health", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantResource", "text": "mana", "amount": 20 }
+    ],
+    "description": "The dark pays well. It pays in advance. Read nothing."
+  },
+  {
+    "id": "move.shadow_cloak", "name": "Shadow Cloak",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:abyssal"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.1, "duration_ticks": 450 }
+    ],
+    "description": "Wear the dark loosely. Blows keep finding where you almost were."
+  },
+  {
+    "id": "move.dark_shield", "name": "Dark Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:abyssal", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "Brace behind something the light can't inspect."
+  },
+  {
+    "id": "move.shadow_barrier", "name": "Shadow Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:abyssal", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "A wall made of everything behind you."
+  },
+
+  // --- Void -----------------------------------------------------------------------------------
+
+  {
+    "id": "move.abyssal_bolt", "name": "Abyssal Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 11 } ],
+    "description": "Posted from the bottom of everything."
+  },
+  {
+    "id": "move.void_bolt", "name": "Void Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "description": "A hole, thrown."
+  },
+  {
+    "id": "move.void_pulse", "name": "Void Pulse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 17 } ],
+    "description": "The absence beats once, in their direction."
+  },
+  {
+    "id": "move.void_lance", "name": "Void Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 22 } ],
+    "description": "Nothing, given a point and a destination."
+  },
+  {
+    "id": "move.void_burst", "name": "Void Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 19 } ],
+    "description": "The void does not knock."
+  },
+  {
+    "id": "move.void_orb", "name": "Void Orb",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:abyssal"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 29 } ],
+    "description": "A sphere of nothing, which is somehow heavier than something."
+  },
+  {
+    "id": "move.void_drain", "name": "Void Drain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:healing"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "effects": [
+      { "kind": "heal", "amount": 7, "target": "TriggerSource" }
+    ],
+    "description": "What the void takes, it tips you a share of."
+  },
+  {
+    "id": "move.void_mark", "name": "Void Mark",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:abyssal", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" },
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.5 }
+    ],
+    "description": "The void files a claim. Everything after is collection."
+  },
+  {
+    "id": "move.void_nova", "name": "Void Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 14 } ],
+    "description": "Everything near you is briefly optional."
+  },
+  {
+    "id": "move.void_wave", "name": "Void Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "description": "Unbeing, in tide form."
+  },
+  {
+    "id": "move.void_storm", "name": "Void Storm",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:abyssal"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 19 },
+    "costs": [ { "resource": "mana", "amount": 29 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 17 } ],
+    "description": "Weather from a sky that isn't there."
+  },
+  {
+    "id": "move.void_shield", "name": "Void Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:abyssal", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 23 }
+    ],
+    "description": "Blows fall into it. Receipts are not issued."
+  },
+  {
+    "id": "move.void_barrier", "name": "Void Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:abyssal", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 33 }
+    ],
+    "description": "A moat of nothing, and nothing crosses it cheaply."
+  }
+]

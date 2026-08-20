@@ -8,9 +8,100 @@
   {
     "id": "movemod.emberbrand",
     "name": "Emberbrand",
-    "match": { "moveId": "move.heavy_strike" },
+    "match": { "move_id": "move.heavy_strike" },
     "ops": [
       { "op": "addAsExtra", "from": "physical", "to": "heat", "fraction": 0.25 }
+    ]
+  },
+
+  // --- The weapon imbues (spell-library expansion, docs/spell-library.md §1) -----------------
+  //
+  // Attached for a duration by the Weapon-X casts in spells_imbue.json via modifyMove. Every
+  // match is tag-scoped to action:attack — NEVER match-all, which is exactly the bug the
+  // unkeyed Emberbrand shipped with. addAsExtra keeps D-01's fraction rule: the strike stays
+  // a strike; the element rides along as extra.
+  {
+    "id": "movemod.imbue_heat",
+    "name": "Flame Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "heat", "fraction": 0.2 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_cold",
+    "name": "Frost Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "cold", "fraction": 0.2 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_charge",
+    "name": "Storm Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "charge", "fraction": 0.2 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_toxin",
+    "name": "Venom Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "toxin", "fraction": 0.2 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_decay",
+    "name": "Umbral Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "decay", "fraction": 0.2 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_radiant",
+    "name": "Radiant Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "magic", "fraction": 0.2 }
+    ]
+  },
+  {
+    // Arcane is unresistable (D-03a), so this imbue's fraction sits deliberately below the rest.
+    "id": "movemod.imbue_arcane",
+    "name": "Arcane Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "arcane", "fraction": 0.12 }
+    ]
+  },
+  {
+    "id": "movemod.imbue_blessed",
+    "name": "Blessed Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "scaleDamage", "value": 1.1 }
+    ]
+  },
+  {
+    // The lifesteal imbue: a flat heal rider on every landing attack (the Drain shape).
+    "id": "movemod.imbue_vampiric",
+    "name": "Vampiric Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addEffect", "effect": { "kind": "heal", "amount": 3, "target": "TriggerSource" } }
+    ]
+  },
+  {
+    "id": "movemod.imbue_elemental",
+    "name": "Elemental Imbue",
+    "match": { "tags_all": ["action:attack"] },
+    "ops": [
+      { "op": "addAsExtra", "from": "physical", "to": "heat", "fraction": 0.08 },
+      { "op": "addAsExtra", "from": "physical", "to": "cold", "fraction": 0.08 },
+      { "op": "addAsExtra", "from": "physical", "to": "charge", "fraction": 0.08 }
     ]
   }
 ]

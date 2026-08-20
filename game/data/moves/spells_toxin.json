@@ -1,0 +1,310 @@
+[
+  // The toxin spell family — poison, acid, plague (docs/spell-library.md §1). Toxin packets
+  // feed Poison (low, long, stacks to 20); corrosion feeds Corroded (the armour answer);
+  // the plague end mixes decay. Placeholder numbers.
+
+  {
+    "id": "move.poison_bolt", "name": "Poison Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 3, "duration_ticks": 90, "chance": 0.6 }
+    ],
+    "description": "The hit is the introduction. The poison is the conversation."
+  },
+  {
+    "id": "move.venom_spray", "name": "Venom Spray",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 3, "duration_ticks": 90, "chance": 0.5 }
+    ],
+    "description": "A fan of bad news, close up."
+  },
+  {
+    "id": "move.venomous_touch", "name": "Venomous Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 5, "duration_ticks": 120 }
+    ],
+    "description": "One touch, one long apology from their bloodstream."
+  },
+  {
+    "id": "move.infection", "name": "Infection",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 6, "duration_ticks": 150 }
+    ],
+    "description": "Small now. Patient. Thorough."
+  },
+  {
+    "id": "move.disease", "name": "Disease",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 5 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 120 },
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Sickness on a schedule. Theirs."
+  },
+  {
+    "id": "move.toxic_burst", "name": "Toxic Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 15 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 90, "chance": 0.5 }
+    ],
+    "description": "Venom with somewhere to be."
+  },
+  {
+    "id": "move.poison_spray", "name": "Poison Spray",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 8 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 3, "duration_ticks": 90, "chance": 0.6 }
+    ],
+    "description": "Generosity, of a kind."
+  },
+  {
+    "id": "move.poison_cloud", "name": "Poison Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 120, "chance": 0.7 }
+    ],
+    "description": "One breath of it is plenty. They take several."
+  },
+  {
+    "id": "move.toxic_cloud", "name": "Toxic Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 5, "duration_ticks": 120, "chance": 0.7 }
+    ],
+    "description": "The air files a grievance against everyone in it."
+  },
+  {
+    "id": "move.poison_nova", "name": "Poison Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 5, "duration_ticks": 120 }
+    ],
+    "description": "Everything around you is invited to decline slowly."
+  },
+  {
+    "id": "move.contagion", "name": "Contagion",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 5 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 5, "duration_ticks": 150 }
+    ],
+    "description": "It spreads on contact, and everything counts as contact."
+  },
+  {
+    "id": "move.acid_bolt", "name": "Acid Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded", "chance": 0.6 }
+    ],
+    "description": "Chemistry's oldest insult."
+  },
+  {
+    "id": "move.corrosive_touch", "name": "Corrosive Touch",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" }
+    ],
+    "description": "Everything you touch is suddenly cheaper."
+  },
+  {
+    "id": "move.acid_spray", "name": "Acid Spray",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded", "chance": 0.7 }
+    ],
+    "description": "Armour polish, in reverse."
+  },
+  {
+    "id": "move.corrosive_blast", "name": "Corrosive Blast",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 16 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" }
+    ],
+    "description": "Rivets first, confidence second."
+  },
+  {
+    "id": "move.acid_wave", "name": "Acid Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded", "chance": 0.6 }
+    ],
+    "description": "A tide with a solvency problem — everyone else's."
+  },
+  {
+    "id": "move.acid_rain", "name": "Acid Rain",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "corrosion", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.corroded" }
+    ],
+    "description": "The forecast is brief: dissolution."
+  },
+  {
+    "id": "move.plague_bolt", "name": "Plague Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [
+      { "type": "Magic", "aspect": "toxin", "amount": 6 },
+      { "type": "Magic", "aspect": "decay", "amount": 6 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 3, "duration_ticks": 120, "chance": 0.5 }
+    ],
+    "description": "Two kinds of bad news sharing one envelope."
+  },
+  {
+    "id": "move.plague_cloud", "name": "Plague Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [
+      { "type": "Magic", "aspect": "toxin", "amount": 5 },
+      { "type": "Magic", "aspect": "decay", "amount": 5 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 5, "duration_ticks": 150, "chance": 0.7 },
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.5 }
+    ],
+    "description": "History's least favourite weather."
+  },
+  {
+    "id": "move.blight_bolt", "name": "Blight Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 12 } ],
+    "description": "The harvest fails, in miniature, in them."
+  },
+  {
+    "id": "move.blight", "name": "Blight",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" }
+    ],
+    "description": "Whatever they were growing into, they stop."
+  },
+  {
+    "id": "move.rot", "name": "Rot",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:dot", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 150 }
+    ],
+    "description": "Time's work, subcontracted."
+  },
+  {
+    "id": "move.decay", "name": "Decay",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "aspect": "decay", "amount": 17 } ],
+    "description": "Entropy, expedited and addressed."
+  },
+  {
+    "id": "move.toxic_ward", "name": "Toxic Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:nature"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.toxin", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Teach your blood to file poison under 'seen it'."
+  }
+]

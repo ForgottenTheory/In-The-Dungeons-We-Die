@@ -1,0 +1,475 @@
+[
+  // The radiant spell family — light and celestial (docs/spell-library.md §1). There is no
+  // radiant lane by design: light damage rides the MAGIC lane under essence:radiant, and the
+  // solar names add heat. Blinding reads as Vulnerable (dazzled = openings), Illuminate applies
+  // the shipped marking status. Placeholder numbers.
+
+  {
+    "id": "move.light_bolt", "name": "Light Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "description": "Daylight, expedited."
+  },
+  {
+    "id": "move.dawn_ray", "name": "Dawn Ray",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "description": "The first light of morning, several hours early and considerably less gentle."
+  },
+  {
+    "id": "move.radiant_beam", "name": "Radiant Beam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 20 } ],
+    "description": "A straight line of noon."
+  },
+  {
+    "id": "move.light_spear", "name": "Light Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "Brightness with a point to make."
+  },
+  {
+    "id": "move.flash", "name": "Flash",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 8 } ],
+    "packets": [ { "type": "Magic", "amount": 4 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable", "chance": 0.6 }
+    ],
+    "description": "One heartbeat of pure noon. The eyes pay for it."
+  },
+  {
+    "id": "move.blinding_light", "name": "Blinding Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:radiant", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 5 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.vulnerable" }
+    ],
+    "description": "Everyone blinks. You don't. That difference is the spell."
+  },
+  {
+    "id": "move.illuminate", "name": "Illuminate",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:impairment"],
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.illuminated" }
+    ],
+    "description": "Paint them in daylight. Nothing lit like that hides."
+  },
+  {
+    "id": "move.sunbeam", "name": "Sunbeam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [
+      { "type": "Magic", "amount": 10 },
+      { "type": "Magic", "aspect": "heat", "amount": 8 }
+    ],
+    "description": "Borrowed directly from the sun, with the warmth left in."
+  },
+  {
+    "id": "move.sunfire", "name": "Sunfire",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [
+      { "type": "Magic", "amount": 8 },
+      { "type": "Magic", "aspect": "heat", "amount": 10 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 4, "duration_ticks": 60, "chance": 0.4 }
+    ],
+    "description": "What the sun does all day, concentrated into a moment."
+  },
+  {
+    "id": "move.solar_flare", "name": "Solar Flare",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [
+      { "type": "Magic", "amount": 8 },
+      { "type": "Magic", "aspect": "heat", "amount": 8 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.3 }
+    ],
+    "description": "The sun sneezes in your favour."
+  },
+  {
+    "id": "move.radiant_burst", "name": "Radiant Burst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "amount": 18 } ],
+    "description": "Light in a hurry to be somewhere specific."
+  },
+  {
+    "id": "move.radiant_nova", "name": "Radiant Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "For one moment, you are the brightest thing that has ever disliked them."
+  },
+  {
+    "id": "move.sunburst", "name": "Sunburst",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "max_targets": 3,
+    "packets": [
+      { "type": "Magic", "amount": 10 },
+      { "type": "Magic", "aspect": "heat", "amount": 8 }
+    ],
+    "description": "Noon, localised and weaponised."
+  },
+  {
+    "id": "move.pillar_of_light", "name": "Pillar of Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "cooldown_ticks": 210,
+    "packets": [ { "type": "Magic", "amount": 36 } ],
+    "description": "The sky points at someone."
+  },
+  {
+    "id": "move.judgment", "name": "Judgment",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 30 } ],
+    "cooldown_ticks": 300,
+    "packets": [ { "type": "Magic", "amount": 42 } ],
+    "description": "The verdict arrives in full daylight, with no appeals process."
+  },
+  {
+    "id": "move.holy_light", "name": "Holy Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "effects": [
+      { "kind": "heal", "amount": 22 }
+    ],
+    "description": "Light that takes your side of the argument with your wounds."
+  },
+  {
+    "id": "move.celestial_light", "name": "Celestial Light",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 26 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "heal", "amount": 38 }
+    ],
+    "description": "Somewhere above the clouds, something notices you and approves."
+  },
+  {
+    "id": "move.light_shield", "name": "Light Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 23 }
+    ],
+    "description": "A pane of morning, held up against the dark."
+  },
+  {
+    "id": "move.radiant_barrier", "name": "Radiant Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 32 }
+    ],
+    "description": "Light with structural opinions."
+  },
+  {
+    "id": "move.halo", "name": "Halo",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 18 },
+      { "kind": "heal", "amount": 8 }
+    ],
+    "description": "Wear the light like a crown that works for a living."
+  },
+  {
+    "id": "move.dawn_shield", "name": "Dawn Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "The certainty that morning comes, worn on the arm."
+  },
+  {
+    "id": "move.sunward", "name": "Sunward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "Stand in the sun's good graces. Heat treats you as family."
+  },
+  {
+    "id": "move.radiant_ward", "name": "Radiant Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.2, "duration_ticks": 500 }
+    ],
+    "description": "Light standing between you and everything uncanny."
+  },
+
+  // --- Celestial ------------------------------------------------------------------------------
+
+  {
+    "id": "move.star_bolt", "name": "Star Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "description": "A very small star with a very short commute."
+  },
+  {
+    "id": "move.astral_bolt", "name": "Astral Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 8, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "Fired from somewhere the maps decline to mention."
+  },
+  {
+    "id": "move.moon_beam", "name": "Moon Beam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "description": "Cold light with excellent aim."
+  },
+  {
+    "id": "move.moonfire", "name": "Moonfire",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 75, "chance": 0.5 }
+    ],
+    "description": "Fire by moonlight: quieter, paler, just as hungry."
+  },
+  {
+    "id": "move.astral_spear", "name": "Astral Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "Thrown across a distance that should have mattered."
+  },
+  {
+    "id": "move.celestial_spear", "name": "Celestial Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "packets": [ { "type": "Magic", "amount": 28 } ],
+    "description": "The heavens keep armouries. This is on loan."
+  },
+  {
+    "id": "move.solar_beam", "name": "Solar Beam",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "packets": [
+      { "type": "Magic", "amount": 14 },
+      { "type": "Magic", "aspect": "heat", "amount": 14 }
+    ],
+    "description": "Eight minutes from the sun, zero of them wasted."
+  },
+  {
+    "id": "move.falling_star", "name": "Falling Star",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:stagger"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "packets": [
+      { "type": "Crushing", "amount": 10 },
+      { "type": "Magic", "aspect": "heat", "amount": 12 }
+    ],
+    "stagger_power": 15,
+    "description": "Make a wish. Theirs won't help."
+  },
+  {
+    "id": "move.starfall", "name": "Starfall",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 15, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 15 } ],
+    "description": "The night sky, redistributed."
+  },
+  {
+    "id": "move.star_shower", "name": "Star Shower",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "description": "Meteorology and astronomy settle their differences on your behalf."
+  },
+  {
+    "id": "move.meteor_strike", "name": "Meteor Strike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 30 } ],
+    "cooldown_ticks": 300,
+    "packets": [
+      { "type": "Crushing", "amount": 20 },
+      { "type": "Magic", "aspect": "heat", "amount": 18 }
+    ],
+    "stagger_power": 30,
+    "description": "Somewhere in the sky, a rock has chosen a side."
+  },
+  {
+    "id": "move.astral_shield", "name": "Astral Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 24 }
+    ],
+    "description": "A shield borrowed from a sky that owes you nothing. It pays anyway."
+  },
+  {
+    "id": "move.moon_shield", "name": "Moon Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "The moon has been deflecting things for a very long time."
+  },
+  {
+    "id": "move.solar_shield", "name": "Solar Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 16 },
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.15, "duration_ticks": 400 }
+    ],
+    "description": "Wear a slice of the corona. Heat defers to seniority."
+  },
+  {
+    "id": "move.lunar_blessing", "name": "Lunar Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.wisdom", "amount": 4, "duration_ticks": 500 },
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.06, "duration_ticks": 500 }
+    ],
+    "description": "The moon's advice: see clearly, and be somewhere slightly else."
+  },
+  {
+    "id": "move.solar_blessing", "name": "Solar Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.12, "duration_ticks": 500 },
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.15, "duration_ticks": 500 }
+    ],
+    "description": "The sun's advice: hit harder, and stop worrying about sunburn."
+  },
+  {
+    "id": "move.lunar_curse", "name": "Lunar Curse",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:impairment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken" },
+      { "kind": "grantModifier", "text": "attr.luck", "amount": -4, "duration_ticks": 400 }
+    ],
+    "description": "The moon remembers every wolf that ever howled at it. Now it remembers them."
+  }
+]

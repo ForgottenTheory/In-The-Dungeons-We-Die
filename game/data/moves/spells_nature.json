@@ -1,0 +1,165 @@
+[
+  // The nature spell family — thorns, bark, spores (docs/spell-library.md §1). The root/vine
+  // grabs and the heal-over-time growth names are PARKED (no Root status, no heal-tick status);
+  // what ships is the physical thorn end, the toxin end, and bark as armour. Placeholder numbers.
+
+  {
+    "id": "move.thorn_whip", "name": "Thorn Whip",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [
+      { "type": "Slashing", "amount": 8 },
+      { "type": "Magic", "aspect": "toxin", "amount": 4 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.bleed", "amount": 3, "duration_ticks": 60, "chance": 0.4 }
+    ],
+    "description": "A lash that grew its own barbs and opinions."
+  },
+  {
+    "id": "move.vine_lash", "name": "Vine Lash",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:nature", "mech:impairment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Slashing", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.5 }
+    ],
+    "description": "Green, fast, and utterly without sympathy."
+  },
+  {
+    "id": "move.thorn_volley", "name": "Thorn Volley",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [
+      { "type": "Piercing", "amount": 5 },
+      { "type": "Piercing", "amount": 5 },
+      { "type": "Piercing", "amount": 5 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 2, "duration_ticks": 90, "chance": 0.4 }
+    ],
+    "description": "The hedge fires back."
+  },
+  {
+    "id": "move.poison_ivy", "name": "Poison Ivy",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 150 }
+    ],
+    "description": "It itches its way through armour."
+  },
+  {
+    "id": "move.spore_cloud", "name": "Spore Cloud",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "essence:nature", "mech:ailment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "aspect": "toxin", "amount": 6 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.poison", "amount": 4, "duration_ticks": 120, "chance": 0.6 }
+    ],
+    "description": "The forest's opinion of trespassers, in powder form."
+  },
+  {
+    "id": "move.natures_wrath", "name": "Nature's Wrath",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:nature"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 21 } ],
+    "cooldown_ticks": 180,
+    "packets": [
+      { "type": "Crushing", "amount": 12 },
+      { "type": "Magic", "aspect": "toxin", "amount": 12 }
+    ],
+    "description": "The green remembers every axe."
+  },
+  {
+    "id": "move.natures_blessing", "name": "Nature's Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:nature", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "heal", "amount": 16 },
+      { "kind": "grantModifier", "text": "combat.resist.toxin", "amount": 0.15, "duration_ticks": 400 }
+    ],
+    "description": "The green takes you for one of its own, briefly."
+  },
+  {
+    "id": "move.barkskin", "name": "Barkskin",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:nature"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 6, "duration_ticks": 450 }
+    ],
+    "description": "Trees have been ignoring axes longer than you've been alive."
+  },
+  {
+    "id": "move.ironbark", "name": "Ironbark",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:nature"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 10, "duration_ticks": 450 }
+    ],
+    "description": "The old growth. Axes retire against it."
+  },
+  {
+    "id": "move.nature_ward", "name": "Nature Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:nature"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.toxin", "amount": 0.25, "duration_ticks": 500 }
+    ],
+    "description": "The forest agrees not to poison family."
+  },
+  {
+    "id": "move.blur", "name": "Blur",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.1, "duration_ticks": 400 }
+    ],
+    "description": "Be approximately where they aim."
+  },
+  {
+    "id": "move.false_life", "name": "False Life",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 22 }
+    ],
+    "description": "Borrowed vitality with a short lease. The blows read it as real."
+  }
+]

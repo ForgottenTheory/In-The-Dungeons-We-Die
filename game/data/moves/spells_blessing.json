@@ -1,0 +1,659 @@
+[
+  // The blessing family — attribute buffs, battle shouts, divine strikes and prayers
+  // (docs/spell-library.md §1). Buffs are grantModifier over real keys with durations; the
+  // shouts (War Cry, Rage, Fury, Heroism, Courage) cost STAMINA and ship as Manuals, not
+  // Grimoires. Fury and Rage buy damage with damage-taken — the tradeoff is the identity.
+  // Placeholder numbers.
+
+  // --- Attribute blessings -----------------------------------------------------------------
+
+  {
+    "id": "move.strength", "name": "Strength",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.strength", "amount": 4, "duration_ticks": 500 }
+    ],
+    "description": "The jar lid of the world loosens."
+  },
+  {
+    "id": "move.greater_strength", "name": "Greater Strength",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.strength", "amount": 7, "duration_ticks": 500 }
+    ],
+    "description": "Doors stop being questions."
+  },
+  {
+    "id": "move.agility", "name": "Agility",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.dexterity", "amount": 4, "duration_ticks": 500 }
+    ],
+    "description": "The floor reports fewer of your footsteps."
+  },
+  {
+    "id": "move.greater_agility", "name": "Greater Agility",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.dexterity", "amount": 7, "duration_ticks": 500 }
+    ],
+    "description": "Gravity starts issuing suggestions instead of rules."
+  },
+  {
+    "id": "move.endurance", "name": "Endurance",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.endurance", "amount": 4, "duration_ticks": 500 }
+    ],
+    "description": "The hill agrees to be shorter."
+  },
+  {
+    "id": "move.greater_endurance", "name": "Greater Endurance",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.endurance", "amount": 7, "duration_ticks": 500 }
+    ],
+    "description": "Tiredness misses its appointment."
+  },
+  {
+    "id": "move.intellect", "name": "Intellect",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.intelligence", "amount": 4, "duration_ticks": 500 }
+    ],
+    "description": "The idea arrives before you need it."
+  },
+  {
+    "id": "move.greater_intellect", "name": "Greater Intellect",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.intelligence", "amount": 7, "duration_ticks": 500 }
+    ],
+    "description": "Whole libraries, briefly on retainer."
+  },
+  {
+    "id": "move.fortitude", "name": "Fortitude",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.constitution", "amount": 4, "duration_ticks": 500 }
+    ],
+    "description": "Sturdier, in writing."
+  },
+  {
+    "id": "move.blessing_of_strength", "name": "Blessing of Strength",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.strength", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "Somebody upstairs signs off on your arms."
+  },
+  {
+    "id": "move.blessing_of_agility", "name": "Blessing of Agility",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.dexterity", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "Blessed are the quick, for they are elsewhere."
+  },
+  {
+    "id": "move.blessing_of_endurance", "name": "Blessing of Endurance",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.endurance", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "Keep going, says something that would know."
+  },
+  {
+    "id": "move.blessing_of_wisdom", "name": "Blessing of Wisdom",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.wisdom", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "The long view, on loan."
+  },
+  {
+    "id": "move.blessing_of_protection", "name": "Blessing of Protection",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.85, "duration_ticks": 500 }
+    ],
+    "description": "Everything hits like it half means it."
+  },
+  {
+    "id": "move.blessing_of_fortune", "name": "Blessing of Fortune",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.luck", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "The dice remember your name fondly."
+  },
+
+  // --- Battle focus and shouts ----------------------------------------------------------------
+
+  {
+    "id": "move.battle_focus", "name": "Battle Focus",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.crit.chance", "amount": 0.08, "duration_ticks": 450 }
+    ],
+    "description": "The fight slows down enough to read."
+  },
+  {
+    "id": "move.battle_trance", "name": "Battle Trance",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.crit.mult", "amount": 1.35, "duration_ticks": 450 }
+    ],
+    "description": "Somewhere past thinking, the openings glow."
+  },
+  {
+    "id": "move.divine_favor", "name": "Divine Favor",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.crit.chance", "amount": 0.1, "duration_ticks": 450 }
+    ],
+    "description": "Someone important is watching, and rooting."
+  },
+  {
+    "id": "move.war_cry", "name": "War Cry",
+    "kind": "Utility",
+    "tags": ["action:utility"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 10 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.15, "duration_ticks": 400 }
+    ],
+    "description": "Say it loud enough and your arms believe it."
+  },
+  {
+    "id": "move.heroism", "name": "Heroism",
+    "kind": "Utility",
+    "tags": ["action:utility"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 11 },
+    "costs": [ { "resource": "stamina", "amount": 12 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.1, "duration_ticks": 450 },
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 4, "duration_ticks": 450 }
+    ],
+    "description": "Act like the story is about you. For a while, it is."
+  },
+  {
+    "id": "move.courage", "name": "Courage",
+    "kind": "Utility",
+    "tags": ["action:utility"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 8 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.08, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.92, "duration_ticks": 400 }
+    ],
+    "description": "Fear noted, overruled."
+  },
+  {
+    "id": "move.fury", "name": "Fury",
+    "kind": "Utility",
+    "tags": ["action:utility"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 5, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 12 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.25, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.15, "duration_ticks": 400 }
+    ],
+    "description": "Hit harder. Get hit harder. Fair, in its way."
+  },
+  {
+    "id": "move.rage", "name": "Rage",
+    "kind": "Utility",
+    "tags": ["action:utility"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 4, "recoveryTicks": 10 },
+    "costs": [ { "resource": "stamina", "amount": 14 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.flat", "amount": 5, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 1.2, "duration_ticks": 400 }
+    ],
+    "description": "The red curtain. Everything behind it is simpler."
+  },
+  {
+    "id": "move.bloodlust", "name": "Bloodlust",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.1, "duration_ticks": 400 },
+      { "kind": "grantModifier", "text": "combat.crit.chance", "amount": 0.06, "duration_ticks": 400 }
+    ],
+    "description": "An appetite with excellent aim."
+  },
+  {
+    "id": "move.quickness", "name": "Quickness",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.88, "duration_ticks": 400 }
+    ],
+    "description": "Every motion loses its paperwork."
+  },
+  {
+    "id": "move.swiftness", "name": "Swiftness",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.8, "duration_ticks": 400 }
+    ],
+    "description": "The world's slow half, and you're not in it."
+  },
+  {
+    "id": "move.fleet_foot", "name": "Fleet Foot",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.evade.chance", "amount": 0.08, "duration_ticks": 450 }
+    ],
+    "description": "Feet that file their own flight plans."
+  },
+  {
+    "id": "move.haste", "name": "Haste",
+    "kind": "Spell",
+    "tags": ["action:spell"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 210,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.windup.mult", "amount": 0.82, "duration_ticks": 450 }
+    ],
+    "description": "The classic. Time keeps the change."
+  },
+  {
+    "id": "move.iron_skin", "name": "Iron Skin",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 7, "duration_ticks": 450 }
+    ],
+    "description": "Skin with a smithy's warranty."
+  },
+  {
+    "id": "move.elemental_resistance", "name": "Elemental Resistance",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.heat", "amount": 0.15, "duration_ticks": 450 },
+      { "kind": "grantModifier", "text": "combat.resist.cold", "amount": 0.15, "duration_ticks": 450 },
+      { "kind": "grantModifier", "text": "combat.resist.charge", "amount": 0.15, "duration_ticks": 450 }
+    ],
+    "description": "Fire, frost and storm all find you mildly disappointing."
+  },
+
+  // --- Divine ----------------------------------------------------------------------------------
+
+  {
+    "id": "move.bless", "name": "Bless",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.08, "duration_ticks": 500 },
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 3, "duration_ticks": 500 }
+    ],
+    "description": "A small good word, in the right ear."
+  },
+  {
+    "id": "move.greater_blessing", "name": "Greater Blessing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.12, "duration_ticks": 550 },
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 5, "duration_ticks": 550 }
+    ],
+    "description": "The same good word, underlined twice."
+  },
+  {
+    "id": "move.bless_armor", "name": "Bless Armor",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.armor", "amount": 6, "duration_ticks": 500 }
+    ],
+    "description": "Every strap and rivet remembers its duty."
+  },
+  {
+    "id": "move.divine_protection", "name": "Divine Protection",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "cooldown_ticks": 240,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.8, "duration_ticks": 450 }
+    ],
+    "description": "Harm arrives pre-forgiven and much reduced."
+  },
+  {
+    "id": "move.divine_shield", "name": "Divine Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 11, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "cooldown_ticks": 270,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 40 }
+    ],
+    "description": "Somebody up there votes no on your behalf."
+  },
+  {
+    "id": "move.divine_barrier", "name": "Divine Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 30 }
+    ],
+    "description": "Architecture by prayer."
+  },
+  {
+    "id": "move.sacred_shield", "name": "Sacred Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "Guarded, and witnessed."
+  },
+  {
+    "id": "move.holy_ward", "name": "Holy Ward",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "cooldown_ticks": 120,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.resist.magic", "amount": 0.22, "duration_ticks": 500 }
+    ],
+    "description": "The uncanny reads the seal on the door and reconsiders."
+  },
+  {
+    "id": "move.holy_barrier", "name": "Holy Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 9, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 28 }
+    ],
+    "description": "Sanctified masonry, minus the masonry."
+  },
+  {
+    "id": "move.divine_strike", "name": "Divine Strike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:radiant"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "amount": 17 } ],
+    "description": "A blow with a co-signer."
+  },
+  {
+    "id": "move.holy_strike", "name": "Holy Strike",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee", "essence:radiant"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 11 } ],
+    "packets": [ { "type": "Magic", "amount": 14 } ],
+    "description": "Righteousness, applied locally."
+  },
+  {
+    "id": "move.divine_hammer", "name": "Divine Hammer",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "packets": [
+      { "type": "Crushing", "amount": 10 },
+      { "type": "Magic", "amount": 10 }
+    ],
+    "stagger_power": 24,
+    "description": "Judgment, in blunt form."
+  },
+  {
+    "id": "move.divine_spear", "name": "Divine Spear",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile", "essence:radiant"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 22 } ],
+    "description": "Thrown from higher ground than exists."
+  },
+  {
+    "id": "move.divine_wrath", "name": "Divine Wrath",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 25 } ],
+    "cooldown_ticks": 240,
+    "packets": [ { "type": "Magic", "amount": 36 } ],
+    "description": "Patience, upstairs, has limits."
+  },
+  {
+    "id": "move.divine_nova", "name": "Divine Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:radiant"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 17 },
+    "costs": [ { "resource": "mana", "amount": 24 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 15 } ],
+    "description": "Grace, at detonation velocity."
+  },
+  {
+    "id": "move.holy_nova", "name": "Holy Nova",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:area", "essence:radiant", "mech:healing"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 23 } ],
+    "cooldown_ticks": 180,
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 11 } ],
+    "effects": [
+      { "kind": "heal", "amount": 8, "target": "Self" }
+    ],
+    "description": "It hurts the wicked and settles your breathing, in one flash."
+  },
+  {
+    "id": "move.sacred_flame", "name": "Sacred Flame",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "essence:radiant", "mech:ailment"],
+    "timing": { "telegraphTicks": 3, "windupTicks": 9, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 12 } ],
+    "packets": [
+      { "type": "Magic", "amount": 7 },
+      { "type": "Magic", "aspect": "heat", "amount": 7 }
+    ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.burn", "amount": 3, "duration_ticks": 60, "chance": 0.3 }
+    ],
+    "description": "Fire that tithes."
+  },
+  {
+    "id": "move.prayer_of_healing", "name": "Prayer of Healing",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 11, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 18 } ],
+    "effects": [
+      { "kind": "heal", "amount": 24 }
+    ],
+    "description": "Asked politely, answered promptly."
+  },
+  {
+    "id": "move.prayer_of_protection", "name": "Prayer of Protection",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "combat.damage_taken.mult", "amount": 0.88, "duration_ticks": 500 }
+    ],
+    "description": "A quiet word that stands in front of you."
+  },
+  {
+    "id": "move.prayer_of_strength", "name": "Prayer of Strength",
+    "kind": "Spell",
+    "tags": ["action:spell", "essence:radiant"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "cooldown_ticks": 180,
+    "effects": [
+      { "kind": "grantModifier", "text": "attr.strength", "amount": 4, "duration_ticks": 500 },
+      { "kind": "grantModifier", "text": "combat.damage.mult", "amount": 1.06, "duration_ticks": 500 }
+    ],
+    "description": "Ask for strong hands. Receive them, warm."
+  }
+]

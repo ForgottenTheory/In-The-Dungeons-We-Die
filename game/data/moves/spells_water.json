@@ -1,0 +1,212 @@
+[
+  // The water spell family (docs/spell-library.md §1). Water is not one of the seven essences
+  // and has no lane of its own: conjured water rides the MAGIC lane, and the big waves hit as
+  // physical Crushing mass. One heal (Soothing Waters) anchors the restorative reading.
+  // Placeholder numbers.
+
+  {
+    "id": "move.water_bolt", "name": "Water Bolt",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 9 },
+    "costs": [ { "resource": "mana", "amount": 7 } ],
+    "packets": [ { "type": "Magic", "amount": 10 } ],
+    "description": "A fist of river, thrown overhand."
+  },
+  {
+    "id": "move.water_jet", "name": "Water Jet",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "description": "Pressure, aimed. It cuts politely and does not stop."
+  },
+  {
+    "id": "move.water_whip", "name": "Water Whip",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:melee"],
+    "timing": { "telegraphTicks": 2, "windupTicks": 7, "recoveryTicks": 11 },
+    "costs": [ { "resource": "mana", "amount": 10 } ],
+    "packets": [ { "type": "Magic", "amount": 13 } ],
+    "description": "The current, on a short leash."
+  },
+  {
+    "id": "move.water_lance", "name": "Water Lance",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:projectile"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 21 } ],
+    "description": "Water remembers being ice. Remind it briefly."
+  },
+  {
+    "id": "move.torrent", "name": "Torrent",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:direct"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "packets": [ { "type": "Magic", "amount": 18 } ],
+    "description": "The river, minus the riverbed's advice."
+  },
+  {
+    "id": "move.deep_current", "name": "Deep Current",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 12, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "packets": [ { "type": "Magic", "amount": 22 } ],
+    "description": "The cold weight from under the sunlit part."
+  },
+  {
+    "id": "move.geyser", "name": "Geyser",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 11, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 15 } ],
+    "packets": [ { "type": "Magic", "amount": 15 } ],
+    "stagger_power": 20,
+    "description": "The ground spits. Upward, specifically, under them."
+  },
+  {
+    "id": "move.riptide", "name": "Riptide",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:impairment"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 10, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 13 } ],
+    "packets": [ { "type": "Magic", "amount": 12 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.weaken", "chance": 0.6 }
+    ],
+    "description": "Fighting the current uses the arms you needed for fighting."
+  },
+  {
+    "id": "move.wave_crash", "name": "Wave Crash",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 4, "windupTicks": 12, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "max_targets": 2,
+    "packets": [ { "type": "Crushing", "amount": 14 } ],
+    "stagger_power": 14,
+    "description": "The shoreline's whole argument, in one landing."
+  },
+  {
+    "id": "move.crashing_wave", "name": "Crashing Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "mech:stagger"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 17 } ],
+    "packets": [ { "type": "Crushing", "amount": 20 } ],
+    "stagger_power": 18,
+    "description": "One wave, one target, one conclusion."
+  },
+  {
+    "id": "move.whirlpool", "name": "Whirlpool",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 5, "windupTicks": 13, "recoveryTicks": 15 },
+    "costs": [ { "resource": "mana", "amount": 20 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 13 } ],
+    "description": "The water goes in circles. Everything in it goes down."
+  },
+  {
+    "id": "move.flood", "name": "Flood",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area"],
+    "timing": { "telegraphTicks": 6, "windupTicks": 14, "recoveryTicks": 16 },
+    "costs": [ { "resource": "mana", "amount": 22 } ],
+    "max_targets": 3,
+    "packets": [ { "type": "Magic", "amount": 15 } ],
+    "description": "Everywhere, at once, wet. Resistance is architectural."
+  },
+  {
+    "id": "move.maelstrom", "name": "Maelstrom",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 7, "windupTicks": 16, "recoveryTicks": 18 },
+    "costs": [ { "resource": "mana", "amount": 27 } ],
+    "cooldown_ticks": 240,
+    "max_targets": 4,
+    "packets": [ { "type": "Magic", "amount": 16 } ],
+    "stagger_power": 12,
+    "description": "The ocean opens one eye."
+  },
+  {
+    "id": "move.seas_fury", "name": "Sea's Fury",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 18, "recoveryTicks": 20 },
+    "costs": [ { "resource": "mana", "amount": 31 } ],
+    "cooldown_ticks": 300,
+    "max_targets": 4,
+    "packets": [
+      { "type": "Crushing", "amount": 10 },
+      { "type": "Magic", "amount": 12 }
+    ],
+    "stagger_power": 18,
+    "description": "The sea keeps ledgers. Today it collects."
+  },
+  {
+    "id": "move.tidal_wave", "name": "Tidal Wave",
+    "kind": "Spell",
+    "tags": ["action:spell", "delivery:ranged", "delivery:area", "mech:stagger"],
+    "timing": { "telegraphTicks": 8, "windupTicks": 17, "recoveryTicks": 19 },
+    "costs": [ { "resource": "mana", "amount": 29 } ],
+    "cooldown_ticks": 270,
+    "max_targets": 4,
+    "packets": [ { "type": "Crushing", "amount": 18 } ],
+    "stagger_power": 22,
+    "description": "The horizon stands up."
+  },
+  {
+    "id": "move.soothing_waters", "name": "Soothing Waters",
+    "kind": "Spell",
+    "tags": ["action:spell", "mech:healing"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 10, "recoveryTicks": 14 },
+    "costs": [ { "resource": "mana", "amount": 16 } ],
+    "effects": [
+      { "kind": "heal", "amount": 22 }
+    ],
+    "description": "Clean water over a bad day. Both improve."
+  },
+  {
+    "id": "move.bubble_shield", "name": "Bubble Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:block"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 1, "windupTicks": 6, "recoveryTicks": 10 },
+    "costs": [ { "resource": "mana", "amount": 9 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.guarded" }
+    ],
+    "description": "A film of stubborn water. It pops, but late."
+  },
+  {
+    "id": "move.water_shield", "name": "Water Shield",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 2, "windupTicks": 8, "recoveryTicks": 12 },
+    "costs": [ { "resource": "mana", "amount": 14 } ],
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 23 }
+    ],
+    "description": "Blows land on the surface tension's schedule, not theirs."
+  },
+  {
+    "id": "move.tidal_barrier", "name": "Tidal Barrier",
+    "kind": "Spell",
+    "tags": ["action:spell", "action:defensive", "mech:barrier"],
+    "targeting": "Self",
+    "timing": { "telegraphTicks": 3, "windupTicks": 10, "recoveryTicks": 13 },
+    "costs": [ { "resource": "mana", "amount": 19 } ],
+    "cooldown_ticks": 150,
+    "effects": [
+      { "kind": "applyStatus", "text": "status.barrier", "amount": 33 }
+    ],
+    "description": "Stand behind the tide. Let the sea do the arguing."
+  }
+]
