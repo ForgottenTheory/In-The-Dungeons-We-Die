@@ -1,0 +1,8 @@
+[
+  // Verb actions — the crafting actions of the identity system (docs/transformation-verbs.md
+  // §1/§8, D47/D48): verb + parameters + gates + costs + fiction name. Deliberately EMPTY
+  // until migration Phase 4 puts migrated materials under them — an action whose substrates
+  // and Process outputs aren't in the identity model yet would be dead furniture, and the
+  // validator rightly refuses Process outputs that aren't migrated. The station routing
+  // (stations.json `verb_actions`) fills in with the same pass.
+]

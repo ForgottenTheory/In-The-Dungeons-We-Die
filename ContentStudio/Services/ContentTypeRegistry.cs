@@ -143,6 +143,14 @@ public static class ContentTypeRegistry
         },
         new()
         {
+            TypeId = "verb_actions", Folder = "verb_actions", DefinitionType = typeof(VerbActionDefinition),
+            DisplayName = "Verb Actions", SingularName = "Verb Action", NavigationGroup = "Crafting", IdPrefix = "craft.",
+            ListColumns = new[] { "verb", "profession" },
+            ValidatorCategories = new[] { "verb_actions" },
+            Description = "Identity-system crafting actions: verb + parameters + gates + costs + fiction name. Empty until the Phase 4 material migration.",
+        },
+        new()
+        {
             TypeId = "processes", Folder = "processes", DefinitionType = typeof(CraftingActionDefinition),
             DisplayName = "Crafting Actions", SingularName = "Crafting Action", NavigationGroup = "Crafting", IdPrefix = "process.",
             ListColumns = new[] { "profession", "medium", "severity" },

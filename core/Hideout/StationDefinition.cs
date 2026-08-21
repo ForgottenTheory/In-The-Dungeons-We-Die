@@ -42,6 +42,13 @@ public sealed class StationDefinition : IDefinition
     /// mostly made of — a Longsword at the Forge, a Vest at the Tannery or the Loom.</summary>
     public IReadOnlyList<string> Blueprints { get; init; } = Array.Empty<string>();
 
+    /// <summary>Identity-system crafting actions (<see cref="VerbActionDefinition"/>) offered
+    /// here — the new bench, routing exactly as <see cref="CraftingActions"/> does for the
+    /// outgoing one. Both lists coexist through the migration; the old one dies with its
+    /// engine (Phase 7).</summary>
+    [JsonPropertyName("verb_actions")]
+    public IReadOnlyList<string> VerbActions { get; init; } = Array.Empty<string>();
+
     /// <summary>The profession whose shelf this station sorts onto in the Hideout — the first
     /// one listed. A station hosting several is filed under the one it is named for.</summary>
     public string PrimaryProfessionId => Professions.Count > 0 ? Professions[0] : string.Empty;

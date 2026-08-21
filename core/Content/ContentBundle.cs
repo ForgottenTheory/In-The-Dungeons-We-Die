@@ -23,6 +23,7 @@ public sealed class ContentBundle
     public DataStore<SignatureTriggerDefinition> SignatureTriggers { get; init; } = new();
     public DataStore<SignatureBehaviorDefinition> SignatureBehaviors { get; init; } = new();
     public DataStore<SignatureThemeDefinition> SignatureThemes { get; init; } = new();
+    public DataStore<VerbActionDefinition> VerbActions { get; init; } = new();
     public DataStore<CraftingActionDefinition> CraftingActions { get; init; } = new();
     public DataStore<ByproductDefinition> Byproducts { get; init; } = new();
     public DataStore<TraitDefinition> Traits { get; init; } = new();

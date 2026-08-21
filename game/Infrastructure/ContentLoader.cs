@@ -30,6 +30,7 @@ public static class ContentLoader
         SignatureTriggers = LoadDefinitions<SignatureTriggerDefinition>($"{dataRoot}/signature_triggers"),
         SignatureBehaviors = LoadDefinitions<SignatureBehaviorDefinition>($"{dataRoot}/signature_behaviors"),
         SignatureThemes = LoadDefinitions<SignatureThemeDefinition>($"{dataRoot}/signature_themes"),
+        VerbActions = LoadDefinitions<VerbActionDefinition>($"{dataRoot}/verb_actions"),
         CraftingActions = LoadDefinitions<CraftingActionDefinition>($"{dataRoot}/processes"),
         Byproducts = LoadDefinitions<ByproductDefinition>($"{dataRoot}/byproducts"),
         Traits = LoadDefinitions<TraitDefinition>($"{dataRoot}/traits"),

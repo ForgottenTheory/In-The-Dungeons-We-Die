@@ -100,6 +100,7 @@ public static class ContentValidator
         ValidateSignatureVocabulary(content.SignatureTriggers, content.SignatureBehaviors,
             content.SignatureThemes, problems);
         ValidateMaterialIdentityFields(content, problems);
+        ValidateVerbActions(content, problems);
         ValidateProcesses(content.CraftingActions, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
         ValidateTraits(content.Traits, knownProperties, problems);
@@ -262,6 +263,74 @@ public static class ContentValidator
                     if (!content.SignatureBehaviors.Contains(behavior))
                         Problem($"profile favored behavior '{behavior}' is not in the behavior registry.");
             }
+        }
+    }
+
+    /// <summary>The identity-targeting verbs — the only ones an <c>identity_scope</c> means
+    /// anything on (Runecrafting's lever, D48). Scoping Refine would be a silent no-op, so it
+    /// is a load error instead.</summary>
+    private static readonly IReadOnlySet<Dungeons.Crafting.Identity.CraftVerb> IdentityTargetingVerbs =
+        new HashSet<Dungeons.Crafting.Identity.CraftVerb>
+        {
+            Dungeons.Crafting.Identity.CraftVerb.Reveal,
+            Dungeons.Crafting.Identity.CraftVerb.Transfer,
+            Dungeons.Crafting.Identity.CraftVerb.Develop,
+            Dungeons.Crafting.Identity.CraftVerb.Extract,
+            Dungeons.Crafting.Identity.CraftVerb.Displace,
+        };
+
+    /// <summary>Verb actions (docs/transformation-verbs.md §1, D47/D48): gates resolve,
+    /// scopes only appear where they mean something, Process names a migrated output, and
+    /// every cost exists — each rule the typo class that would otherwise fail at the bench.</summary>
+    private static void ValidateVerbActions(ContentBundle content, List<ContentProblem> problems)
+    {
+        foreach (var action in content.VerbActions.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("verb_actions", $"{action.Id}: {message}"));
+
+            if (!action.Id.StartsWith("craft.", StringComparison.Ordinal))
+                Problem("id must start with 'craft.'.");
+            if (string.IsNullOrWhiteSpace(action.Name))
+                Problem("needs a fiction name — the verb is the executor, the name is what the player clicks.");
+            if (action.RequiredLevel < 0)
+                Problem($"required_level {action.RequiredLevel} is negative.");
+            if (!string.IsNullOrEmpty(action.Profession) && !content.Professions.Contains(action.Profession))
+                Problem($"gates on unknown profession '{action.Profession}'.");
+
+            foreach (var tag in action.SubstrateTags)
+                if (!TagFamilies.TryParse(tag, out _, out _))
+                    Problem($"substrate tag '{tag}' is not a family:value tag.");
+            if (action.SubstrateTags.Count > 0
+                && content.Materials.Count > 0
+                && !content.Materials.GetAll().Any(material =>
+                    action.SubstrateTags.Any(tag => material.Tags.Contains(tag, StringComparer.Ordinal))))
+            {
+                Problem("no material satisfies its substrate gate — an action nobody can ever run.");
+            }
+
+            foreach (var identityId in action.IdentityScope)
+                if (!content.Identities.Contains(identityId))
+                    Problem($"identity scope names unknown identity '{identityId}'.");
+            if (action.IdentityScope.Count > 0 && !IdentityTargetingVerbs.Contains(action.Verb))
+                Problem($"declares an identity scope on {action.Verb}, which targets no identity — the scope would be a silent no-op.");
+
+            if (action.Verb == Dungeons.Crafting.Identity.CraftVerb.Process)
+            {
+                if (string.IsNullOrWhiteSpace(action.Output))
+                    Problem("Process actions must name their output definition.");
+                else if (!content.Materials.TryGetById(action.Output, out var output))
+                    Problem($"output '{action.Output}' is not a known material.");
+                else if (output.Capacity is null)
+                    Problem($"output '{action.Output}' has not been migrated to the identity model — processing into it would strand the carried state.");
+            }
+            else if (!string.IsNullOrWhiteSpace(action.Output))
+            {
+                Problem($"declares an output but its verb is {action.Verb} — only Process converts substance.");
+            }
+
+            foreach (var cost in action.ExtraCosts)
+                if (!content.Materials.Contains(cost.ItemId))
+                    Problem($"extra cost '{cost.ItemId}' is not a known material.");
         }
     }
 
@@ -1609,6 +1678,10 @@ public static class ContentValidator
             foreach (var blueprintId in station.Blueprints)
                 if (!content.Forms.Contains(blueprintId))
                     Problem($"assembles unknown blueprint '{blueprintId}'.");
+
+            foreach (var verbActionId in station.VerbActions)
+                if (!content.VerbActions.Contains(verbActionId))
+                    Problem($"offers unknown verb action '{verbActionId}'.");
         }
 
         // The reverse-reachability rules below are only meaningful once stations exist at all —
@@ -1635,6 +1708,12 @@ public static class ContentValidator
             if (!assembledBlueprints.Contains(blueprint.Id))
                 problems.Add(new("stations",
                     $"{blueprint.Id} is assembled at no station — the player could never make one."));
+
+        var offeredVerbActions = content.Stations.GetAll().SelectMany(s => s.VerbActions).ToHashSet(StringComparer.Ordinal);
+        foreach (var verbAction in content.VerbActions.GetAll())
+            if (!offeredVerbActions.Contains(verbAction.Id))
+                problems.Add(new("stations",
+                    $"{verbAction.Id} is offered at no station — the player could never run it."));
     }
 
     private static void ValidateInteractions(

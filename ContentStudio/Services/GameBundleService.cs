@@ -36,6 +36,7 @@ public sealed class GameBundleService
             SignatureTriggers = BuildStore<SignatureTriggerDefinition>(workspace, "signature_triggers", problems),
             SignatureBehaviors = BuildStore<SignatureBehaviorDefinition>(workspace, "signature_behaviors", problems),
             SignatureThemes = BuildStore<SignatureThemeDefinition>(workspace, "signature_themes", problems),
+            VerbActions = BuildStore<VerbActionDefinition>(workspace, "verb_actions", problems),
             CraftingActions = BuildStore<CraftingActionDefinition>(workspace, "processes", problems),
             Byproducts = BuildStore<ByproductDefinition>(workspace, "byproducts", problems),
             Traits = BuildStore<TraitDefinition>(workspace, "traits", problems),
