@@ -222,6 +222,182 @@ public class IdentityContentTests
         AssertProblem(bundle, "identity", "cosmic");
     }
 
+    // --- The payload registry (Phase 3, D50) ---------------------------------
+
+    [Fact]
+    public void ShippedPayloadsGiveEveryOwningIdentityExactlyOneFloor()
+    {
+        // D50 category 1: the floor is authored content, and it is singular. The validator
+        // enforces this for any bundle; this pin proves the shipped starter set honors it.
+        var payloads = TestPaths.LoadStore<SignaturePayloadDefinition>("signature_payloads").GetAll();
+
+        Assert.NotEmpty(payloads);
+        var owningIdentities = payloads.SelectMany(p => p.Families.Select(f => f.Identity)).Distinct();
+        foreach (var identity in owningIdentities)
+        {
+            var floors = payloads.Where(p => p.Floor is not null && p.Families.Any(f => f.Identity == identity));
+            Assert.Single(floors);
+        }
+    }
+
+    [Fact]
+    public void ADottedPayloadIdFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Id = "payload.mending" }));
+
+        AssertProblem(bundle, "signature_payload", "bare keys");
+    }
+
+    [Fact]
+    public void APayloadWithNoFamilyFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Families = Array.Empty<PayloadFamilyStake>() }));
+
+        AssertProblem(bundle, "signature_payload", "orphan");
+    }
+
+    [Fact]
+    public void APayloadFamilyOutsideTheRosterFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Families = new[] { new PayloadFamilyStake { Identity = "identity.nonexistent" } },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "identity.nonexistent");
+    }
+
+    [Fact]
+    public void APayloadRungOutsideTheLadderFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Families = new[] { new PayloadFamilyStake { Identity = "identity.vital", Rung = 5 } },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "rung 5");
+    }
+
+    [Fact]
+    public void AnUnknownBindingKindFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Binding = new PayloadBinding { Kind = "wish" },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "binding kind 'wish'");
+    }
+
+    [Fact]
+    public void ABindingToAnUnknownModifierKeyFails()
+    {
+        // The D30 fence in its payload form: the binding must name machinery that resolves.
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Binding = new PayloadBinding { Kind = "modifier", Key = "combat.wish.granted" },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "combat.wish.granted");
+    }
+
+    [Fact]
+    public void ABindingScopeDisagreeingWithTheKeysDimensionFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Binding = new PayloadBinding { Kind = "modifier", Key = "resource.max_health", Scope = "lane:heat" },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "scoped by");
+    }
+
+    [Fact]
+    public void ABindingToAnUnknownStatusFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Binding = new PayloadBinding { Kind = "status", Key = "status.wishful" },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "status.wishful");
+    }
+
+    [Fact]
+    public void AMagnitudeBearingBindingWithoutARangeFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Range = Array.Empty<double>() }));
+
+        AssertProblem(bundle, "signature_payload", "needs a [lo, hi] range");
+    }
+
+    [Fact]
+    public void AnInvertedRangeFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Range = new[] { 10.0, 2.0 } }));
+
+        AssertProblem(bundle, "signature_payload", "lo ≤ hi");
+    }
+
+    [Fact]
+    public void AFloorPayloadAboveRungOneFails()
+    {
+        // The floor is what carrying the identity at all promises — it cannot sit behind
+        // development the identity may not have.
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Families = new[] { new PayloadFamilyStake { Identity = "identity.vital", Rung = 2 } },
+            Floor = new PayloadFloorSentence { Trigger = "on_block", Behavior = "store" },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "rung 1");
+    }
+
+    [Fact]
+    public void AnIdentityOwningPayloadsWithoutAFloorFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload));
+
+        AssertProblem(bundle, "signature_payload", "0 floor expressions");
+    }
+
+    [Fact]
+    public void TwoFloorsForOneIdentityFails()
+    {
+        var bundle = BundleWithVocabulary();
+        var floorSentence = new PayloadFloorSentence { Trigger = "on_block", Behavior = "store" };
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Floor = floorSentence }));
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Id = "mending_twin", Floor = floorSentence }));
+
+        AssertProblem(bundle, "signature_payload", "2 floor expressions");
+    }
+
+    [Fact]
+    public void AProfileFavoringAnUnknownPayloadFails()
+    {
+        var bundle = BundleWithVocabulary();
+        bundle.Materials.Add(new MaterialDefinition
+        {
+            Id = "material.test",
+            Name = "Test",
+            SignatureProfile = new SignatureProfile { FavoredPayloads = new[] { "no_such_payload" } },
+        });
+
+        AssertProblem(bundle, "material_identity", "no_such_payload");
+    }
+
     // --- Harness -------------------------------------------------------------
 
     /// <summary>A bundle carrying one valid entry per identity-system registry, so the broken
@@ -242,8 +418,26 @@ public class IdentityContentTests
         {
             Id = "renewal", Name = "Renewal", Description = "x",
         });
+        bundle.ModifierKeys.Add(new Dungeons.Modifiers.ModifierKeyDefinition
+        {
+            Id = "resource.max_health", Name = "Max Health",
+        });
         return bundle;
     }
+
+    /// <summary>A valid heal payload owned by Vital, reshaped per test via <c>with</c> — the
+    /// broken field under test is the only broken thing about it.</summary>
+    private static SignaturePayloadDefinition TestPayload(
+        Func<SignaturePayloadDefinition, SignaturePayloadDefinition> reshape) => reshape(new SignaturePayloadDefinition
+    {
+        Id = "mending",
+        Name = "Mending",
+        Families = new[] { new PayloadFamilyStake { Identity = "identity.vital", Rung = 1 } },
+        Binding = new PayloadBinding { Kind = "heal" },
+        Range = new[] { 2.0, 5.0 },
+        Weight = 10,
+        Description = "A modest heal.",
+    });
 
     private static IdentityDefinition TestIdentity(string id) => new()
     {

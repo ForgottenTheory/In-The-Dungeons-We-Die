@@ -45,10 +45,52 @@ public static class EquipmentResolver
             if (!moves.TryGetById(grant.Id, out var move))
                 continue; // the validator rejects this at load; at runtime, skip loudly-validated content
 
-            resolved.Add(mass == 0 ? move : WithMass(move, mass));
+            // Identity-minted gear (Phase 3, D46) carries an explicit base delivery instead
+            // of a mass property — damage and swing weight arrive pre-separated, which is
+            // what lets a keen light blade exist at all.
+            if (instance?.BaseDelivery is { } delivery)
+                resolved.Add(WithDelivery(move, delivery));
+            else
+                resolved.Add(mass == 0 ? move : WithMass(move, mass));
         }
 
         return resolved;
+    }
+
+    /// <summary>The identity-model twin of <see cref="WithMass"/>: the delivery's damage
+    /// bonus lands once, split by packet share; its windup ticks land whole.</summary>
+    private static MoveDefinition WithDelivery(MoveDefinition move, Dungeons.Crafting.Identity.ItemBaseDelivery delivery)
+    {
+        if (delivery.DamageBonus == 0 && delivery.WindupTicks == 0)
+            return move;
+
+        var total = move.Packets.Sum(p => p.Amount);
+
+        return new MoveDefinition
+        {
+            Id = move.Id,
+            Name = move.Name,
+            Description = move.Description,
+            Kind = move.Kind,
+            Tags = move.Tags,
+            Timing = new Actions.ActionTiming
+            {
+                TelegraphTicks = move.Timing.TelegraphTicks,
+                WindupTicks = move.Timing.WindupTicks + delivery.WindupTicks,
+                RecoveryTicks = move.Timing.RecoveryTicks,
+            },
+            Costs = move.Costs,
+            Requires = move.Requires,
+            Targeting = move.Targeting,
+            MaxTargets = move.MaxTargets,
+            CooldownTicks = move.CooldownTicks,
+            Interruptible = move.Interruptible,
+            Packets = total <= 0 || delivery.DamageBonus == 0
+                ? move.Packets
+                : move.Packets.Select(p => p.WithAmount(p.Amount + (delivery.DamageBonus * (p.Amount / total)))).ToList(),
+            StaggerPower = move.StaggerPower,
+            Effects = move.Effects,
+        };
     }
 
     private static MoveDefinition WithMass(MoveDefinition move, double mass)
@@ -117,6 +159,22 @@ public static class EquipmentResolver
     public static ArmorProfile ResolveArmor(EquipmentDefinition definition, ItemInstance? instance)
     {
         ArgumentNullException.ThrowIfNull(definition);
+
+        // Identity-minted gear (Phase 3, D46): armor arrives on the instance's base
+        // delivery, not through a hardness read — the definition carries no armor block.
+        if (instance?.BaseDelivery is { } delivery)
+        {
+            return delivery.Armor == 0 && definition.Armor is null
+                ? ArmorProfile.None
+                : new ArmorProfile
+                {
+                    Armor = delivery.Armor + (definition.Armor?.Armor ?? 0),
+                    Resistances = new Dictionary<string, double>(
+                        definition.Armor?.Resistances ?? new Dictionary<string, double>(),
+                        StringComparer.OrdinalIgnoreCase),
+                };
+        }
+
         if (definition.Armor is null)
             return ArmorProfile.None;
 

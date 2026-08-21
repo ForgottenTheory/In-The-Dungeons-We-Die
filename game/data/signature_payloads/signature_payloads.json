@@ -1,0 +1,316 @@
+[
+  // Signature grammar: payloads (docs/identity-foundation.md §7.4, D50) — WHAT a sentence
+  // delivers. Each entry binds to machinery that already resolves (the D30 fence, validated):
+  // a registered modifier key, a shipped status, the plain damage/heal effect handlers. The
+  // starter set covers the identities the Phase 2 starter materials can actually reach —
+  // Dense, Vital, Ember — plus Warded's barrier, which oak's profile favors from outside its
+  // open families (the §9 authored-breach path, exercised on purpose).
+  //
+  // `families`  which identities own it, and at which access rung (1–4). An identity of rank
+  //             R opens its families' payloads of rung ≤ R.
+  // `floor`     at most one per owning identity, always rung 1: the guaranteed expression the
+  //             identity promises on every item that expresses it (D50 category 1). The
+  //             sentence is guaranteed; a chance on it (Ember's Burn) is part of the promise.
+  // `range`     [lo, hi] magnitude in mechanical units. Quality and rank position the value.
+  //
+  // ⚠ Every number here is provisional until play, like all identity-system numbers.
+
+  // ---- Vital — the health pool itself --------------------------------------------------------
+  {
+    "id": "vitality",
+    "name": "Vitality",
+    "families": [ { "identity": "identity.vital", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "resource.max_health" },
+    "range": [6, 14],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "More health, while worn — the floor every Vital item stands on."
+  },
+  {
+    "id": "mending",
+    "name": "Mending",
+    "families": [ { "identity": "identity.vital", "rung": 1 } ],
+    "binding": { "kind": "heal" },
+    "range": [2, 5],
+    "weight": 10,
+    "description": "A modest heal, delivered when the sentence's trigger fires."
+  },
+  {
+    "id": "second_wind",
+    "name": "Second Wind",
+    "families": [ { "identity": "identity.vital", "rung": 2 } ],
+    "binding": { "kind": "heal" },
+    "range": [5, 10],
+    "weight": 6,
+    "description": "A stronger heal — improved-rung Vital work."
+  },
+
+  // ---- Warded — magical defense; the barrier economy's home ----------------------------------
+  {
+    "id": "warding",
+    "name": "Warding",
+    "families": [ { "identity": "identity.warded", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.resist.magic" },
+    "range": [0.05, 0.15],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Magical resistance, while worn — the floor every Warded item stands on."
+  },
+  {
+    "id": "barrier",
+    "name": "Barrier",
+    "families": [ { "identity": "identity.warded", "rung": 2 } ],
+    "binding": { "kind": "status", "key": "status.barrier" },
+    "range": [4, 10],
+    "weight": 8,
+    "description": "A damage-absorbing barrier. Warded turf — and the payload oak-derived gear reaches for from outside its families (§9)."
+  },
+
+  // ---- Dense — weight as force ---------------------------------------------------------------
+  {
+    "id": "impact",
+    "name": "Impact",
+    "families": [ { "identity": "identity.dense", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.damage.flat" },
+    "range": [1, 3],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Flat hitting power, while worn — weight doing what weight does."
+  },
+  {
+    "id": "bulwark",
+    "name": "Bulwark",
+    "families": [ { "identity": "identity.dense", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.block.mult" },
+    "range": [0.08, 0.2],
+    "weight": 10,
+    "description": "Stronger blocks — mass planted between you and the hit."
+  },
+  {
+    "id": "slam",
+    "name": "Slam",
+    "families": [ { "identity": "identity.dense", "rung": 2 } ],
+    "binding": { "kind": "damage" },
+    "range": [2, 5],
+    "weight": 8,
+    "description": "A burst of crushing force, delivered when the sentence's trigger fires."
+  },
+
+  // ---- Ember — heat and Burn -----------------------------------------------------------------
+  {
+    "id": "kindling",
+    "name": "Kindling",
+    "families": [ { "identity": "identity.ember", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.burn" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.15 },
+    "description": "Hits can set the target Burning — the spark every Ember item carries."
+  },
+
+  // ---- The Phase 4 floors (D52) — one guaranteed expression per identity the migrated
+  // library can reach. Every binding names machinery that resolves today; the families that
+  // wanted machinery that does not exist yet took the nearest honest expression instead
+  // (Blighted's healing-reduction is Weaken, Radiant's light is proof against decay).
+
+  {
+    "id": "chilling",
+    "name": "Chilling",
+    "families": [ { "identity": "identity.frost", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.chill" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.15 },
+    "description": "Hits can Chill the target — the cold every Frost item carries."
+  },
+  {
+    "id": "charged",
+    "name": "Charged",
+    "families": [ { "identity": "identity.storm", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.shock" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.12 },
+    "description": "Hits can Shock the target — the charge every Storm item carries."
+  },
+  {
+    "id": "venom",
+    "name": "Venom",
+    "families": [ { "identity": "identity.venomous", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.poison" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.15 },
+    "description": "Hits can Poison the target — the taint every Venomous item carries."
+  },
+  {
+    "id": "jagged",
+    "name": "Jagged",
+    "families": [ { "identity": "identity.serrated", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.bleed" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.15 },
+    "description": "Hits can open a Bleed — the tearing edge every Serrated item carries."
+  },
+  {
+    "id": "caustic",
+    "name": "Caustic",
+    "families": [ { "identity": "identity.corrosive", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.corroded" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.12 },
+    "description": "Hits can Corrode the target's armor — the bite every Corrosive item carries."
+  },
+  {
+    "id": "withering",
+    "name": "Withering",
+    "families": [ { "identity": "identity.blighted", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.weaken" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "afflict", "chance": 0.12 },
+    "description": "Hits can Weaken the target — decay leaching the strength out of what it touches."
+  },
+  {
+    "id": "regrowth",
+    "name": "Regrowth",
+    "families": [ { "identity": "identity.verdant", "rung": 1 } ],
+    "binding": { "kind": "heal" },
+    "range": [1, 3],
+    "weight": 10,
+    "floor": { "trigger": "on_kill", "behavior": "direct" },
+    "description": "Kills feed the wearer a little life back — growth closing over the wound."
+  },
+  {
+    "id": "radiance",
+    "name": "Radiance",
+    "families": [ { "identity": "identity.radiant", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.resist.decay" },
+    "range": [0.05, 0.15],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Proof against decay, while worn — light holding the rot at bay."
+  },
+  {
+    "id": "shadowmeld",
+    "name": "Shadowmeld",
+    "families": [ { "identity": "identity.umbral", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.evade.chance" },
+    "range": [0.02, 0.05],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "A sliver of evasion, while worn — the shadow that is not quite where it was."
+  },
+  {
+    "id": "attunement",
+    "name": "Attunement",
+    "families": [ { "identity": "identity.arcane", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "resource.max_mana" },
+    "range": [5, 12],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "More mana, while worn — the floor every Arcane item stands on."
+  },
+  {
+    "id": "casehardened",
+    "name": "Casehardened",
+    "families": [ { "identity": "identity.hardened", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.armor" },
+    "range": [1, 3],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Armor, while worn — a surface that has already decided not to yield."
+  },
+  {
+    "id": "stoneskin_response",
+    "name": "Stoneskin",
+    "families": [ { "identity": "identity.earthen", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.stoneskin" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_being_struck", "behavior": "afflict", "chance": 0.15 },
+    "description": "Being struck can raise Stoneskin on the wearer — the earth refusing to move."
+  },
+  {
+    "id": "honed",
+    "name": "Honed",
+    "families": [ { "identity": "identity.keen", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.crit.chance" },
+    "range": [0.02, 0.05],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Critical chance, while worn — an edge that finds the seam."
+  },
+  {
+    "id": "poise",
+    "name": "Poise",
+    "families": [ { "identity": "identity.balanced", "rung": 1 } ],
+    "binding": { "kind": "status", "key": "status.guarded" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_block", "behavior": "afflict", "chance": 0.2 },
+    "description": "Blocking can leave the wearer Guarded — timing settling into stance."
+  },
+  {
+    "id": "bloodletting",
+    "name": "Bloodletting",
+    "families": [ { "identity": "identity.leeching", "rung": 1 } ],
+    "binding": { "kind": "resource", "key": "health" },
+    "range": [1, 3],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "drain", "chance": 0.12 },
+    "description": "Hits can take a little of the enemy's blood for the wearer's own."
+  },
+  {
+    "id": "thorns",
+    "name": "Thorns",
+    "families": [ { "identity": "identity.thorned", "rung": 1 } ],
+    "binding": { "kind": "damage" },
+    "range": [1, 3],
+    "weight": 10,
+    "floor": { "trigger": "on_being_struck", "behavior": "retaliate" },
+    "description": "Harm answered in kind — every strike against the wearer costs something."
+  },
+  {
+    "id": "wind",
+    "name": "Wind",
+    "families": [ { "identity": "identity.swift", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "resource.max_stamina" },
+    "range": [5, 12],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "More stamina, while worn — the action economy every Swift item feeds."
+  },
+  {
+    "id": "lucky",
+    "name": "Lucky",
+    "families": [ { "identity": "identity.charmed", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "attr.luck" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "Luck, while worn — the coin keeps landing the wearer's way."
+  },
+  {
+    "id": "preservation",
+    "name": "Preservation",
+    "families": [ { "identity": "identity.pure", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "profession.preserve.chance" },
+    "range": [0.02, 0.05],
+    "weight": 10,
+    "floor": { "trigger": "while_worn", "behavior": "sustain" },
+    "description": "A chance to preserve materials in profession work, while worn — nothing wasted."
+  },
+  {
+    "id": "charge_hum",
+    "name": "Charge",
+    "families": [ { "identity": "identity.resonant", "rung": 1 } ],
+    "binding": { "kind": "modifier", "key": "combat.damage.flat" },
+    "range": [1, 2],
+    "weight": 10,
+    "floor": { "trigger": "on_hit", "behavior": "store" },
+    "description": "Acting feeds a small charge gauge; while it runs high, the wearer hits harder."
+  }
+]

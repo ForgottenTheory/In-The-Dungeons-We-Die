@@ -6,15 +6,17 @@ namespace Dungeons.Crafting.Identity;
 /// material's provenance leans toward it.</summary>
 public sealed record WeightedLean(string Id, double Weight);
 
-/// <summary>A signature profile as the resolver will consume it — the weighted union of the
+/// <summary>A signature profile as the resolver consumes it — the weighted union of the
 /// roots' authored profiles (docs/identity-foundation.md §11.4).</summary>
 public sealed record MergedSignatureProfile(
     IReadOnlyList<WeightedLean> Themes,
     IReadOnlyList<WeightedLean> FavoredTriggers,
-    IReadOnlyList<WeightedLean> FavoredBehaviors)
+    IReadOnlyList<WeightedLean> FavoredBehaviors,
+    IReadOnlyList<WeightedLean> FavoredPayloads)
 {
     public static readonly MergedSignatureProfile Neutral = new(
-        Array.Empty<WeightedLean>(), Array.Empty<WeightedLean>(), Array.Empty<WeightedLean>());
+        Array.Empty<WeightedLean>(), Array.Empty<WeightedLean>(),
+        Array.Empty<WeightedLean>(), Array.Empty<WeightedLean>());
 }
 
 /// <summary>
@@ -29,8 +31,13 @@ public static class RootDerivations
     /// root weight, trace entries pruned, each list capped — profiles never grow without
     /// bound. A material whose roots author nothing is neutral (§6).
     /// </summary>
+    /// <param name="traceWeight">The prune bar. Materials use the default
+    /// (<see cref="IdentityCraftTuning.ProfileTraceWeight"/>); item composition passes the
+    /// lower <see cref="IdentityCraftTuning.ItemProfileTraceWeight"/> because assembly
+    /// dilutes every share by slot mass.</param>
     public static MergedSignatureProfile ProfileOf(
-        IdentityMaterialState state, DataStore<MaterialDefinition> materials)
+        IdentityMaterialState state, DataStore<MaterialDefinition> materials,
+        double traceWeight = IdentityCraftTuning.ProfileTraceWeight)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(materials);
@@ -42,6 +49,7 @@ public static class RootDerivations
         var themes = new Dictionary<string, double>(StringComparer.Ordinal);
         var triggers = new Dictionary<string, double>(StringComparer.Ordinal);
         var behaviors = new Dictionary<string, double>(StringComparer.Ordinal);
+        var payloads = new Dictionary<string, double>(StringComparer.Ordinal);
 
         foreach (var root in state.Roots)
         {
@@ -55,9 +63,12 @@ public static class RootDerivations
             Accumulate(themes, profile.Themes, share);
             Accumulate(triggers, profile.FavoredTriggers, share);
             Accumulate(behaviors, profile.FavoredBehaviors, share);
+            Accumulate(payloads, profile.FavoredPayloads, share);
         }
 
-        return new MergedSignatureProfile(Bounded(themes), Bounded(triggers), Bounded(behaviors));
+        return new MergedSignatureProfile(
+            Bounded(themes, traceWeight), Bounded(triggers, traceWeight),
+            Bounded(behaviors, traceWeight), Bounded(payloads, traceWeight));
     }
 
     /// <summary>The contribution-weighted blend of the roots' base stats, rounded to the
@@ -142,9 +153,10 @@ public static class RootDerivations
             into[entry] = into.GetValueOrDefault(entry) + share;
     }
 
-    private static IReadOnlyList<WeightedLean> Bounded(Dictionary<string, double> accumulated) =>
+    private static IReadOnlyList<WeightedLean> Bounded(
+        Dictionary<string, double> accumulated, double traceWeight) =>
         accumulated
-            .Where(pair => pair.Value >= IdentityCraftTuning.ProfileTraceWeight)
+            .Where(pair => pair.Value >= traceWeight)
             .OrderByDescending(pair => pair.Value)
             .ThenBy(pair => pair.Key, StringComparer.Ordinal)
             .Take(IdentityCraftTuning.MaxProfileEntriesPerList)

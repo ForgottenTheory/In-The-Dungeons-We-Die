@@ -109,6 +109,8 @@ public partial class GameRoot : Node
     private EquipmentAssemblyEngine _equipmentAssembly = null!;
     private IMaterialTransformationEngine _reactionEngine = null!;
     private VerbActionRunner _verbActionRunner = null!;
+    private ItemEffectResolver _itemEffectResolver = null!;
+    private IdentityFabricationEngine _identityFabrication = null!;
     private MaterialStateResolver _materialStates = null!;
     private PropertyGlossary _glossary = null!;
     private SeededRandom _affixRandom = null!;
@@ -291,7 +293,14 @@ public partial class GameRoot : Node
             new IdentityCraftingEngine(content, new SeededRandom(0x1DE47175)),
             _emergentRegistry,
             () => ActiveInventory,
-            professionLevel: id => _professions.GetProgress(id).Level);
+            professionProgress: id => _professions.GetProgress(id));
+
+        // The identity forge (migration Phase 3, D50/D51) — the item-generation half of the
+        // replacement stack. One resolver instance serves both minting and the equip-time
+        // recompile, so a worn item's grants can never drift from what its mint promised.
+        _itemEffectResolver = new ItemEffectResolver(content);
+        _identityFabrication = new IdentityFabricationEngine(
+            content, () => ActiveInventory, _instanceIds, new SeededRandom(0x1DEF0126));
 
         _affixRandom = new SeededRandom(0xD1CE5);
         _equipmentAssembly = new EquipmentAssemblyEngine(content, () => ActiveInventory, _materialStates, _instanceIds, _affixRandom);
@@ -306,10 +315,12 @@ public partial class GameRoot : Node
         _modifiers = new CombatantModifiers(
             content.ModifierKeys,
             isOwner: c => c.Team == CombatTeam.Player,
-            // Build statics plus whatever the worn items' affixes grant (R4b) — equipment is
-            // just another contribution source, with per-affix provenance.
+            // Build statics plus whatever the worn items grant — affixes (R4b) and identity
+            // sentences (Phase 3) alike: equipment is just another contribution source,
+            // with per-item provenance.
             buildModifiers: () => _buildResolver.Resolve(_build).Modifiers.Contributions
-                .Concat(EquippedAffixContributions()),
+                .Concat(EquippedAffixContributions())
+                .Concat(EquippedIdentityContributions()),
             _statuses, _gauges);
 
         _encounter = new CombatEncounter(
@@ -1090,6 +1101,21 @@ public partial class GameRoot : Node
             ? IdentityStateResolver.StateOf(definition)
             : null;
 
+    /// <summary>A material's tags — what the forge's slot gates filter by.</summary>
+    public IReadOnlyList<string> MaterialTagsOf(string itemId) =>
+        _materials.TryGetById(itemId, out var definition) ? definition.Tags : Array.Empty<string>();
+
+    /// <summary>Vocabulary display names for the forge preview. Engine ids until the
+    /// Phase 6 semantic pass, exactly like the bench's step text.</summary>
+    public string PayloadNameOf(string payloadId) =>
+        _content.SignaturePayloads.TryGetById(payloadId, out var payload) ? payload.Name : payloadId;
+
+    public string TriggerNameOf(string triggerId) =>
+        _content.SignatureTriggers.TryGetById(triggerId, out var trigger) ? trigger.Name : triggerId;
+
+    public string BehaviorNameOf(string behaviorId) =>
+        _content.SignatureBehaviors.TryGetById(behaviorId, out var behavior) ? behavior.Name : behaviorId;
+
     /// <summary>An identity's player-facing name.</summary>
     public string IdentityNameOf(string identityId) =>
         _content.Identities.TryGetById(identityId, out var identity) ? identity.Name : identityId;
@@ -1145,8 +1171,57 @@ public partial class GameRoot : Node
                 ? $"[Bench] First discovery — {item.Name}!"
                 : $"[Bench] {item.Name} added to the bag.");
 
+        // Phase 5 — the bench trains: announce the pay the same way profession actions do.
+        if (result.XpAwarded > 0)
+            Emit($"[Bench] xp +{result.XpAwarded}.");
+        if (result.LevelUp is { } levelUp)
+            Emit($"[Level] {ProfessionName(levelUp.ProfessionId)} reached level {levelUp.NewLevel}!");
+
         InventoryChanged?.Invoke();
         if (result.AnyFirstDiscovery)
+            DiscoveryChanged?.Invoke();
+        return result;
+    }
+
+    // --- Identity fabrication (migration Phase 3, D50/D51) --------------------
+
+    /// <summary>The identity forge's menu: every form migrated to the identity model.</summary>
+    public IReadOnlyList<EquipmentBlueprintDefinition> IdentityForgeForms() =>
+        _content.Forms.GetAll()
+            .Where(form => form.IdentityCap is not null)
+            .OrderBy(form => form.Name, StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>What a mint would produce, before committing: the composed item side and
+    /// the full effect projection — guaranteed floor, scored candidate table, odds.</summary>
+    public IdentityFabricationPreview PreviewIdentityFabrication(
+        string formId, IReadOnlyDictionary<string, string> componentItemIdsBySlot) =>
+        _identityFabrication.Preview(new IdentityFabricationInvocation(formId, componentItemIdsBySlot));
+
+    /// <summary>Mints an item at the identity forge: compose → resolve → consume → deposit.</summary>
+    public IdentityFabricationResult RunIdentityFabrication(
+        string formId, IReadOnlyDictionary<string, string> componentItemIdsBySlot)
+    {
+        var result = _identityFabrication.Fabricate(
+            new IdentityFabricationInvocation(formId, componentItemIdsBySlot));
+
+        if (result.GateFailure is not null)
+        {
+            Emit($"[Forge] {result.GateDetail}");
+            return result;
+        }
+        if (result.CompositionFailure != IdentityCompositionFailure.None)
+        {
+            Emit($"[Forge] The composition refuses: {result.CompositionFailure}.");
+            return result;
+        }
+
+        Emit(result.FirstOfItsKind
+            ? $"[Forge] First of its kind — {result.Item!.DisplayName}!"
+            : $"[Forge] {result.Item!.DisplayName} forged.");
+
+        InventoryChanged?.Invoke();
+        if (result.FirstOfItsKind)
             DiscoveryChanged?.Invoke();
         return result;
     }
@@ -1889,6 +1964,13 @@ public partial class GameRoot : Node
                 if (string.Equals(grant.Type, "moveModifier", StringComparison.OrdinalIgnoreCase)
                     && _moveModifierStore.TryGetById(grant.Key, out var moveModifier))
                     modifierGrants.Add(new MoveModifierGrant(moveModifier, $"{affixDef.Name} ({instance.DisplayName})"));
+
+        // Phase 3: identity sentences' convert behavior grants standing move modifiers —
+        // the fourth grantor, same builder path.
+        foreach (var (identityInstance, compiled) in EquippedIdentityGrants())
+            foreach (var moveModifierId in compiled.MoveModifierIds)
+                if (_moveModifierStore.TryGetById(moveModifierId, out var identityMoveModifier))
+                    modifierGrants.Add(new MoveModifierGrant(identityMoveModifier, identityInstance.DisplayName));
 
         // The store the builder reads from: the weapon's own mass-adjusted definitions win over
         // the shared store's for those ids, and everything else comes through unchanged.
@@ -2800,9 +2882,21 @@ public partial class GameRoot : Node
                 _ruleEngine.Attach(rule, $"{definition.Name} ({instance.DisplayName})");
         }
 
+        // Phase 3: identity sentences on worn items attach the same way — rules beside the
+        // build's, gauges beside the build's (a store sentence's meter swaps with the gear
+        // exactly like a Prefix's meter swaps with the Prefix).
+        var identityGrants = EquippedIdentityGrants().ToList();
+        foreach (var (instance, compiled) in identityGrants)
+        {
+            foreach (var rule in compiled.Rules)
+                _ruleEngine.Attach(rule, instance.DisplayName);
+        }
+
         // The gauge set is part of the build, so it swaps with it — otherwise a retired Prefix's
         // meter would keep filling from feeds that no longer exist.
-        _gauges.Reconfigure(resolved.Gauges, _tick.CurrentTick);
+        _gauges.Reconfigure(
+            resolved.Gauges.Concat(identityGrants.SelectMany(grant => grant.Compiled.Gauges)).ToList(),
+            _tick.CurrentTick);
     }
 
     /// <summary>Every rolled affix on every worn item, with its definition resolved.</summary>
@@ -2822,6 +2916,40 @@ public partial class GameRoot : Node
     private IEnumerable<ModifierContribution> EquippedAffixContributions() =>
         EquippedAffixes().SelectMany(a =>
             ModifierGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
+
+    /// <summary>Every worn identity-minted item with its sentences recompiled to grants —
+    /// the equip-time twin of <see cref="EquippedAffixes"/>. Compiled fresh per rebuild; the
+    /// compile is deterministic from the persisted sentences (D50), so nothing can drift.</summary>
+    private IEnumerable<(ItemInstance Instance, CompiledSentence Compiled)> EquippedIdentityGrants()
+    {
+        foreach (var instance in _playerEquipment.Slots.Values)
+        {
+            if (instance.IdentitySentences.Count == 0)
+                continue;
+            yield return (instance, _itemEffectResolver.CompileAll(instance.IdentitySentences));
+        }
+    }
+
+    /// <summary>Standing stat grants from worn identity items' sentences, with per-item
+    /// provenance — the sustain floors and their kin.</summary>
+    private IEnumerable<ModifierContribution> EquippedIdentityContributions()
+    {
+        foreach (var (instance, compiled) in EquippedIdentityGrants())
+        {
+            foreach (var (modifierKey, value, scopeText) in compiled.StatGrants)
+            {
+                ModifierScope? scope = null;
+                if (scopeText is { Length: > 0 })
+                {
+                    var dimensionEnd = scopeText.IndexOf(':');
+                    if (dimensionEnd > 0)
+                        scope = new ModifierScope(scopeText[..dimensionEnd], scopeText[(dimensionEnd + 1)..]);
+                }
+
+                yield return new ModifierContribution(modifierKey, value, instance.DisplayName, scope);
+            }
+        }
+    }
 
     /// <summary>Tags of everything currently worn, for the <c>equippedTag</c> condition.</summary>
     private IEnumerable<string> EquippedTags() =>

@@ -1,5 +1,6 @@
 using Dungeons.Content;
 using Dungeons.Items;
+using Dungeons.Professions;
 
 namespace Dungeons.Crafting.Identity;
 
@@ -37,7 +38,12 @@ public sealed record VerbActionResult(
     VerbActionGateFailure? GateFailure, string? GateDetail,
     VerbOutcome? Outcome,
     IReadOnlyList<DepositedItem> Deposited,
-    bool AnyFirstDiscovery);
+    bool AnyFirstDiscovery,
+    // Phase 5 — bench work trains: what this run paid into the acting profession, and the
+    // level it crossed if it crossed one. Zero/null on refusals and on ungated actions.
+    long XpAwarded = 0,
+    int MasteryAwarded = 0,
+    ProfessionLevelUp? LevelUp = null);
 
 /// <summary>
 /// The application seam of the identity bench (migration Phase 2c): resolves a
@@ -58,20 +64,23 @@ public sealed class VerbActionRunner
     private readonly IdentityCraftingEngine _engine;
     private readonly IEmergentRegistry _registry;
     private readonly Func<Inventory> _inventory;
-    private readonly Func<string, int> _professionLevel;
+    private readonly Func<string, ProfessionProgress> _professionProgress;
 
+    /// <param name="professionProgress">The live progress ledger per profession id — the
+    /// bench reads levels and mastery from it and pays XP/mastery into it (Phase 5), so verb
+    /// work and profession actions train through one ledger and one save shape.</param>
     public VerbActionRunner(
         ContentBundle content,
         IdentityCraftingEngine engine,
         IEmergentRegistry registry,
         Func<Inventory> inventory,
-        Func<string, int> professionLevel)
+        Func<string, ProfessionProgress> professionProgress)
     {
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
-        _professionLevel = professionLevel ?? throw new ArgumentNullException(nameof(professionLevel));
+        _professionProgress = professionProgress ?? throw new ArgumentNullException(nameof(professionProgress));
     }
 
     public VerbActionPreview Preview(VerbActionInvocation invocation)
@@ -108,14 +117,38 @@ public sealed class VerbActionRunner
         foreach (var produced in outcome.Produced)
             deposited.Add(Deposit(produced));
 
-        return new VerbActionResult(null, null, outcome, deposited, deposited.Any(item => item.FirstDiscovery));
+        // Phase 5 — the bench trains. Work happened (success, fracture, or destruction —
+        // the gamble was taken; the hand learned), so the acting profession is paid through
+        // the same ledger profession actions use. Fracture and destruction pay too, on the
+        // same reasoning that byproducts do: the attempt was real.
+        var award = Award(gate.Action!);
+
+        return new VerbActionResult(
+            null, null, outcome, deposited, deposited.Any(item => item.FirstDiscovery),
+            award.Xp, award.Mastery, award.LevelUp);
+    }
+
+    private (long Xp, int Mastery, ProfessionLevelUp? LevelUp) Award(VerbActionDefinition action)
+    {
+        if (string.IsNullOrEmpty(action.Profession))
+            return (0, 0, null);
+
+        var progress = _professionProgress(action.Profession);
+        var oldLevel = progress.Level;
+        progress.AddXp(action.Experience);
+        progress.AddMastery(action.Id, ProfessionTuning.MasteryPerAction);
+        var newLevel = progress.Level;
+
+        return (action.Experience, ProfessionTuning.MasteryPerAction,
+            newLevel > oldLevel ? new ProfessionLevelUp(action.Profession, oldLevel, newLevel) : null);
     }
 
     // --- Gates ---------------------------------------------------------------
 
     private sealed record GateCheck(
         VerbActionGateFailure? Failure, string? Detail,
-        VerbRequest? Request = null, IReadOnlyCollection<ItemStack>? Consumption = null);
+        VerbRequest? Request = null, IReadOnlyCollection<ItemStack>? Consumption = null,
+        VerbActionDefinition? Action = null);
 
     private GateCheck CheckGates(VerbActionInvocation invocation)
     {
@@ -126,7 +159,7 @@ public sealed class VerbActionRunner
 
         if (!string.IsNullOrEmpty(action.Profession))
         {
-            var level = _professionLevel(action.Profession);
+            var level = _professionProgress(action.Profession).Level;
             if (level < action.RequiredLevel)
                 return new GateCheck(VerbActionGateFailure.ProfessionLevelTooLow,
                     $"{action.Name} needs {action.Profession} {action.RequiredLevel} (have {level}).");
@@ -208,9 +241,16 @@ public sealed class VerbActionRunner
             TargetIdentityId = invocation.TargetIdentityId,
             DisplacedIdentityId = invocation.DisplacedIdentityId,
             OutputDefinitionId = action.Output,
+            // Steadiness (Phase 5): practicing THIS action makes THIS action's gambles
+            // safer. Built here in the shared gate path, so preview and commit read the
+            // same practiced hand — parity for free.
+            RiskReduction = string.IsNullOrEmpty(action.Profession)
+                ? 0
+                : _professionProgress(action.Profession).GetMastery(action.Id)
+                    * IdentityCraftTuning.RiskReductionPerMasteryPoint,
         };
         var consumption = needs.Select(pair => new ItemStack(pair.Key, pair.Value)).ToList();
-        return new GateCheck(null, null, request, consumption);
+        return new GateCheck(null, null, request, consumption, action);
     }
 
     // --- Deposit -------------------------------------------------------------

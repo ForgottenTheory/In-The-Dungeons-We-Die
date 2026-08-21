@@ -2,244 +2,168 @@
 
 For the next Claude session. Read `CLAUDE.md`, then this.
 
-**Entry-point docs — read these before anything else:**
-- **`docs/game-overview.md`** — the whole game on one map (player's side), with
-  BUILT / PARTIAL / DESIGNED / UNRESOLVED marks. **Rewritten and re-verified this context** —
-  it now opens with a one-run walkthrough and every number in it was measured, not quoted.
-- **`docs/code-map.md`** — the whole repo on one map: layers, entry points, a card per
-  subsystem, **"Where do I change X?"**, and the do-not-rename persistent-identifier list.
-  **§10.13b** is auto-combat, **§10.14** is professions (and the benefit seam), **§10.16b** is
-  Realm preparation, **§10.16c** is the seven progression tracks.
-- **`docs/GDD.md`** — the deepest single design document, and **current again as of this
-  context**: statuses, counts and §19 were re-grounded against the code at HEAD. Where an older
-  design number and the shipped constant disagree, the GDD now records both (see the honesty
-  notes in §5.5, §5.6, §11.1, §19.3).
-- **`docs/crafting-overview.md`** — the crafting stack end to end. **§15 is the
-  design-word ↔ code-name bridge and you will need it** (see the ⚠ below).
-- **`docs/professions.md`** — the 20-profession system as it actually ships.
-- **`docs/loot.md`** — the reward layer, one table shape for every source.
+## ⭐ THE BIG THING — migration Phases 3, 4 and 5 landed in this context
 
-Decisions are in `DECISIONS.md` (through **D41**, plus **D29.3 resolved** at the end). For the
-D30 presentation rule see `docs/presentation-architecture.md`.
+The **Identity + Signature redesign** (D42–D52) advanced three phases in one context, all beside
+the untouched old system, suite green throughout:
+
+- **Phase 3 — item generation (D50/D51).** ONE unified pipeline, `ItemEffectResolver`, emitting
+  three categories kept apart on the item: **identity floor expressions** (guaranteed,
+  deterministic, rank-deepened) · **ordinary generated effects** (weighted draws from a scored
+  table the preview shows — the table IS the draw distribution) · **optional Signatures**
+  (earned via theme resonance/quality/overfill; 1–N coherent sentences). Built: the **payload
+  registry** (bare keys, machinery-proven bindings, families+rungs, one-floor-per-identity
+  discipline — all validator-enforced), form identity fields (`identity_cap`, `base_reads`,
+  per-slot `identity_priority`, `generation_profile`), `IdentityEquipmentComposer` (D51
+  union/cap/dormancy; base delivery parity-pinned to the authored Iron Sword through the live
+  `EquipmentResolver` seam), 11 behavior **assemblers** compiling sentences into existing
+  grants, `IdentityFabricationEngine` (mint → `ItemInstance` carrying sentences/delivery/
+  identity split), **save v13**, the **Identity Forge** panel beside the old assembly, and the
+  full equip seam (stat grants, rules, gauges, move modifiers attach like affixes and swap with
+  gear).
+- **Phase 4 — the material database (D52).** The expected cull was **consciously declined**
+  (measured: 1,448 materials, 1,446 referenced by shipped profession/loot content). All 1,448
+  migrated: a throwaway line-oriented derivation tool (deleted; its rules live in
+  `MaterialLibraryMigrationTests`) drafted capacity/base/latents; hand tiers added **53
+  active-identity materials** (motes r1 · essences/hearts/runes r2 · cores r3; Earthen got
+  elemental earth, Resonant the catalyst, Pure the salts), **a floor payload for every one of
+  the 24 identities** (28 payloads), **46 curated profiles**, plant-true seed latents, and the
+  **acquisition fence** (D29.3 translated: gathering faucets never passively pay
+  active-identity stock — it caught `quarry_arcane` paying an arcane core every completion;
+  three new opportunities took the evicted payouts, pinned scale 36→39).
+- **Phase 5 — professions.** **The bench trains**: `VerbActionDefinition.experience`
+  (validated two-sided: gated⇒pays, ungated⇒cannot), awards through the shared
+  `ProfessionProgress` ledger on success/fracture/destruction alike (refusals pay nothing),
+  level-ups surface at the bench, previews name the pay. **Mastery steadies the hand**: per-
+  action mastery shaves both risk chances via `VerbRequest.RiskReduction` (built in the shared
+  gate path — preview/commit parity free; engine-clamped at 45% — skill narrows variance,
+  never deletes it). **The D48 matrix is content**: 53 verb actions across 11 professions at
+  their own stations, pinned (incl. Runecrafting as the ONLY identity-scoped profession);
+  domain Restores eat salvage stock; Expand costs its catalysts; **preparation = activation**
+  (Process merges the output's innate identities: drying raw emberleaf lands on the authored
+  dried form with Ember active — pinned).
+
+Decisions this context: **D50** (one pipeline, three categories — "Signature" is the special
+layer, never a rename of affixes), **D51** (union + form cap + dormancy; readable slot
+priorities, never percentage apertures; material capacity ≠ form cap), **D52** (no cull;
+derivation + hand tiers). All recorded in DECISIONS.md and mirrored in
+`docs/identity-foundation.md` (§8, §8.1, §15) and `docs/transformation-verbs.md` (§4, §8.3).
 
 ## Repo / build state
 
-- Branch `main`. This context: **`89e00bc`** (the documentation sync) is committed; **the two
-  content fixes below and this handoff are in the working tree awaiting the user's commit
-  call** — commit only when asked. Pushing is the user's job.
+- Branch `main`, working tree **clean**. This context's work — Phases 3, 4 and 5 together —
+  landed as **one combined commit** on top of `16fed3f` (Phase 2 complete): the three phases
+  interleave inside shared files (DECISIONS, the foundation doc, the validator), so a
+  per-phase split could not have kept every commit green. Pushing is the user's job.
 - Green at handoff: **`dotnet build InTheDungeonsWeDie.slnx` clean (0 warnings) ·
-  `dotnet test` → 1,191 passing.**
-- **Save schema is v11.** Nothing this context touched code or the save. The one real
-  migration in the project's history is still v9's `Armor` → `Body`.
-- **`GDD/` is the user's personal folder and is in `.gitignore`.** Leave it alone.
-- Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`. The user runs the game
-  from their Godot 4.7.1 editor and checks UI visually.
-- **Workflow (user-set):** concise reports, plan → approve → build → report. Commit only when
-  asked. Do not update this HANDOFF mid-session — only when the user says the context is ending.
-- **Do not spawn subagents** unless the user asks for them (standing instruction).
+  `dotnet test` → 1,330 passing.** ContentStudio builds clean, its 14 tests pass (registry got
+  the `signature_payloads` type; material/form/verb editors regenerate from the Core types).
+- **Save schema is v13** (v12 + identity-minted item fields: sentences, base delivery,
+  expressed/dormant; derived equipment definitions ride the existing `EmergentEquipment` list
+  via the shared `equip.emergent.` prefix — `equip.emergent.i<hash>` for identity mints).
+  The D49 break (progression survives, items reset) still waits for Phase 7.
+- Godot is **not** on PATH — verify with `dotnet build`/`dotnet test`; the user runs the game
+  from the Godot 4.7.1 editor.
+- **Workflow (user-set):** concise reports; plan → approve → build → report; decisions through
+  AskUserQuestion sign-offs, landing in DECISIONS + the foundation doc the same turn. Commit
+  only when asked. **Do not spawn subagents unless the user asks** (standing). PowerShell 5.1:
+  no double quotes inside `git commit -m` here-strings.
 
----
+## ⭐ START HERE next session
 
-## ⚠️ READ THIS FIRST — the crafting vocabulary
+1. **The user was about to say "start phase 6" when the context ended — Phase 6 is next:
+   Presentation + UI** (§15): identity/signature readings replace property readings; Assay
+   re-aimed at detecting latents and reading potential. Known scope waiting for it:
+   - The **semantic pass over the bench and forge** — `VerbBenchPanel` shows the engine's step
+     text and `IdentityForgePanel` shows engine vocabulary (`on_block → store → Bulwark 0.15`)
+     by explicit Phase 6 deferral (D30: the panels deliberately invented no second vocabulary).
+     The one-way `Dungeons.Presentation` layer is where the player language lives.
+   - **Item tooltips**: `ItemReading` renders affixes/properties but NOT identity sentences —
+     an equipped identity sword currently shows nothing about its effects. Sentences are
+     gameplay-language already (damage, Burn, Barrier); Phase 6 gives them player wording.
+   - **Assay re-aim** (D48: information only — latents, profile hints, capacity/condition
+     readouts; §14 #3 profile-visibility is the open decision that belongs to this phase).
+   - Dormant identities, stability/condition ladders, and the scored candidate table all need
+     their player-facing surfaces decided.
+2. **Editor verification backlog (user's side, never done for Phases 2–5):** the Identity
+   Bench at five stations (now 11 stations routing 53 actions); the Identity Forge at assembly
+   stations (plain iron longsword should swing like the authored Iron Sword); XP/level-up
+   lines at the bench; save v13 roundtrip (mint → save → reload → sentences intact).
 
-The crafting code was renamed for readability in `8824f66`. **If you grep for `ReactionEngine`,
-`Genome`, `Potency` or `Integrity` in the C# you will find nothing.** The design docs, the GDD,
-the player UI and the Reaction Log still use the old words on purpose.
+## The identity-system rules that must not erode (new ones first)
 
-```
-Integrity → Workability            Potency  → MaterialStrength
-Process   → CraftingAction         Channel  → AffectedQualities
-Form      → EquipmentBlueprint     Aperture → TraitExpression
-Genome    → ItemPotential          Pressure → MaterialInfluence
-ReactionEngine   → MaterialTransformationEngine   (Resolve/Project → RunCraft/PreviewCraft)
-ReactionAlgebra  → MaterialTransformationRules
-FabricationEngine→ EquipmentAssemblyEngine        (Fabricate/Project → Assemble/Preview)
-AffixRoller      → ModifierGenerator
-MaterialProfile  → MaterialState                  (Resolve → StateOf)
-```
+- **D50's taxonomy:** Floor/Generated/Signature/Drawback stay distinct on the item; a
+  Signature is *earned*, never the blanket word for generated effects.
+- **D51's selection stays readable:** slot priority → rank → contribution → id. No percentage
+  apertures on the floor, ever. Material capacity and form `identity_cap` are different
+  concepts; neither implies the other.
+- **The assembler D30 fence:** `drainResource` has NO handler, so **drain compiles as
+  damage+restore** and **store as gauge-feed+band** (release-on-full waits for a gauge-spend
+  effect kind — documented in `SentenceAssemblers` and foundation §7.3). `craft.quality` and
+  `loot.quantity.mult` are **declared-but-unread** modifier keys — nothing may bind them
+  (Pure floors on `profession.preserve.chance`, Charmed on `attr.luck`).
+- **Floor discipline:** every identity that owns payloads has exactly ONE rung-1 floor
+  (validator); every roster identity owns one (test). The preview's scored table IS the draw
+  distribution (per-payload diversity cap keeps breaches visible).
+- **The structural discipline (D52):** migrated structural stock must author base; only
+  structural stock may; Bite only on edge-capable forms (raw ore holds no edge — smelting
+  earns it). `TagFamilies.StructuralForms`/`EdgeCapableForms` are the closed sets.
+- **The acquisition fence:** no gathering faucet passively pays active-identity materials —
+  active stock is opportunities, Realm loot, or processing chains whose inputs already paid.
+- **Steadiness is capped** (`RiskReductionCeiling` 0.45) and lives in the shared gate path —
+  never let preview and commit compute mastery separately.
+- **Authored equivalence + preparation=activation:** mundane chains land on authored ids;
+  Process merges the output's innate identities (that's the mechanism, don't "fix" it).
+- All prior invariants stand: the grammar's D30 fence (triggers→published events;
+  detonate/spread/bloom parked BY NAME) · roster pinned to D44's 24 · solo-complete,
+  chain-enhanced (D48) · rank never decays passively · stability derived, never stored ·
+  fingerprint excludes history/profile/base · themes never player-facing · numerals never
+  player-facing · D20 stacking · preview parity everywhere · 0 warnings · validator-before-
+  content with failing-content tests.
 
-Full table, including what deliberately did **not** move, in `docs/crafting-overview.md` §15.
-Player-facing text, save keys and content ids stayed put on purpose — **offer to change
-displayed wording, don't just do it.** (`MasteryBenefitKind` → `ProfessionBenefitKind` also
-landed in Phase 10; member names did not move — they are the JSON `kind` values.)
+## Deferred / parked — do not relitigate
 
----
-
-## ⭐ START HERE — the priority has not changed
-
-### 1. The playtest half is the user's, and it is still the whole bottleneck
-
-Everything the loop needs is built, **including the idle half**. Nobody has played it. Play the
-full loop — prepare a loadout → enter → fight → extract → mine/smelt/infuse/attune/fabricate/roll
-→ equip → go again, and leave something training overnight — then land the whole balance backlog
-in one pass. **Do not retune anything before the user reports play feel** — standing decision.
-The backlog: profession intervals/XP across all twenty, opportunity odds/risk/cost, offline
-caps, plot grow times, course bonuses, Fireball, Bastion, casting-speed (GDD §18 #16),
-fabrication constants, affix-roll odds, the whole Dark Forest, the mastery ladder, the character
-XP curve, the knowledge thresholds, everything Phase 10 added (13 synergy rates, both global
-unlock thresholds, three auto-combat brains, the seven re-shaped D29.3 opportunities) — **plus
-the two content fixes below, which change live behaviour** (Emberbrand got narrower, Reflection
-got real).
-
-### 2. Editor verification pending — unchanged from last handoff; nothing new rendered
-
-This context was documentation and two data lines; the whole list from the previous handoff
-stands: the Phase 10 surfaces (away panel, auto-combat toggle + brain picker, three-state
-passive label, "Helped by:" synergy lines, autosave-on-quit — and watch a Brute fight with
-auto-combat on: it should block reliably and never perfect-block or parry), and the older list
-(the Realm Preparation screen, mastery readouts, deep-entry picker at 900 knowledge, the rebuilt
-Hideout tab, the R-track bench grammar + fabrication preview + Reroll, the Parry button, the
-Techniques panel, the goblin fights, Char Lab hooks).
-
----
-
-## This context, in two pieces
-
-### `89e00bc` — the documentation sync (docs only; no code, no data)
-
-`docs/GDD.md` and `docs/game-overview.md` were re-grounded **against the repository, not
-against each other** — every count measured, every status mark checked against code and tests.
-
-- **GDD**: the loop diagram no longer claims fabrication/combat/anatomy are PLANNED; §7 is the
-  real 20/348/36 profession system (the old designed-19 roster moved to a superseded note);
-  offline is BUILT with its caps; materials 1,448; processes 8 (Attune live; the temporary
-  Distill/Attune ungating documented with its pinning test); statuses 29 with true category
-  rosters; moves 43; affixes 44; keys 60; Dark Forest 34/3 with all eleven node types; enemies
-  483/26/7/7 with the rank layer; Hideout = 20 stations; Economy = gold + 72 tables + the one
-  Hedge Trader sink; a new §13.4 Loot section; §19 fully rebuilt (it still said auto-combat and
-  offline were unbuilt, 8 professions, save v4).
-- **Recorded doc/code honesty notes** (documented, deliberately not "fixed" in code): armour
-  ships **ArmourK = 1.0** (the 5× formula in `docs/damage-and-defense.md` is older intent);
-  **`MaxResistanceCeiling` (0.90) is declared and read by nothing**; of the timing keys only
-  `combat.windup.mult` is consumed (interval/telegraph/recovery are declared with clamps,
-  unread — and the D-20 floor 0.55 **is** applied in the registry now); **realm tiers are
-  carried and read by nothing**; chains (`addChain`) are live machinery with zero content.
-- **game-overview.md** was rewritten as the plain-language overview (a narrative run, player
-  experience per system, ~40% shorter), keeping the status marks and the reading map.
-
-### The two content fixes (working tree) — silent-key bugs, now behaviour changes
-
-`DataStore<T>` matches JSON keys case-insensitively against the C# property name **or** its
-exact `[JsonPropertyName]` — and silently ignores everything else. Two shipped records paid
-for that:
-
-1. **`game/data/move_modifiers/move_modifiers.json`** — `movemod.emberbrand` authored
-   `"moveId"` where `MoveMatch` declares `"move_id"`. The id was ignored, the match was empty,
-   and **Emberbrand added heat to every move** instead of only Heavy Strike. Fixed. An
-   Emberbrand item is now strictly narrower — exactly the "Heavy Strike gains additional Heat
-   damage" exemplar it was written to be.
-2. **`game/data/affixes/affixes.json`** — `affix.reflection` authored `"scalesWith"` where
-   `EffectSpec` declares `"scales_with"`. With it ignored, `Magnitude()` returned the flat
-   rolled amount — **Reflection dealt ~0.1–0.3 flat damage**. Fixed: it now returns
-   roll% × the mitigated amount, which is what "Return $roll% of damage your block prevents"
-   always claimed. Reflection is now *much* stronger than it ever was in testing — flag for
-   the balance pass.
-
-No test pinned either bug (nothing in `tests/` references emberbrand or reflection); the suite
-is green after both fixes.
-
-**The structural fence this suggests** (method note, not started): the game has no
-unknown-JSON-field detection — `UnmappedMemberHandling.Disallow` on the definition types, or a
-validator arm, would make this whole bug class a load error instead of a silent shrug. Same
-shape as every other "true by construction" win in this file. Worth proposing when content work
-resumes.
-
----
-
-## ⚠️ Deferred by explicit decision — do not relitigate, do not silently fix
-
-- **Balance, wholesale** (see START HERE).
-- **Form/schematic acquisition (D29.2)** — schematics drop from eight tables and bind to no
-  form. The one progression track nothing reads; `ProgressionEcosystemTests` exempts it **by
-  name**. When it ships, delete the exemption and the roll-call should still pass.
-- **Profession tools (E6)** — the seam is built (`ProfessionBenefits` is three-source by
-  construction; `CourseBonusKeys` and the tool components already ship, read by nothing).
-- **Fully unattended Realm runs** — auto-combat is live-only by design.
-- **Player-facing crafting wording** (Integrity/Potency on screen) — offer, don't do.
-- **Casting-speed scaling** (§18 #16) · **the Fighter identity hook** (§18 #15, NEEDS DESIGN).
-- **Operations + Overreach + Anomalous, Exotic rare-roll, stored retaliation, inversion,
-  ignore-fraction** — E7. **Signature affixes** — need crafting P4.
-- **Sealed uniques + relic materials** — post-slice content (D28 fencing recorded).
-- **No currency for Thieving; no economy** (NEEDS DESIGN — the Hedge Trader is the only sink).
-- **`MainMvpUI` → a better name** — editor-side job.
-- **`AffixDefinition`/`RolledAffix`/`Dungeons.Affixes`** keep their names (D-17).
+- Grammar gaps by name: behaviors detonate/spread/bloom; effect kinds `consumeStatus`,
+  area-status, delayed, `cleanse`; the `LootResolver` luck seam (Charmed's real consumer).
+- Named identity evolution (§14 #4) · Emergent Phenomena (seam named in `ItemEffectResolver`,
+  deliberately empty; overfill raising Signature odds is its only designed input).
+- Verb-level open details (transformation-verbs §7): Fuse derived capacity/condition,
+  Restore ceiling (Worked, virgin-only Pristine), fracture-targets-newest — all provisional.
+- Phase 7: old-system deletion, doc rewrites, the D49 save break, schema settling.
+- Pre-redesign deferrals: form/schematic acquisition (D29.2), profession tools (E6),
+  consumable forms (P5c — Cooking's named dead-end), `MainMvpUI` rename, economy.
+- **Every identity-system number is provisional** (all three `*Tuning` classes say so).
 
 ## Known debt and filed items
 
-- **`PROJECT_STATE.md` / `SYSTEM_INDEX.md` are badly stale** (they predate the R-track, the
-  crafting rename, the profession pass, M6 and Phases 6–10). GDD/overview/ROADMAP/DECISIONS and
-  this file are current. **Either refresh them or delete them; a stale map is worse than none.**
-- **Two sibling docs still carry pre-sync numbers:** `docs/damage-and-defense.md` (the 5×
-  armour constant) and `docs/statuses.md` ("~27 definitions"; it is 29). Small, mechanical.
-- **Stale code comments found during verification** (cheap sweep, all one-liners):
-  `game/data/statuses/core.json` header says 14, the file holds 15 · `StatusController.cs`
-  says "fourteen statuses" · `CharacterLeveling.cs` says "481 actors" (483) ·
-  `mastery_benefits.json` + `MasteryBenefitDefinition.cs` say "659 actions" (348) ·
-  `MaterialStateTuning.cs`/`TagFamilies.cs` say "~470 library" (1,448) · `DiscoverySystem.cs`
-  claims persistence is future (it persists, `SaveMapper.cs:90/:196`) ·
-  `CombatTuning.ResolveDecayPerTick` is applied per 5-tick sweep, so the name overstates the
-  rate 5×.
-- **Declared-but-unread constants**, now recorded in the GDD rather than only in heads:
-  `MaxResistanceCeiling`, `combat.interval/telegraph/recovery.mult`, `combat.damage.flat`,
-  the per-type damage keys, `combat.stagger.vulnerable`, realm `SupportedTiers`/run tier.
-- **`GameRoot` is ~2,870 lines** — application-layer extraction still deferred (D2).
-- **The in-run `KnowledgeIntel` and pre-run `RealmBriefing`** are two implementations of "what
-  does knowledge reveal" sharing thresholds but not the reading; the in-run one still drops
-  negative resistances. Unifying them is the obvious next tidy.
-- **Three of the five Dark Forest enemies have no readable weakness** (Raider, Hexer, Grask) —
-  the first knowledge rung buys a nearly empty Known Threats panel for 3 of 5 fights.
-- **Auto-combat never uses consumables**, and `AutoCombatPilot` polls every tick — both filed.
-- **Combat-tab Parry button** is evaluated once at startup (`BuildCombatSection`); the in-run
-  row re-checks correctly, so a fabricated Buckler enables Parry in a Realm but not on the
-  Combat tab until restart. **"Use Salve" is hard-wired** to `consumable.healing_salve`;
-  `GameRoot.UsableConsumables` exists and no UI calls it. Both are one-screen fixes when UI
-  work resumes.
-- **Cooking is the one documented profession dead end** (named exception; dies with consumable
-  forms). **Fletching's bow/projectile parts have no forms yet** (form acquisition).
-- Zeroing every affix's `chance_weight.base` still passes the suite — that lever is unguarded.
-- Two provisional crafting constants; `PropertyDefinition.transferable` unconsumed; response
-  properties drop on transformation; `InappropriateOptimismRule` orphaned;
-  `StatusController.ModifierTotal` display-only.
-
-## The rules that keep this tractable — do not erode
-
-- **Code optimizes for human comprehension (CLAUDE.md rule 8).** Expressive names, one name per
-  concept project-wide, no magic numbers, no behaviour-selecting booleans, and **code-symbol
-  renaming is not persistent-identifier renaming** — `docs/code-map.md` §12 (action ids,
-  `CourseBonusKeys` values, `elite`/`boss` tags, `ProfessionBenefitKind` members,
-  `DefensiveStance` members, and every `[JsonPropertyName]` value — the two fixes this context
-  are what ignoring that list costs).
-- **Three languages (D30, rule 7):** raw simulation values never on normal play surfaces;
-  `Dungeons.Presentation` is the one path to player-facing text; a player-facing surface ships
-  only when its mechanic resolves.
-- **Progression stays layered (D40).** Character XP is Realm-only. Nothing in the Hideout may
-  feed it.
-- **Automation is disadvantaged by latency, never by damage (D-07, D41).** No second combat
-  resolver, ever. A profile quick enough to parry is a load error.
-- **Essence is extraction's export (D29.3).** Professions reach it only through opportunity
-  payloads; drop tables not at all.
-- **No recipe, ever.** **A Prefix may never reference a Base.** **Every Base distributes the
-  same growth budget.** **No class-check condition kind (D25).** **Enemy identity composes
-  (D26).** **Innates never reroll (U-7).** One affix per family per item (§3.5).
-- **Professions are an ecosystem, not twenty XP bars** — `ProfessionEcosystemTests`.
-- **D-12** never default a `ModifierContext` · **D-08** Resolve, not per-control chances ·
-  **D-06** on-block hooks listen to `Blocked` (both outcomes) · **D-01** lane movement is
-  always `convert`/`addAsExtra` with a fraction · ailment ticks never proc.
-- Keep `dotnet test` green (**1,191**) and the build at **0 warnings**. Content is data; every
-  new content type ships with validator rules + failing-content tests per rule. Commit only
-  when asked; `main`; Co-Authored-By trailer.
+- `PROJECT_STATE.md` / `SYSTEM_INDEX.md` predate the redesign entirely — refresh or delete.
+- Old-system surfaces are still the primary UI (assembly panel beside the Identity Forge,
+  property readings, Assay unredacting numbers) — Phases 6/7 retire them.
+- ContentStudio still has no registry-vs-`LoadAll` parity test (cheap fence, unbuilt).
+- `VerbBenchPanel`/`IdentityForgePanel` pickers reset selection on refresh (filed).
+- Two identical sentences on one item share a `RuleId` (cooldown bookkeeping collision —
+  harmless while sentences don't cool down; noted in `ItemEffectSentence`).
+- Two store-behavior sentences with the same payload would share a gauge name (noted in
+  `SentenceAssemblers.StoreGauge`; unlikely with current content).
+- Verb-action XP values and all payload magnitude ranges are first guesses; the §8.3 gate
+  waves (L1/5/12/40/60/70) likewise.
 
 ## The method notes that keep paying
 
-Rendering a worked example and reading the output · perturbation testing when touching data
-keys · tests that express a design rule rather than cover a code path · writing the validation
-rule before the data it validates · **prefer a structural fence to a list of exceptions**
-(D29.3's allowlist → one sentence; `MinimumReactionTicks` deriving itself from the windows) ·
-when a rule has one honest exception, **name it in the test** (Cooking; form acquisition).
+Everything from earlier contexts stands (worked examples · perturbation tests · tests that
+express design rules · validator before data · structural fences over exception lists ·
+documentation is a claim, so measure it — this context's rarity grep missed `very_rare` and
+the doc said "~60" where the measure said 53). This context added three:
 
-**This context added a sixth: documentation is a claim, so measure it.** The docs pass found
-its corrections by counting records, greping constants and running the suite — not by
-reconciling documents against each other. Two of those measurements turned out to be live
-content bugs (`moveId`, `scalesWith`) that the whole 1,191-test suite was structurally unable
-to notice, because unknown JSON fields are silently ignored at load. The unknown-field fence
-(above) is the structural version of that lesson.
+- **Fences catch their author.** The floor-discipline validator rejected my own first payload
+  file (a rung-2 floor); the acquisition fence's first run caught a real leak the old essence
+  fence could not see (`quarry_arcane`'s guaranteed arcane core). Write the fence before the
+  content it polices, then believe it over yourself.
+- **Trace thresholds must agree across surfaces.** Assembly dilutes provenance by mass share —
+  the item-side name threshold AND the item-side profile trace both had to drop below the
+  material-side ones, or the sword said "Oakbound" while generation forgot oak. When a derived
+  value crosses a boundary, check every consumer of the threshold.
+- **When the engine already does the right thing, let it.** Preparation=activation was not
+  designed — it fell out of Process's output-innate merge, discovered by tracing the
+  fingerprint math before authoring the Process pairs. Trace first; the mechanism may already
+  be the design.

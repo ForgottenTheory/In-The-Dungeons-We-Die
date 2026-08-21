@@ -99,6 +99,7 @@ public static class ContentValidator
         ValidateIdentityRegistry(content.Identities, problems);
         ValidateSignatureVocabulary(content.SignatureTriggers, content.SignatureBehaviors,
             content.SignatureThemes, problems);
+        ValidateSignaturePayloads(content, problems);
         ValidateMaterialIdentityFields(content, problems);
         ValidateVerbActions(content, problems);
         ValidateProcesses(content.CraftingActions, content.Properties, content.Professions, problems);
@@ -106,6 +107,7 @@ public static class ContentValidator
         ValidateTraits(content.Traits, knownProperties, problems);
         ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
         ValidateForms(content.Forms, content.Moves, content.Materials, knownProperties, problems);
+        ValidateFormIdentityFields(content, problems);
         ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
         ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
@@ -251,18 +253,192 @@ public static class ContentValidator
                 CheckStat("give", baseStats.Give);
             }
 
+            // The D46/D52 structural discipline. Applies to migrated materials only — the
+            // unmigrated remainder is the old world's, and the coexistence seam already
+            // refuses it at every identity surface.
+            var structuralForms = material.Tags
+                .Where(tag => TagFamilies.TryParse(tag, out var family, out _) && family == "form")
+                .Select(tag => tag["form:".Length..])
+                .Where(TagFamilies.StructuralForms.Contains)
+                .ToList();
+
+            if (material.Capacity is not null && structuralForms.Count > 0 && material.Base is null)
+                Problem("is structural gear stock but authors no base stats — a migrated material's physical floor is authored, never guessed (D46/D52).");
+            if (material.Base is not null && structuralForms.Count == 0)
+                Problem("authors base stats but carries no structural form — base is the physical floor of gear stock, and this is not gear stock (D46's dividing line).");
+            if (material.Base is { Bite: > 0 }
+                && !structuralForms.Any(TagFamilies.EdgeCapableForms.Contains))
+                Problem("authors Bite but no edge-capable form — a material that cannot take an edge cannot cut (D46).");
+
             if (material.SignatureProfile is { } profile)
+                ValidateSignatureProfileReferences(profile, content, Problem);
+        }
+    }
+
+    /// <summary>Every favored-vocabulary reference in a profile resolves — shared by material
+    /// personality profiles and form generation profiles, which are the same shape on
+    /// purpose (§6, §8 stage 1).</summary>
+    private static void ValidateSignatureProfileReferences(
+        SignatureProfile profile, ContentBundle content, Action<string> problem)
+    {
+        foreach (var theme in profile.Themes)
+            if (!content.SignatureThemes.Contains(theme))
+                problem($"profile theme '{theme}' is not in the theme registry.");
+        foreach (var trigger in profile.FavoredTriggers)
+            if (!content.SignatureTriggers.Contains(trigger))
+                problem($"profile favored trigger '{trigger}' is not in the trigger registry.");
+        foreach (var behavior in profile.FavoredBehaviors)
+            if (!content.SignatureBehaviors.Contains(behavior))
+                problem($"profile favored behavior '{behavior}' is not in the behavior registry.");
+        foreach (var payload in profile.FavoredPayloads)
+            if (!content.SignaturePayloads.Contains(payload))
+                problem($"profile favored payload '{payload}' is not in the payload registry.");
+    }
+
+    /// <summary>
+    /// The payload registry (docs/identity-foundation.md §7.4, D50). The load-bearing rule is
+    /// the D30 fence: a payload's binding must name machinery that resolves in play — a
+    /// modifier key, status, move, move modifier or item that exists, a real resource pool —
+    /// so the generated sentence can never promise what combat cannot deliver. Around it, the
+    /// same shape checks every registry gets, plus the floor discipline: every identity that
+    /// owns payloads has exactly one rung-1 floor expression (D50 category 1).
+    /// </summary>
+    private static void ValidateSignaturePayloads(ContentBundle content, List<ContentProblem> problems)
+    {
+        foreach (var payload in content.SignaturePayloads.GetAll())
+        {
+            void Problem(string message) => problems.Add(new ContentProblem("signature_payload", $"{payload.Id}: {message}"));
+
+            if (string.IsNullOrWhiteSpace(payload.Id) || payload.Id.Contains('.'))
+                Problem("payload ids are bare keys (regeneration), never dotted entity ids.");
+            if (string.IsNullOrWhiteSpace(payload.Name) || string.IsNullOrWhiteSpace(payload.Description))
+                Problem("needs a name and a one-sentence description.");
+
+            if (payload.Families.Count == 0)
+                Problem("belongs to no identity family — an orphan payload could never be generated (§7.4).");
+            var familyIdentities = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var stake in payload.Families)
             {
-                foreach (var theme in profile.Themes)
-                    if (!content.SignatureThemes.Contains(theme))
-                        Problem($"profile theme '{theme}' is not in the theme registry.");
-                foreach (var trigger in profile.FavoredTriggers)
-                    if (!content.SignatureTriggers.Contains(trigger))
-                        Problem($"profile favored trigger '{trigger}' is not in the trigger registry.");
-                foreach (var behavior in profile.FavoredBehaviors)
-                    if (!content.SignatureBehaviors.Contains(behavior))
-                        Problem($"profile favored behavior '{behavior}' is not in the behavior registry.");
+                if (!content.Identities.Contains(stake.Identity))
+                    Problem($"family identity '{stake.Identity}' is not in the identity registry.");
+                if (stake.Rung < MinIdentityRank || stake.Rung > MaxIdentityRank)
+                    Problem($"family rung {stake.Rung} is outside {MinIdentityRank}–{MaxIdentityRank}.");
+                if (!familyIdentities.Add(stake.Identity))
+                    Problem($"family identity '{stake.Identity}' is listed twice.");
             }
+
+            ValidatePayloadBinding(payload, content, Problem);
+
+            if (payload.Range.Count > 0 && (payload.Range.Count != 2 || payload.Range[0] > payload.Range[1]))
+                Problem("range must be [lo, hi] with lo ≤ hi.");
+            if (PayloadBindingKinds.MagnitudeBearing.Contains(payload.Binding.Kind) && payload.Range.Count == 0)
+                Problem($"binding kind '{payload.Binding.Kind}' carries a magnitude and needs a [lo, hi] range.");
+
+            if (payload.Weight <= 0)
+                Problem("needs a positive default weight.");
+
+            if (payload.Floor is { } floor)
+            {
+                if (payload.Families.Any(stake => stake.Rung != 1))
+                    Problem("floor payloads sit at rung 1 in every family — the floor is what carrying the identity at all promises.");
+                if (!content.SignatureTriggers.Contains(floor.Trigger))
+                    Problem($"floor trigger '{floor.Trigger}' is not in the trigger registry.");
+                if (!content.SignatureBehaviors.Contains(floor.Behavior))
+                    Problem($"floor behavior '{floor.Behavior}' is not in the behavior registry.");
+                if (floor.Chance is < 0 or > 1)
+                    Problem($"floor chance {floor.Chance:0.##} is outside 0–1.");
+            }
+        }
+
+        // The floor discipline, per identity: owning payloads without a floor leaves the
+        // identity's guarantee unauthored; two floors would make "the" floor ambiguous.
+        var floorsByIdentity = new Dictionary<string, int>(StringComparer.Ordinal);
+        var ownersByIdentity = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var payload in content.SignaturePayloads.GetAll())
+        {
+            foreach (var stake in payload.Families)
+            {
+                ownersByIdentity.Add(stake.Identity);
+                if (payload.Floor is not null)
+                    floorsByIdentity[stake.Identity] = floorsByIdentity.GetValueOrDefault(stake.Identity) + 1;
+            }
+        }
+
+        foreach (var identity in ownersByIdentity.OrderBy(id => id, StringComparer.Ordinal))
+        {
+            var floorCount = floorsByIdentity.GetValueOrDefault(identity);
+            if (floorCount != 1)
+                problems.Add(new ContentProblem("signature_payload",
+                    $"identity '{identity}' owns payloads but has {floorCount} floor expressions — exactly one is the rule (D50 category 1)."));
+        }
+    }
+
+    /// <summary>The D30 fence, per binding kind: every key resolves against the store that
+    /// gives it meaning. A modifier binding's scope must also match the key's declared
+    /// <c>scoped_by</c> dimension, or the grant would throw at equip time.</summary>
+    private static void ValidatePayloadBinding(
+        SignaturePayloadDefinition payload, ContentBundle content, Action<string> problem)
+    {
+        var binding = payload.Binding;
+
+        if (!PayloadBindingKinds.All.Contains(binding.Kind))
+        {
+            problem($"binding kind '{binding.Kind}' is not one of ({string.Join(", ", PayloadBindingKinds.All)}).");
+            return;
+        }
+
+        switch (binding.Kind)
+        {
+            case PayloadBindingKinds.Modifier:
+                if (!content.ModifierKeys.TryGetById(binding.Key, out var modifierKey))
+                {
+                    problem($"binding modifier key '{binding.Key}' is not in the modifier-key registry.");
+                }
+                else if (binding.Scope is { Length: > 0 } scope)
+                {
+                    var dimensionEnd = scope.IndexOf(':');
+                    var dimension = dimensionEnd > 0 ? scope[..dimensionEnd] : string.Empty;
+                    if (dimension.Length == 0)
+                        problem($"binding scope '{scope}' is not of the form dimension:value.");
+                    else if (!string.Equals(modifierKey.ScopedBy, dimension, StringComparison.OrdinalIgnoreCase))
+                        problem($"binding scopes '{binding.Key}' by '{dimension}', but the key is scoped by '{(modifierKey.IsScoped ? modifierKey.ScopedBy : "nothing")}'.");
+                }
+                break;
+
+            case PayloadBindingKinds.Status:
+                if (!content.Statuses.Contains(binding.Key))
+                    problem($"binding status '{binding.Key}' is not in the status registry.");
+                break;
+
+            case PayloadBindingKinds.Resource:
+                if (!PayloadBindingKinds.ResourceNames.Contains(binding.Key))
+                    problem($"binding resource '{binding.Key}' is not one of ({string.Join(", ", PayloadBindingKinds.ResourceNames)}).");
+                break;
+
+            case PayloadBindingKinds.Move:
+                if (!content.Moves.Contains(binding.Key))
+                    problem($"binding move '{binding.Key}' is not in the move registry.");
+                break;
+
+            case PayloadBindingKinds.MoveModifier:
+                if (!content.MoveModifiers.Contains(binding.Key))
+                    problem($"binding move modifier '{binding.Key}' is not in the move-modifier registry.");
+                break;
+
+            case PayloadBindingKinds.Item:
+                if (!content.Materials.Contains(binding.Key)
+                    && !content.Equipment.Contains(binding.Key)
+                    && !content.Consumables.Contains(binding.Key))
+                {
+                    problem($"binding item '{binding.Key}' is not a material, equipment or consumable id.");
+                }
+                break;
+
+            // Damage and heal bind to the effect handlers themselves — no key to resolve.
+            case PayloadBindingKinds.Damage or PayloadBindingKinds.Heal:
+                if (!string.IsNullOrEmpty(binding.Key))
+                    problem($"binding kind '{binding.Kind}' takes no key, but '{binding.Key}' was authored.");
+                break;
         }
     }
 
@@ -296,6 +472,13 @@ public static class ContentValidator
                 Problem($"required_level {action.RequiredLevel} is negative.");
             if (!string.IsNullOrEmpty(action.Profession) && !content.Professions.Contains(action.Profession))
                 Problem($"gates on unknown profession '{action.Profession}'.");
+
+            // Phase 5: the bench trains. A gated action that pays nothing reopens the exact
+            // gap this phase closed; an ungated action has nobody to pay.
+            if (!string.IsNullOrEmpty(action.Profession) && action.Experience <= 0)
+                Problem("is profession-gated but awards no experience — bench work trains (D47 §4).");
+            if (string.IsNullOrEmpty(action.Profession) && action.Experience > 0)
+                Problem($"awards {action.Experience} experience with no profession to pay it to.");
 
             foreach (var tag in action.SubstrateTags)
                 if (!TagFamilies.TryParse(tag, out _, out _))
@@ -809,10 +992,12 @@ public static class ContentValidator
 
     /// <summary>
     /// Shared validation for any declarative hook — gauge feeds, prefix rules, suffix
-    /// expressions. Everything a typo could hide behind is checked here: the event, the
-    /// condition kinds, the effect kind, and any modifier key an effect names.
+    /// expressions, and the item-effect assemblers' compiled rules (which the fence tests
+    /// hold to the same standard as authored content). Everything a typo could hide behind
+    /// is checked here: the event, the condition kinds, the effect kind, and any modifier
+    /// key an effect names.
     /// </summary>
-    internal static void ValidateTriggerRule(
+    public static void ValidateTriggerRule(
         Dungeons.Rules.TriggerRule rule,
         string context,
         DataStore<Modifiers.ModifierKeyDefinition> modifierKeys,
@@ -1311,6 +1496,61 @@ public static class ContentValidator
             if (EquipmentSlots.GrantsArmor(form.Type) && !tags.Contains("armor") && !tags.Contains("shield"))
                 Problem("is worn armour but carries neither the 'armor' nor the 'shield' tag, so no defensive modifier is available to it.");
         }
+    }
+
+    /// <summary>Form identity-cap range (D51 — a different concept from material capacity,
+    /// with its own bounds on purpose).</summary>
+    public const int MinFormIdentityCap = 1;
+    public const int MaxFormIdentityCap = 4;
+
+    /// <summary>The identity-model form fields (D46 base reads, D51 cap/priorities, §8's
+    /// generation lean): the cap in range, every base read naming a real item stat, a real
+    /// base stat and a real slot, every generation-profile reference resolving — each rule
+    /// the typo class that would otherwise read as silent zeros at the bench.</summary>
+    private static void ValidateFormIdentityFields(ContentBundle content, List<ContentProblem> problems)
+    {
+        foreach (var form in content.Forms.GetAll())
+            ValidateOneFormsIdentityFields(form, content, problems);
+    }
+
+    private static void ValidateOneFormsIdentityFields(
+        Dungeons.Crafting.EquipmentBlueprintDefinition form, ContentBundle content, List<ContentProblem> problems)
+    {
+        void problem(string message) => problems.Add(new ContentProblem("forms", $"{form.Id} {message}"));
+        if (form.IdentityCap is int identityCap
+            && (identityCap < MinFormIdentityCap || identityCap > MaxFormIdentityCap))
+        {
+            problem($"identity_cap {identityCap} is outside {MinFormIdentityCap}–{MaxFormIdentityCap}.");
+        }
+
+        if (form.BaseReads.Count > 0 && form.IdentityCap is null)
+            problem("authors base_reads without identity_cap — migrate the form whole or not at all.");
+
+        foreach (var (itemStat, reads) in form.BaseReads)
+        {
+            if (!Dungeons.Crafting.IdentityFormVocabulary.ItemStats.Contains(itemStat))
+            {
+                problem($"base read feeds unknown item stat '{itemStat}' — an item stat only joins the set when machinery consumes it (D30).");
+                continue;
+            }
+
+            foreach (var read in reads)
+            {
+                if (!Dungeons.Crafting.IdentityFormVocabulary.BaseStats.Contains(read.Stat))
+                    problem($"base read for '{itemStat}' names unknown base stat '{read.Stat}' — the channel is Heft/Bite/Toughness/Give forever (D46).");
+                if (read.Slot != Dungeons.Crafting.BlueprintSlots.AllSlots && !form.Slots.ContainsKey(read.Slot))
+                    problem($"base read for '{itemStat}' reads unknown slot '{read.Slot}'.");
+                if (read.Weight <= 0)
+                    problem($"base read for '{itemStat}' has non-positive weight {read.Weight:0.##}.");
+            }
+        }
+
+        foreach (var (slotName, slot) in form.Slots)
+            if (slot.IdentityPriority < 0)
+                problem($"slot '{slotName}' identity_priority is negative — priorities are plain readable ranks, 0 and up.");
+
+        if (form.GenerationProfile is { } generationProfile)
+            ValidateSignatureProfileReferences(generationProfile, content, problem);
     }
 
     /// <summary>§5 essence (C1b): anchors must be real properties, oppositions must resolve,

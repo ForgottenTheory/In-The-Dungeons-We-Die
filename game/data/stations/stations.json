@@ -47,7 +47,8 @@
     "id": "station.bone_table",
     "name": "Bone Table",
     "description": "A scrubbed slab and good light. What a carcass gives up is a matter of knowing where to look.",
-    "professions": ["profession.beast_lore"]
+    "professions": ["profession.beast_lore"],
+    "verb_actions": ["craft.read_the_beast", "craft.render_essence"]
   },
   {
     "id": "station.salvage_yard",
@@ -69,7 +70,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
-    "verb_actions": ["craft.smelt_iron", "craft.infuse_metal", "craft.mend", "craft.hone"],
+    "verb_actions": ["craft.smelt_iron", "craft.smelt_copper", "craft.smelt_silver", "craft.hone_metal", "craft.infuse_metal", "craft.temper_metal", "craft.mend", "craft.alloy", "craft.displace_metal"],
     "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail", "form.shortsword", "form.halberd", "form.knuckles"]
   },
   {
@@ -78,7 +79,7 @@
     "description": "Mortar, press and steeping jars. Everything here prepares an ingredient without changing what it is.",
     "professions": ["profession.herblore"],
     "crafting_actions": ["process.grind", "process.steep"],
-    "verb_actions": ["craft.identify_virtues", "craft.draw_extract", "craft.hone"]
+    "verb_actions": ["craft.identify_virtues", "craft.draw_extract", "craft.press_herbs", "craft.dry_emberleaf", "craft.dry_frostfern"]
   },
   {
     "id": "station.alchemy_lab",
@@ -86,7 +87,7 @@
     "description": "Glassware, a low flame and the willingness to find out. Where the Apothecary prepares, this changes.",
     "professions": ["profession.alchemy"],
     "crafting_actions": ["process.distill"],
-    "verb_actions": ["craft.distill"]
+    "verb_actions": ["craft.distill", "craft.clarify", "craft.fuse_solution", "craft.universal_extraction", "craft.expand_vessel"]
   },
   {
     "id": "station.kitchen",
@@ -99,6 +100,7 @@
     "name": "Tannery",
     "description": "Lye, a scraping beam and drying frames. Drake leather stays drake; nothing here is flattened into a tier.",
     "professions": ["profession.leatherworking"],
+    "verb_actions": ["craft.cure_hide", "craft.dress_leather", "craft.infuse_leather", "craft.work_supple", "craft.patch", "craft.displace_leather"],
     "blueprints": ["form.vest", "form.gauntlets", "form.treads", "form.whip"]
   },
   {
@@ -106,6 +108,7 @@
     "name": "Loom",
     "description": "Fibre, thread, cloth. Slow, quiet, and the only source of anything soft enough to wear.",
     "professions": ["profession.tailoring"],
+    "verb_actions": ["craft.spin_silkvine", "craft.weave_silkvine", "craft.press_cloth", "craft.infuse_cloth", "craft.embroider", "craft.reweave", "craft.displace_cloth"],
     "blueprints": ["form.vest", "form.gauntlets", "form.sling"]
   },
   {
@@ -113,6 +116,7 @@
     "name": "Fletcher's Bench",
     "description": "Shafts, staves, strings and vanes. The haft is most of a spear, which is why the spear is made here and not at the Forge.",
     "professions": ["profession.fletching"],
+    "verb_actions": ["craft.hew_oak_planks", "craft.hew_maple_planks", "craft.true_the_grain", "craft.infuse_wood", "craft.season_wood", "craft.splice", "craft.displace_wood"],
     "blueprints": ["form.warspear", "form.longbow", "form.crossbow", "form.quarterstaff", "form.halberd", "form.javelin", "form.sling"]
   },
   {
@@ -121,6 +125,7 @@
     "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
     "professions": ["profession.artifice"],
     "crafting_actions": ["process.grind"],
+    "verb_actions": ["craft.melt_glass", "craft.cut_crystal", "craft.infuse_crystal", "craft.facet", "craft.reset_setting", "craft.fuse_composite", "craft.displace_crystal"],
     "blueprints": ["form.buckler", "form.focus", "form.ring", "form.crossbow", "form.dagger"]
   },
   {
@@ -129,6 +134,7 @@
     "description": "A cut blank, an essence and a very steady hand. Raising a material's resonance starts here — and a focus is where that resonance finally does something.",
     "professions": ["profession.runecrafting"],
     "crafting_actions": ["process.attune"],
+    "verb_actions": ["craft.inscribe", "craft.deepen_inscription", "craft.expand_matrix"],
     "blueprints": ["form.focus"]
   },
 

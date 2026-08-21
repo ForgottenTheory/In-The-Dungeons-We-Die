@@ -132,8 +132,12 @@ previewed, all opted into:
 **Quality** is the control stat, not a power stat: it tightens signature scoring, scales base
 delivery at fabrication, and improves Develop efficiency (provisional). Active crafting earns
 quality through the existing timing-performance mechanic; verbs award profession XP and
-mastery — closing the shipped system's known gap where bench work trained nothing (wired in
-migration Phase 5).
+mastery — the gap where bench work trained nothing closed in migration Phase 5: every gated
+action authors `experience`, awards pay through the shared profession ledger on any run where
+work happened (success, fracture, destruction — the gamble was taken), and **mastery of an
+action steadies the hand at it**: each point shaves both risk chances
+(`IdentityCraftTuning.RiskReductionPerMasteryPoint`), clamped at the ceiling — skill narrows
+variance, never deletes it.
 
 ---
 
@@ -225,6 +229,16 @@ Verbs unlock in waves per profession: Process/Refine early · Reveal/Transfer mi
 Develop/Extract/Restore mid-late · Fuse/Displace late · Expand last. All numbers belong to the
 balance pass. Verb actions are authored at each profession's own station (the station model and
 its validators carry forward unchanged), and verbs award profession XP and mastery (§4).
+
+**Shipped (migration Phase 5, 2026-08-20):** the matrix above is content — 53 verb actions
+across eleven professions at their own stations, pinned by
+`VerbActionContentTests.TheD48MatrixIsShippedContent` (including the rule that Runecrafting is
+the *only* identity-scoped profession). Domain Restores eat salvage-economy stock (Mend=slag ·
+Patch=strap · Reweave=tattered cloth · Splice=resin · Reset=broken mechanism); Expand costs
+its catalysts (catalytic salt at the lab, the resonance catalyst at the altar); and the
+prepared-reagent Process pairs activate on drying (raw emberleaf's latent Ember arrives active
+on the authored dried form — preparation = activation, straight out of the output-innate
+merge).
 
 The ecosystem tests stay true with a *reason* behind them: every processing profession still
 eats another profession's output — no longer because a list says so, but because prepared

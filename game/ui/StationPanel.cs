@@ -21,6 +21,7 @@ public partial class StationPanel : VBoxContainer
     private CraftingBenchPanel? _bench;
     private VerbBenchPanel? _verbBench;
     private EquipmentAssemblyPanel? _assembly;
+    private IdentityForgePanel? _identityForge;
     private CraftingInteractionsPanel? _interactions;
     private FarmingPlotsPanel? _plots;
     private TrainingCoursePanel? _course;
@@ -86,6 +87,11 @@ public partial class StationPanel : VBoxContainer
         {
             AddChild(new HSeparator());
             AddChild(_assembly = new EquipmentAssemblyPanel(game, game.BlueprintsAt(station)));
+
+            // The identity forge (migration Phase 3) runs beside the old assembly until the
+            // surfaces swap — same station, same materials, the replacement mint.
+            AddChild(new HSeparator());
+            AddChild(_identityForge = new IdentityForgePanel(game));
         }
     }
 
@@ -104,5 +110,6 @@ public partial class StationPanel : VBoxContainer
         _bench?.Refresh();
         _verbBench?.Refresh();
         _assembly?.Refresh();
+        _identityForge?.Refresh();
     }
 }

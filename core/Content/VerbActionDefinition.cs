@@ -37,6 +37,12 @@ public sealed record VerbActionDefinition : IDefinition
     [JsonPropertyName("required_level")]
     public int RequiredLevel { get; init; }
 
+    /// <summary>Profession XP one run awards (migration Phase 5 — bench work trains). Paid
+    /// whenever the work actually happened: success, fracture, and destruction alike (the
+    /// gamble was taken; the hand learned). Gate and engine refusals pay nothing. A
+    /// profession-gated action must author a positive value (validated).</summary>
+    public int Experience { get; init; }
+
     /// <summary>Any-of tag gate on the substrate — the domain scoping (Smithing:
     /// <c>form:metal</c>). Empty means any migrated material.</summary>
     [JsonPropertyName("substrate_tags")]

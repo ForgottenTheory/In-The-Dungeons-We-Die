@@ -58,6 +58,71 @@ public static class IdentityNameGenerator
         return string.Join(' ', parts);
     }
 
+    /// <summary>
+    /// Names an identity-minted item: expressed-identity adjectives (deepest first), a strong
+    /// secondary root's "-bound", the primary root's <i>first word</i> ("Iron", never "Iron
+    /// Ingot" — the form supplies the noun), then the form's name — "Vital Oakbound Iron
+    /// Longsword". Dormant identities never reach the name: the name reads what the item
+    /// expresses, exactly like its effects. The material word budget
+    /// (<see cref="IdentityCraftTuning.MaxNameWords"/>) covers everything before the form word.
+    ///
+    /// <para><paramref name="assembledComponentIds"/> are the definition ids physically
+    /// slotted into the form. They never earn "-bound": that adjective names what was worked
+    /// <i>into</i> a material (an oak tincture infused at the bench), not what the item is
+    /// assembled <i>from</i> — otherwise every leather-bound sword would be "Leatherbound"
+    /// and the word would stop meaning anything.</para>
+    /// </summary>
+    public static string NameForItem(
+        IReadOnlyList<IdentityStake> expressedIdentities,
+        IReadOnlyList<ProvenanceRoot> roots,
+        IReadOnlySet<string> assembledComponentIds,
+        string formName,
+        ContentBundle content)
+    {
+        ArgumentNullException.ThrowIfNull(expressedIdentities);
+        ArgumentNullException.ThrowIfNull(roots);
+        ArgumentNullException.ThrowIfNull(assembledComponentIds);
+        ArgumentNullException.ThrowIfNull(content);
+
+        var rootsByWeight = roots
+            .OrderByDescending(root => root.Weight)
+            .ThenBy(root => root.DefinitionId, StringComparer.Ordinal)
+            .ToList();
+        var primaryWord = rootsByWeight.Count > 0
+            ? FirstWord(RootName(rootsByWeight[0].DefinitionId, content))
+            : "Material";
+
+        var identityAdjectives = expressedIdentities
+            .Select((stake, index) => (stake, index))
+            .OrderByDescending(pair => pair.stake.Rank)
+            .ThenBy(pair => pair.index)
+            .Select(pair => IdentityName(pair.stake.Id, content))
+            .ToList();
+        var boundRoot = rootsByWeight
+            .Skip(1)
+            .FirstOrDefault(root => root.Weight >= IdentityCraftTuning.ItemRootAdjectiveThreshold
+                && !assembledComponentIds.Contains(root.DefinitionId));
+        var boundAdjective = boundRoot is not null
+            ? FirstWord(RootName(boundRoot.DefinitionId, content)) + "bound"
+            : null;
+
+        var budget = IdentityCraftTuning.MaxNameWords - 1; // the primary root word is spent
+        var priority = new List<string>();
+        if (identityAdjectives.Count > 0)
+            priority.Add(identityAdjectives[0]);
+        if (boundAdjective is not null)
+            priority.Add(boundAdjective);
+        priority.AddRange(identityAdjectives.Skip(1));
+        var kept = priority.Take(Math.Max(budget, 0)).ToHashSet(StringComparer.Ordinal);
+
+        var parts = identityAdjectives.Where(kept.Contains).ToList();
+        if (boundAdjective is not null && kept.Contains(boundAdjective))
+            parts.Add(boundAdjective);
+        parts.Add(primaryWord);
+        parts.Add(formName);
+        return string.Join(' ', parts);
+    }
+
     private static string RootName(string definitionId, ContentBundle content) =>
         content.Materials.TryGetById(definitionId, out var definition) ? definition.Name : "Material";
 

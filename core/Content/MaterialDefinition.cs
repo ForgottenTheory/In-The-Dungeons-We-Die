@@ -50,9 +50,9 @@ public sealed class MaterialBaseStats
 /// never recipes (docs/identity-foundation.md §6, D43). Every list references a Signature
 /// vocabulary registry and is validated against it. Absent profile = neutral material.
 ///
-/// <para>Deliberately narrower than the full design for now: <c>favored_payloads</c> joins
-/// when the payload registry lands (Phase 3), and interaction biases / hidden tendencies /
-/// exclusions join with their consumers — a field nothing validates is a silent-typo farm.</para>
+/// <para>Deliberately narrower than the full design for now: interaction biases / hidden
+/// tendencies / exclusions join with their consumers — a field nothing validates is a
+/// silent-typo farm.</para>
 /// </summary>
 public sealed class SignatureProfile
 {
@@ -64,6 +64,12 @@ public sealed class SignatureProfile
 
     [JsonPropertyName("favored_behaviors")]
     public IReadOnlyList<string> FavoredBehaviors { get; init; } = Array.Empty<string>();
+
+    /// <summary>Favored payload keys — and the §9 breach mechanism: a favored payload is
+    /// <b>eligible</b> in generation even when no active identity opens its family, which is
+    /// how authored data extends the sensible defaults with no engine special-casing.</summary>
+    [JsonPropertyName("favored_payloads")]
+    public IReadOnlyList<string> FavoredPayloads { get; init; } = Array.Empty<string>();
 }
 
 /// <summary>

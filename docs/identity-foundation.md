@@ -25,7 +25,7 @@ them is the most expensive mistake available.
 |---|---|---|
 | **Identity** | A named mechanical door on a material — Dense, Vital, Ember. Deterministic, player-legible, and the thing crafting moves around. An identity opens an **effect family**; it is never itself one effect | Approved (roster in §3) |
 | **Signature Profile** | Authored tendency data on a material — themes, favored triggers/behaviors/payloads, biases, exclusions. Weights, never recipes. The reason Oak-derived gear feels different from Willow-derived gear even when both carry Vital | Approved (§6) |
-| **Signature** (generated) | The concrete result on a crafted thing: **1–N effect sentences** produced by the Signature Resolver. What the player actually reads on the item | Approved (§7–§8) |
+| **Signature** (generated) | The **special layer** on a crafted thing: 1–N coherent, material/process-derived effect sentences, produced by the Signature stage of the item-effect pipeline. One of three effect categories an item can carry (§8, D50) — never a blanket name for everything generated | Approved (§7–§8, D50) |
 | **Effect-family progression** | How deep into a family a material/item can reach: basic → improved → advanced → build-changing. An *access* ladder — advancing an identity expands what it can DO | Approved as a concept (§4–§5) |
 | **Named identity evolution** | A possible future player-facing ladder of identity *names* (e.g. Vital → Regenerative → Lifebound) | **[OPEN — deliberately unresolved.]** Examples are illustrations, never commitments. Internal ranks may exist meanwhile; player-facing roman numerals (Vital I/II/III) are rejected |
 
@@ -300,6 +300,14 @@ A fourth small gap: a `cleanse` effect kind (cleanse groups exist on statuses; n
 invokes them yet) — Radiant wants it. Each gap is one effect kind + one handler through the
 sanctioned extension path.
 
+**Two compile shapes the D30 fence forced at Phase 3** (`SentenceAssemblers`): `drainResource`
+is authorable but has no registered handler, so **drain** compiles as damage-plus-restore (a
+faithful "take from the enemy" over machinery that resolves) and **store** compiles as
+feed-plus-band — the trigger feeds a gauge whose band grants the payload's modifier while
+high — rather than release-on-full. The release shape joins when a gauge-spend effect kind
+exists; until then an assembler that compiled to a silent no-op would be the exact lie this
+architecture exists to prevent.
+
 ## 7.4 Payloads — binding categories
 
 A payload registry entry = binding + target + magnitude basis + **which identity families own
@@ -311,12 +319,28 @@ player-side modifier (small; Charmed's consumer).
 
 ---
 
-# 8. Generation — the Signature Resolver
+# 8. Generation — the item-effect pipeline
+
+**One unified pipeline generates everything a finished item does (approved 2026-08-20, D50)** —
+working name `ItemEffectResolver`, succeeding the old genome → `ModifierGenerator` path. Its
+output is **three distinct categories, kept apart on the item**:
+
+| Category | Determinism | What it is |
+|---|---|---|
+| **Identity floor expressions** | Guaranteed | The deterministic grants each active identity promises at its rank — §2's floor, inheriting the innate layer's determinism |
+| **Ordinary generated effects** | Weighted | The workaday layer: sentences drawn from the shared trigger/behavior/payload vocabulary under family/rung gates and profile/form bias |
+| **Signatures** | Weighted, optional | The special material/process-derived layer (§7): 1–N coherent sentences, present only when sources, process, profile or overfill earn one. Not a rename of affixes — D50 |
+
+The 44 old affixes re-ground as content in the shared vocabulary where appropriate — one
+mechanical language, one balancing pipeline. `SignatureResolver` names the Signature-specific
+stage inside the pipeline; `ModifierGenerator` and the innate/prefix/suffix shape retire in
+Phase 7. How the two weighted categories divide mechanically at generation time is Phase 3
+implementation design.
 
 **Inputs (all of them, by rule):** the exact source materials, current identities, crafting
 process/history, equipment form, quality, catalysts, and every contributing Signature Profile.
 
-Ordered stages:
+Ordered stages (the weighted categories; floor expressions are deterministic reads beside them):
 
 1. **Collect influence** — each contributing material's profile enters, weighted by its share
    and role; the crafting actions used, the form, and catalysts contribute their own biases (a
@@ -341,6 +365,23 @@ old genome → modifiers, which is architecturally proven.
 **Determinism:** the identity floor is guaranteed; randomness lives above it, is seeded, and is
 shown before commitment — the scored candidate table appears in the preview (Project/Resolve
 parity). *"I am engineering the odds," never "I pulled a lever."*
+
+## 8.1 Item-side identity expression (approved 2026-08-20, D51)
+
+Which identities a finished item carries — settled before any generation runs:
+
+- **Union:** the item inherits every active identity its components bring.
+- **Form cap:** each form authors a small active-identity cap; up to that many express.
+- **Dormancy:** identities beyond the cap are recorded **Dormant** on the item — no floor
+  expressions, no generation weight, never deleted. They wait for future deliberate mechanics
+  (reforging, awakening, unusual Signatures, Emergent Phenomena).
+- **Readable selection:** which identities express is decided by simple authored slot
+  roles/priorities and clear rules — never an opaque per-slot percentage scheme (the old
+  `trait_expression` apertures do not return). Placement matters through base reads (§11.5)
+  and slot-role bias in scoring (stage 1 above), never through floor eligibility — reality
+  test 5's identical-floor rule holds.
+- **Two caps, two concepts:** material capacity (§10.1) is the crafting-side risk axis; the
+  form's identity cap is the item-side expression axis. Neither implies the other.
 
 ---
 
@@ -517,8 +558,8 @@ items — a plain oak focus is a stick, which is correct fiction · content migr
 
 ## 11.6 Deferred on purpose
 
-- **Item-side identity expression** through forms (which slots express which identities; the
-  dormancy question) — Phase 3, together with the per-form base reads.
+- **Item-side identity expression** — resolved (D51, §8.1): union + form cap + dormancy, with
+  readable slot roles. Ships in Phase 3 together with the per-form base reads.
 - **Every specific number above** — provisional until play.
 
 Rank accrual and transfer math are settled in **`docs/transformation-verbs.md`** (D47): raw
@@ -591,8 +632,8 @@ The foundation survived all six tests without inventing a new rule.
 
 | # | Question | Belongs to |
 |---|---|---|
-| 1 | **Signatures vs rolled modifiers** — recommendation: one unified generator (the resolver succeeds `ModifierGenerator`; the 44 affixes become payload/behavior/weighting content; deterministic innates survive as the identity floor's guaranteed expressions) | Phase 3 decision |
-| 2 | **Item-side identity expression** — which form slots express which identities; whether dormancy carries over | Phase 3, with the per-form base reads (§11.5) |
+| 1 | ~~Signatures vs rolled modifiers~~ — **RESOLVED (D50, §8):** one unified pipeline (`ItemEffectResolver`) emitting three categories — identity floor expressions, ordinary generated effects, optional Signatures; the 44 affixes re-ground as shared-vocabulary content | ✅ 2026-08-20 |
+| 2 | ~~Item-side identity expression~~ — **RESOLVED (D51, §8.1):** union + form cap + dormancy; readable slot roles, never percentage apertures; material capacity and the form cap stay separate | ✅ 2026-08-20 |
 | 3 | **Profile visibility** — what Assay reveals of favored triggers/behaviors. Themes are never visible (§6.1) | Presentation phase |
 | 4 | **Named identity evolution** (§5) | Later, explicitly |
 | 5 | **Residual sentence-count drivers** (quality, generation context — §7.1) | Balance |
@@ -615,9 +656,9 @@ Ordered so the game stays green and nothing is authored twice. Position marker k
 | 0.5 — Prep fences | Unknown-JSON-field rejection ✅ (`DataStore` rejects unknown members — shipped with the spell-library commit) · `arcane`→`kinetic` aspect sweep ✅ (code, content, tests, combat docs) · fingerprint needs no pre-work (the new name arrives with Phase 2's code; `MaterialSignature` dies on schedule) · save stance decided (D49) | **✅ complete (2026-08-20)** |
 | 1 — Core model, coexisting | Identity + profile + grammar registries as content types (bundle → loader → validator → failing-content tests → ContentStudio registry); `MaterialDefinition` grows capacity/identities/latent/base/profile. Old system untouched, suite green. Shipped: 24 identities · 22 triggers · 11 behaviors (detonate/spread/bloom parked behind the D30 fence, named in the pin test) · 16 themes. The payload registry and `favored_payloads` arrive with Phase 3, so no reference ships unvalidated | **✅ complete (2026-08-20)** |
 | 2 — Transformation engine | The ten verbs (`docs/transformation-verbs.md`) behind the same bench surface; profile carry/merge; condition + stability enforcement; preview parity + reaction-log equivalent from day one. **Slice 1 ✅ (2026-08-20):** `core/Crafting/Identity/` — the eight-facet state, the fingerprint, root-derived profile/base, and `IdentityCraftingEngine` with all ten verbs, preview parity, and the §6 worked chain passing as a test. **Slice 2b ✅ (2026-08-20):** `VerbActionDefinition` (verb + gates + identity scope + Process output + extra costs) with full validation and station routing. **Slice 2c-core ✅ (2026-08-20):** emergent registration reusing `EmergentRegistry` under fingerprint ids (`MaterialDefinition.IdentityState`), the naming generator (identity adjectives + "-bound" root adjectives, four-word budget — "Vital Oakbound Iron Ingot" ships), the **authored-equivalence rule** (plain smelted ore deposits as `material.iron_ingot`, never an emergent twin), `VerbActionRunner` (gates → verb → consume → register → deposit, testable in Core), GameRoot commands (`PreviewVerbAction`/`RunVerbAction`/`VerbActionsAt`), and a **starter content set**: 5 migrated materials (iron ore/ingot, granite, oak, sageleaf), 9 verb actions, 5 stations routing them — the full worked chain runs over real shipped data. Transfer/Displace/Develop now merge source provenance (share 0.15 — 0.25 flipped the substrate's primary root under repeated infusion; caught by test). **Slice 2c-finish ✅ (2026-08-20):** save schema **v12** — `IdentityArchetypeSave` persists the eight facets beside the old-model archetypes (capture used to *throw* on a new-model registry entry; the split is pinned by test, and a v11 save loads with none) · `VerbBenchPanel` at every station routing verb actions (action/material/source/identity pickers shaped by the verb, preview-before-commit, engine step text pending the Phase 6 semantic pass). **Phase 2 complete** — editor verification of the panel pending, per standing practice | **✅ complete (2026-08-20)** |
-| 3 — Item generation | The Signature Resolver (succeeds the genome → `ModifierGenerator` path per §14#1); effect families as payload content; per-form base reads (§11.5); item-side expression (§14#2) | not started |
-| 4 — Material database | Re-author the library to capacity/identities/latents/profiles (expect a deliberate cull); `material.*` ids stay stable so loot tables and profession actions survive | not started |
-| 5 — Professions | Identity verbs per profession (gather/reveal/isolate/transfer/develop); bench awards XP/mastery (fixing the existing gap); cross-profession prepared products | not started |
+| **3 — Item generation** | The item-effect pipeline (`ItemEffectResolver`, D50 — identity floor expressions + ordinary generated effects + optional Signatures, succeeding genome → `ModifierGenerator`); the payload registry (effect families as content); per-form base reads (§11.5); item-side expression (D51, §8.1) | **✅ complete (2026-08-20)** — shipped: the payload registry (bare-key entries binding to live machinery, families+rungs, the one-floor-per-identity discipline validator-enforced; 8 starter payloads over Dense/Vital/Ember/Warded; `favored_payloads` joins profiles and §9's breach path works) · form identity fields (`identity_cap`, `base_reads`, per-slot `identity_priority`, `generation_profile`) authored on Longsword + Buckler, leather migrated to complete the starter set · `IdentityEquipmentComposer` (D51 union/cap/dormancy; base delivery parity-pinned to the authored Iron Sword through the live resolver seam) · `ItemEffectResolver`/`SignatureResolver` + 11 behavior assemblers with preview-parity projections (the scored table IS the draw distribution; per-payload diversity cap) · `IdentityFabricationEngine` minting `ItemInstance`s that carry the three categories, dormant identities and the base delivery · save **v13** (sentences + delivery + identity split persist; derived definitions ride the existing emergent-equipment list) · `IdentityForgePanel` beside the old assembly · the equip seam (stat grants, rules, gauges, move modifiers) attaching sentences like affixes. Editor verification pending, per standing practice |
+| 4 — Material database | Re-author the library to capacity/identities/latents/profiles; `material.*` ids stay stable so loot tables and profession actions survive. **The expected cull was consciously declined (D52)**: the library measured 1,448 materials with 1,446 referenced by shipped profession/loot content, so everything migrates | **✅ complete (2026-08-20)** — all 1,448 materials migrated: derivation-drafted (capacity by rarity +magical, base from properties on structural forms — `TagFamilies.StructuralForms`/`EdgeCapableForms` now validator rules — latents from D44's essence map + property signals, ~413 carriers) and hand-tiered: **53 active-identity materials** (elemental motes/shards r1, essences/hearts/runes r2, cores r3; Earthen found its home in elemental earth, Resonant in the resonance catalyst, Pure in the alchemical salts) · **every one of the 24 identities has a shipped source and an authored floor payload** (28 payloads total; the fence caught `craft.quality`/`loot.*` as declared-but-unread, so Pure floors on `profession.preserve.chance` and Charmed on `attr.luck`) · **the acquisition fence** (D29.3 translated: gathering faucets never passively pay active-identity stock — caught the arcane core as a guaranteed idle yield; three new opportunities took the evicted payouts, 36→39) · **46 curated signature profiles** · seeds carry their plant's latent (D48). Fences: `MaterialLibraryMigrationTests` |
+| 5 — Professions | Identity verbs per profession (gather/reveal/isolate/transfer/develop); bench awards XP/mastery (fixing the existing gap); cross-profession prepared products | **✅ complete (2026-08-20)** — **the bench trains**: `VerbActionDefinition.experience` (validated: gated ⇒ pays, ungated ⇒ cannot), awards through the shared `ProfessionProgress` ledger on any run where work happened (success/fracture/destruction; refusals pay nothing), level-ups surface in the result and at the bench, and the preview names the pay · **mastery steadies the hand** (the D47 §4 consumer): per-action mastery shaves both risk chances via `VerbRequest.RiskReduction`, engine-clamped at the ceiling — built in the shared gate path so preview and commit read one practiced hand · **the D48 matrix is content**: 53 actions across 11 professions at their own stations, pinned by test incl. Runecrafting-is-the-only-identity-scoped-profession; domain Restores eat salvage stock; Expand costs its catalysts; the worked chain now trains all four of its professions · **preparation = activation**: raw→prepared Process pairs (drying emberleaf/frostfern, curing, spinning/weaving, hewing, glass-melting) land on the authored prepared ids with the output's innate identities active, pinned by `DryingActivatesThePreparedForm` |
 | 6 — Presentation + UI | Identity/signature readings replace property readings; Assay re-aimed at detecting latents and reading potential | not started |
 | 7 — Deletion + docs | Property algebra, genome pressure, trait/essence layers, stale tests and superseded docs removed; save schema settles | not started |
 

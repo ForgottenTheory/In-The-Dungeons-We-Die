@@ -242,7 +242,12 @@ public partial class VerbBenchPanel : VBoxContainer
             return;
         }
 
-        _previewLabel.Text = string.Join("\n", projection.Steps.Select(step => step.Detail));
+        var lines = projection.Steps.Select(step => step.Detail).ToList();
+        // Phase 5: the bench trains — the preview says what the run pays, like every other
+        // promise on this panel.
+        if (SelectedAction is { Profession.Length: > 0 } trainingAction)
+            lines.Add($"Trains {_game.ProfessionName(trainingAction.Profession)} +{trainingAction.Experience} xp.");
+        _previewLabel.Text = string.Join("\n", lines);
         _runButton.Disabled = false;
     }
 

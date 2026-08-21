@@ -49,17 +49,20 @@
       "edge": {
         "requires_tags": ["form:metal", "form:crystal"],
         "mass_share": 0.60,
-        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 },
+        "identity_priority": 3
       },
       "core": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 0.25,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 }
+        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 },
+        "identity_priority": 2
       },
       "binding": {
         "requires_tags": ["form:hide", "form:fiber"],
         "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 }
+        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 },
+        "identity_priority": 1
       }
     },
     "stat_map": {
@@ -67,6 +70,16 @@
       "hardness": [ { "slot": "edge", "property": "hardness", "weight": 0.8 }, { "slot": "core", "property": "hardness", "weight": 0.2 } ]
     },
     "trait_cap": 4,
+    // Identity model (Phase 3, D46/D51): the blade reads Bite off the edge and swings by its
+    // whole-item Heft; the edge's identities express before the core's, the core's before the
+    // binding's. identity_cap 3 — a sword states at most three ideas. The generation lean is
+    // §8 stage 1: a sword pushes sentences toward landing hits, never a recipe.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "edge", "stat": "bite", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
+    },
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.iron_slash", "move.heavy_strike"],
     // Every one-handed straight or curved blade in the library. They differ by fashion and by
     // where they were made, not by what the stat map reads off them — so they are names, and
@@ -591,7 +604,8 @@
       "face": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 1.0,
-        "trait_expression": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 }
+        "trait_expression": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 },
+        "identity_priority": 1
       }
     },
     "stat_map": {
@@ -599,6 +613,15 @@
       "mass":     [ { "slot": "face", "property": "mass",     "weight": 0.8 } ]
     },
     "trait_cap": 4,
+    // Identity model (Phase 3, D46/D51): all face — Toughness is the whole read. Same cap as
+    // the sword's slots would give one component, so reality test 5's identical-floor rule
+    // holds: the same material expresses the same identities here and on a longsword edge.
+    // The lean is what makes the same material read defensively here (§12 test 5).
+    "identity_cap": 2,
+    "base_reads": {
+      "armor": [ { "slot": "face", "stat": "toughness", "weight": 1.0 } ]
+    },
+    "generation_profile": { "favored_triggers": ["on_block", "on_being_struck"] },
     "description": "A small answer to large questions. Carrying one makes Shield Bash yours."
   },
 

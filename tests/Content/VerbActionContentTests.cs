@@ -24,6 +24,49 @@ public class VerbActionContentTests
     }
 
     [Fact]
+    public void TheD48MatrixIsShippedContent()
+    {
+        // The profession assignment (docs/transformation-verbs.md §8.2, D48), pinned: every
+        // verb a matrix row promises exists as at least one shipped action gated on that
+        // profession. Changing the matrix is a design decision, never content drift.
+        var matrix = new Dictionary<string, CraftVerb[]>
+        {
+            ["profession.smithing"] = new[] { CraftVerb.Process, CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Restore, CraftVerb.Fuse, CraftVerb.Displace },
+            ["profession.leatherworking"] = new[] { CraftVerb.Process, CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Restore, CraftVerb.Displace },
+            ["profession.tailoring"] = new[] { CraftVerb.Process, CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Restore, CraftVerb.Displace },
+            ["profession.fletching"] = new[] { CraftVerb.Process, CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Restore, CraftVerb.Displace },
+            ["profession.artifice"] = new[] { CraftVerb.Process, CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Restore, CraftVerb.Fuse, CraftVerb.Displace },
+            ["profession.runecrafting"] = new[] { CraftVerb.Transfer, CraftVerb.Develop, CraftVerb.Expand },
+            ["profession.herblore"] = new[] { CraftVerb.Process, CraftVerb.Reveal, CraftVerb.Extract, CraftVerb.Refine },
+            ["profession.alchemy"] = new[] { CraftVerb.Extract, CraftVerb.Develop, CraftVerb.Refine, CraftVerb.Fuse, CraftVerb.Expand },
+            ["profession.beast_lore"] = new[] { CraftVerb.Reveal, CraftVerb.Extract },
+            ["profession.mining"] = new[] { CraftVerb.Reveal },
+            ["profession.forestry"] = new[] { CraftVerb.Reveal },
+        };
+
+        var shipped = TestPaths.LoadStore<VerbActionDefinition>("verb_actions").GetAll()
+            .GroupBy(action => action.Profession)
+            .ToDictionary(group => group.Key, group => group.Select(a => a.Verb).ToHashSet());
+
+        foreach (var (professionId, verbs) in matrix)
+        {
+            Assert.True(shipped.ContainsKey(professionId), $"{professionId} has no verb actions at all.");
+            foreach (var verb in verbs)
+                Assert.True(shipped[professionId].Contains(verb),
+                    $"{professionId} is missing its {verb} action — the D48 matrix promises it.");
+        }
+
+        // Runecrafting stays the ONE identity-scoped profession: its identity-targeting
+        // actions carry a magical-identity scope; nobody else's do.
+        var identityScoped = TestPaths.LoadStore<VerbActionDefinition>("verb_actions").GetAll()
+            .Where(action => action.IdentityScope.Count > 0)
+            .Select(action => action.Profession)
+            .Distinct()
+            .ToList();
+        Assert.Equal(new[] { "profession.runecrafting" }, identityScoped);
+    }
+
+    [Fact]
     public void AnActionOfferedAtNoStationFails()
     {
         var bundle = BundleWith(SmeltIron(), offerAtStation: false);
@@ -131,6 +174,7 @@ public class VerbActionContentTests
         Verb = CraftVerb.Process,
         Profession = "profession.test_smithing",
         RequiredLevel = 1,
+        Experience = 10,
         SubstrateTags = new[] { "form:ore" },
         Output = "material.test_ingot",
     };

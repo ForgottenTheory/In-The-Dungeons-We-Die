@@ -49,6 +49,15 @@ public static class IdentityCraftTuning
     /// still pays byproducts, always.</summary>
     public const double DestructionChanceWhenFragile = 0.35;
 
+    /// <summary>Steadiness (Phase 5): each mastery point of the acting bench action shaves
+    /// this fraction off both risk chances. At one mastery per completion, ~50 runs of an
+    /// action buy a 15% steadier hand at it (provisional).</summary>
+    public const double RiskReductionPerMasteryPoint = 0.003;
+
+    /// <summary>The most steadiness practice can buy — skill narrows variance, never deletes
+    /// it (the D42 kept lesson, at the bench). The deep end stays the deep end (provisional).</summary>
+    public const double RiskReductionCeiling = 0.45;
+
     /// <summary>Workmanship defaults and steps. Quality buckets into the fingerprint so
     /// near-identical workmanship still stacks.</summary>
     public const int DefaultQuality = 50;
@@ -71,6 +80,12 @@ public static class IdentityCraftTuning
     public const int MaxProfileEntriesPerList = 4;
     public const double ProfileTraceWeight = 0.15;
 
+    /// <summary>The item-side profile trace bar, lower for the same reason as
+    /// <see cref="ItemRootAdjectiveThreshold"/>: assembly dilutes provenance by mass share,
+    /// and a personality strong enough to name the item ("Oakbound") must still be strong
+    /// enough to lean its generation — name and behavior must not disagree about oak.</summary>
+    public const double ItemProfileTraceWeight = 0.10;
+
     /// <summary>How much of a consumed source's provenance joins the substrate's on Transfer
     /// and Displace — the reason oak's personality (and the "Oakbound" in the name) reaches
     /// the iron it was infused into. Kept small on purpose: at 0.25 three infusions
@@ -88,4 +103,10 @@ public static class IdentityCraftTuning
     public const int MaxNameWords = 4;
     public const double RootAdjectiveThreshold = 0.15;
     public const string CarrierNoun = "Extract";
+
+    /// <summary>The item-side "-bound" bar. Lower than the material bar on purpose:
+    /// assembling a form dilutes every component's provenance by its mass share (an infused
+    /// oak trace of 0.15 becomes ~0.13 once a binding joins), and the story a material earned
+    /// at the bench should survive onto the item it becomes.</summary>
+    public const double ItemRootAdjectiveThreshold = 0.10;
 }

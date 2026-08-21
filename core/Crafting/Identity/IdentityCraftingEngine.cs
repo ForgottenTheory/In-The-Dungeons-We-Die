@@ -118,9 +118,12 @@ public sealed class IdentityCraftingEngine
     /// <summary>Fracture keys on the substrate's stability <em>before</em> the verb — the
     /// overfilling transfer itself is safe; it is <em>further</em> work that gambles (§10.3).
     /// Destruction keys on Fragile + a condition-stepping verb: three safe identity-changing
-    /// actions, then every further one gambles (§10.4).</summary>
-    private static VerbRisks RisksFor(IdentityMaterialState substrate, bool stepsCondition)
+    /// actions, then every further one gambles (§10.4). A practiced hand
+    /// (<see cref="VerbRequest.RiskReduction"/>, Phase 5) shaves both chances — clamped, so
+    /// skill narrows the variance without ever deleting it.</summary>
+    private static VerbRisks RisksFor(IdentityMaterialState substrate, bool stepsCondition, double riskReduction)
     {
+        var steadiness = 1.0 - Math.Clamp(riskReduction, 0.0, IdentityCraftTuning.RiskReductionCeiling);
         var fracture = substrate.Stability switch
         {
             Stability.Unstable => IdentityCraftTuning.FractureChanceUnstable,
@@ -130,7 +133,9 @@ public sealed class IdentityCraftingEngine
         var destruction = stepsCondition && substrate.Condition == Condition.Fragile
             ? IdentityCraftTuning.DestructionChanceWhenFragile
             : 0.0;
-        return new VerbRisks(stepsCondition ? fracture : 0.0, destruction);
+        return new VerbRisks(
+            stepsCondition ? Math.Round(fracture * steadiness, 4) : 0.0,
+            Math.Round(destruction * steadiness, 4));
     }
 
     private static Condition StepDown(Condition condition) =>
@@ -274,7 +279,7 @@ public sealed class IdentityCraftingEngine
         if (substrate.Identities.Count >= substrate.Capacity)
             return ResolvedVerb.Refused(VerbFailureReason.NoFreeSlot);
 
-        var risks = RisksFor(substrate, stepsCondition: true);
+        var risks = RisksFor(substrate, stepsCondition: true, request.RiskReduction);
         var result = substrate with
         {
             Identities = substrate.Identities
@@ -319,7 +324,7 @@ public sealed class IdentityCraftingEngine
         // their full rank. Preparation = fidelity — the rule that interlocks the professions.
         var deliveredRank = source.IsCarrier ? sourceStake.Rank : IdentityCraftTuning.RawTransferRank;
 
-        var risks = RisksFor(substrate, stepsCondition: true);
+        var risks = RisksFor(substrate, stepsCondition: true, request.RiskReduction);
         var result = substrate with
         {
             Identities = substrate.Identities
@@ -375,7 +380,7 @@ public sealed class IdentityCraftingEngine
         if (feedPoints < cost)
             return ResolvedVerb.Refused(VerbFailureReason.InsufficientDevelopment);
 
-        var risks = RisksFor(substrate, stepsCondition: true);
+        var risks = RisksFor(substrate, stepsCondition: true, request.RiskReduction);
         var feedShare = IdentityCraftTuning.DevelopRootShare / request.Sources.Count;
         var result = substrate with
         {
@@ -455,7 +460,7 @@ public sealed class IdentityCraftingEngine
             return ResolvedVerb.Refused(VerbFailureReason.IdentityAlreadyActive); // upgrading in place is Develop's job
 
         var deliveredRank = source.IsCarrier ? incoming.Rank : IdentityCraftTuning.RawTransferRank;
-        var risks = RisksFor(substrate, stepsCondition: true);
+        var risks = RisksFor(substrate, stepsCondition: true, request.RiskReduction);
         var result = substrate with
         {
             Identities = substrate.Identities
@@ -520,7 +525,7 @@ public sealed class IdentityCraftingEngine
         if (substrate.Capacity >= IdentityCraftTuning.ExpandedCapacityCeiling)
             return ResolvedVerb.Refused(VerbFailureReason.CapacityAtCeiling);
 
-        var risks = RisksFor(substrate, stepsCondition: true);
+        var risks = RisksFor(substrate, stepsCondition: true, request.RiskReduction);
         var result = substrate with
         {
             Capacity = substrate.Capacity + 1,

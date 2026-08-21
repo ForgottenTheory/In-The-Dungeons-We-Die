@@ -1,71 +1,364 @@
 [
   // Verb actions — the crafting actions of the identity system (docs/transformation-verbs.md
-  // §1/§8, D47/D48): verb + parameters + gates + costs + fiction name. This is the STARTER
-  // set over the handful of migrated materials (iron ore/ingot, granite, oak, sageleaf) —
-  // enough to run the worked chain end to end: prospect granite, identify oak, draw and
-  // distill an extract, smelt and infuse iron. The full set arrives with the Phase 4
-  // material migration. Every gate is the action's own; stations only route (D48).
+  // §1/§8, D47/D48): verb + parameters + gates + costs + fiction name. Migration Phase 5:
+  // the full D48 matrix — every profession's kit at its own station, gates in the §8.3
+  // waves (Process/Refine early · Reveal/Transfer mid · Develop/Extract/Restore mid-late ·
+  // Fuse/Displace late · Expand last), and every action pays experience (bench work trains).
+  // Every gate is the action's own; stations only route (D48). XP values are provisional,
+  // sized against the profession-action ladder (L1 ≈ 10-25, L30 ≈ 54, L70 ≈ 118).
 
-  // ---- Reveal — discovery at the source (gatherer Reveal, D48) ------------------------------
+  // ══ GATHERER REVEAL — discovery at the source (D48) ═══════════════════════════════════════
   {
     "id": "craft.prospect_stone", "name": "Prospect", "verb": "Reveal",
     "description": "Read the vein of a stone or ore: a latent identity wakes at rank 1.",
-    "profession": "profession.mining", "required_level": 1,
+    "profession": "profession.mining", "required_level": 1, "experience": 12,
     "substrate_tags": ["origin:mineral"]
   },
   {
     "id": "craft.read_the_grain", "name": "Read the Grain", "verb": "Reveal",
     "description": "What a timber holds, the grain admits — a latent identity wakes at rank 1.",
-    "profession": "profession.forestry", "required_level": 1,
+    "profession": "profession.forestry", "required_level": 1, "experience": 12,
     "substrate_tags": ["form:wood"]
   },
   {
     "id": "craft.identify_virtues", "name": "Identify Virtues", "verb": "Reveal",
     "description": "Herblore's eye for what a plant can do: a latent identity wakes at rank 1.",
-    "profession": "profession.herblore", "required_level": 1,
+    "profession": "profession.herblore", "required_level": 1, "experience": 12,
     "substrate_tags": ["origin:flora"]
   },
+  {
+    "id": "craft.read_the_beast", "name": "Read the Beast", "verb": "Reveal",
+    "description": "Beast Lore reads what an animal's remains still hold: a latent identity wakes at rank 1.",
+    "profession": "profession.beast_lore", "required_level": 1, "experience": 12,
+    "substrate_tags": ["origin:fauna"]
+  },
 
-  // ---- The carrier chain — preparation = fidelity (D47 §3) ----------------------------------
+  // ══ HERBLORE — the carrier-maker (apothecary) ═════════════════════════════════════════════
   {
     "id": "craft.draw_extract", "name": "Draw an Extract", "verb": "Extract",
     "description": "Pull an identity out of a plant onto a carrier, rank preserved. The plant is spent.",
-    "profession": "profession.herblore", "required_level": 1,
+    "profession": "profession.herblore", "required_level": 1, "experience": 15,
     "substrate_tags": ["origin:flora"]
   },
   {
-    "id": "craft.distill", "name": "Distill", "verb": "Develop",
-    "description": "Deepen a carrier's identity by feeding it same-identity sources.",
-    "profession": "profession.alchemy", "required_level": 1,
-    "substrate_tags": ["state:extract"]
+    "id": "craft.press_herbs", "name": "Press", "verb": "Refine",
+    "description": "Careful preparation: quality up, nothing risked, no condition cost.",
+    "profession": "profession.herblore", "required_level": 3, "experience": 10,
+    "substrate_tags": ["origin:flora"]
+  },
+  {
+    "id": "craft.dry_emberleaf", "name": "Dry Emberleaf", "verb": "Process",
+    "description": "Emberleaf dried to its working form — drying concentrates the leaf's fire.",
+    "profession": "profession.herblore", "required_level": 8, "experience": 20,
+    "substrate_tags": ["form:herb"], "substrate_id": "material.emberleaf",
+    "output": "material.dried_emberleaf"
+  },
+  {
+    "id": "craft.dry_frostfern", "name": "Dry Frostfern", "verb": "Process",
+    "description": "Frostfern dried to its working form — drying concentrates the fern's cold.",
+    "profession": "profession.herblore", "required_level": 8, "experience": 20,
+    "substrate_tags": ["form:herb"], "substrate_id": "material.frostfern",
+    "output": "material.dried_frostfern"
   },
 
-  // ---- The metal domain (Smithing, D48) ------------------------------------------------------
+  // ══ BEAST LORE — the fauna specialist (bone table) ════════════════════════════════════════
+  {
+    "id": "craft.render_essence", "name": "Render", "verb": "Extract",
+    "description": "Render an identity out of animal remains onto a carrier, rank preserved. The remains are spent.",
+    "profession": "profession.beast_lore", "required_level": 15, "experience": 32,
+    "substrate_tags": ["origin:fauna"]
+  },
+
+  // ══ ALCHEMY — depth: carriers, solutions, capacity science (alchemy lab) ══════════════════
+  {
+    "id": "craft.distill", "name": "Distill", "verb": "Develop",
+    "description": "Deepen a carrier's identity by feeding it same-identity sources.",
+    "profession": "profession.alchemy", "required_level": 1, "experience": 20,
+    "substrate_tags": ["state:extract"]
+  },
+  {
+    "id": "craft.clarify", "name": "Clarify", "verb": "Refine",
+    "description": "Clarify a carrier: quality up, nothing risked, no condition cost.",
+    "profession": "profession.alchemy", "required_level": 3, "experience": 10,
+    "substrate_tags": ["state:extract"]
+  },
+  {
+    "id": "craft.fuse_solution", "name": "Compound", "verb": "Fuse",
+    "description": "Fuse liquids into one solution — identities union, personalities merge. Ambitious work.",
+    "profession": "profession.alchemy", "required_level": 40, "experience": 70,
+    "substrate_tags": ["form:liquid"]
+  },
+  {
+    "id": "craft.universal_extraction", "name": "Universal Extraction", "verb": "Extract",
+    "description": "Alchemy's late mastery: pull an identity out of anything onto a carrier, rank preserved.",
+    "profession": "profession.alchemy", "required_level": 50, "experience": 86
+  },
+  {
+    "id": "craft.expand_vessel", "name": "Expand the Vessel", "verb": "Expand",
+    "description": "+1 stable capacity — rare, expensive, ambitious. The legitimate deep end of capacity science.",
+    "profession": "profession.alchemy", "required_level": 70, "experience": 118,
+    "extra_costs": [ { "itemId": "material.catalytic_salt", "quantity": 2 } ]
+  },
+
+  // ══ SMITHING — the metal domain (forge) ═══════════════════════════════════════════════════
   {
     "id": "craft.smelt_iron", "name": "Smelt Iron", "verb": "Process",
     "description": "Iron ore into an ingot; whatever the ore carried, the ingot carries.",
-    "profession": "profession.smithing", "required_level": 1,
+    "profession": "profession.smithing", "required_level": 1, "experience": 10,
     "substrate_tags": ["form:ore"], "substrate_id": "material.iron_ore",
     "output": "material.iron_ingot"
   },
   {
+    "id": "craft.smelt_copper", "name": "Smelt Copper", "verb": "Process",
+    "description": "Copper ore into an ingot; whatever the ore carried, the ingot carries.",
+    "profession": "profession.smithing", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:ore"], "substrate_id": "material.copper_ore",
+    "output": "material.copper_ingot"
+  },
+  {
+    "id": "craft.smelt_silver", "name": "Smelt Silver", "verb": "Process",
+    "description": "Silver ore into an ingot; whatever the ore carried, the ingot carries.",
+    "profession": "profession.smithing", "required_level": 20, "experience": 40,
+    "substrate_tags": ["form:ore"], "substrate_id": "material.silver_ore",
+    "output": "material.silver_ingot"
+  },
+  {
+    "id": "craft.hone_metal", "name": "Hone", "verb": "Refine",
+    "description": "Careful work at the anvil: quality up, nothing risked, no condition cost.",
+    "profession": "profession.smithing", "required_level": 1, "experience": 8,
+    "substrate_tags": ["form:metal"]
+  },
+  {
     "id": "craft.infuse_metal", "name": "Infuse", "verb": "Transfer",
     "description": "Work a source's identity into metal. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
-    "profession": "profession.smithing", "required_level": 5,
+    "profession": "profession.smithing", "required_level": 5, "experience": 25,
+    "substrate_tags": ["form:metal"]
+  },
+  {
+    "id": "craft.temper_metal", "name": "Temper", "verb": "Develop",
+    "description": "Deepen a metal's identity by feeding it same-identity sources.",
+    "profession": "profession.smithing", "required_level": 12, "experience": 30,
     "substrate_tags": ["form:metal"]
   },
   {
     "id": "craft.mend", "name": "Mend", "verb": "Restore",
     "description": "Climb a worked metal's condition one step, fed by salvage. Worked is the ceiling — Pristine cannot be faked.",
-    "profession": "profession.smithing", "required_level": 3,
+    "profession": "profession.smithing", "required_level": 3, "experience": 12,
     "substrate_tags": ["form:metal"],
     "extra_costs": [ { "itemId": "material.slag", "quantity": 1 } ]
   },
-
-  // ---- Gentle, ungated (the Grind precedent) -------------------------------------------------
   {
-    "id": "craft.hone", "name": "Hone", "verb": "Refine",
-    "description": "Careful work: quality up, nothing risked, no condition cost.",
-    "profession": "", "required_level": 0
+    "id": "craft.alloy", "name": "Alloy", "verb": "Fuse",
+    "description": "Fuse metals into a new substance — base stats blend, identities union. Ambitious work.",
+    "profession": "profession.smithing", "required_level": 40, "experience": 70,
+    "substrate_tags": ["form:metal"]
+  },
+  {
+    "id": "craft.displace_metal", "name": "Displace", "verb": "Displace",
+    "description": "The surgical swap: push a new identity in, deliberately ejecting a chosen one. No refund.",
+    "profession": "profession.smithing", "required_level": 60, "experience": 100,
+    "substrate_tags": ["form:metal"]
+  },
+
+  // ══ LEATHERWORKING — the hide domain (tannery) ════════════════════════════════════════════
+  {
+    "id": "craft.cure_hide", "name": "Cure Hide", "verb": "Process",
+    "description": "A raw hide into working leather; whatever the hide carried, the leather carries.",
+    "profession": "profession.leatherworking", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:hide"],
+    "output": "material.leather"
+  },
+  {
+    "id": "craft.dress_leather", "name": "Dress", "verb": "Refine",
+    "description": "Careful dressing: quality up, nothing risked, no condition cost.",
+    "profession": "profession.leatherworking", "required_level": 1, "experience": 8,
+    "substrate_tags": ["form:hide", "form:leather"]
+  },
+  {
+    "id": "craft.infuse_leather", "name": "Infuse", "verb": "Transfer",
+    "description": "Work a source's identity into leather. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
+    "profession": "profession.leatherworking", "required_level": 5, "experience": 25,
+    "substrate_tags": ["form:hide", "form:leather"]
+  },
+  {
+    "id": "craft.work_supple", "name": "Work Supple", "verb": "Develop",
+    "description": "Deepen a leather's identity by feeding it same-identity sources.",
+    "profession": "profession.leatherworking", "required_level": 12, "experience": 30,
+    "substrate_tags": ["form:hide", "form:leather"]
+  },
+  {
+    "id": "craft.patch", "name": "Patch", "verb": "Restore",
+    "description": "Climb a worked leather's condition one step, fed by straps. Worked is the ceiling.",
+    "profession": "profession.leatherworking", "required_level": 3, "experience": 12,
+    "substrate_tags": ["form:hide", "form:leather"],
+    "extra_costs": [ { "itemId": "material.leather_strap", "quantity": 1 } ]
+  },
+  {
+    "id": "craft.displace_leather", "name": "Displace", "verb": "Displace",
+    "description": "The surgical swap: push a new identity in, deliberately ejecting a chosen one. No refund.",
+    "profession": "profession.leatherworking", "required_level": 60, "experience": 100,
+    "substrate_tags": ["form:hide", "form:leather"]
+  },
+
+  // ══ TAILORING — the cloth domain (loom) ═══════════════════════════════════════════════════
+  {
+    "id": "craft.spin_silkvine", "name": "Spin Silkvine", "verb": "Process",
+    "description": "Silkvine fiber into thread; whatever the fiber carried, the thread carries.",
+    "profession": "profession.tailoring", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:fiber"], "substrate_id": "material.silkvine_fiber",
+    "output": "material.silkvine_thread"
+  },
+  {
+    "id": "craft.weave_silkvine", "name": "Weave Silkvine", "verb": "Process",
+    "description": "Silkvine thread into cloth; whatever the thread carried, the cloth carries.",
+    "profession": "profession.tailoring", "required_level": 5, "experience": 15,
+    "substrate_tags": ["form:thread"], "substrate_id": "material.silkvine_thread",
+    "output": "material.silkvine_cloth"
+  },
+  {
+    "id": "craft.press_cloth", "name": "Press", "verb": "Refine",
+    "description": "Careful pressing: quality up, nothing risked, no condition cost.",
+    "profession": "profession.tailoring", "required_level": 1, "experience": 8,
+    "substrate_tags": ["form:cloth", "form:fiber", "form:thread"]
+  },
+  {
+    "id": "craft.infuse_cloth", "name": "Infuse", "verb": "Transfer",
+    "description": "Work a source's identity into cloth. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
+    "profession": "profession.tailoring", "required_level": 5, "experience": 25,
+    "substrate_tags": ["form:cloth", "form:fiber", "form:thread"]
+  },
+  {
+    "id": "craft.embroider", "name": "Embroider", "verb": "Develop",
+    "description": "Deepen a cloth's identity by feeding it same-identity sources.",
+    "profession": "profession.tailoring", "required_level": 12, "experience": 30,
+    "substrate_tags": ["form:cloth", "form:fiber", "form:thread"]
+  },
+  {
+    "id": "craft.reweave", "name": "Reweave", "verb": "Restore",
+    "description": "Climb a worked cloth's condition one step, fed by salvaged cloth. Worked is the ceiling.",
+    "profession": "profession.tailoring", "required_level": 3, "experience": 12,
+    "substrate_tags": ["form:cloth", "form:fiber", "form:thread"],
+    "extra_costs": [ { "itemId": "material.tattered_cloth", "quantity": 1 } ]
+  },
+  {
+    "id": "craft.displace_cloth", "name": "Displace", "verb": "Displace",
+    "description": "The surgical swap: push a new identity in, deliberately ejecting a chosen one. No refund.",
+    "profession": "profession.tailoring", "required_level": 60, "experience": 100,
+    "substrate_tags": ["form:cloth", "form:fiber", "form:thread"]
+  },
+
+  // ══ FLETCHING — the wood domain (fletcher's bench) ════════════════════════════════════════
+  {
+    "id": "craft.hew_oak_planks", "name": "Hew Oak Planks", "verb": "Process",
+    "description": "Oak logs into planks; whatever the log carried, the plank carries.",
+    "profession": "profession.fletching", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:wood"], "substrate_id": "material.oak_log",
+    "output": "material.oak_plank"
+  },
+  {
+    "id": "craft.hew_maple_planks", "name": "Hew Maple Planks", "verb": "Process",
+    "description": "Maple logs into planks; whatever the log carried, the plank carries.",
+    "profession": "profession.fletching", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:wood"], "substrate_id": "material.maple_log",
+    "output": "material.maple_plank"
+  },
+  {
+    "id": "craft.true_the_grain", "name": "True the Grain", "verb": "Refine",
+    "description": "Careful truing: quality up, nothing risked, no condition cost.",
+    "profession": "profession.fletching", "required_level": 1, "experience": 8,
+    "substrate_tags": ["form:wood"]
+  },
+  {
+    "id": "craft.infuse_wood", "name": "Infuse", "verb": "Transfer",
+    "description": "Work a source's identity into wood. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
+    "profession": "profession.fletching", "required_level": 5, "experience": 25,
+    "substrate_tags": ["form:wood"]
+  },
+  {
+    "id": "craft.season_wood", "name": "Season", "verb": "Develop",
+    "description": "Deepen a wood's identity by feeding it same-identity sources.",
+    "profession": "profession.fletching", "required_level": 12, "experience": 30,
+    "substrate_tags": ["form:wood"]
+  },
+  {
+    "id": "craft.splice", "name": "Splice", "verb": "Restore",
+    "description": "Climb a worked wood's condition one step, set with resin. Worked is the ceiling.",
+    "profession": "profession.fletching", "required_level": 3, "experience": 12,
+    "substrate_tags": ["form:wood"],
+    "extra_costs": [ { "itemId": "material.amber_resin", "quantity": 1 } ]
+  },
+  {
+    "id": "craft.displace_wood", "name": "Displace", "verb": "Displace",
+    "description": "The surgical swap: push a new identity in, deliberately ejecting a chosen one. No refund.",
+    "profession": "profession.fletching", "required_level": 60, "experience": 100,
+    "substrate_tags": ["form:wood"]
+  },
+
+  // ══ ARTIFICE — crystal, glass, gems; composites (workbench) ═══════════════════════════════
+  {
+    "id": "craft.melt_glass", "name": "Melt Glass", "verb": "Process",
+    "description": "Sand into glass; whatever the sand carried, the glass carries.",
+    "profession": "profession.artifice", "required_level": 1, "experience": 10,
+    "substrate_tags": ["form:sand"], "substrate_id": "material.sand",
+    "output": "material.glass"
+  },
+  {
+    "id": "craft.cut_crystal", "name": "Cut", "verb": "Refine",
+    "description": "Careful cutting: quality up, nothing risked, no condition cost.",
+    "profession": "profession.artifice", "required_level": 1, "experience": 8,
+    "substrate_tags": ["form:crystal", "form:glass", "form:gem"]
+  },
+  {
+    "id": "craft.infuse_crystal", "name": "Infuse", "verb": "Transfer",
+    "description": "Work a source's identity into crystal. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
+    "profession": "profession.artifice", "required_level": 5, "experience": 25,
+    "substrate_tags": ["form:crystal", "form:glass", "form:gem"]
+  },
+  {
+    "id": "craft.facet", "name": "Facet", "verb": "Develop",
+    "description": "Deepen a crystal's identity by feeding it same-identity sources.",
+    "profession": "profession.artifice", "required_level": 12, "experience": 30,
+    "substrate_tags": ["form:crystal", "form:glass", "form:gem"]
+  },
+  {
+    "id": "craft.reset_setting", "name": "Reset the Setting", "verb": "Restore",
+    "description": "Climb a worked crystal's condition one step, fed by salvaged mechanisms. Worked is the ceiling.",
+    "profession": "profession.artifice", "required_level": 3, "experience": 12,
+    "substrate_tags": ["form:crystal", "form:glass", "form:gem"],
+    "extra_costs": [ { "itemId": "material.broken_mechanism", "quantity": 1 } ]
+  },
+  {
+    "id": "craft.fuse_composite", "name": "Fuse Composite", "verb": "Fuse",
+    "description": "Fuse crystal and glass into a composite — base stats blend, identities union. Ambitious work.",
+    "profession": "profession.artifice", "required_level": 40, "experience": 70,
+    "substrate_tags": ["form:crystal", "form:glass"]
+  },
+  {
+    "id": "craft.displace_crystal", "name": "Displace", "verb": "Displace",
+    "description": "The surgical swap: push a new identity in, deliberately ejecting a chosen one. No refund.",
+    "profession": "profession.artifice", "required_level": 60, "experience": 100,
+    "substrate_tags": ["form:crystal", "form:glass", "form:gem"]
+  },
+
+  // ══ RUNECRAFTING — the identity-domain specialist (runic altar, D48) ══════════════════════
+  // The one profession scoped by IDENTITY rather than material: magical identities on any
+  // substrate — the home of cross-substrate magical work no domain profession covers.
+  {
+    "id": "craft.inscribe", "name": "Inscribe", "verb": "Transfer",
+    "description": "Work a magical identity into any substrate — Runecrafting reads the current beneath the material.",
+    "profession": "profession.runecrafting", "required_level": 10, "experience": 30,
+    "identity_scope": ["identity.arcane", "identity.resonant", "identity.warded", "identity.radiant", "identity.umbral"]
+  },
+  {
+    "id": "craft.deepen_inscription", "name": "Deepen the Inscription", "verb": "Develop",
+    "description": "Deepen a magical identity on any substrate by feeding it same-identity sources.",
+    "profession": "profession.runecrafting", "required_level": 25, "experience": 50,
+    "identity_scope": ["identity.arcane", "identity.resonant", "identity.warded", "identity.radiant", "identity.umbral"]
+  },
+  {
+    "id": "craft.expand_matrix", "name": "Expand the Matrix", "verb": "Expand",
+    "description": "+1 stable capacity — rare, expensive, ambitious. Runecrafting's late mastery, shared with Alchemy.",
+    "profession": "profession.runecrafting", "required_level": 70, "experience": 118,
+    "extra_costs": [ { "itemId": "material.resonance_catalyst", "quantity": 1 } ]
   }
 ]

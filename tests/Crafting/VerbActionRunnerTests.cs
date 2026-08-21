@@ -55,7 +55,7 @@ public class VerbActionRunnerTests
     [Fact]
     public void TheStarterChainForgesTheTwiceInfusedIngot()
     {
-        var (runner, bag, content) = Harness();
+        var (runner, bag, content, progress) = ProgressHarness();
         bag.Add("material.oak", 3);
         bag.Add("material.granite", 1);
         bag.Add("material.iron_ore", 1);
@@ -86,6 +86,88 @@ public class VerbActionRunnerTests
         Assert.Equal(1, state.StakeOf(Dense)!.Rank);
         Assert.Equal(Condition.Strained, state.Condition);
         Assert.Equal(Stability.Stable, state.Stability);
+
+        // Phase 5: the chain TRAINS — four professions each earned above their seed, which
+        // is the cross-profession economy paying in XP as well as fidelity.
+        foreach (var professionId in new[]
+        {
+            "profession.herblore", "profession.alchemy", "profession.mining", "profession.smithing",
+        })
+        {
+            Assert.True(progress[professionId].Xp > ProfessionLeveling.XpForLevel(99),
+                $"{professionId} trained nothing across the chain.");
+        }
+    }
+
+    [Fact]
+    public void DryingActivatesThePreparedForm()
+    {
+        // Preparation = activation, falling straight out of Process's output-innate merge:
+        // raw emberleaf carries latent Ember; the authored dried form carries it ACTIVE.
+        // Drying the raw leaf lands exactly on the authored prepared reagent — one id, one
+        // stack, and the mundane chain never mints an emergent twin.
+        var (runner, bag, content) = Harness(new() { ["profession.herblore"] = 8 });
+        bag.Add("material.emberleaf", 1);
+
+        var result = runner.Run(new VerbActionInvocation("craft.dry_emberleaf", "material.emberleaf", Array.Empty<string>()));
+
+        var deposited = Assert.Single(result.Deposited);
+        Assert.Equal("material.dried_emberleaf", deposited.ItemId);
+        Assert.False(deposited.FirstDiscovery);
+        var driedState = IdentityStateResolver.StateOf(content.Materials.GetById("material.dried_emberleaf"))!;
+        Assert.Equal(1, driedState.StakeOf("identity.ember")!.Rank);
+    }
+
+    // --- Phase 5: the bench trains -------------------------------------------
+
+    [Fact]
+    public void TheBenchTrainsTheActingProfession()
+    {
+        var (runner, bag, content, progress) = ProgressHarness();
+        bag.Add("material.iron_ore", 1);
+
+        var result = runner.Run(new VerbActionInvocation("craft.smelt_iron", "material.iron_ore", Array.Empty<string>()));
+
+        var smeltExperience = content.VerbActions.GetById("craft.smelt_iron").Experience;
+        Assert.Equal(smeltExperience, result.XpAwarded);
+        Assert.Equal(ProfessionTuning.MasteryPerAction, result.MasteryAwarded);
+        Assert.Equal(ProfessionLeveling.XpForLevel(99) + smeltExperience, progress["profession.smithing"].Xp);
+        Assert.Equal(1, progress["profession.smithing"].GetMastery("craft.smelt_iron"));
+    }
+
+    [Fact]
+    public void RefusalsTrainNothing()
+    {
+        // Gate refusals spend nothing and teach nothing; engine refusals likewise — the
+        // work never happened. Only taken gambles pay.
+        var (runner, bag, _, progress) = ProgressHarness();
+        bag.Add("material.iron_ingot", 1);
+
+        var result = runner.Run(new VerbActionInvocation(
+            "craft.identify_virtues", "material.iron_ingot", Array.Empty<string>(), Vital)); // iron is not flora
+
+        Assert.NotNull(result.GateFailure);
+        Assert.Equal(0, result.XpAwarded);
+        Assert.False(progress.ContainsKey("profession.herblore")
+            && progress["profession.herblore"].GetMastery("craft.identify_virtues") > 0);
+    }
+
+    [Fact]
+    public void CrossingALevelSurfacesInTheResult()
+    {
+        var (runner, bag, content, progress) = ProgressHarness(new() { ["profession.smithing"] = 1 });
+        bag.Add("material.iron_ore", 1);
+
+        // Park smithing one XP short of level 2 (pre-seeding wins — the harness fills the
+        // ledger lazily), then smelt across the line.
+        var smithing = progress["profession.smithing"] = new ProfessionProgress(
+            "profession.smithing", ProfessionLeveling.XpForLevel(2) - 1);
+
+        var result = runner.Run(new VerbActionInvocation("craft.smelt_iron", "material.iron_ore", Array.Empty<string>()));
+
+        Assert.NotNull(result.LevelUp);
+        Assert.Equal(2, result.LevelUp!.Value.NewLevel);
+        Assert.Equal(2, smithing.Level);
     }
 
     [Fact]
@@ -116,10 +198,16 @@ public class VerbActionRunnerTests
     [Fact]
     public void AnUnmigratedSubstrateIsRefusedByName()
     {
-        var (runner, bag, _) = Harness();
-        bag.Add("material.limestone", 1);
+        // Since D52 every shipped material is migrated, so the coexistence seam is pinned
+        // with an in-memory relic — the refusal must survive for modded or hand-added stock.
+        var (runner, bag, content) = Harness();
+        content.Materials.Add(new MaterialDefinition
+        {
+            Id = "material.test_relic_stone", Name = "Relic Stone", Tags = new[] { "form:stone", "rarity:common" },
+        });
+        bag.Add("material.test_relic_stone", 1);
 
-        var result = runner.Run(new VerbActionInvocation("craft.prospect_stone", "material.limestone", Array.Empty<string>(), Dense));
+        var result = runner.Run(new VerbActionInvocation("craft.prospect_stone", "material.test_relic_stone", Array.Empty<string>(), Dense));
 
         Assert.Equal(VerbActionGateFailure.SubstrateNotMigrated, result.GateFailure);
     }
@@ -173,6 +261,15 @@ public class VerbActionRunnerTests
     private static (VerbActionRunner Runner, Inventory Bag, ContentBundle Content) Harness(
         Dictionary<string, int>? levels = null)
     {
+        var (runner, bag, content, _) = ProgressHarness(levels);
+        return (runner, bag, content);
+    }
+
+    /// <summary>The full harness, exposing the progress ledger so award tests can read what
+    /// the bench paid. Levels come from seeding each profession's XP to the requested level.</summary>
+    private static (VerbActionRunner Runner, Inventory Bag, ContentBundle Content,
+        Dictionary<string, ProfessionProgress> Progress) ProgressHarness(Dictionary<string, int>? levels = null)
+    {
         var content = new ContentBundle
         {
             Materials = TestPaths.LoadStore<MaterialDefinition>("materials"),
@@ -182,12 +279,24 @@ public class VerbActionRunnerTests
             Byproducts = TestPaths.LoadStore<ByproductDefinition>("byproducts"),
         };
         var bag = new Inventory();
+        var progressById = new Dictionary<string, ProfessionProgress>(StringComparer.Ordinal);
+        ProfessionProgress ProgressOf(string professionId)
+        {
+            if (!progressById.TryGetValue(professionId, out var progress))
+            {
+                progressById[professionId] = progress = new ProfessionProgress(
+                    professionId, ProfessionLeveling.XpForLevel(levels?.GetValueOrDefault(professionId, 99) ?? 99));
+            }
+
+            return progress;
+        }
+
         var runner = new VerbActionRunner(
             content,
             new IdentityCraftingEngine(content, new SeededRandom(11)),
             new EmergentRegistry(content.Materials),
             () => bag,
-            id => levels?.GetValueOrDefault(id, 99) ?? 99);
-        return (runner, bag, content);
+            ProgressOf);
+        return (runner, bag, content, progressById);
     }
 }

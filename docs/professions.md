@@ -292,7 +292,7 @@ metal, gems, a key, or somebody's paperwork.
 
 ## 6. Content counts
 
-**20 professions · 348 actions · 36 opportunities · 12 obstacles · 15 synergies · 1448 materials**
+**20 professions · 348 actions · 39 opportunities · 12 obstacles · 15 synergies · 1448 materials**
 (79 added by the P4 pass). Save schema **v11** — Phase 10 added no field: `PassiveActionId` now
 carries the standing selection rather than the running action, which is the same key meaning the
 same thing slightly more honestly. `ProfessionEcosystemTests.TheRosterMeetsItsStatedScale` pins

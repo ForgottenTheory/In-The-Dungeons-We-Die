@@ -504,6 +504,50 @@ public class IdentityVerbEngineTests
         Assert.Equal(1, rawPath.StakeOf(Vital)!.Rank);
     }
 
+    // --- Phase 5: skill narrows variance -------------------------------------
+
+    [Fact]
+    public void APracticedHandShavesTheRiskChances()
+    {
+        var unstable = Migrated(capacity: 1) with
+        {
+            Identities = new[] { new IdentityStake(Vital, 1), new IdentityStake(Dense, 1) },
+        };
+        Assert.Equal(Stability.Unstable, unstable.Stability);
+        VerbRequest RequestAt(double riskReduction) => new()
+        {
+            Verb = CraftVerb.Transfer, Substrate = unstable, Sources = new[] { Carrier(Ember, 1) },
+            RiskReduction = riskReduction,
+        };
+
+        var unpracticed = Engine().Preview(RequestAt(0)).Risks;
+        var practiced = Engine().Preview(RequestAt(0.2)).Risks;
+
+        Assert.Equal(IdentityCraftTuning.FractureChanceUnstable, unpracticed.FractureChance);
+        Assert.Equal(IdentityCraftTuning.FractureChanceUnstable * 0.8, practiced.FractureChance, 4);
+    }
+
+    [Fact]
+    public void SteadinessIsCappedAtTheCeiling()
+    {
+        // Skill narrows variance, never deletes it — the deep end stays the deep end.
+        var unstable = Migrated(capacity: 1) with
+        {
+            Identities = new[] { new IdentityStake(Vital, 1), new IdentityStake(Dense, 1) },
+        };
+
+        var risks = Engine().Preview(new VerbRequest
+        {
+            Verb = CraftVerb.Transfer, Substrate = unstable, Sources = new[] { Carrier(Ember, 1) },
+            RiskReduction = 0.99,
+        }).Risks;
+
+        Assert.Equal(
+            IdentityCraftTuning.FractureChanceUnstable * (1 - IdentityCraftTuning.RiskReductionCeiling),
+            risks.FractureChance, 4);
+        Assert.True(risks.FractureChance > 0);
+    }
+
     // --- Harness -------------------------------------------------------------
 
     private static IdentityMaterialState Migrated(int capacity) => new()

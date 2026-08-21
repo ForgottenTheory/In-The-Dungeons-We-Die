@@ -36,5 +36,26 @@ public sealed class ItemInstance
     /// <summary>Named traits/effects generated during crafting (reserved for the reaction sim).</summary>
     public IReadOnlyList<string> Traits { get; init; } = Array.Empty<string>();
 
+    // ---- Identity-model fields (migration Phase 3, D50/D51 — save v13). All empty/null on
+    // old-system and authored gear; the two models never mix on one instance. ----------------
+
+    /// <summary>The mundane physical floor (D46), computed from base reads at the mint and
+    /// consumed by the equipment resolver. Null on non-identity gear.</summary>
+    public Crafting.Identity.ItemBaseDelivery? BaseDelivery { get; init; }
+
+    /// <summary>Every effect sentence the mint crystallized — floor, generated, signature,
+    /// drawback — recompiled into live grants deterministically whenever worn (D50).</summary>
+    public IReadOnlyList<Crafting.Identity.ItemEffectSentence> IdentitySentences { get; init; } =
+        Array.Empty<Crafting.Identity.ItemEffectSentence>();
+
+    /// <summary>The identities this item actively expresses (D51).</summary>
+    public IReadOnlyList<Crafting.Identity.IdentityStake> ExpressedIdentities { get; init; } =
+        Array.Empty<Crafting.Identity.IdentityStake>();
+
+    /// <summary>Identities beyond the form's cap: recorded, inert, never deleted — the
+    /// reforge/awaken hooks of the future (D51).</summary>
+    public IReadOnlyList<Crafting.Identity.IdentityStake> DormantIdentities { get; init; } =
+        Array.Empty<Crafting.Identity.IdentityStake>();
+
     public bool IsEquipment => ItemType is ItemType.Weapon or ItemType.Armor;
 }

@@ -60,6 +60,40 @@ public sealed class ItemInstanceSave
 
     /// <summary>v6: innates + rolled modifiers, in display order.</summary>
     public List<RolledAffixSave> Affixes { get; init; } = new();
+
+    /// <summary>v13: the identity-minted base delivery (D46). Null on non-identity gear.</summary>
+    public BaseDeliverySave? BaseDelivery { get; init; }
+
+    /// <summary>v13: every effect sentence the mint crystallized (D50).</summary>
+    public List<ItemEffectSentenceSave> IdentitySentences { get; init; } = new();
+
+    /// <summary>v13: expressed and dormant identities (D51).</summary>
+    public List<IdentityStakeSave> ExpressedIdentities { get; init; } = new();
+    public List<IdentityStakeSave> DormantIdentities { get; init; } = new();
+}
+
+/// <summary>Serializable form of an <see cref="Dungeons.Crafting.Identity.ItemBaseDelivery"/> (v13).</summary>
+public sealed class BaseDeliverySave
+{
+    public double DamageBonus { get; init; }
+    public int WindupTicks { get; init; }
+    public double Armor { get; init; }
+}
+
+/// <summary>Serializable form of an <see cref="Dungeons.Crafting.Identity.ItemEffectSentence"/> (v13):
+/// stable vocabulary ids plus the rolled numbers — grants recompile from these
+/// deterministically, so nothing compiled is stored.</summary>
+public sealed class ItemEffectSentenceSave
+{
+    /// <summary>An <c>ItemEffectCategory</c> enum member name; an unreadable value loads Generated.</summary>
+    public string Category { get; init; } = "Generated";
+
+    public string TriggerId { get; init; } = string.Empty;
+    public string BehaviorId { get; init; } = string.Empty;
+    public string PayloadId { get; init; } = string.Empty;
+    public double Magnitude { get; init; }
+    public double Chance { get; init; } = 1.0;
+    public bool AfflictsWearer { get; init; }
 }
 
 /// <summary>Serializable form of a <see cref="Dungeons.Crafting.Genome"/>.</summary>
@@ -221,8 +255,15 @@ public sealed class SaveData
     /// bench (migration Phase 2c, D42) persist as <see cref="IdentityArchetypeSave"/> beside
     /// the old-model archetypes. An older save loads with none — the state of a player who
     /// never used the new bench. No migration step.</para>
+    ///
+    /// <para><b>v13 — identity-minted items.</b> <see cref="ItemInstanceSave"/> grows the
+    /// identity forge's fields (migration Phase 3, D50/D51): the base delivery, the effect
+    /// sentences, and the expressed/dormant identity split. Older instances load with none —
+    /// they are old-model gear and keep behaving exactly as before. The derived equipment
+    /// definitions ride the existing <see cref="EmergentEquipment"/> list (their ids share
+    /// the <c>equip.emergent.</c> prefix on purpose). No migration step.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 12;
+    public const int CurrentSchemaVersion = 13;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }

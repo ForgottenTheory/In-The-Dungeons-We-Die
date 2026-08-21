@@ -1,9 +1,9 @@
 [
-  { "id": "material.slag", "name": "Slag", "tags": ["state:spent", "form:stone", "origin:mineral", "rarity:common", "comp:inorganic"], "properties": { "hardness": 45, "mass": 70, "flexibility": 2, "affinity": 12, "insulation": 35, "solubility": 2, "heat_resistance": 70 } },
+  { "id": "material.slag", "name": "Slag", "tags": ["state:spent", "form:stone", "origin:mineral", "rarity:common", "comp:inorganic"], "properties": { "hardness": 45, "mass": 70, "flexibility": 2, "affinity": 12, "insulation": 35, "solubility": 2, "heat_resistance": 70 }, "capacity": 1, "latent": ["identity.dense"], "base": { "heft": 7, "bite": 4, "toughness": 2 } },
 
-  { "id": "material.cinders", "name": "Cinders", "tags": ["state:spent", "form:ash", "origin:flora", "rarity:common", "comp:inorganic"], "properties": { "hardness": 8, "mass": 14, "affinity": 55, "insulation": 25, "solubility": 60, "heat": 12, "decay": 20 } },
+  { "id": "material.cinders", "name": "Cinders", "tags": ["state:spent", "form:ash", "origin:flora", "rarity:common", "comp:inorganic"], "properties": { "hardness": 8, "mass": 14, "affinity": 55, "insulation": 25, "solubility": 60, "heat": 12, "decay": 20 }, "capacity": 1 },
 
-  { "id": "material.dross", "name": "Dross", "tags": ["state:spent", "form:sludge", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 20, "mass": 30, "flexibility": 25, "affinity": 40, "solubility": 20, "toxicity": 15, "decay": 45 } },
+  { "id": "material.dross", "name": "Dross", "tags": ["state:spent", "form:sludge", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 20, "mass": 30, "flexibility": 25, "affinity": 40, "solubility": 20, "toxicity": 15, "decay": 45 }, "capacity": 1, "latent": ["identity.blighted"] },
 
-  { "id": "material.residue", "name": "Residue", "tags": ["state:spent", "form:liquid", "origin:synthetic", "rarity:common", "comp:inorganic"], "properties": { "mass": 12, "affinity": 48, "solubility": 70, "instability": 25, "corrosion": 18 } }
+  { "id": "material.residue", "name": "Residue", "tags": ["state:spent", "form:liquid", "origin:synthetic", "rarity:common", "comp:inorganic"], "properties": { "mass": 12, "affinity": 48, "solubility": 70, "instability": 25, "corrosion": 18 }, "capacity": 1 }
 ]

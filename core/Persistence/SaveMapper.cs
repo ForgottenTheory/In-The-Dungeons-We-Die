@@ -372,6 +372,30 @@ public static class SaveMapper
         Affixes = instance.Affixes
             .Select(a => new RolledAffixSave { AffixId = a.AffixId, Tier = a.Tier, Roll = a.Roll })
             .ToList(),
+        BaseDelivery = instance.BaseDelivery is { } delivery
+            ? new BaseDeliverySave
+            {
+                DamageBonus = delivery.DamageBonus, WindupTicks = delivery.WindupTicks, Armor = delivery.Armor,
+            }
+            : null,
+        IdentitySentences = instance.IdentitySentences
+            .Select(sentence => new ItemEffectSentenceSave
+            {
+                Category = sentence.Category.ToString(),
+                TriggerId = sentence.TriggerId,
+                BehaviorId = sentence.BehaviorId,
+                PayloadId = sentence.PayloadId,
+                Magnitude = sentence.Magnitude,
+                Chance = sentence.Chance,
+                AfflictsWearer = sentence.AfflictsWearer,
+            })
+            .ToList(),
+        ExpressedIdentities = instance.ExpressedIdentities
+            .Select(stake => new IdentityStakeSave { Id = stake.Id, Rank = stake.Rank })
+            .ToList(),
+        DormantIdentities = instance.DormantIdentities
+            .Select(stake => new IdentityStakeSave { Id = stake.Id, Rank = stake.Rank })
+            .ToList(),
     };
 
     private static ItemInstance FromSave(ItemInstanceSave save) => new()
@@ -398,6 +422,27 @@ public static class SaveMapper
             : null,
         Affixes = save.Affixes
             .Select(a => new Dungeons.Affixes.RolledAffix(a.AffixId, a.Tier, a.Roll))
+            .ToList(),
+        BaseDelivery = save.BaseDelivery is { } delivery
+            ? new Dungeons.Crafting.Identity.ItemBaseDelivery(delivery.DamageBonus, delivery.WindupTicks, delivery.Armor)
+            : null,
+        IdentitySentences = save.IdentitySentences
+            .Select(sentence => new Dungeons.Crafting.Identity.ItemEffectSentence(
+                Enum.TryParse<Dungeons.Crafting.Identity.ItemEffectCategory>(sentence.Category, out var category)
+                    ? category
+                    : Dungeons.Crafting.Identity.ItemEffectCategory.Generated,
+                sentence.TriggerId,
+                sentence.BehaviorId,
+                sentence.PayloadId,
+                sentence.Magnitude,
+                sentence.Chance,
+                sentence.AfflictsWearer))
+            .ToList(),
+        ExpressedIdentities = save.ExpressedIdentities
+            .Select(stake => new Dungeons.Crafting.Identity.IdentityStake(stake.Id, stake.Rank))
+            .ToList(),
+        DormantIdentities = save.DormantIdentities
+            .Select(stake => new Dungeons.Crafting.Identity.IdentityStake(stake.Id, stake.Rank))
             .ToList(),
     };
 }

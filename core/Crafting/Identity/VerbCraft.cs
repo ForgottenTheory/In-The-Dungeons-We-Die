@@ -122,6 +122,14 @@ public sealed record VerbRequest
 
     /// <summary>Process only: the authored definition the substrate converts into.</summary>
     public string? OutputDefinitionId { get; init; }
+
+    /// <summary>
+    /// Steadiness from the crafter's practiced hand (migration Phase 5): the acting bench
+    /// action's mastery, translated by the application layer into a fraction shaved off both
+    /// risk chances. Skill narrows variance, never deletes it — the engine clamps to
+    /// <see cref="IdentityCraftTuning.RiskReductionCeiling"/>. 0 for an unpracticed hand.
+    /// </summary>
+    public double RiskReduction { get; init; }
 }
 
 /// <summary>The preview — the same computation as commit with the dice removed, so it

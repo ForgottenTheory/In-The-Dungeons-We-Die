@@ -38,6 +38,7 @@ public class ContentValidatorTests
         SignatureTriggers = Load<SignatureTriggerDefinition>("signature_triggers"),
         SignatureBehaviors = Load<SignatureBehaviorDefinition>("signature_behaviors"),
         SignatureThemes = Load<SignatureThemeDefinition>("signature_themes"),
+        SignaturePayloads = Load<SignaturePayloadDefinition>("signature_payloads"),
         VerbActions = Load<VerbActionDefinition>("verb_actions"),
         CraftingActions = Load<CraftingActionDefinition>("processes"),
         Byproducts = Load<ByproductDefinition>("byproducts"),

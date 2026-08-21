@@ -20,9 +20,11 @@ namespace Dungeons.Tests.Persistence;
 public class IdentityArchetypeSaveV12Tests
 {
     [Fact]
-    public void ANewSaveIsWrittenAtSchemaTwelve()
+    public void ANewSaveIsWrittenAtSchemaThirteen()
     {
-        Assert.Equal(12, SaveData.CurrentSchemaVersion);
+        // v12 added identity archetypes; v13 added the identity-minted item fields
+        // (Phase 3, D50/D51). Bumping this pin is the conscious act the pin exists to force.
+        Assert.Equal(13, SaveData.CurrentSchemaVersion);
     }
 
     [Fact]

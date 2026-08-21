@@ -32,7 +32,10 @@ public class ProfessionEcosystemTests
     public void TheRosterMeetsItsStatedScale()
     {
         Assert.Equal(348, Actions.Count);
-        Assert.Equal(36, Actions.GetAll().Sum(a => a.Opportunities.Count));
+        // 36 → 39 with D52: three new opportunities took over the active-identity payouts
+        // the Phase 4 acquisition fence evicted from passive rolls (ley confluence,
+        // earthheart seam, breathing pocket).
+        Assert.Equal(39, Actions.GetAll().Sum(a => a.Opportunities.Count));
         Assert.Equal(12, TestPaths.LoadStore<TrainingObstacleDefinition>("training_obstacles").Count);
         Assert.Equal(15, TestPaths.LoadStore<ProfessionSynergyDefinition>("synergies").Count);
         Assert.Equal(1448, TestPaths.LoadStore<MaterialDefinition>("materials").Count);

@@ -290,12 +290,31 @@
     "requiredLevel": 70,
     "baseIntervalTicks": 150,
     "experience": 118,
-    "outputs": [ { "itemId": "material.arcane_core", "quantity": 1 } ],
+    // D52 (D29.3 translated): the arcane core was this action's GUARANTEED yield — an idle
+    // faucet of active-identity concentrate, invisible to the old essence fence because
+    // `arcane` was never an essence key. The core and the identity-bearing crystals moved
+    // into the confluence opportunity; the mundane yields stay.
+    "outputs": [ { "itemId": "material.echo_crystal", "quantity": 1 } ],
     "bonusOutputs": [
-      { "itemId": "material.echo_crystal", "chance": 0.39, "quantity": 1 },
-      { "itemId": "material.echo_shard", "chance": 0.39, "quantity": 1 },
-      { "itemId": "material.ley_crystal", "chance": 0.39, "quantity": 1 },
       { "itemId": "material.starmetal_ore", "chance": 0.36, "quantity": 1 }
+    ],
+    "opportunities": [
+      {
+        "id": "opportunity.ley_confluence",
+        "experience": 175,
+        "required_mastery": 30,
+        "name": "Ley Confluence",
+        "prompt": "The veins hum in phase — a confluence is open. Working it now could free a charged crystal, or the resonance could close around an arcane core.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.45,
+        "outputs": [ { "itemId": "material.echo_crystal", "quantity": 2 } ],
+        "bonusOutputs": [
+          { "itemId": "material.echo_shard", "chance": 0.4, "quantity": 1 },
+          { "itemId": "material.ley_crystal", "chance": 0.4, "quantity": 1 },
+          { "itemId": "material.arcane_core", "chance": 0.18, "quantity": 1 }
+        ]
+      }
     ]
   },
   {
@@ -445,8 +464,25 @@
     "experience": 118,
     "outputs": [ { "itemId": "material.quicksilver_ore", "quantity": 1 } ],
     "bonusOutputs": [
-      { "itemId": "material.terra_core", "chance": 0.33, "quantity": 1 },
       { "itemId": "material.zinc_ore", "chance": 0.45, "quantity": 1 }
+    ],
+    // D52: the terra core moved off the passive bonus roll — an active-identity concentrate
+    // is earned by staying at the seam, never banked while idle (the D29.3 rule, identity edition).
+    "opportunities": [
+      {
+        "id": "opportunity.earthheart_seam",
+        "experience": 175,
+        "required_mastery": 30,
+        "name": "Earthheart Seam",
+        "prompt": "Something under the quicksilver vein is holding its breath. Digging for the heart means propping the seam while it fights you.",
+        "discoveryChance": 0.11,
+        "extraIntervalTicks": 260,
+        "riskWeight": 0.5,
+        "outputs": [ { "itemId": "material.quicksilver_ore", "quantity": 2 } ],
+        "bonusOutputs": [
+          { "itemId": "material.terra_core", "chance": 0.3, "quantity": 1 }
+        ]
+      }
     ]
   },
   {
@@ -488,12 +524,29 @@
     "outputs": [ { "itemId": "material.aqua_fortis", "quantity": 1 } ],
     "bonusOutputs": [
       { "itemId": "material.chalk", "chance": 0.45, "quantity": 1 },
-      { "itemId": "material.earth_mote", "chance": 0.39, "quantity": 1 },
       { "itemId": "material.graphite", "chance": 0.45, "quantity": 1 },
       { "itemId": "material.living_crystal", "chance": 0.36, "quantity": 1 },
       { "itemId": "material.marble", "chance": 0.45, "quantity": 1 },
       { "itemId": "material.mud", "chance": 0.45, "quantity": 1 },
       { "itemId": "material.niter", "chance": 0.45, "quantity": 1 }
+    ],
+    // D52: the earth mote moved off the passive bonus roll into the pocket below —
+    // elemental concentrates are chosen exposure, not idle income.
+    "opportunities": [
+      {
+        "id": "opportunity.breathing_pocket",
+        "experience": 130,
+        "required_mastery": 25,
+        "name": "Breathing Pocket",
+        "prompt": "A pocket in the wild rock exhales grit in a slow rhythm. Reaching into it between breaths could bring out a mote of living earth.",
+        "discoveryChance": 0.12,
+        "extraIntervalTicks": 220,
+        "riskWeight": 0.4,
+        "outputs": [ { "itemId": "material.niter", "quantity": 2 } ],
+        "bonusOutputs": [
+          { "itemId": "material.earth_mote", "chance": 0.4, "quantity": 1 }
+        ]
+      }
     ]
   },
   {

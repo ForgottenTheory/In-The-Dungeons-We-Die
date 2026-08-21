@@ -47,6 +47,32 @@ public sealed class TagFamily
 /// <summary>The material tag families and the <c>family:value</c> parsing helper.</summary>
 public static class TagFamilies
 {
+    /// <summary>
+    /// The <c>form:</c> values that make a material physical gear stock (D46/D52): things a
+    /// blueprint slot can gate on, or recognizable parts and stock. A migrated structural
+    /// material must author base stats, and only structural materials may — the D46 dividing
+    /// line ("if it only matters for special behavior, it is an identity, not a base stat")
+    /// applied to the whole library. Fruits, herbs, liquids and the other consumable-shaped
+    /// forms stay base-less on purpose: their worth is what they carry, not what they weigh.
+    /// </summary>
+    public static readonly IReadOnlySet<string> StructuralForms = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "metal", "ore", "ingot", "wood", "stone", "crystal", "gem", "bone", "horn",
+        "chitin", "hide", "leather", "fiber", "cloth", "bark", "glass", "tooth", "claw",
+        "thread", "shaft", "stave", "haft", "binding", "mechanism",
+    };
+
+    /// <summary>
+    /// The structural forms that take an edge or a point — the only materials whose base may
+    /// carry Bite (D46: Bite is cutting/piercing damage; a fiber cannot cut whatever its
+    /// hardness says). Validated, so a copy-paste Bite on a hide fails at load.
+    /// </summary>
+    public static readonly IReadOnlySet<string> EdgeCapableForms = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "metal", "ore", "ingot", "crystal", "gem", "stone", "glass",
+        "bone", "horn", "tooth", "claw", "chitin",
+    };
+
     public static readonly TagFamily Origin = new("origin", TagCardinality.OneOrTwo,
         new HashSet<string>(StringComparer.Ordinal) { "flora", "fauna", "fungal", "mineral", "elemental", "arcane", "synthetic" });
 

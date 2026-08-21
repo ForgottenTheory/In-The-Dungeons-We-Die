@@ -143,6 +143,14 @@ public static class ContentTypeRegistry
         },
         new()
         {
+            TypeId = "signature_payloads", Folder = "signature_payloads", DefinitionType = typeof(SignaturePayloadDefinition),
+            DisplayName = "Signature Payloads", SingularName = "Signature Payload", NavigationGroup = "Crafting", IdPrefix = "",
+            ListColumns = new[] { "weight" },
+            ValidatorCategories = new[] { "signature_payload" },
+            Description = "Signature grammar: what a sentence delivers. Bare-key ids; every binding names machinery that resolves (D30 fence), families carry the access rungs, floors are the identity guarantees (D50).",
+        },
+        new()
+        {
             TypeId = "verb_actions", Folder = "verb_actions", DefinitionType = typeof(VerbActionDefinition),
             DisplayName = "Verb Actions", SingularName = "Verb Action", NavigationGroup = "Crafting", IdPrefix = "craft.",
             ListColumns = new[] { "verb", "profession" },
