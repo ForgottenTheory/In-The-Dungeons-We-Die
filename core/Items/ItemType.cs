@@ -9,12 +9,3 @@ public enum ItemType
     Consumable,
 }
 
-/// <summary>Crafted quality tiers (docs/crafting.md §12). Affects derived effectiveness.</summary>
-public enum ItemQuality
-{
-    Poor,
-    Normal,
-    Fine,
-    Exceptional,
-    Masterwork,
-}

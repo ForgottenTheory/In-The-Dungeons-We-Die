@@ -50,12 +50,12 @@ project file does not let it. That is deliberately stronger than a folder conven
 | Folder | Namespace | Owns |
 |---|---|---|
 | `core/Actions/` | `Dungeons.Actions` | The shared Action vocabulary (timing, costs) |
-| `core/Affixes/` | `Dungeons.Affixes` | Item modifiers: definitions, rolling, grants |
 | `core/Characters/` | `Dungeons.Characters` | Attributes, resources, gauges, character rules |
 | `core/Characters/Composition/` | `Dungeons.Characters.Composition` | The class combinator |
 | `core/Combat/` | `Dungeons.Combat` | Encounter, hit pipeline, moves, statuses, enemies |
 | `core/Content/` | `Dungeons.Content` | Definition loading, the bundle, validation |
-| `core/Crafting/` | `Dungeons.Crafting` | Reaction engine, traits, essence, fabrication, genome |
+| `core/Crafting/` | `Dungeons.Crafting` | The emergent registry, byproducts, forms, the legacy salve path |
+| `core/Crafting/Identity/` | `Dungeons.Crafting.Identity` | The identity crafting stack: state, verbs, composer, effect pipeline |
 | `core/Equipment/` | **`Dungeons.Items`** ⚠ | Equipment container, definitions, the combat seam |
 | `core/Events/` | `Dungeons.Events` | The game event bus |
 | `core/Hideout/` | `Dungeons.Hideout` | Station definitions — the Hideout's routing table |
@@ -94,8 +94,8 @@ _Ready()
  ├─ construct the TriggerRuleEngine over the event bus
  ├─ RebuildCharacter()  +  EquipStarterLoadout()
  ├─ build professions   (ProfessionSystem, PassiveProfessionRunner, FarmingPlots, TrainingCourse) on the shared TickEngine
- ├─ build crafting      (MaterialStateResolver, EmergentRegistry, MaterialTransformationEngine,
- │                       EquipmentAssemblyEngine, PropertyGlossary)
+ ├─ build crafting      (EmergentRegistry, VerbActionRunner, IdentityFabricationEngine,
+ │                       ItemEffectResolver)
  ├─ build combat        (StatusController, CombatantModifiers, HitPipeline, CombatEncounter)
  ├─ RegisterCombatHandlers(encounter, rng)     ← effect kinds stop landing in Unhandled
  └─ wire the condition world + subscribe to encounter events
@@ -107,7 +107,7 @@ while `_running` is true.
 
 Everything else in `GameRoot` is one of three things — and nothing else belongs there:
 
-1. **Commands** the UI calls (`Craft`, `FabricateItem`, `EquipFromStash`, `RealmTravel`…).
+1. **Commands** the UI calls (`RunVerbAction`, `RunIdentityFabrication`, `EquipFromStash`, `RealmTravel`…).
 2. **Queries** the UI reads (`MaterialsOnHand`, `PlayerMoveset`, `RealmReport`…).
 3. **C# events** the UI subscribes to (`LogEmitted`, `CharacterChanged`, `InventoryChanged`,
    `RunningChanged`, `DiscoveryChanged`, `CombatChanged`, `RealmChanged`).
@@ -115,7 +115,7 @@ Everything else in `GameRoot` is one of three things — and nothing else belong
 > **Known debt, recorded in D2.** `GameRoot` is ~1,650 lines and is both the composition root and
 > the application layer. Extracting an Application/use-case layer is deferred, not forgotten.
 > The mitigation that keeps it survivable: **every gameplay rule is a thin forward into Core.**
-> `Craft` builds a `CraftRequest`, calls `MaterialTransformationEngine`, and formats the outcome — that is all.
+> `RunVerbAction` builds an invocation, calls `VerbActionRunner`, and formats the outcome — that is all.
 > Keep it that way; if you find yourself writing a `if` about game rules in `GameRoot`, it belongs
 > in Core.
 
@@ -155,8 +155,8 @@ cost one class:
 | `ui/ConsoleTheme.cs` | The palette and the `Row`/`Card`/`MakeButton`/`SectionTitle` vocabulary. Imported with `using static`, so call sites read unchanged |
 | `ui/StationPanel.cs` | Composes one station's page from what its definition routes to |
 | `ui/ProfessionLadderPanel.cs` | One profession's level-gated ladder, with Passive/Active |
-| `ui/CraftingBenchPanel.cs` | The reagent chain + projection, scoped to this station's crafting actions |
-| `ui/EquipmentAssemblyPanel.cs` | Blueprint slots + preview + "Latest work", scoped to this station's blueprints |
+| `ui/VerbBenchPanel.cs` | The identity bench: action/material/identity pickers shaped by the verb, inspector, preview |
+| `ui/IdentityForgePanel.cs` | The identity forge: form + per-slot pickers, the projection, an Advanced toggle |
 | `ui/FarmingPlotsPanel.cs` · `TrainingCoursePanel.cs` · `AssayBenchPanel.cs` | The three professions that are a system rather than a list. Drawn because of **which profession the station hosts**, never a flag |
 | `ui/CraftingInteractionsPanel.cs` | The legacy fixed-interaction list (the Healing Salve). Dies with P5c |
 
@@ -200,11 +200,10 @@ xUnit over Core only. Content-validation tests load the **real** `game/data` JSO
 │      │                                       │ drives                 │
 │      ├── Professions ── ProfessionSystem ────┤                         │
 │      ├── Combat ─────── CombatEncounter ─────┘                         │
-│      ├── Crafting ───── MaterialTransformationEngine, EquipmentAssemblyEngine             │
+│      ├── Crafting ───── IdentityCraftingEngine, IdentityFabricationEngine     │
 │      ├── Characters ─── CharacterComposer, BuildResolver              │
 │      ├── Realms ─────── RealmRun, RealmExtraction                     │
 │      ├── Items ──────── Inventory, Equipment, ItemInstance            │
-│      ├── Affixes ────── ModifierGenerator, ModifierGrants                      │
 │      ├── Presentation ─ the semantic read-model (one-way)             │
 │      └── Persistence ── SaveMapper, SaveData                          │
 │                                                                       │
@@ -263,20 +262,20 @@ game/data/<type>/*.json
 
 Nothing else — no positional argument threaded through five call sites.
 
-### 4.3 Property names have exactly one source of truth (D17)
+### 4.3 Vocabularies have exactly one source of truth (D17's heir)
 
-`game/data/properties/properties.json` is authoritative for what a valid property name is.
-`ContentValidator` derives its known-property set from that loaded registry — **not** from a code
-list. `ItemProperties` survives only as convenience constants for direct code references, and a
-bijection test fails if the two ever drift.
+Every string a payload, profile or form references resolves against a loaded registry —
+identities, triggers, behaviors, payloads, modifier keys, statuses, moves — **never** a code
+list. The two authored equipment property keys (`mass`, `hardness`) are the one closed
+code-level set (`ItemProperties`), validated as such.
 
 ### 4.4 Id convention (D19)
 
 `type.slug` — `material.oak_bark`, `equip.iron_sword`, `move.heavy_strike`, `status.burn`,
-`affix.emberbrand`, `profession.mining`, `action.mine_iron`, `actor.goblin_raider`,
-`technique.*`, `trait.*`, `essence.*`, `form.*`, `realm.*`, `class.*`/`prefix.*`/`suffix.*`/
-`species.*`. Realm-location ids (`loc.*`) are realm-scoped, not globally unique. **Property ids
-are bare** (`hardness`) — they are keys, not entities.
+`identity.dense`, `profession.mining`, `action.mine_iron`, `actor.goblin_raider`,
+`technique.*`, `craft.*`, `form.*`, `realm.*`, `class.*`/`prefix.*`/`suffix.*`/`species.*`.
+Realm-location ids (`loc.*`) are realm-scoped, not globally unique. **Sentence-vocabulary ids
+are bare** (`on_block`, `store`, `bulwark`) — they are keys, not entities.
 
 Generated ids follow the same shape: `emergent.7f3a91c4` (materials), `equip.emergent.<hash>`
 (fabricated equipment).
@@ -301,11 +300,10 @@ Everything below is constructed once in `GameRoot._Ready()` and lives for the se
 | `CombatEncounter` | `Dungeons.Combat` | The tick-driven fight |
 | `ProfessionSystem` | `Dungeons.Professions` | The single execute path (active + passive) |
 | `PassiveProfessionRunner` | `Dungeons.Professions` | Repeating passive action on the tick engine |
-| `MaterialTransformationEngine` | `Dungeons.Crafting` | Every craft, through one pipeline |
-| `EquipmentAssemblyEngine` | `Dungeons.Crafting` | Materials → equipment instances |
-| `EmergentRegistry` | `Dungeons.Crafting` | Signature → registered runtime material |
-| `MaterialStateResolver` | `Dungeons.Content` | `MaterialDefinition` → `MaterialState` |
-| `PropertyGlossary` | `Dungeons.Presentation` | Property → glyph + gloss (data-driven) |
+| `VerbActionRunner` | `Dungeons.Crafting.Identity` | Every bench act: gates → verb → deposit |
+| `IdentityFabricationEngine` | `Dungeons.Crafting.Identity` | Materials → minted equipment |
+| `ItemEffectResolver` | `Dungeons.Crafting.Identity` | The item-effect pipeline + the equip-time compile |
+| `EmergentRegistry` | `Dungeons.Crafting` | Fingerprint → registered runtime material |
 | `Inventory` (×2) | `Dungeons.Items` | The Stash, and the per-run inventory |
 | `Equipment` | `Dungeons.Items` | Slot → worn `ItemInstance` |
 | `SeededRandom` (×4) | `Dungeons.Randomness` | Rules, professions, crafting, combat, affixes |
@@ -418,7 +416,7 @@ The handful of types that appear everywhere. Learn these and most of the codebas
 | `PropertySet` | `core/Items/` | Immutable, case-insensitive `name → value`. Zero == absent |
 | `ItemStack` | `core/Items/` | The one item+quantity shape. `ItemChance` = stack + drop chance |
 | `ItemInstance` | `core/Items/` | A specific owned item. **Equipment only** (D20) |
-| `MaterialState` | `core/Content/` | A material's full crafting state: properties, potency, integrity, traits, essence, lineage, signature |
+| `IdentityMaterialState` | `core/Crafting/Identity/` | A material's full crafting state: identities, latents, capacity, condition, quality, roots — stability derived |
 | `TickEngine` | `core/Simulation/` | Integer ticks, deterministic ordering, cancellable schedules |
 | `IRandomSource` | `core/Randomness/` | Injected, seeded. **No global RNG anywhere** |
 | `GameEvent` / `IGameEventBus` | `core/Events/` | The 31-event vocabulary |
@@ -427,7 +425,7 @@ The handful of types that appear everywhere. Learn these and most of the codebas
 | `ModifierContribution` / `ModifierSet` / `ModifierContext` | `core/Modifiers/` | The modification vocabulary |
 | `ActionTiming` / `ActionCost` | `core/Actions/` | Telegraph/windup/recovery, and costs that may name a **gauge**. Shared by Moves and (later) Profession actions — components, deliberately **not** an `abstract class Action` |
 | `ResolvedMove` | `core/Combat/` | A move after grants + modifiers, with full provenance |
-| `Genome` | `core/Crafting/` | An item's genetic profile; the input to every modifier decision |
+| `ItemEffectSentence` | `core/Crafting/Identity/` | What a minted item carries; grants recompile from it deterministically |
 
 ---
 
@@ -437,7 +435,7 @@ Five mechanisms, and only five.
 
 | # | Mechanism | Used for | Example |
 |---|---|---|---|
-| 1 | **Direct construction + injection** | Everything wired at startup | `new MaterialTransformationEngine(content, () => ActiveInventory, …)` |
+| 1 | **Direct construction + injection** | Everything wired at startup | `new IdentityFabricationEngine(content, () => ActiveInventory, …)` |
 | 2 | **`Func<T>` providers** | Late-bound state that changes | `() => ActiveInventory`, `id => professionLevel(id)` |
 | 3 | **The game event bus** | Gameplay facts anyone may react to | Combat publishes `HitLanded`; a Prefix rule hooks it |
 | 4 | **C# events** | System → application → UI notification | `Inventory.Changed`, `CombatEncounter.StateChanged` |
@@ -458,7 +456,7 @@ The simulation must reproduce from a seed. That constrains several things you mi
 casually:
 
 - All randomness comes from an injected `IRandomSource`. There are exactly five seeded sources,
-  all created in `GameRoot._Ready()`: rules, professions, crafting, combat, affixes.
+  all created in `GameRoot._Ready()`: rules, professions, the bench, the forge, combat.
 - Chain ids are **sequential**, never GUIDs.
 - The event bus is **synchronous and ordered**; handler-raised events queue and drain after.
 - The tick engine resolves due actions in **schedule order**, with a snapshot taken before any
@@ -531,223 +529,101 @@ validation surface; each `ValidateX` below it is self-contained.
 
 ---
 
-## 10.3 Materials and properties
+## 10.3 Materials — the identity model
 
-**PURPOSE** — The ingredient set the entire crafting engine operates on.
+**PURPOSE** — The ingredient set the crafting system operates on (D42–D52; the 0–100 property
+model died with Phase 7/D54).
 
 **IMPORTANT FILES**
-- `core/Content/MaterialDefinition.cs` — flat `Dictionary<string,double>` on a 0–100 scale,
-  `family:value` tags, optional essence
-- `core/Content/PropertyDefinition.cs` — the property registry: role, opposites, `resisted_by`,
-  `grants_tags`, **`glyph` + `gloss`** (display metadata as data, never code switches)
-- `core/Content/MaterialState.cs` — the *runtime* view: properties + potency + integrity +
-  traits + essence + lineage + signature
-- `core/Content/MaterialStateResolver.cs` — definition → profile (authored materials get
-  derived defaults; emergent ones carry their stored profile)
-- `core/Content/TagFamilies.cs` — the closed `family:value` namespace and its cardinality rules
-- `core/Content/ResistanceCalculator.cs` — derives resistance from `resisted_by`
-- `core/Items/ItemProperties.cs` — code-reference constants (the JSON registry is authoritative)
+- `core/Content/MaterialDefinition.cs` — capacity, `identities` (ranked grants), `latent`,
+  `base` (Heft/Bite/Toughness/Give, 0–10), `signature_profile`, `family:value` tags
+- `core/Content/IdentityDefinition.cs` — the 24-identity roster (pinned by test)
+- `core/Content/SignatureVocabulary.cs` — triggers, behaviors, themes, payloads (+ bindings)
+- `core/Crafting/Identity/IdentityMaterialState.cs` — the runtime eight facets: identities,
+  latents, capacity, Condition, quality, carrier flag, roots; Stability always derived
+- `core/Crafting/Identity/IdentityStateResolver.cs` — definition → starting state
+- `core/Crafting/Identity/RootDerivations.cs` — merged profile + base from provenance roots
+- `core/Crafting/Identity/Fingerprint.cs` — the stacking hash
+- `core/Content/TagFamilies.cs` — the closed `family:value` namespace (+ `StructuralForms`/
+  `EdgeCapableForms`, the D52 structural fences)
 
-**DATA** — `game/data/materials/*.json` (~474 across 9 category files),
-`game/data/properties/properties.json` (21).
+**DATA** — `game/data/materials/` (1,448; 53 with active identities) · `identities/` (24) ·
+`signature_triggers/` (22) · `signature_behaviors/` (11) · `signature_payloads/` (29) ·
+`signature_themes/` (16, never player-facing).
 
-**RUNTIME FLOW** — `MaterialDefinition` → `MaterialStateResolver.Resolve` → `MaterialState` →
-consumed by `MaterialTransformationEngine`, `EquipmentAssemblyEngine` and the presentation readings.
-
-**DEPENDENCIES** — Content only.
-
-**OUTPUT** — `MaterialState`.
-
-**EXTENSION POINTS** — A new property is **one entry in `properties.json`**: name, role, glyph,
-gloss, opposite, thresholds. Code changes only if something must *read it by name*.
-
-**ENTRY POINT** — `PropertyDefinition` first (it explains the vocabulary), then
-`MaterialStateResolver`.
+**ENTRY POINT** — `docs/identity-foundation.md` first; then `IdentityMaterialState`.
 
 ---
 
-## 10.4 Emergent crafting — the reaction engine
+## 10.4 The identity bench — verbs as content
 
-**PURPOSE** — Resolve **every** craft through one universal pipeline. No recipes, no
-per-combination rules, ever.
+**PURPOSE** — Every crafting act is one of ten verbs, offered as content actions, with risk
+only where the crafter chose it (overfill → fracture; Fragile deep work → destruction).
 
 **IMPORTANT FILES**
-| File | Owns |
-|---|---|
-| `core/Crafting/MaterialTransformationEngine.cs` | The pipeline and the only public entry (`PreviewCraft` / `RunCraft`) |
-| `MaterialTransformationRules.cs` | Per-reagent: converge → drift → oppose → prune |
-| `TransferCoefficients.cs` | Acceptance/release; the medium → property map |
-| `TransformationStepResult.cs` | What moved and **why** (typed `PropertyChangeKind`) |
-| `MaterialStrengthCalculator.cs` | Weighted mean + `best input + 8 × skill` ceiling |
-| `WorkabilityCalculator.cs` | Cost, effective instability, variance, `IntegrityProjection` |
-| `CraftQuality.cs` | Skill + instability + performance → a quality factor |
-| `MaterialSignature.cs` | Quantize → SHA-256 → `emergent.7f3a91c4` |
-| `VariancePerturbation.cs` | The seeded scatter (one of crafting's two RNG draws) |
-| `EmergentRegistry.cs` / `IEmergentRegistry.cs` | Signature → registered runtime material |
-| `NameGenerator.cs` | Pure function of final state; ≤3 words; deterministic coinage on collision |
-| `TagDeriver.cs` | Process assertion → state thresholds → lineage carry |
-| `ByproductResolver.cs` | Destruction → Slag / Cinders / Dross / Residue |
-| `TraitResolver.cs` / `TraitDefinition.cs` | Birth → supersede → cap 3 |
-| `EssenceAlgebra.cs` / `EssenceDefinition.cs` | Additive transfer, opposition → strain, capacity |
-| `ReactionLog.cs` / `ReactionLogBuilder.cs` | The structured "why" trace |
-| `*Tuning.cs` | Every magic number, named and in one place |
+- `core/Crafting/Identity/VerbCraft.cs` — the verb enum, requests, projections, outcomes
+- `core/Crafting/Identity/IdentityCraftingEngine.cs` — the ten executors; preview = commit − dice
+- `core/Content/VerbActionDefinition.cs` — verb + gates + identity scope + Process output + XP
+- `core/Crafting/Identity/VerbActionRunner.cs` — gates → verb → consume → register → deposit;
+  awards XP/mastery through `ProfessionProgress`; mastery shaves risk (`RiskReduction`, capped)
+- `core/Crafting/Identity/IdentityNameGenerator.cs` — identity adjectives + "-bound" roots
+- `core/Crafting/EmergentRegistry.cs` — minted materials register under fingerprint ids
+- `core/Crafting/Identity/IdentityCraftTuning.cs` — every bench number (all provisional)
 
-**DATA** — `processes/` (8) · `byproducts/` (4) · `traits/` (16) · `essences/` (7) ·
-`name_grammar/` (44 words).
+**DATA** — `game/data/verb_actions/` (53 actions, 11 professions) routed by `stations/`.
 
-**RUNTIME FLOW**
-```
-CraftRequest(process, substrate, [reagents…], catalyst?)
-   │
-   ├─ AcceptRequest   profession level, substrate tags, inputs on hand
-   │                  → CraftFailure, or an AcceptedCraft with every input resolved
-   │
-   ├─ RunReaction(accepted, applyVariance):
-   ├─ per reagent, in order:
-   │     effective instability (integrity + essence strain)
-   │       → craft quality → variance magnitude
-   │       → MaterialTransformationRules.ApplyReagent  (converge, drift, oppose, prune)
-   │       → EssenceAlgebra.Apply          (transfer, opposition → strain)
-   │       → integrity cost                (Δstate × severity, minus skill)
-   │       → integrity ≤ 0 ⇒ DESTROYED, stop
-   │
-   ├─ variance perturbation (Resolve only; Project runs with it off)
-   ├─ ApplyTraitPass       birth → supersede → cap; births charge integrity and CAN destroy
-   ├─ tag derivation       from the POST-trait state
-   ├─ potency              weighted mean over substrate/reagents/catalyst
-   ├─ lineage merge        roots by weight, renormalised, trace pruned
-   └─ signature            quantize + hash
-         │
-   Project ─┴─► CraftProjection   (integrity projection, potency, name, typed steps, log)
-   Resolve  ──► consume inputs → register archetype → deposit → CraftOutcome (+ byproducts)
-```
+**RUNTIME FLOW** — `GameRoot.PreviewVerbAction`/`RunVerbAction` → runner → engine →
+`EmergentRegistry` + inventory. Authored equivalence: plain smelted ore deposits as
+`material.iron_ingot`, never an emergent twin; Process merges the output's innate identities
+(preparation = activation).
 
-The two entry points differ **only** in the `applyVariance` flag and what they do with the
-result. Same gate, same pipeline, same numbers — which is what makes the pre-commit projection
-incapable of lying.
-
-**DEPENDENCIES** — Content, Items (`Inventory`), Randomness, Professions (level provider).
-
-**OUTPUT** — A registered `MaterialDefinition` (or byproducts), a `ReactionLog`, and a
-`CraftProjection` that is *the same computation* with variance off.
-
-**EXTENSION POINTS** — A new **process** is one JSON entry (channel, medium, severity, role
-weights, gates, tag effects). A new **trait** is one JSON entry. A new **essence** likewise.
-Changing *behaviour* means the algebra or a `*Tuning` constant — and every tuning number is
-already isolated in a `*Tuning` class for exactly that reason.
-
-**ENTRY POINT** — `MaterialTransformationEngine.RunCraft` → `RunReaction`, then follow the reagent loop. `MaterialTransformationRules` is
-the mathematics; `MaterialTransformationEngine` is the orchestration.
+**ENTRY POINT** — `docs/transformation-verbs.md`, then `VerbActionRunner`.
 
 ---
 
-## 10.5 Fabrication — materials become equipment
+## 10.5 The identity forge — materials become equipment
 
-**PURPOSE** — The terminal boundary. Consume materials in named slots and mint an
-`ItemInstance` over a **derived** `EquipmentDefinition`.
+**PURPOSE** — The terminal boundary. Compose the item side (D51 union/cap/dormancy + D46 base
+delivery), then generate its effects (D50), with the preview drawn from the same computation.
 
-**IMPORTANT FILES** — `core/Crafting/EquipmentAssemblyEngine.cs`,
-`core/Crafting/EquipmentBlueprintDefinition.cs` (`BlueprintSlot`, `StatContribution`, `EquipmentAssemblyTuning`)
+**IMPORTANT FILES**
+- `core/Crafting/Identity/IdentityEquipmentComposer.cs` — union, form cap, readable selection
+  (priority → rank → contribution → id), dormancy, base delivery, quality, the item name
+- `core/Crafting/Identity/IdentityFabricationEngine.cs` — gates → compose → resolve → consume
+  → register the derived definition (`equip.emergent.i<hash>`) → mint; also `FormNoun` (the
+  deterministic D34 name-variant pick)
+- `core/Crafting/EquipmentBlueprintDefinition.cs` — forms: slots (tags, mass share, identity
+  priority), `identity_cap`, `base_reads`, `generation_profile`, moves, name variants
 
-**DATA** — `game/data/forms/forms.json` (**23 forms across 9 slots**: Longsword + Warspear
-(Weapon), Buckler (Offhand), Helm (Head), Vest (Body), Gauntlets (Hands), Treads (Feet), Focus
-(Trinket), Ring (Ring1 **or** Ring2 — one form fills both, D33)). Each exists to exercise a different part of the material system — the file's own
-header says which, and `tests/Crafting/FormBreadthTests.cs` holds it to that.
+**DATA** — `game/data/forms/forms.json` (23 forms, all identity-forgeable — D54; six
+`has_assembly` stations host the forge, forms need no per-station routing).
 
-**RUNTIME FLOW**
-```
-FabricationRequest(formId, { slotName → materialId })
-   │
-   └─ Compose()   ← ONE side-effect-free computation, used by BOTH Project and Fabricate
-        ├─ resolve + tag-gate every slot; check inputs on hand
-        ├─ stats:    stat_map contributions (per-slot, or FormSlots.AllSlots mass-weighted)
-        │            × contribution.Weight
-        │            ÷ 100 × EquipmentAssemblyTuning.CombatUnitScale     ← the 0–100 ↔ combat scale,
-        │                                                            HERE and nowhere else
-        ├─ traits:   magnitude × the slot's aperture for that trait's category
-        │            → top N expressed, the rest DORMANT
-        ├─ essence:  mass-share weighted, arcane-amplified
-        ├─ armour:   response properties → lane resistances (armour forms only)
-        ├─ name:     dominant trait adjective + primary material root + form noun
-        ├─ signature: form + component ids + stats → SHA-256 → equip.emergent.<hash>
-        └─ genome:   ItemPotentialCalculator.MaterialInfluence(form, components) + essence + traits + tags
-                     + potency (mass-weighted mean) + generation depth
-   │
-   Project  ──► FabricationProjection  (+ deterministic innates — the preview may promise these)
-   Fabricate ─► consume · register the derived EquipmentDefinition (if new)
-                · roll prefixes + suffixes · mint ItemInstance · deposit
-```
-
-**DEPENDENCIES** — Content, Crafting (profiles, traits, genome), Items, Affixes, Randomness.
-
-**OUTPUT** — `ItemInstance` with `Genome` + `Affixes`; a registered `EquipmentDefinition`
-persisted in the save.
-
-**EXTENSION POINTS** — A new **form** is one JSON entry: slots (required tags, mass share,
-aperture), `stat_map`, `trait_cap`, granted moves, tags. No code. Validation will reject it if
-the mass shares do not sum to 1, a slot gate no material satisfies, a weapon grants no moves, or
-it lacks the tag (`weapon`/`armor`/`shield`) its modifier pool gates on — four ways to author a
-form that loads cleanly and is still broken.
-
-**WHERE THE FORM'S IDENTITY LIVES** — the `stat_map`, and it is worth internalising: the map
-decides both the item's stats *and*, through `ItemPotentialCalculator.MaterialInfluence`, which
-modifiers are eligible at all. A form that reads flexibility off its biggest component is a
-flexibility item that rolls flexibility modifiers; the same materials in a form that reads
-hardness are a different item. **This is what makes "there is no best material, only a best
-placement" true rather than aspirational.**
-
-**ENTRY POINT** — `EquipmentAssemblyEngine.Compose`. Everything interesting happens there; `Project`
-and `Fabricate` are thin wrappers around it, which is what makes the preview incapable of
-drifting from the truth.
+**ENTRY POINT** — foundation §8.1/§11.5, then `IdentityEquipmentComposer.Compose`.
 
 ---
 
-## 10.6 The Genome and item modifiers (affixes)
+## 10.6 The item-effect pipeline — sentences
 
-**PURPOSE** — Decide what an item *can* roll, how likely, how strong, and where in the range —
-all as pure functions of the genome.
+**PURPOSE** — One generator for everything a minted item does, in three categories kept apart
+(floor / generated / Signature) plus the volatile drawback.
 
 **IMPORTANT FILES**
-- `core/Crafting/ItemPotential.cs` — the record + `ItemPotentialCalculator.MaterialInfluence`
-- `core/Affixes/AffixDefinition.cs` — eligibility / weight / tiers / grants / description
-- `core/Affixes/ModifierGenerator.cs` — `AffixTuning`, `ModifierGenerator`, `ModifierGrants`
+- `core/Crafting/Identity/ItemEffectResolver.cs` — `Project` (floor + scored table + odds; the
+  table IS the draw distribution) and `Resolve` (the same projection, plus dice);
+  `SignatureResolver` (chance + the coherent bundle); `FloorPayloadOf` (the shared floor rule);
+  `CompileAll` (sentences → grants, deterministic — grants are never stored)
+- `core/Crafting/Identity/ItemEffectSentence.cs` — what persists: category + vocabulary ids +
+  magnitude + chance
+- `core/Crafting/Identity/SentenceAssemblers.cs` — one compiler per behavior onto machinery
+  that already resolves (drain = damage+restore, store = gauge+band — the D30 fence, stated
+  in code)
+- `core/Crafting/Identity/ItemEffectTuning.cs` — every pipeline number (all provisional)
 
-**DATA** — `game/data/affixes/affixes.json` (43).
+**RUNTIME FLOW (worn)** — `GameRoot.AttachBuildRules`/`EquippedIdentityGrants`: sentences
+recompile per rebuild into stat contributions, `TriggerRule`s, gauges and move-modifier
+grants — the same seams character components use, so effects swap with the gear.
 
-**RUNTIME FLOW**
-```
-Genome ─┬─ IsEligible(affix)        hard gate: form/tags, pressure minimums, essence, family
-        ├─ WeightOf(affix)          base + Σ (pressure or essence)/10 × per10
-        ├─ TierFor(affix)           best (lowest-numbered) tier the genome qualifies for
-        └─ PotencyPosition(potency) where in the tier's [lo,hi] the value lands
-
-Innates   deterministic: eligible → weight rank → top ≤3 above the floor → zero variance
-Rolled    weighted count → per pick: build pool → weighted choice → tier → value ± variance
-                                     (one affix per family per item)
-```
-
-Once rolled, `ModifierGrants` turns each grant into live game state:
-
-| Grant type | Becomes | Attached where |
-|---|---|---|
-| `stat` | `ModifierContribution` (scoped, with provenance) | `GameRoot.EquippedAffixContributions()` → `CombatantModifiers.buildModifiers` |
-| `rule` | `TriggerRule` | `GameRoot.AttachBuildRules()` → `TriggerRuleEngine.Attach` |
-| `moveModifier` | `MoveModifierGrant` | `GameRoot.ResolvePlayerMoveset()` → `MovesetBuilder` |
-
-Equipping or unequipping re-runs `AttachBuildRules`, so an item's rules stop firing the moment it
-comes off — exactly like a retired Prefix's would.
-
-**`$roll` is substituted in exactly one place** (`ModifierGrants`), so the tooltip and the mechanics
-can never drift. A validator rule enforces the parity.
-
-**DEPENDENCIES** — Crafting (genome), Modifiers, Rules, Randomness.
-
-**OUTPUT** — `RolledAffix` (id + tier + value) — this is what persists.
-
-**EXTENSION POINTS** — A new modifier is one JSON entry. It ships only when its mechanic already
-resolves in play (D30).
-
-**ENTRY POINT** — `ModifierGenerator.Roll` for the casino; `ModifierGrants` for how a roll becomes real.
+**ENTRY POINT** — foundation §7–§8, then `ItemEffectResolver.Project`.
 
 ---
 
@@ -757,7 +633,7 @@ resolves in play (D30).
 shape rather than an equipment type.
 
 **IMPORTANT FILES** — `core/Items/ItemInstance.cs`, `PropertySet.cs`, `ItemStack.cs`,
-`InstanceIdSource.cs`, `ItemFormat.cs` · `core/Inventory/Inventory.cs` ·
+`InstanceIdSource.cs` · `core/Inventory/Inventory.cs` ·
 `core/Equipment/Equipment.cs`, `EquipmentDefinition.cs`, `EquipmentResolver.cs`
 
 **DATA** — `game/data/equipment/*.json` (4 authored; fabricated ones are generated + persisted).
@@ -855,7 +731,7 @@ growth budget and "a Prefix may never name a Base".
 **RUNTIME FLOW**
 ```
 grants: weapon FIRST → species → base → prefix → suffix → learned    (each with provenance)
-modifiers: character components + worn equipment + worn affixes
+modifiers: character components + worn equipment + worn identity sentences
         │
         └─ MovesetBuilder.Build → for each move: apply matching ops in MoveOps.ApplicationOrder
                                   (fixed order, proved independent of source order)
@@ -910,8 +786,8 @@ Commit → [telegraph ticks] → EnterWindup (× the windup modifier — this is
 
 **OUTPUT** — `CombatOutcome`, 14 published event kinds, `HitResult` traces, `Logged` narration.
 
-**EXTENSION POINTS** — New behaviour is normally **content**: a move, a status, an AI rule, an
-affix rule. Touch `CombatEncounter` only for genuinely new *lifecycle* mechanics.
+**EXTENSION POINTS** — New behaviour is normally **content**: a move, a status, an AI rule, a
+sentence payload. Touch `CombatEncounter` only for genuinely new *lifecycle* mechanics.
 
 **ENTRY POINT** — `ResolveMove` (line ~684). It is the centre of the system: pipeline → result →
 stagger → chains → riders.
@@ -1194,8 +1070,8 @@ StationDefinition  { professions[], crafting_actions[], blueprints[] }
 StationPanel  ── ProfessionLadderPanel  per hosted profession
               ├─ FarmingPlots / TrainingCourse / AssayBench   ← keyed on WHICH profession
               ├─ CraftingInteractionsPanel                    ← interactions gated on a hosted profession
-              ├─ CraftingBenchPanel        (only if crafting_actions is non-empty)
-              └─ EquipmentAssemblyPanel    (only if blueprints is non-empty)
+              ├─ VerbBenchPanel            (only if verb_actions is non-empty)
+              └─ IdentityForgePanel        (only if has_assembly)
 ```
 
 **A station owns no rules.** Hosting is *where you stand*, never *whether you may* — a hosted
@@ -1409,25 +1285,21 @@ the actor's own identity tags. `loot.template.beast_anatomy` is the ready-made c
 **IMPORTANT FILES**
 | File | Owns |
 |---|---|
-| `PropertyTier.cs` (`Tiers`) | 0–100 → Trace…Extreme, pips, wear words |
-| `Trend.cs` (`Trends`, `PropertyMovement`) | Direction, aggregated from the algebra's typed change kinds |
-| `RiskBand.cs` (`Risk`) | Integrity projection → SAFE…DESTROYS |
-| `PropertyGlossary.cs` | Property → glyph + gloss, **from data** |
-| `MaterialReading.cs` | A material as leading properties, receptiveness, traits, essence |
-| `CraftReading.cs` | A projection as grouped movements, opposition, risk, emergence |
-| `SlotReading.cs` | Why a material suits (or does not suit) a form slot |
-| `ItemReading.cs` | An item as stats, modifier lines, moves, genome support |
-| `EquipmentSlotNames.cs` | `EquipmentSlot` → player text. `CategoryOf` = what kind of place ("ring"), `PositionOf` = which one ("Ring I"). **Slot enum members are save keys and read as data, not English** — `Ring1` is the reason this file exists |
-| `TraitProximity.cs` | "Within reach: Emberveined — needs more Heat" |
-| `SemanticFormat.cs` | **All wording.** Readings → strings and typed `ProjectionLine`s |
-| `AdvancedFormat.cs` | The numeric voice, behind the Advanced toggle |
+| `SentenceReadings.cs` | One effect sentence → one player line, truthful to what the assemblers compile; modifier units derived from the key registry |
+| `ItemReading.cs` + `SemanticFormat.cs` | The item card and strip: moves, armour, identities in rung words, sentences under D50's category labels |
+| `MintReadings.cs` | The forge preview: likelihood words for the draw table (D53), the Advanced voice with exact scores |
+| `VerbReading.cs` (`VerbReadings`) | Bench refusals in words; preview/outcome change lines diffed from engine states |
+| `IdentityMaterialReading.cs` | The bench inspector: stakes and slots, latents, carrier, condition/workmanship/overfill meanings; the D53 leanings and potential phrases |
+| `IdentityPhrases.cs` | Rung words (never numerals — D44), quality words, state markers and meanings |
+| `AssayLens.cs` | The reveal ladder: Vessel → Latency → Latents → Leanings → Potential; stakes and overfill never gated |
+| `EquipmentSlotNames.cs` | `EquipmentSlot` → player text. **Slot enum members are save keys and read as data, not English** — `Ring1` is the reason this file exists |
+| `RealmBriefing.cs` / `RealmFieldwork.cs` / `AwayReadout.cs` / `PreparationText.cs` | The Realm and away voices |
 | `PresentationTuning.cs` | Presentation thresholds — never gameplay ones |
 
 **RUNTIME FLOW**
 ```
-simulation state  →  XReadings.From(...)  →  XReading (a typed read-model, no strings)
-                                          →  SemanticFormat.X(reading, glossary)  →  text
-                                          →  ProjectionLine(kind, text)  → the UI colours by kind
+simulation state  →  XReadings.From(...)  →  a typed read-model / player line
+                                          →  SemanticFormat / the panel  →  text
 ```
 
 **THE RULES — do not erode**
@@ -1435,10 +1307,10 @@ simulation state  →  XReadings.From(...)  →  XReading (a typed read-model, n
 2. The layer may **translate, never recompute**. No second simulation.
 3. **Display tiers never touch identity quantization** (`QuantizationTuning` is unread here,
    forever).
-4. Glyphs and glosses are **data on `PropertyDefinition`**, never code switches.
-5. A player-facing modifier ships only when its mechanic resolves in play.
+4. Display names live on the definitions (identities, triggers, payloads), never code switches.
+5. A player-facing effect ships only when its mechanic resolves in play.
 
-**DEPENDENCIES** — Content, Crafting, Items, Affixes. **Nothing depends on it except the UI**,
+**DEPENDENCIES** — Content, Crafting.Identity, Items. **Nothing depends on it except the UI**,
 which is what makes it safe.
 
 **OUTPUT** — Strings and typed lines. Never game state.
@@ -1469,8 +1341,9 @@ LoadGame → SaveStore.Load → SaveMapper.Apply(...) → RebuildCharacter → E
            (blocked during a realm run)
 ```
 
-**Schema v6.** Older schemas load forward-compatibly: a missing field arrives empty rather than
-failing. v4 added emergent archetypes, v5 learned moves, v6 the genome + rolled affixes.
+**Schema v14** (D49/D54): the identity model alone. Progression sections load
+forward-compatibly from any older schema; **item sections load only from v14+** — a pre-v14
+save keeps its progression and loses its items, and the starter-kit rule re-equips.
 
 **The one thing the save stores that is definition-shaped** is the emergent archetype (material)
 and the derived equipment definition — not an exception to "ids never definitions" so much as a
@@ -1495,13 +1368,10 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 
 | I want to… | Do this |
 |---|---|
-| **Add a material** | One entry in `game/data/materials/<category>.json`: id `material.*`, name, tags (`family:value`), 0–100 properties, optional `essence`. Validation checks ranges, known property names, and exactly one `rarity:` tag |
-| **Add a material property** | One entry in `game/data/properties/properties.json`: name, role, glyph, gloss, opposite, `resisted_by`, `grants_tags`. Add a constant in `core/Items/ItemProperties.cs` **only if code must name it** (a bijection test keeps the two in sync) |
-| **Add a crafting process** | One entry in `game/data/processes/processes.json`: channel, medium, severity, role weights, profession gate, substrate tags, tag effects, essence rate |
-| **Add a trait** | One entry in `game/data/traits/traits.json`: property conditions, magnitude, category (which aperture gates it), drawback, optional merge rule |
-| **Add an essence** | One entry in `game/data/essences/essences.json`: anchor aspect, opposites |
-| **Add an item Form** | One entry in `game/data/forms/forms.json`: `type` (an `EquipmentSlot`), `slots` (each: `requires_tags`, `mass_share` — they must sum to 1, `trait_expression` per trait category), `stat_map` (each read: `slot`, `property`, `weight`), `trait_cap`, `moves`, `tags`. **Plus a station in `stations/` that assembles it** — a form nobody can build fails validation. Make the `stat_map` read something no other form reads, or the form is cosmetic |
-| **Add an affix (item modifier)** | One entry in `game/data/affixes/affixes.json`: slot (prefix/suffix/innate), family, class, `eligibility`, `weight`, `tiers`, `grants`, `description` with `$roll`. **Ship it only when its mechanic resolves in play** |
+| **Add a material** | One entry in `game/data/materials/<category>.json`: id `material.*`, name, tags (`family:value`), `capacity` (1–4), optional `identities`/`latent`/`base`/`signature_profile`. Validation checks ranges, identity references, structural-form rules (D52) and exactly one `rarity:` tag |
+| **Add a bench action** | One entry in `game/data/verb_actions/`: a verb (one of the ten), name/fiction, profession gate + XP (gated ⇒ pays, validated two-sided), substrate tags or id, identity scope, Process output, extra costs — **plus a station routing it** (an unroutable action fails validation) |
+| **Add an item Form** | One entry in `game/data/forms/forms.json`: `type` (an `EquipmentSlot`), `slots` (each: `requires_tags`, `mass_share` — must sum to 1, `identity_priority` where mass order would mislead), `identity_cap`, `base_reads` (damage/speed/armor from Heft/Bite/Toughness/Give — weapons need a damage read, worn armour an armor read, by test), optional `generation_profile`, `moves`, `name_variants`, `tags`. The forge offers every form wherever `has_assembly` is true |
+| **Add an item effect (payload)** | One entry in `game/data/signature_payloads/`: name, `families` (identity + rung), `binding` (a registered modifier key / status / damage / heal / resource / move / moveModifier — **must already resolve in play**, validated), `[lo, hi]` range (factors for multiplicative keys — the validator catches deltas), weight, at most one `floor` per owning identity |
 | **Add a Move** | One entry in `game/data/moves/*.json`: namespaced tags, `timing`, `costs`, `requires`, `targeting`, `packets`, `stagger_power`, effect riders. Reachability is validated — grant it from something |
 | **Add a Status** | One entry in `game/data/statuses/*.json`: category, stack policy, duration, `magnitude` (basis + coefficient), `while_active` modifiers, hooks. **No C# class** |
 | **Add an enemy** | `game/data/actors/<name>.json`: `family`, `role`, `moves`, per-key tweaks, `loot_table`. Reuse an `ai_profile` or add inline rules. Never write a C# class |
@@ -1512,8 +1382,8 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Add an active opportunity** | A nested entry in an action's `opportunities[]`: unique id, `prompt` (the offer text *is* the decision), `discoveryChance`, `extraIntervalTicks`, `riskWeight`, payoff. It must out-pay its own action — a test checks |
 | **Add a training obstacle** | One entry in `game/data/training_obstacles/`: `slot` (one of the five), level, interval, XP, and `bonuses` keyed by `CourseBonusKeys`. An unknown key fails validation |
 | **Add a profession** | One entry in `professions/` (id, name, category, primary attributes, a one-line description) plus its action file **plus a station in `stations/` that hosts it** — a profession with no station fails validation. It must both consume another profession's output and produce something something else wants — `ProfessionEcosystemTests` fails a dead end |
-| **Add a Hideout station** | One entry in `game/data/stations/stations.json`: id `station.*`, name, description, `professions` (≥1, and no profession may appear twice across the file), optional `crafting_actions` and `blueprints`. Routing only — it cannot change a gate |
-| **Move where a crafting action or blueprint is offered** | Edit the station's `crafting_actions` / `blueprints` list. Listing one in two stations is legal and sometimes right (Grind is ungated) |
+| **Add a Hideout station** | One entry in `game/data/stations/stations.json`: id `station.*`, name, description, `professions` (≥1, and no profession may appear twice across the file), optional `verb_actions` and `has_assembly`. Routing only — it cannot change a gate |
+| **Move where a bench action is offered** | Edit the stations' `verb_actions` lists. Listing one action at two stations is legal and sometimes right |
 | **Add a Base / Prefix / Suffix** | One entry in `classes/`, `prefixes/`, `suffixes/`. Bases must spend exactly the 4.0 growth budget. **A Prefix may never name a Base.** An expressed Suffix needs one expression per channel |
 | **Add a technique item** | One entry in `techniques/` naming the move it teaches |
 | **Add a realm or location** | One entry in `realms/`. Edges must be symmetric and content refs must resolve — both validated |
@@ -1525,9 +1395,9 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 |---|---|
 | **Change combat damage calculation** | `core/Combat/HitPipeline.cs` — `Resolve` for the whole-hit stages, `Mitigate` for per-packet. Constants in `CombatTuning`. **Update the golden traces in `tests/Combat/HitPipelineTests.cs`** — they assert the whole trace by design |
 | **Change how a stat scales** | Prefer a modifier contribution over a pipeline change. Only attribute scaling is hard-coded (`HitPipeline.ApplyAttributeScaling`) |
-| **Change crafting behaviour** | `core/Crafting/MaterialTransformationRules.cs` for the mathematics; `MaterialTransformationEngine.RunReaction` for the orchestration; `MaterialTransformationTuning` / `RefinementTuning` / `QuantizationTuning` for numbers. Worked examples are pinned in `tests/Crafting/MaterialTransformationRulesTests.cs` |
-| **Change fabrication behaviour** | `core/Crafting/EquipmentAssemblyEngine.Compose` — **one method, used by both the preview and the mint**. The 0–100 ↔ combat scale is `EquipmentAssemblyTuning.CombatUnitScale`, pinned by the iron-sword parity test |
-| **Change item generation (what rolls)** | `core/Affixes/ModifierGenerator.cs` (eligibility / weight / tier / position) and `AffixTuning` (counts, variance, innate floor). `ItemPotentialCalculator.MaterialInfluence` if the *inputs* to those decisions should change |
+| **Change bench behaviour** | `core/Crafting/Identity/IdentityCraftingEngine.cs` — one executor per verb, preview = commit − dice; `IdentityCraftTuning` for numbers. The §6 worked chain is pinned in `tests/Crafting/IdentityVerbEngineTests.cs` |
+| **Change forge behaviour** | `core/Crafting/Identity/IdentityEquipmentComposer.Compose` — **one computation, used by both the preview and the mint** (base delivery parity-pinned to the authored Iron Sword) |
+| **Change item generation (what mints)** | `core/Crafting/Identity/ItemEffectResolver.cs` (the floor, the scored table, the draws, Signature odds) and `ItemEffectTuning`. The behavior→grants compile lives in `SentenceAssemblers` |
 | **Change enemy AI** | Usually `ai_profiles/` data. For the *selection* mechanism: `CombatEncounter.ChooseMove` |
 | **Change the action lifecycle** | `CombatEncounter.Commit` / `EnterWindup` / `Execute`, and `CombatTuning` for the windows |
 | **Change what a weapon does to combat** | `core/Equipment/EquipmentResolver.cs` — the whole material → combat seam, 105 lines |
@@ -1539,7 +1409,7 @@ The navigation table. **"Data only" means you should not need to open the C# at 
 | **Change how the character levels** | `core/Characters/CharacterLeveling.cs` (curve + what a Realm pays); `GameRoot.AwardCharacterXp` for the sources. **Realm work only** — awarding it anywhere else collapses the layered model, and `ProgressionEcosystemTests` fails |
 | **Change what the player takes into a run** | `core/Realms/RunLoadout.cs` for the model, `LoadoutCheck` for the warnings and the starter-kit rule, `GameRoot.EnterPreparedRun` for the hand-off into the run bag. Worn gear is **not** stored here — it lives in `Equipment` (§10.16b) |
 | **Change player-facing wording** | `core/Presentation/SemanticFormat.cs`. If you need a new *fact*, add it to the relevant `XReading` first. **Never format in the UI** |
-| **Change a number the player feels** | Find the `*Tuning` class: `CombatTuning`, `MaterialTransformationTuning`, `RefinementTuning`, `EssenceTuning`, `EquipmentAssemblyTuning`, `AffixTuning`, `ProfessionTuning`, `RealmTuning`, `EquipmentTuning`, `PresentationTuning`, `QuantizationTuning`, `MaterialStateTuning` |
+| **Change a number the player feels** | Find the `*Tuning` class: `CombatTuning`, `IdentityCraftTuning`, `ItemEffectTuning`, `ProfessionTuning`, `RealmTuning`, `EquipmentTuning`, `PresentationTuning` |
 | **Add a new effect kind** | Define it in `RuleVocabulary`, implement an `IEffectHandler`, register it (combat's live in `CombatEffectHandlers.RegisterCombatHandlers`). **Propagate `invocation.Context`** |
 | **Add a new condition kind** | `TriggerRuleEngine.Evaluate`; if it must read world state, extend `IConditionWorld` and `CombatConditionWorld`. Prefer a derived tag over a new kind (D-11). **Never add a class check** (D25) |
 | **Add a new game event** | `GameEvents` constant, publish it from the authoritative system, and note it in the docs |
@@ -1562,23 +1432,24 @@ Some names are data, not code. Renaming them silently corrupts saves or breaks c
 |---|---|
 | Every property of `SaveData` and every `*Save` class in `core/Persistence/SaveData.cs` | These **are** the JSON keys in `user://save.json` |
 | The four `CharacterBuild` id properties | Positional **and** persisted |
-| `EquipmentSlot`, `ItemType`, `ItemQuality` enum **member names** | Serialized as strings in the save **and** the `slot` field of every `equipment/` and `forms/` definition. Adding a member is free. `EquipmentSlot.Armor` → `Body` (save v9) is the one rename that has happened; `SaveMapper.TryReadSlot` carries it, and `EquipmentSlots.LegacyBodySlotName` is the only place the old name survives |
+| `EquipmentSlot`, `ItemType` enum **member names** | Serialized as strings in the save **and** the `slot` field of every `equipment/` and `forms/` definition. Adding a member is free (the v9 Armor→Body rename shim retired with D54 — pre-v14 item sections no longer load) |
 | `TrainingSlot` enum **member names** | Written as strings into `SaveData.TrainingCourse` |
 | Action ids (`action.*`) | Per-action **mastery** is keyed by action id in every save |
 | `CourseBonusKeys` **values** | Keys in `training_obstacles/` content, and validated against |
 | `ProfessionBenefitKind` **member names** | The `kind` field of every `mastery/` and `synergies/` entry. (The *enum type* was renamed from `MasteryBenefitKind` in Phase 10; the members did not move) |
 | `DefensiveStance` enum **member names** | The `stance` field of every `auto_combat/` defence rule |
 | `SaveData.CurrentSchemaVersion` semantics | Bump it; never repurpose a version |
-| The `emergent.<hash>` / `equip.emergent.<hash>` scheme, and anything feeding `MaterialSignature` or the fabrication signature | Changing what is hashed re-identifies every stored archetype |
+| The `emergent.<hash>` / `equip.emergent.i<hash>` scheme, and anything feeding `Fingerprint` or `IdentityFabricationEngine.DerivedDefinitionId` | Changing what is hashed re-identifies every stored archetype and derived definition |
+| `ItemEffectCategory`, `Condition`, `Stability` enum **member names** and the sentence vocabulary ids (bare trigger/behavior/payload keys) | Persisted on every minted item (save v13+) and referenced by profiles/forms |
 
 ### ⚠️ Rename only with the data, in the same commit
 
 | What | Why |
 |---|---|
-| Content ids (`material.*`, `move.*`, `status.*`, `affix.*`, `loot.*`, …) | Referenced across JSON files and by save data (stash stacks are keyed by item id) |
+| Content ids (`material.*`, `identity.*`, `form.*`, `craft.*`, `move.*`, `status.*`, `loot.*`, …) | Referenced across JSON files and by save data (stash stacks are keyed by item id) |
 | Loot **context tag** values (`active`, `passive`, `in_realm`, `elite`, `boss`, `source:*`) | Written by the code, read by `when` conditions in `loot_tables/` content — a rename silently stops gating |
-| The **values** of `ItemProperties` constants (`"hardness"`) and property ids in `properties.json` | Property names are keys in materials, saved instances and saved archetypes |
-| Modifier key ids (`combat.damage.mult`, …) | Referenced by affixes, statuses, class components |
+| The **values** of `ItemProperties` constants (`"hardness"`, `"mass"`) | Keys in authored equipment definitions |
+| Modifier key ids (`combat.damage.mult`, …) | Referenced by payloads, statuses, class components |
 | Damage lane / aspect strings, tag families and values | Referenced by content and by saved archetype tags |
 | `[JsonPropertyName]` values and the JSON key of any definition property | Referenced by every content file of that type |
 
@@ -1597,9 +1468,9 @@ above — including definition *class* names, service names, and public methods 
   content is checked by the same rules the game uses at startup — plus a deliberately-broken
   store per rule, so the rule itself is proven to fire.
 - **Golden traces** — `HitPipelineTests` asserts the whole hit trace, not the final number.
-  `MaterialTransformationRulesTests` reproduces the documented worked examples exactly.
-- **Distribution tests** — `ModifierGeneratorTests` runs 20,000 seeded rolls and asserts the shape.
-- **Parity pins** — the iron-sword fabrication parity test pins the 0–100 ↔ combat-unit scale.
+  `IdentityVerbEngineTests` reproduces the foundation §6 worked chain exactly.
+- **Parity pins** — the iron-sword parity test pins the D46 base-delivery calibration through
+  the live resolver seam.
 - **`tests/Integration/FullLoopTests.cs`** runs the whole loop headless.
 
 Commands:
@@ -1634,18 +1505,13 @@ Recorded so it is a decision rather than a surprise.
 
 ---
 
-# 15. Crafting vocabulary — design word vs code name
+# 15. Crafting vocabulary — one name per concept
 
-The crafting code was renamed for readability (2026-08-16). The **design** vocabulary in
-`docs/GDD.md`, the player UI and the Reaction Log is unchanged; only the C# is plainer. The full
-mapping — and the three categories that deliberately did **not** move (player-facing text, save
-keys, content ids) — is in **`docs/crafting-overview.md` §15**.
-
-The short version, for when you are reading code and the doc says something else:
-
-```
-Integrity → Workability          Potency  → MaterialStrength
-Process   → CraftingAction       Channel  → AffectedQualities
-Form      → EquipmentBlueprint   Aperture → TraitExpression
-Genome    → ItemPotential        Pressure → MaterialInfluence
-```
+The identity system's words, held one-per-concept project-wide (CLAUDE.md "Crafting
+vocabulary"): **identity** always means *material* identity · a **sentence** is
+trigger→behavior→payload · **Signature** is the earned category, never the blanket word ·
+material **capacity** vs form **identity_cap** are different axes (D51) · **Condition** and
+**Stability** enum words are the player words · rung words are *basic → improved → advanced →
+build-changing*, never numerals (D44). The pre-redesign C# vocabulary (Workability,
+MaterialStrength, ItemPotential, the reaction/assembly engines) was deleted with its system in
+Phase 7 (D54) — if an old doc or commit mentions it, it is history, not the code.

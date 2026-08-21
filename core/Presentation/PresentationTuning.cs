@@ -56,4 +56,28 @@ public static class PresentationTuning
 
     /// <summary>How many leading properties a material reading shows before the rest is noise.</summary>
     public const int LeadingPropertyCount = 4;
+
+    // ---- The forge's draw-table likelihood words (Phase 6, D53) ------------------------------
+    // Derived one-way from each candidate's share of the table's total score, measured against
+    // the uniform share (1/table-size) so the words survive tables of any size: a fixed
+    // percentage would call every row of a large table "a long shot" and every row of a tiny
+    // one "likely" no matter what the profile did.
+
+    /// <summary>A candidate at or above this multiple of the uniform share reads "Likely" —
+    /// the material's personality or the form's lean made it a front-runner.</summary>
+    public const double LikelyUniformShareMultiple = 2.0;
+
+    /// <summary>At or above this multiple reads "Possible" (a flat, unleaned table reads all
+    /// Possible — which is the truth); below it, "A long shot".</summary>
+    public const double PossibleUniformShareMultiple = 0.5;
+
+    // ---- Identity workmanship words (Phase 6) — quality 0–100 is Advanced-only ---------------
+    public const int DecentQualityFloor = 25;
+    public const int FineQualityFloor = 50;
+    public const int ExcellentQualityFloor = 70;
+    public const int MasterworkQualityFloor = 90;
+
+    /// <summary>How many of each lean list the D53 profile reading names — the strongest few,
+    /// never the whole profile, so leanings stay a personality the player senses.</summary>
+    public const int LeaningsShown = 2;
 }

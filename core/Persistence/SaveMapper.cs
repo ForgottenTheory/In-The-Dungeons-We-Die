@@ -1,6 +1,6 @@
 using Dungeons.Characters;
-using Dungeons.Characters.Composition;
 using Dungeons.Combat;
+using Dungeons.Characters.Composition;
 using Dungeons.Content;
 using Dungeons.Crafting;
 using Dungeons.Items;
@@ -88,35 +88,20 @@ public static class SaveMapper
                 .ToList(),
             RealmKnowledge = new Dictionary<string, int>(realmKnowledge),
             Discoveries = discoveries.All.ToList(),
-            EmergentArchetypes = emergentRegistry is null
-                ? new List<EmergentArchetypeSave>()
-                : emergentRegistry.All.Where(a => a.IdentityState is null).Select(ToSave).ToList(),
             IdentityArchetypes = emergentRegistry is null
                 ? new List<IdentityArchetypeSave>()
-                : emergentRegistry.All.Where(a => a.IdentityState is not null).Select(ToIdentitySave).ToList(),
+                : emergentRegistry.All.Select(ToIdentitySave).ToList(),
             LearnedMoves = learnedMoves?.All.ToList() ?? new List<string>(),
             EmergentEquipment = (emergentEquipment ?? Enumerable.Empty<Items.EquipmentDefinition>())
                 .Select(ToSave).ToList(),
         };
     }
 
-    /// <summary>
-    /// Reads a persisted slot name. <b>The project's first save migration</b>: schemas v1–v8
-    /// called the torso slot <c>Armor</c>, which stopped being true the moment head, hands and
-    /// feet existed. Without this, a v8 save would fail to parse the key and silently drop
-    /// whatever the player was wearing — so the rename buys a coherent slot vocabulary for the
-    /// cost of these three lines (docs/code-map.md §12, DECISIONS D32).
-    /// </summary>
-    private static bool TryReadSlot(string persistedName, out EquipmentSlot slot)
-    {
-        if (string.Equals(persistedName, EquipmentSlots.LegacyBodySlotName, StringComparison.Ordinal))
-        {
-            slot = EquipmentSlot.Body;
-            return true;
-        }
-
-        return Enum.TryParse(persistedName, out slot);
-    }
+    /// <summary>Reads a persisted slot name. The v9 <c>Armor</c>→<c>Body</c> rename shim that
+    /// lived here retired with D54: item sections only load from v14+ saves, which always
+    /// wrote the current slot vocabulary.</summary>
+    private static bool TryReadSlot(string persistedName, out EquipmentSlot slot) =>
+        Enum.TryParse(persistedName, out slot);
 
     private static EquipmentArchetypeSave ToSave(Items.EquipmentDefinition definition) => new()
     {
@@ -125,32 +110,16 @@ public static class SaveMapper
         Slot = definition.Slot.ToString(),
         Tags = definition.Tags.ToList(),
         MoveIds = definition.Moves.Select(m => m.Id).ToList(),
-        HasArmor = definition.Armor is not null,
-        ArmorValue = definition.Armor?.Armor ?? 0,
-        ArmorResistances = new Dictionary<string, double>(definition.Armor?.Resistances ?? new()),
-        Properties = new Dictionary<string, double>(definition.Properties),
-        ExpressedTraits = definition.ExpressedTraits.ToDictionary(t => t.Id, t => t.Magnitude),
-        DormantTraits = definition.DormantTraits.ToDictionary(t => t.Id, t => t.Magnitude),
-        Essence = new Dictionary<string, double>(definition.Essence),
     };
 
     private static Items.EquipmentDefinition FromSave(EquipmentArchetypeSave save) => new()
     {
         Id = save.Id,
         Name = save.Name,
-        // Same v9 rename: a fabricated vest stored before the slot vocabulary grew says "Armor".
+        // Same v9 rename: a piece stored before the slot vocabulary grew says "Armor".
         Slot = TryReadSlot(save.Slot, out var slot) ? slot : Items.EquipmentSlot.Weapon,
         Tags = save.Tags,
         Moves = save.MoveIds.Select(id => new Combat.MoveGrantSpec { Id = id }).ToList(),
-        Armor = save.HasArmor
-            ? new Items.ArmorStats { Armor = save.ArmorValue, Resistances = new Dictionary<string, double>(save.ArmorResistances) }
-            : null,
-        Properties = new Dictionary<string, double>(save.Properties),
-        ExpressedTraits = save.ExpressedTraits.OrderBy(t => t.Key, StringComparer.Ordinal)
-            .Select(t => new Crafting.TraitInstance(t.Key, t.Value)).ToList(),
-        DormantTraits = save.DormantTraits.OrderBy(t => t.Key, StringComparer.Ordinal)
-            .Select(t => new Crafting.TraitInstance(t.Key, t.Value)).ToList(),
-        Essence = new Dictionary<string, double>(save.Essence),
     };
 
     public static void Apply(
@@ -171,25 +140,37 @@ public static class SaveMapper
     {
         ArgumentNullException.ThrowIfNull(save);
 
+        // D49/D54, executed at v14: there is no faithful mapping from property-shaped items
+        // to the identity model, so a pre-v14 save keeps every progression section and loses
+        // every item section — progression survives, items reset. The starter-kit rule
+        // re-equips on first load.
+        var itemsSurvive = save.SchemaVersion >= SaveData.ItemsSurviveVersion;
+
         // Restored first: stash stacks may refer to emergent archetype ids, which nothing else
         // in the game can resolve until they are back in the material store.
-        emergentRegistry?.Restore(save.EmergentArchetypes.Select(FromSave));
-        emergentRegistry?.Restore(save.IdentityArchetypes.Select(FromSave));
+        if (itemsSurvive)
+            emergentRegistry?.Restore(save.IdentityArchetypes.Select(FromSave));
 
         stash.Clear();
-        foreach (var stack in save.Stash)
-            stash.Add(stack);
-        foreach (var instance in save.StashInstances)
-            stash.AddInstance(FromSave(instance));
+        if (itemsSurvive)
+        {
+            foreach (var stack in save.Stash)
+                stash.Add(stack);
+            foreach (var instance in save.StashInstances)
+                stash.AddInstance(FromSave(instance));
+        }
         stash.RestoreGold(save.Gold);
 
         if (equipment is not null)
         {
             equipment.Clear();
-            foreach (var pair in save.Equipment)
+            if (itemsSurvive)
             {
-                if (TryReadSlot(pair.Key, out var slot))
-                    equipment.Equip(slot, FromSave(pair.Value));
+                foreach (var pair in save.Equipment)
+                {
+                    if (TryReadSlot(pair.Key, out var slot))
+                        equipment.Equip(slot, FromSave(pair.Value));
+                }
             }
         }
 
@@ -207,22 +188,21 @@ public static class SaveMapper
 
         farmingPlots?.Restore(save.FarmingPlots.Select(plot => (plot.Index, plot.ActionId, plot.ReadyAtTick)));
 
-        // A v9 save has no loadout at all, which restores as "never prepared" — no destination
-        // and an empty pack. That is the same state a new game starts in, so there is nothing
-        // to migrate.
-        loadout?.Restore(save.Loadout?.RealmId, save.Loadout?.Packed ?? Enumerable.Empty<ItemStack>());
+        // The destination survives an item reset — it is a choice, not an item; the packed
+        // list is stacks and follows them.
+        loadout?.Restore(
+            save.Loadout?.RealmId,
+            itemsSurvive ? save.Loadout?.Packed ?? Enumerable.Empty<ItemStack>() : Enumerable.Empty<ItemStack>());
 
-        // A v10 save has no character XP, which restores as level 1 — where every existing
-        // character already is, because nothing awarded it until Phase 8.
         characterProgress?.Restore(save.CharacterXp);
 
         trainingCourse?.Restore(save.TrainingCourse
             .Where(slot => Enum.TryParse<TrainingSlot>(slot.Slot, out _))
             .Select(slot => (Enum.Parse<TrainingSlot>(slot.Slot), slot.ObstacleId)));
 
-        // Fabrication-derived gear (C2a) — restored before anything resolves the stash's
-        // instances, exactly like emergent material archetypes.
-        if (equipmentStore is not null)
+        // Forge-derived gear — restored before anything resolves the stash's instances,
+        // exactly like emergent material archetypes.
+        if (equipmentStore is not null && itemsSurvive)
         {
             foreach (var archetype in save.EmergentEquipment.Where(a => !equipmentStore.Contains(a.Id)))
                 equipmentStore.Add(FromSave(archetype));
@@ -236,55 +216,6 @@ public static class SaveMapper
             progress.AddMastery(pair.Key, pair.Value);
         return progress;
     }
-
-    private static EmergentArchetypeSave ToSave(MaterialDefinition archetype)
-    {
-        var profile = archetype.State
-            ?? throw new InvalidOperationException($"Emergent archetype '{archetype.Id}' has no profile to save.");
-
-        return new EmergentArchetypeSave
-        {
-            Signature = archetype.Id,
-            Name = archetype.Name,
-            Tags = archetype.Tags.ToList(),
-            Properties = new Dictionary<string, double>(profile.Properties.AsDictionary()),
-            Potency = profile.MaterialStrength,          // save key stays "Potency" (v4+)
-            Integrity = profile.Workability,             // save key stays "Integrity" (v4+)
-            Generation = profile.Generation,
-            ProcessId = profile.Lineage.CraftingActionId,   // save key stays "ProcessId" (v4+)
-            Roots = profile.Lineage.Roots
-                .Select(r => new LineageRootSave { RootId = r.RootId, Weight = r.Weight })
-                .ToList(),
-            ParentSignatures = profile.Lineage.ParentSignatures.ToList(),
-            Traits = profile.Traits.ToDictionary(t => t.Id, t => t.Magnitude),
-            Essence = new Dictionary<string, double>(profile.Essence),
-        };
-    }
-
-    private static MaterialDefinition FromSave(EmergentArchetypeSave save) => new()
-    {
-        Id = save.Signature,
-        Name = save.Name,
-        Tags = save.Tags,
-        Properties = new Dictionary<string, double>(save.Properties),
-        State = new MaterialState(
-            Properties: new PropertySet(save.Properties),
-            MaterialStrength: save.Potency,
-            Workability: save.Integrity,
-            Lineage: new Lineage(
-                save.Roots.Select(r => new RootShare(r.RootId, r.Weight)).ToList(),
-                save.Generation,
-                save.ProcessId,
-                save.ParentSignatures),
-            Signature: save.Signature)
-        {
-            Traits = save.Traits
-                .OrderBy(t => t.Key, StringComparer.Ordinal)
-                .Select(t => new Crafting.TraitInstance(t.Key, t.Value))
-                .ToList(),
-            Essence = new Dictionary<string, double>(save.Essence),
-        },
-    };
 
     private static IdentityArchetypeSave ToIdentitySave(MaterialDefinition archetype)
     {
@@ -349,29 +280,7 @@ public static class SaveMapper
         BaseDefinitionId = instance.BaseDefinitionId,
         ItemType = instance.ItemType,
         DisplayName = instance.DisplayName,
-        Quality = instance.Quality,
-        Properties = new Dictionary<string, double>(instance.Properties.AsDictionary()),
         Provenance = instance.Provenance.ToList(),
-        Traits = instance.Traits.ToList(),
-        Genome = instance.Potential is { } potential            // save key stays "Genome" (v6)
-            ? new GenomeSave
-            {
-                FormId = potential.BlueprintId,                     // save key stays "FormId"
-                Pressure = new Dictionary<string, double>(                // save key stays "Pressure"
-                    potential.MaterialInfluence.ToDictionary(entry => entry.Key, entry => entry.Value)),
-                Essence = new Dictionary<string, double>(
-                    potential.Essence.ToDictionary(entry => entry.Key, entry => entry.Value)),
-                Expressed = potential.Expressed.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
-                Dormant = potential.Dormant.Select(t => new TraitInstanceSave { Id = t.Id, Magnitude = t.Magnitude }).ToList(),
-                Tags = potential.Tags.ToList(),
-                Potency = potential.MaterialStrength,               // save key stays "Potency" (v6)
-                GenerationDepth = potential.GenerationDepth,
-                Signatures = potential.Signatures.ToList(),
-            }
-            : null,
-        Affixes = instance.Affixes
-            .Select(a => new RolledAffixSave { AffixId = a.AffixId, Tier = a.Tier, Roll = a.Roll })
-            .ToList(),
         BaseDelivery = instance.BaseDelivery is { } delivery
             ? new BaseDeliverySave
             {
@@ -404,25 +313,7 @@ public static class SaveMapper
         BaseDefinitionId = save.BaseDefinitionId,
         ItemType = save.ItemType,
         DisplayName = save.DisplayName,
-        Quality = save.Quality,
-        Properties = new PropertySet(save.Properties),
         Provenance = save.Provenance,
-        Traits = save.Traits,
-        Potential = save.Genome is { } savedPotential
-            ? new Dungeons.Crafting.ItemPotential(
-                savedPotential.FormId,
-                savedPotential.Pressure,
-                savedPotential.Essence,
-                savedPotential.Expressed.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
-                savedPotential.Dormant.Select(t => new Dungeons.Crafting.TraitInstance(t.Id, t.Magnitude)).ToList(),
-                savedPotential.Tags,
-                savedPotential.Potency,
-                savedPotential.GenerationDepth,
-                savedPotential.Signatures)
-            : null,
-        Affixes = save.Affixes
-            .Select(a => new Dungeons.Affixes.RolledAffix(a.AffixId, a.Tier, a.Roll))
-            .ToList(),
         BaseDelivery = save.BaseDelivery is { } delivery
             ? new Dungeons.Crafting.Identity.ItemBaseDelivery(delivery.DamageBonus, delivery.WindupTicks, delivery.Armor)
             : null,

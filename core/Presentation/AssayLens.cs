@@ -1,51 +1,56 @@
 using System.Text;
+using Dungeons.Content;
+using Dungeons.Crafting.Identity;
 
 namespace Dungeons.Presentation;
 
 /// <summary>
 /// How much of a material's reading the player has earned the right to read. Each step is a
 /// strictly larger view of the <em>same</em> reading — Assay never changes what a material is,
-/// only how much of it is legible (docs/professions.md §7, GDD §20).
+/// only how much of it is legible (D45/D48: information only, never capability).
 /// </summary>
 public enum AssayDepth
 {
-    /// <summary>Name and descriptor. "Hot metal", and nothing else.</summary>
+    /// <summary>Name, open stakes and the overfill word — what anyone can see.</summary>
     Superficial,
 
-    /// <summary>Which qualities lead: the property strip.</summary>
-    Composition,
+    /// <summary>Slots, condition, workmanship — how much material there is to work with.</summary>
+    Vessel,
 
-    /// <summary>How it behaves under work: bonding, receptiveness, wear.</summary>
-    Reactive,
+    /// <summary>Whether anything sleeps in it at all.</summary>
+    Latency,
 
-    /// <summary>Which traits it carries, and their drawbacks.</summary>
-    Traits,
+    /// <summary>Which identities sleep in it — what Reveal could wake.</summary>
+    Latents,
 
-    /// <summary>Its essence load and resonance, and whether the vessel is strained.</summary>
-    Essence,
+    /// <summary>The signature profile as leanings in words (D53).</summary>
+    Leanings,
 
-    /// <summary>What it could become: potential pressure, slot fit, modifier eligibility.</summary>
+    /// <summary>What its identities would guarantee on gear — reading potential.</summary>
     Potential,
 }
 
-/// <summary>The five things a reading can hide, in the order Assay uncovers them.</summary>
-public enum AssayFacet
+/// <summary>
+/// What Assay uncovers about a material, in reveal order (the Phase 6 re-aim, D45/D48).
+/// Active identities and the overfill word are never gated: identities are legible by design
+/// (D42), and chosen risk must be visible wherever a material is offered.
+/// </summary>
+public enum IdentityAssayFacet
 {
-    Identity,
-    Composition,
-    ReactiveBehaviour,
-    Traits,
-    Essence,
+    Vessel,
+    Latency,
+    LatentNames,
+    Leanings,
     Potential,
 }
 
 /// <summary>Assay level thresholds. One place, so the reveal ladder is legible as a ladder.</summary>
 public static class AssayTuning
 {
-    public const int CompositionLevel = 10;
-    public const int ReactiveLevel = 25;
-    public const int TraitsLevel = 45;
-    public const int EssenceLevel = 65;
+    public const int VesselLevel = 10;
+    public const int LatencyLevel = 25;
+    public const int LatentsLevel = 45;
+    public const int LeaningsLevel = 65;
     public const int PotentialLevel = 85;
 
     /// <summary>What an unrevealed line reads as. Deliberately not blank: the player should
@@ -59,102 +64,102 @@ public static class AssayTuning
 /// <para>Assay is the profession that pays in comprehension: it never adds a point of damage,
 /// it removes <c>???</c>. Because the underlying reading is computed the same way at every
 /// level, a player who levels Assay is not getting a better item — they are finally reading
-/// the item they already had.</para>
+/// the material they already had.</para>
 /// </summary>
 public static class AssayLens
 {
     public static AssayDepth DepthFor(int assayLevel) => assayLevel switch
     {
         >= AssayTuning.PotentialLevel => AssayDepth.Potential,
-        >= AssayTuning.EssenceLevel => AssayDepth.Essence,
-        >= AssayTuning.TraitsLevel => AssayDepth.Traits,
-        >= AssayTuning.ReactiveLevel => AssayDepth.Reactive,
-        >= AssayTuning.CompositionLevel => AssayDepth.Composition,
+        >= AssayTuning.LeaningsLevel => AssayDepth.Leanings,
+        >= AssayTuning.LatentsLevel => AssayDepth.Latents,
+        >= AssayTuning.LatencyLevel => AssayDepth.Latency,
+        >= AssayTuning.VesselLevel => AssayDepth.Vessel,
         _ => AssayDepth.Superficial,
     };
 
-    public static bool Reveals(AssayDepth depth, AssayFacet facet) => facet switch
+    public static bool Reveals(AssayDepth depth, IdentityAssayFacet facet) => facet switch
     {
-        AssayFacet.Identity => true,
-        AssayFacet.Composition => depth >= AssayDepth.Composition,
-        AssayFacet.ReactiveBehaviour => depth >= AssayDepth.Reactive,
-        AssayFacet.Traits => depth >= AssayDepth.Traits,
-        AssayFacet.Essence => depth >= AssayDepth.Essence,
-        AssayFacet.Potential => depth >= AssayDepth.Potential,
+        IdentityAssayFacet.Vessel => depth >= AssayDepth.Vessel,
+        IdentityAssayFacet.Latency => depth >= AssayDepth.Latency,
+        IdentityAssayFacet.LatentNames => depth >= AssayDepth.Latents,
+        IdentityAssayFacet.Leanings => depth >= AssayDepth.Leanings,
+        IdentityAssayFacet.Potential => depth >= AssayDepth.Potential,
         _ => false,
     };
 
     /// <summary>The Assay level at which <paramref name="facet"/> becomes legible.</summary>
-    public static int LevelFor(AssayFacet facet) => facet switch
+    public static int LevelFor(IdentityAssayFacet facet) => facet switch
     {
-        AssayFacet.Identity => 1,
-        AssayFacet.Composition => AssayTuning.CompositionLevel,
-        AssayFacet.ReactiveBehaviour => AssayTuning.ReactiveLevel,
-        AssayFacet.Traits => AssayTuning.TraitsLevel,
-        AssayFacet.Essence => AssayTuning.EssenceLevel,
-        AssayFacet.Potential => AssayTuning.PotentialLevel,
+        IdentityAssayFacet.Vessel => AssayTuning.VesselLevel,
+        IdentityAssayFacet.Latency => AssayTuning.LatencyLevel,
+        IdentityAssayFacet.LatentNames => AssayTuning.LatentsLevel,
+        IdentityAssayFacet.Leanings => AssayTuning.LeaningsLevel,
+        IdentityAssayFacet.Potential => AssayTuning.PotentialLevel,
         _ => 1,
     };
 
-    public static string FacetLabel(AssayFacet facet) => facet switch
+    public static string FacetLabel(IdentityAssayFacet facet) => facet switch
     {
-        AssayFacet.Composition => "Composition",
-        AssayFacet.ReactiveBehaviour => "Reactive behaviour",
-        AssayFacet.Traits => "Traits",
-        AssayFacet.Essence => "Essence",
-        AssayFacet.Potential => "Potential",
+        IdentityAssayFacet.Vessel => "Vessel",
+        IdentityAssayFacet.Latency => "Latency",
+        IdentityAssayFacet.LatentNames => "Latent",
+        IdentityAssayFacet.Leanings => "Leanings",
+        IdentityAssayFacet.Potential => "Potential",
         _ => "Identity",
     };
 
     /// <summary>
-    /// Renders a material reading through the lens: revealed facets read exactly as
-    /// <see cref="SemanticFormat.Material"/> renders them, and everything above the player's
-    /// depth reads as a labelled <c>???</c> with the level that would open it. Two voices
-    /// would have drifted, so the revealed half delegates rather than re-formatting.
+    /// A material through the lens: the open stakes and overfill word always; vessel,
+    /// latency, latent names, leanings and potential each behind their rung, reading as a
+    /// labelled <c>???</c> until earned. Revealed facets delegate to
+    /// <see cref="IdentityMaterialReadings"/> — one voice, two surfaces.
     /// </summary>
-    public static string Material(MaterialReading reading, PropertyGlossary glossary, AssayDepth depth)
+    public static string IdentityMaterial(
+        string materialName, IdentityMaterialState state, MergedSignatureProfile profile,
+        ContentBundle content, AssayDepth depth)
     {
-        ArgumentNullException.ThrowIfNull(reading);
-        ArgumentNullException.ThrowIfNull(glossary);
-
-        if (depth >= AssayDepth.Essence)
-            return SemanticFormat.Material(reading, glossary);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(profile);
+        ArgumentNullException.ThrowIfNull(content);
 
         var builder = new StringBuilder();
-        builder.Append(reading.Name).Append(" — ").Append(reading.Descriptor);
+        builder.Append(materialName).Append(" — ")
+            .Append(IdentityMaterialReadings.StakeNames(state, content));
 
-        AppendFacet(builder, AssayFacet.Composition, depth, () =>
-            reading.Leading.Count == 0
-                ? "no leading quality"
-                : string.Join(" · ", reading.Leading.Select(p =>
-                    $"{glossary.Label(p.Property)} {Tiers.Word(p.Tier)} {Tiers.Pips(p.Tier)}")));
-
-        AppendFacet(builder, AssayFacet.ReactiveBehaviour, depth, () =>
+        if (state.IsCarrier)
         {
-            var receptive = reading.Receptive
-                .Where(r => r.Tier >= PropertyTier.Low)
-                .OrderByDescending(r => r.Tier)
-                .ToList();
-            var media = receptive.Count == 0
-                ? "inert under every medium"
-                : string.Join(" · ", receptive.Select(SemanticFormat.ReceptivenessPhrase));
-            return $"{SemanticFormat.BondingPhrase(reading.Bonding)} · {media} · {Tiers.WearWord(reading.Workability)}";
-        });
+            builder.AppendLine();
+            builder.Append("A prepared carrier — delivers its full depth on Transfer");
+        }
 
-        AppendFacet(builder, AssayFacet.Traits, depth, () =>
-            reading.Traits.Count == 0
-                ? "no traits"
-                : string.Join(" · ", reading.Traits.Select(t => t.Name)));
+        AppendFacet(builder, IdentityAssayFacet.Vessel, depth,
+            () => IdentityMaterialReadings.VesselPhrase(state));
 
-        AppendFacet(builder, AssayFacet.Essence, depth, () =>
-            reading.Essence.Count == 0
-                ? "no essence"
-                : string.Join(" · ", reading.Essence.Select(e => $"{e.Name} {Tiers.Word(e.Tier)}")));
+        AppendFacet(builder, IdentityAssayFacet.Latency, depth,
+            () => state.Latent.Count > 0 ? "something sleeps in this" : "nothing sleeps in it");
+
+        // Naming what sleeps only matters while something does — a revealed empty list would
+        // repeat what Latency already said.
+        if (state.Latent.Count > 0 || !Reveals(depth, IdentityAssayFacet.LatentNames))
+        {
+            AppendFacet(builder, IdentityAssayFacet.LatentNames, depth,
+                () => string.Join(", ", state.Latent.Select(id =>
+                    content.Identities.TryGetById(id, out var identity) ? identity.Name : id))
+                    + " — Reveal can wake it");
+        }
+
+        AppendFacet(builder, IdentityAssayFacet.Leanings, depth,
+            () => IdentityMaterialReadings.LeaningsPhrase(profile, content));
+
+        AppendFacet(builder, IdentityAssayFacet.Potential, depth,
+            () => IdentityMaterialReadings.PotentialPhrase(state, content));
 
         return builder.ToString();
     }
 
-    private static void AppendFacet(StringBuilder builder, AssayFacet facet, AssayDepth depth, Func<string> revealed)
+    private static void AppendFacet(
+        StringBuilder builder, IdentityAssayFacet facet, AssayDepth depth, Func<string> revealed)
     {
         builder.AppendLine();
         builder.Append(FacetLabel(facet)).Append(": ");

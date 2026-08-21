@@ -222,6 +222,35 @@ public class IdentityContentTests
         AssertProblem(bundle, "identity", "cosmic");
     }
 
+    // --- The form migration is complete (Phase 7, D54) -----------------------
+
+    [Fact]
+    public void EveryShippedFormIsIdentityForgeable()
+    {
+        // Phase 7 deletes the old assembly engine, so a form without identity fields would be
+        // unfabricatable. Every form authors a cap; every weapon authors a damage read and
+        // every armour-bearing form an armor read. The two trinkets are pure identity vessels
+        // BY NAME — no delivery is their design, not an omission.
+        var pureVessels = new[] { "form.focus", "form.ring" };
+        var forms = TestPaths.LoadStore<Dungeons.Crafting.EquipmentBlueprintDefinition>("forms").GetAll();
+
+        Assert.NotEmpty(forms);
+        foreach (var form in forms)
+        {
+            Assert.True(form.IdentityCap is not null, $"{form.Id} authors no identity_cap.");
+            if (pureVessels.Contains(form.Id))
+            {
+                Assert.Empty(form.BaseReads);
+                continue;
+            }
+
+            if (form.Type == Dungeons.Items.EquipmentSlot.Weapon)
+                Assert.True(form.BaseReads.ContainsKey("damage"), $"{form.Id} is a weapon with no damage read.");
+            else
+                Assert.True(form.BaseReads.ContainsKey("armor"), $"{form.Id} wears with no armor read.");
+        }
+    }
+
     // --- The payload registry (Phase 3, D50) ---------------------------------
 
     [Fact]
@@ -347,6 +376,26 @@ public class IdentityContentTests
         bundle.SignaturePayloads.Add(TestPayload(payload => payload with { Range = new[] { 10.0, 2.0 } }));
 
         AssertProblem(bundle, "signature_payload", "lo ≤ hi");
+    }
+
+    [Fact]
+    public void AMultiplicativeKeyPayloadAuthoringDeltasFails()
+    {
+        // Multiplicative contributions multiply raw, so a "+15%" authored as 0.15 would
+        // multiply the stat by 0.15 — the shipped bulwark did exactly this (Phase 6 caught it).
+        var bundle = BundleWithVocabulary();
+        bundle.ModifierKeys.Add(new Dungeons.Modifiers.ModifierKeyDefinition
+        {
+            Id = "combat.block.mult", Name = "Block Strength",
+            Kind = Dungeons.Modifiers.ModifierKind.Multiplicative,
+        });
+        bundle.SignaturePayloads.Add(TestPayload(payload => payload with
+        {
+            Binding = new PayloadBinding { Kind = PayloadBindingKinds.Modifier, Key = "combat.block.mult" },
+            Range = new[] { 0.08, 0.2 },
+        }));
+
+        AssertProblem(bundle, "signature_payload", "factors");
     }
 
     [Fact]

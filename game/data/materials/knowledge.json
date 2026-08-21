@@ -10,17 +10,17 @@
   // away with is precious metal (already in minerals.json), a key, or somebody's paperwork.
 
   // --- Cartography ----------------------------------------------------------------------
-  { "id": "material.charcoal_rubbing", "name": "Charcoal Rubbing", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 50, "affinity": 30, "solubility": 20, "decay": 20 }, "capacity": 1 },
-  { "id": "material.route_sketch", "name": "Route Sketch", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 48, "affinity": 34, "solubility": 18, "decay": 18 }, "capacity": 1 },
-  { "id": "material.survey_chart", "name": "Survey Chart", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 5, "flexibility": 44, "affinity": 38, "solubility": 14, "decay": 12 }, "capacity": 2 },
-  { "id": "material.hidden_way_note", "name": "Hidden Way Note", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 3, "flexibility": 44, "affinity": 42, "solubility": 12, "decay": 10, "arcane": 12 }, "capacity": 2 },
+  { "id": "material.charcoal_rubbing", "name": "Charcoal Rubbing", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "capacity": 1 },
+  { "id": "material.route_sketch", "name": "Route Sketch", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:common", "comp:organic", "class:knowledge"], "capacity": 1 },
+  { "id": "material.survey_chart", "name": "Survey Chart", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "capacity": 2 },
+  { "id": "material.hidden_way_note", "name": "Hidden Way Note", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "capacity": 2 },
 
   // --- Assay ----------------------------------------------------------------------------
-  { "id": "material.reference_sample", "name": "Reference Sample", "tags": ["state:processed", "form:sample", "origin:synthetic", "rarity:common", "comp:inorganic", "class:knowledge"], "properties": { "hardness": 30, "mass": 10, "affinity": 45, "resonance": 15, "insulation": 25 }, "capacity": 1 },
-  { "id": "material.property_dossier", "name": "Property Dossier", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 6, "flexibility": 40, "affinity": 40, "solubility": 12, "decay": 10 }, "capacity": 2 },
+  { "id": "material.reference_sample", "name": "Reference Sample", "tags": ["state:processed", "form:sample", "origin:synthetic", "rarity:common", "comp:inorganic", "class:knowledge"], "capacity": 1 },
+  { "id": "material.property_dossier", "name": "Property Dossier", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "capacity": 2 },
 
   // --- Thieving -------------------------------------------------------------------------
-  { "id": "material.iron_key", "name": "Iron Key", "tags": ["state:processed", "form:key", "origin:synthetic", "rarity:uncommon", "comp:inorganic", "class:knowledge"], "properties": { "hardness": 58, "mass": 16, "flexibility": 8, "affinity": 28, "conductivity": 48, "corrosion": 18 }, "capacity": 2 },
-  { "id": "material.cipher_note", "name": "Cipher Note", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "properties": { "hardness": 3, "mass": 3, "flexibility": 46, "affinity": 36, "solubility": 22, "decay": 20 }, "capacity": 2 },
-  { "id": "material.stolen_schematic", "name": "Stolen Schematic", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "properties": { "hardness": 4, "mass": 5, "flexibility": 42, "affinity": 40, "solubility": 14, "decay": 12, "arcane": 10 }, "capacity": 2 }
+  { "id": "material.iron_key", "name": "Iron Key", "tags": ["state:processed", "form:key", "origin:synthetic", "rarity:uncommon", "comp:inorganic", "class:knowledge"], "capacity": 2 },
+  { "id": "material.cipher_note", "name": "Cipher Note", "tags": ["state:processed", "form:record", "origin:synthetic", "rarity:uncommon", "comp:organic", "class:knowledge"], "capacity": 2 },
+  { "id": "material.stolen_schematic", "name": "Stolen Schematic", "tags": ["state:composite", "form:record", "origin:synthetic", "rarity:rare", "comp:organic", "class:knowledge"], "capacity": 2 }
 ]

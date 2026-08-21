@@ -33,18 +33,13 @@ public class ContentValidatorTests
     private static ContentBundle LoadShippedBundle() => new()
     {
         Materials = Load<MaterialDefinition>("materials"),
-        Properties = Load<PropertyDefinition>("properties"),
         Identities = Load<IdentityDefinition>("identities"),
         SignatureTriggers = Load<SignatureTriggerDefinition>("signature_triggers"),
         SignatureBehaviors = Load<SignatureBehaviorDefinition>("signature_behaviors"),
         SignatureThemes = Load<SignatureThemeDefinition>("signature_themes"),
         SignaturePayloads = Load<SignaturePayloadDefinition>("signature_payloads"),
         VerbActions = Load<VerbActionDefinition>("verb_actions"),
-        CraftingActions = Load<CraftingActionDefinition>("processes"),
         Byproducts = Load<ByproductDefinition>("byproducts"),
-        Traits = Load<Dungeons.Crafting.TraitDefinition>("traits"),
-        Essences = Load<Dungeons.Crafting.EssenceDefinition>("essences"),
-        NameGrammar = Load<NameWordDefinition>("name_grammar"),
         ModifierKeys = Load<Dungeons.Modifiers.ModifierKeyDefinition>("modifier_keys"),
         Statuses = Load<StatusDefinition>("statuses"),
         NameFormats = Load<NameFormatDefinition>("name_formats"),
@@ -96,21 +91,10 @@ public class ContentValidatorTests
             Assert.True(material.Tags.Count(t => t.StartsWith("rarity:", StringComparison.Ordinal)) == 1,
                 $"{material.Id} must have exactly one rarity: tag.");
 
-        // Spot-check that profiles express their intended identity.
-        var copper = materials.GetById("material.copper_ore");
-        Assert.True(copper.GetProperty("conductivity") > copper.GetProperty("insulation")); // copper conducts
-
-        var stormCore = materials.GetById("material.storm_core");
-        Assert.Equal(100, stormCore.GetProperty("charge"));
-        Assert.True(stormCore.GetProperty("instability") >= 80); // deliberately volatile
-
-        Assert.True(materials.GetById("material.frost_core").GetProperty("cold") >= 80);          // frost = cold
-        Assert.True(materials.GetById("material.scorpion_venom").GetProperty("toxicity") >= 50);  // venom = toxic
-        Assert.True(materials.GetById("material.wolf_fur").GetProperty("insulation") >= 60);      // fur insulates
-
-        var ingot = materials.GetById("material.iron_ingot");
-        var ore = materials.GetById("material.iron_ore");
-        Assert.True(ingot.GetProperty("hardness") > ore.GetProperty("hardness")); // processing hardens
+        // Spot-check that the identity model expresses intent where properties used to.
+        Assert.Contains(materials.GetById("material.storm_core").Identities, grant => grant.Id == "identity.storm");
+        Assert.Contains(materials.GetById("material.frost_core").Identities, grant => grant.Id == "identity.frost");
+        Assert.Contains("identity.venomous", materials.GetById("material.scorpion_venom").Latent);
     }
 
     // --- Each rule catches a broken reference --------------------------------
@@ -122,61 +106,9 @@ public class ContentValidatorTests
         Assert.Empty(content.Validate());
     }
 
-    [Fact]
-    public void Material_WithCoherentProperties_IsAccepted()
-    {
-        var content = ValidBaseline();
-        content.Materials.Add(new MaterialDefinition
-        {
-            Id = "material.copper_ore",
-            Name = "Copper Ore",
-            Tags = new[] { "origin:mineral", "comp:inorganic", "form:ore", "state:raw", "rarity:common" },
-            Properties = new Dictionary<string, double>
-            {
-                ["hardness"] = 40, ["mass"] = 50, ["conductivity"] = 85, ["heat_resistance"] = 55,
-            },
-        });
-        Assert.Empty(content.Validate());
-    }
 
-    [Fact]
-    public void Material_WithUnknownProperty_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Materials.Add(new MaterialDefinition
-        {
-            Id = "material.bad",
-            Name = "Bad",
-            Properties = new Dictionary<string, double> { ["sparkliness"] = 10 },
-        });
-        AssertHasProblem(content, "materials", "sparkliness");
-    }
 
-    [Fact]
-    public void Material_WithOutOfRangeValue_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Materials.Add(new MaterialDefinition
-        {
-            Id = "material.bad",
-            Name = "Bad",
-            Properties = new Dictionary<string, double> { ["hardness"] = 250 },
-        });
-        AssertHasProblem(content, "materials", "range");
-    }
 
-    [Fact]
-    public void Material_WithNegativeValue_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Materials.Add(new MaterialDefinition
-        {
-            Id = "material.bad",
-            Name = "Bad",
-            Properties = new Dictionary<string, double> { ["mass"] = -5 },
-        });
-        AssertHasProblem(content, "materials", "range");
-    }
 
     [Fact]
     public void Equipment_WithUnknownProperty_IsFlagged()
@@ -476,135 +408,19 @@ public class ContentValidatorTests
 
     // --- CraftingActions (docs/emergent-item-system.md §7) --------------------------
 
-    [Fact]
-    public void Process_WithUnknownProfession_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(profession: "profession.nope"));
-        AssertHasProblem(content, "processes", "unknown profession");
-    }
 
-    [Fact]
-    public void Process_WithUnknownChannelProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: Channel("sparkliness", 0.5)));
-        AssertHasProblem(content, "processes", "unknown property 'sparkliness'");
-    }
 
-    /// <summary>§2.3: a derived resistance can never be a reaction input.</summary>
-    [Fact]
-    public void Process_OpeningAResponseProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: Channel("heat_resistance", 0.5)));
-        AssertHasProblem(content, "processes", "Response property");
-    }
 
-    /// <summary>§2.2: otherwise every craft would "alloy the difficulty of mining."</summary>
-    [Fact]
-    public void Process_OpeningASourcingProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: Channel("harvest_resistance", 0.5)));
-        AssertHasProblem(content, "processes", "Sourcing property");
-    }
 
-    [Fact]
-    public void CraftingAction_WithNoAffectedQualities_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: Array.Empty<AffectedQuality>()));
-        AssertHasProblem(content, "processes", "declares no affected_qualities");
-    }
 
-    [Fact]
-    public void Process_WithDuplicateChannelProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: new[]
-        {
-            new AffectedQuality { Property = "heat", Rate = 0.5 },
-            new AffectedQuality { Property = "heat", Rate = 0.3 },
-        }));
-        AssertHasProblem(content, "processes", "twice");
-    }
 
-    [Theory]
-    [InlineData(0.0)]
-    [InlineData(1.5)]
-    public void Process_WithChannelRateOutOfRange_IsReported(double rate)
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(channel: Channel("heat", rate)));
-        AssertHasProblem(content, "processes", "rate");
-    }
 
-    /// <summary>§6.1: material strength is a weighted mean, so weights that don't sum to 1 would let a
-    /// crafting action inflate material strength for free — the exact exploit the mean exists to close.</summary>
-    [Fact]
-    public void Process_WithRoleWeightsThatDoNotSumToOne_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            roleWeights: new RoleWeights { Substrate = 0.9, Reagent = 0.9, Catalyst = 0.0 }));
-        AssertHasProblem(content, "processes", "role_weights sum to");
-    }
 
-    [Fact]
-    public void Process_WithSeverityOutOfRange_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(severity: 1.4));
-        AssertHasProblem(content, "processes", "severity");
-    }
 
-    [Fact]
-    public void Process_WithUnknownTagFamilyInEffects_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            tagEffects: new CraftingActionTagEffects { Set = new[] { "flavour:zesty" } }));
-        AssertHasProblem(content, "processes", "unknown family");
-    }
 
-    [Fact]
-    public void Process_WithInvalidClosedTagValue_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            tagEffects: new CraftingActionTagEffects { Set = new[] { "state:molten" } }));
-        AssertHasProblem(content, "processes", "not a valid 'state' value");
-    }
 
-    /// <summary>The wildcard means "clear this whole family" — setting it would be meaningless.</summary>
-    [Fact]
-    public void Process_UsingTheFamilyWildcardInSet_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            tagEffects: new CraftingActionTagEffects { Set = new[] { "form:*" } }));
-        AssertHasProblem(content, "processes", "wildcard");
-    }
 
-    [Fact]
-    public void Process_ClearingAWholeFamily_IsAccepted()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            tagEffects: new CraftingActionTagEffects { Set = new[] { "form:powder" }, Clear = new[] { "form:*" } }));
-        Assert.DoesNotContain(content.Validate(), p => p.Category == "processes");
-    }
 
-    [Fact]
-    public void Process_ThatIsUngatedButRequiresALevel_IsReported()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process(
-            profession: string.Empty,
-            requires: new CraftingActionRequirements { ProfessionLevel = 5 }));
-        AssertHasProblem(content, "processes", "ungated");
-    }
 
     // --- Byproducts (docs/emergent-item-system.md §6.2c) ----------------------
 
@@ -770,65 +586,12 @@ public class ContentValidatorTests
 
     // --- Traits (C1a) ---------------------------------------------------------
 
-    [Fact]
-    public void Trait_ReferencingAnUnknownProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.Traits.Add(new Dungeons.Crafting.TraitDefinition
-        {
-            Id = "trait.bad", Name = "Bad",
-            Condition = new() { ["charisma"] = new Dungeons.Crafting.PropertyRange { Min = 50 } },
-            MagnitudeOf = new[] { "charisma" },
-        });
-        AssertHasProblem(content, "traits", "unknown property");
-    }
 
-    [Fact]
-    public void Trait_MergingWithAnUnknownTrait_IsReported()
-    {
-        var content = ValidBaseline();
-        content.Traits.Add(new Dungeons.Crafting.TraitDefinition
-        {
-            Id = "trait.lonely", Name = "Lonely",
-            Condition = new() { ["hardness"] = new Dungeons.Crafting.PropertyRange { Min = 50 } },
-            MagnitudeOf = new[] { "hardness" },
-            Merges = new[] { new Dungeons.Crafting.TraitMerge { With = "trait.ghost", Into = "trait.also_ghost" } },
-        });
-        AssertHasProblem(content, "traits", "unknown trait");
-    }
 
-    /// <summary>A merge-only trait nothing merges into is authored content nobody can ever
-    /// see — the same rule orphan moves follow.</summary>
-    [Fact]
-    public void Trait_MergeOnlyWithNoRoute_IsReported()
-    {
-        var content = ValidBaseline();
-        content.Traits.Add(new Dungeons.Crafting.TraitDefinition { Id = "trait.unreachable", Name = "Unreachable" });
-        AssertHasProblem(content, "traits", "unreachable");
-    }
 
     // --- Essences (C1b) -------------------------------------------------------
 
-    [Fact]
-    public void Essence_AnchoringOnAnUnknownProperty_IsReported()
-    {
-        var content = ValidBaseline();
-        content.Essences.Add(new Dungeons.Crafting.EssenceDefinition { Id = "essence.vibes", Name = "Vibes", Anchor = "charisma" });
-        AssertHasProblem(content, "essences", "unknown property");
-    }
 
-    [Fact]
-    public void Material_AuthoringAnUnknownEssenceKey_IsReported()
-    {
-        var content = ValidBaseline();
-        content.Essences.Add(new Dungeons.Crafting.EssenceDefinition { Id = "essence.fire", Name = "Fire", Anchor = "heat" });
-        content.Materials.Add(new MaterialDefinition
-        {
-            Id = "material.weird", Name = "Weird", Tags = ValidTags,
-            Essence = new() { ["spice"] = 40 },
-        });
-        AssertHasProblem(content, "essences", "unknown essence 'spice'");
-    }
 
     // --- Techniques (M2′ acquisition) ----------------------------------------
 
@@ -875,30 +638,6 @@ public class ContentValidatorTests
         Assert.DoesNotContain(content.Validate(), p => p.Message.Contains("move.arcana"));
     }
 
-    private static AffectedQuality[] Channel(string property, double rate) =>
-        new[] { new AffectedQuality { Property = property, Rate = rate } };
-
-    /// <summary>A well-formed crafting action; each argument left unset keeps its valid default, so a
-    /// test breaks exactly one rule.</summary>
-    private static CraftingActionDefinition Process(
-        string profession = "prof.forestry",
-        double severity = 0.4,
-        RoleWeights? roleWeights = null,
-        IReadOnlyList<AffectedQuality>? channel = null,
-        CraftingActionRequirements? requires = null,
-        CraftingActionTagEffects? tagEffects = null) => new()
-        {
-            Id = "process.test",
-            Name = "Test",
-            Profession = profession,
-            Severity = severity,
-            Medium = TransferMedium.Thermal,
-            RoleWeights = roleWeights ?? new RoleWeights { Substrate = 0.65, Reagent = 0.30, Catalyst = 0.05 },
-            AffectedQualities = channel ?? Channel("heat", 0.5),
-            Requires = requires ?? new CraftingActionRequirements { ProfessionLevel = 1 },
-            TagEffects = tagEffects ?? new CraftingActionTagEffects(),
-        };
-
     // --- Hideout stations ----------------------------------------------------
     //
     // A station is routing, so every rule is about reachability. The two that matter are the
@@ -909,7 +648,6 @@ public class ContentValidatorTests
     public void Station_RoutingToRealContent_IsAccepted()
     {
         var content = ValidBaseline();
-        content.CraftingActions.Add(Process());
         content.Forms.Add(new EquipmentBlueprintDefinition
         {
             Id = "form.plank",
@@ -918,9 +656,7 @@ public class ContentValidatorTests
             Tags = new[] { "armor" },
             Slots = new() { ["shell"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
         });
-        content.Stations.Add(Station(
-            craftingActions: new[] { "process.test" },
-            blueprints: new[] { "form.plank" }));
+        content.Stations.Add(Station(hasAssembly: true));
 
         Assert.Empty(content.Validate());
     }
@@ -934,23 +670,7 @@ public class ContentValidatorTests
         AssertHasProblem(content, "stations", "unknown profession 'prof.nonesuch'");
     }
 
-    [Fact]
-    public void Station_OfferingUnknownCraftingAction_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Stations.Add(Station(craftingActions: new[] { "process.nonesuch" }));
 
-        AssertHasProblem(content, "stations", "unknown crafting action 'process.nonesuch'");
-    }
-
-    [Fact]
-    public void Station_AssemblingUnknownBlueprint_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Stations.Add(Station(blueprints: new[] { "form.nonesuch" }));
-
-        AssertHasProblem(content, "stations", "unknown blueprint 'form.nonesuch'");
-    }
 
     [Fact]
     public void Station_HostingNoProfession_IsFlagged()
@@ -972,32 +692,7 @@ public class ContentValidatorTests
         AssertHasProblem(content, "stations", "prof.orphan has no station");
     }
 
-    [Fact]
-    public void CraftingAction_OfferedAtNoStation_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.CraftingActions.Add(Process());
-        content.Stations.Add(Station());
 
-        AssertHasProblem(content, "stations", "process.test is offered at no station");
-    }
-
-    [Fact]
-    public void Blueprint_AssembledAtNoStation_IsFlagged()
-    {
-        var content = ValidBaseline();
-        content.Forms.Add(new EquipmentBlueprintDefinition
-        {
-            Id = "form.plank",
-            Name = "Plank",
-            Type = EquipmentSlot.Body,
-            Tags = new[] { "armor" },
-            Slots = new() { ["shell"] = new BlueprintSlot { RequiresTags = new[] { "form:wood" } } },
-        });
-        content.Stations.Add(Station());
-
-        AssertHasProblem(content, "stations", "form.plank is assembled at no station");
-    }
 
     [Fact]
     public void Profession_HostedByTwoStations_IsFlagged()
@@ -1014,15 +709,13 @@ public class ContentValidatorTests
     private static Dungeons.Hideout.StationDefinition Station(
         string id = "station.test",
         IReadOnlyList<string>? professions = null,
-        IReadOnlyList<string>? craftingActions = null,
-        IReadOnlyList<string>? blueprints = null) => new()
+        bool hasAssembly = false) => new()
         {
             Id = id,
             Name = "Test Station",
             Description = "Where the test happens.",
             Professions = professions ?? new[] { "prof.forestry" },
-            CraftingActions = craftingActions ?? Array.Empty<string>(),
-            Blueprints = blueprints ?? Array.Empty<string>(),
+            HasAssembly = hasAssembly,
         };
 
     // --- Helpers -------------------------------------------------------------
@@ -1053,14 +746,10 @@ public class ContentValidatorTests
     /// loaded so material/equipment property validation has its source of truth.</summary>
     private sealed class TestContent
     {
-        private readonly ContentBundle _bundle = new() { Properties = LoadProperties() };
+        private readonly ContentBundle _bundle = new();
 
         public DataStore<MaterialDefinition> Materials => _bundle.Materials;
-        public DataStore<CraftingActionDefinition> CraftingActions => _bundle.CraftingActions;
         public DataStore<ByproductDefinition> Byproducts => _bundle.Byproducts;
-        public DataStore<Dungeons.Crafting.TraitDefinition> Traits => _bundle.Traits;
-        public DataStore<Dungeons.Crafting.EssenceDefinition> Essences => _bundle.Essences;
-        public DataStore<NameWordDefinition> NameGrammar => _bundle.NameGrammar;
         public DataStore<ProfessionDefinition> Professions => _bundle.Professions;
         public DataStore<ProfessionActionDefinition> Actions => _bundle.Actions;
         public DataStore<CraftingInteractionDefinition> Interactions => _bundle.Interactions;
@@ -1080,13 +769,5 @@ public class ContentValidatorTests
         public DataStore<Dungeons.Modifiers.ModifierKeyDefinition> ModifierKeys => _bundle.ModifierKeys;
 
         public IReadOnlyList<ContentProblem> Validate() => ContentValidator.Validate(_bundle);
-
-        private static DataStore<PropertyDefinition> LoadProperties()
-        {
-            var store = new DataStore<PropertyDefinition>();
-            store.LoadDocuments(
-                Directory.GetFiles(Path.Combine(TestPaths.DataDir, "properties"), "*.json").Select(File.ReadAllText));
-            return store;
-        }
     }
 }

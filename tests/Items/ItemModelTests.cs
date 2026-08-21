@@ -71,18 +71,4 @@ public class ItemModelTests
         Assert.Equal(0, inv.InstanceCount);
         Assert.Equal(1, changes);
     }
-
-    [Fact]
-    public void MaterialDefinition_ExposesBaseProperties()
-    {
-        var mat = new Dungeons.Content.MaterialDefinition
-        {
-            Id = "material.oak_bark",
-            Name = "Oak Bark",
-            Properties = new Dictionary<string, double> { ["toxin_resistance"] = 0.05 },
-        };
-        Assert.Equal(ItemType.Material, mat.ItemType);
-        Assert.True(mat.Stackable);
-        Assert.Equal(0.05, mat.BaseProperties.Get("toxin_resistance"));
-    }
 }

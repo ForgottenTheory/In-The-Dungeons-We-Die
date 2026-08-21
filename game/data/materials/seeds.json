@@ -2,10 +2,10 @@
   // Farming's inputs. Every bed returns its own seed alongside the crop, so a plot the player
   // has bothered to establish sustains itself — the scarce resource is plot-time, not seeds.
   // Wild gathering seeds the first planting; Farming keeps it going.
-  { "id": "material.nettle_seed", "name": "Nettle Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "properties": { "hardness": 12, "mass": 4, "flexibility": 20, "affinity": 40, "growth": 45, "toxicity": 8 }, "capacity": 1, "latent": ["identity.thorned"] },
-  { "id": "material.sageleaf_seed", "name": "Sageleaf Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "properties": { "hardness": 12, "mass": 4, "flexibility": 18, "affinity": 44, "growth": 48 }, "capacity": 1, "latent": ["identity.vital"] },
-  { "id": "material.comfrey_seed", "name": "Comfrey Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "properties": { "hardness": 13, "mass": 5, "flexibility": 18, "affinity": 45, "growth": 52 }, "capacity": 1, "latent": ["identity.vital"] },
-  { "id": "material.kingsfoil_seed", "name": "Kingsfoil Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:uncommon", "comp:organic"], "properties": { "hardness": 14, "mass": 5, "flexibility": 16, "affinity": 50, "growth": 60, "arcane": 10 }, "capacity": 2, "latent": ["identity.vital", "identity.verdant"] },
-  { "id": "material.emberleaf_seed", "name": "Emberleaf Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:uncommon", "comp:organic"], "properties": { "hardness": 16, "mass": 5, "flexibility": 14, "affinity": 44, "growth": 42, "heat": 25, "heat_resistance": 30 }, "capacity": 2, "latent": ["identity.ember"] },
-  { "id": "material.mushroom_spawn", "name": "Mushroom Spawn", "tags": ["state:raw", "form:spawn", "origin:fungal", "rarity:common", "comp:organic"], "properties": { "hardness": 4, "mass": 6, "flexibility": 30, "affinity": 55, "solubility": 25, "growth": 50, "decay": 25 }, "capacity": 1, "latent": ["identity.verdant"] }
+  { "id": "material.nettle_seed", "name": "Nettle Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "capacity": 1, "latent": ["identity.thorned"] },
+  { "id": "material.sageleaf_seed", "name": "Sageleaf Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "capacity": 1, "latent": ["identity.vital"] },
+  { "id": "material.comfrey_seed", "name": "Comfrey Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:common", "comp:organic"], "capacity": 1, "latent": ["identity.vital"] },
+  { "id": "material.kingsfoil_seed", "name": "Kingsfoil Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:uncommon", "comp:organic"], "capacity": 2, "latent": ["identity.vital", "identity.verdant"] },
+  { "id": "material.emberleaf_seed", "name": "Emberleaf Seed", "tags": ["state:raw", "form:seed", "origin:flora", "rarity:uncommon", "comp:organic"], "capacity": 2, "latent": ["identity.ember"] },
+  { "id": "material.mushroom_spawn", "name": "Mushroom Spawn", "tags": ["state:raw", "form:spawn", "origin:fungal", "rarity:common", "comp:organic"], "capacity": 1, "latent": ["identity.verdant"] }
 ]

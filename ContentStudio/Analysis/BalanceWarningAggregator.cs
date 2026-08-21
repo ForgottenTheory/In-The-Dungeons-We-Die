@@ -21,7 +21,6 @@ public static class BalanceWarningAggregator
         var warnings = new List<BalanceWarning>();
         CollectEnemyWarnings(bundle, warnings);
         CollectMoveWarnings(bundle, warnings);
-        CollectMaterialWarnings(bundle, warnings);
         CollectProfessionWarnings(bundle, warnings);
         CollectLootWarnings(bundle, warnings);
         return warnings;
@@ -66,42 +65,6 @@ public static class BalanceWarningAggregator
                 FlagOutliers(withStamina, row => row.DamagePerStamina!.Value, (row, z) => warnings.Add(new BalanceWarning(
                     "moves", $"{row.Name} ({row.Id}) deals {row.DamagePerStamina:0.##} damage per stamina ({Deviation(z)}).",
                     row.Id, "moves")));
-            }
-        }
-    }
-
-    private static void CollectMaterialWarnings(ContentBundle bundle, List<BalanceWarning> warnings)
-    {
-        var materials = bundle.Materials.GetAll().ToList();
-        foreach (var property in bundle.Properties.GetAll())
-        {
-            var values = materials
-                .Where(material => material.Properties.ContainsKey(property.Id))
-                .Select(material => (material.Id, Value: material.Properties[property.Id]))
-                .ToList();
-            if (values.Count < 30)
-                continue;
-
-            var bottomShare = values.Count(pair => pair.Value <= 20) / (double)values.Count;
-            if (bottomShare >= 0.75)
-            {
-                warnings.Add(new BalanceWarning("materials",
-                    $"{bottomShare:P0} of the {values.Count} materials with {property.Id} sit in the bottom 20% of its range — " +
-                    "the property may have little differentiation.", null, "materials"));
-            }
-
-            var mean = values.Average(pair => pair.Value);
-            var standardDeviation = StandardDeviation(values.Select(pair => pair.Value), mean);
-            if (standardDeviation < 0.001)
-                continue;
-            foreach (var (id, value) in values)
-            {
-                var z = (value - mean) / standardDeviation;
-                if (Math.Abs(z) >= 3.5)
-                {
-                    warnings.Add(new BalanceWarning("materials",
-                        $"{id} has an extreme {property.Id} of {value:0.#} (library mean {mean:0.#}).", id, "materials"));
-                }
             }
         }
     }

@@ -3,20 +3,18 @@
 Permanent project instructions and development rules. **Keep this file concise — it is rules, not documentation.** For current state, systems, decisions, and next steps read the handoff docs (below) and `/docs`.
 
 ## What this is
-A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 spatial realms + extraction risk/loss + tick-based tactical combat + emergent crafting). Godot 4.7 (.NET) client over an engine-independent C# domain. The playable MVP vertical slice is complete; current work is the **equipment + emergent-crafting system**.
+A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 spatial realms + extraction risk/loss + tick-based tactical combat + emergent crafting). Godot 4.7 (.NET) client over an engine-independent C# domain. The playable MVP vertical slice is complete; the **identity crafting system** (D42–D54) is the crafting stack — the original property system was deleted whole in migration Phase 7.
 
 ## Read these first (handoff docs, kept current)
 - `docs/game-overview.md` — the top-down map of the game: every system, how they connect, and how far each one got. **Start here.**
 - `docs/code-map.md` — the developer's technical map: layers, entry points, every subsystem, and **"Where do I change X?"**. Includes the do-not-rename persistent-identifier list.
-- `docs/crafting-overview.md` — the whole crafting stack (materials → bench → traits → essence → fabrication → genome/modifiers) in one place, with real content counts and every tuning constant located.
+- `docs/crafting-overview.md` — the identity crafting stack (materials → verb bench → forge → equip seam) in one place, with real content counts and every tuning constant located.
+- `docs/identity-foundation.md` — the crafting foundation: roster, grammar, capacity/condition, the item-effect pipeline, the migration record.
 - `docs/loot.md` — the reward layer: the one table shape every source shares, how enemy loot composes, the active/passive and depth gates, the elite/boss seam, gold, and the fences the tests hold.
-- `PROJECT_STATE.md` — what's implemented / partial / scaffolded / planned.
-- `SYSTEM_INDEX.md` — systems, key files, how they connect.
 - `DECISIONS.md` — architectural/gameplay decisions **and why** (+ rejected options).
 - `ROADMAP.md` — remaining work and order.
 - `HANDOFF.md` — where we stopped and exact next steps.
-- `docs/effect-foundation.md` — the settled effect/damage/status/move/affix architecture (26 decisions, §12).
-- `docs/itemization.md`, `docs/crafting.md §17` — the item-instance + emergent-crafting model.
+- `docs/effect-foundation.md` — the settled effect/damage/status/move architecture (26 decisions, §12).
 
 ## Architecture rules (hard invariants)
 1. **Domain-first, enforced by the assembly split.** Gameplay logic lives in `core/` (`InTheDungeonsWeDie.Core`, namespace `Dungeons.*`, `net8.0`) and MUST NOT reference Godot. The Godot project `game/` references Core; never the reverse. Tests reference Core only.
@@ -24,7 +22,7 @@ A progression-heavy extraction RPG (Melvor-style professions + For-The-King-2 sp
 3. **Data-driven content.** Definitions are JSON under `game/data/<type>/`, loaded via `ContentLoader` (Godot) into `DataStore<T>` (Core, path-agnostic — it takes JSON text, never file paths). Use stable namespaced ids (`material.oak_bark`, `equip.iron_sword`).
 4. **Definitions vs runtime state are separate.** `IItemDefinition`/`MaterialDefinition`/`EquipmentDefinition` describe kinds; `ItemInstance` is a specific owned item with derived properties. Raw stackables stay quantity-based; anything with derived/unique properties is an instance. Never mutate definitions.
 5. **Deterministic tick simulation.** One shared `TickEngine` drives combat + passive gathering; `GameRoot._Process` advances it. Inject `IRandomSource` (seeded) — no scattered global RNG.
-6. **Properties are string-keyed** (`PropertySet`); new material/item properties are data, not code. Fabrication is the one place the 0–100 material scale meets combat units; combat reads neutral `ResolvedMove`s and an `ArmorProfile` (via `EquipmentResolver`), never equipment types.
+6. **Crafting speaks identities, not numbers.** A material is capacity + identities + latents + base stats + profile (`docs/identity-foundation.md`); effects are trigger→behavior→payload sentences over vocabulary registries. New payloads/actions/forms are data, not code — and every vocabulary entry must bind to machinery that already resolves (the D30 fence). Combat reads neutral `ResolvedMove`s and an `ArmorProfile` (via `EquipmentResolver`), never equipment types.
 7. **Three languages (D30).** Raw simulation values (0–100 properties, rates, coefficients) never appear on normal play surfaces — Advanced/Assay/labs only. The only path from simulation state to player-facing crafting/item text is the semantic layer (`Dungeons.Presentation`): one-way, deterministic, unit-tested. Items speak gameplay language (damage, crit, Thorns…), never property language. A player-facing modifier ships only when its mechanic resolves. See `docs/presentation-architecture.md`.
 8. **Code optimizes for human comprehension.** See the next section — it is a hard rule, not a style preference.
 
@@ -59,5 +57,5 @@ Over: shorthand · cleverness · dense abstractions · unnecessary indirection �
 ## Guiding question
 "How does this make preparing for, exploring, surviving, mastering, or extracting from a Realm more interesting?" If there's no convincing answer, reconsider the feature.
 
-## Crafting vocabulary (renamed 2026-08-16)
-Design/player words are unchanged; the **C# is plainer**. `Integrity`→`Workability` · `Potency`→`MaterialStrength` · `Process`→`CraftingAction` · `Channel`→`AffectedQualities` · `Form`→`EquipmentBlueprint` · `Aperture`→`TraitExpression` · `Genome`→`ItemPotential` · `Pressure`→`MaterialInfluence` · `ReactionEngine`→`MaterialTransformationEngine` · `ReactionAlgebra`→`MaterialTransformationRules` · `FabricationEngine`→`EquipmentAssemblyEngine` · `AffixRoller`→`ModifierGenerator`. **Player text, save keys (`SaveData.cs` untouched) and content ids (`process.*`, `form.*`, the `form:` tag family) did NOT move.** Full table + the reading path: `docs/crafting-overview.md` §15.
+## Crafting vocabulary (identity system, D42–D54)
+One name per concept, project-wide: an **identity** is a material identity (never character or enemy identity) · a **sentence** is trigger→behavior→payload · a **Signature** is the *earned* special layer, never the blanket word for generated effects (D50) · **capacity** is material-side slots, a form's **identity_cap** is item-side expression — neither implies the other (D51) · **rank/rung** words are basic→improved→advanced→build-changing, never player-facing numerals (D44) · **Condition** (Pristine→Fragile) and **Stability** (Stable→Volatile) enum words are the player words. The pre-redesign C# vocabulary (Workability, MaterialStrength, ItemPotential, the reaction/assembly engines) was deleted with its system in Phase 7.

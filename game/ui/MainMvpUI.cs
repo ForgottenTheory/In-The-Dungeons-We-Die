@@ -399,7 +399,6 @@ public partial class MainMvpUI : Control
 
         var debugRow = Row();
         root.AddChild(debugRow);
-        debugRow.AddChild(MakeButton("Grant Test Mats (debug)", () => _game.GrantCraftTestMaterials(), Accent));
     }
 
     private void OpenStation(StationDefinition station)

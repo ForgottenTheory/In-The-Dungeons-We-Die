@@ -181,7 +181,7 @@ public class ProgressionEcosystemTests
     [Fact]
     public void AssayLevelsWidenWhatAMaterialShows()
     {
-        var depths = new[] { 1, AssayTuning.CompositionLevel, AssayTuning.ReactiveLevel, AssayTuning.TraitsLevel, AssayTuning.EssenceLevel, AssayTuning.PotentialLevel }
+        var depths = new[] { 1, AssayTuning.VesselLevel, AssayTuning.LatencyLevel, AssayTuning.LatentsLevel, AssayTuning.LeaningsLevel, AssayTuning.PotentialLevel }
             .Select(AssayLens.DepthFor)
             .ToList();
 

@@ -1,6 +1,7 @@
 using Dungeons.Characters.Composition;
 using Dungeons.Content;
 using Dungeons.Crafting;
+using Dungeons.Crafting.Identity;
 using Dungeons.Items;
 using Dungeons.Persistence;
 using Dungeons.Professions;
@@ -31,20 +32,26 @@ public class SaveMapperTests
         forestry.AddMastery("action.chop_oak", 8);
 
         var discoveries = new DiscoverySystem();
-        discoveries.Record("discovery.barkbound_iron");
+        discoveries.Record("discovery.healing_salve");
 
         var knowledge = new Dictionary<string, int> { ["realm.dark_forest"] = 15 };
 
-        // A crafted material instance in the stash, and an equipped weapon.
+        // A minted identity item in the stash, and an equipped weapon.
         var instanceIds = new InstanceIdSource(5);
         stash.AddInstance(new ItemInstance
         {
             InstanceId = instanceIds.Next(),
-            BaseDefinitionId = "material.barkbound_iron",
-            ItemType = ItemType.Material,
-            DisplayName = "Barkbound Iron",
-            Properties = new PropertySet(new Dictionary<string, double> { ["toxin_resistance"] = 0.05 }),
-            Provenance = new[] { "material.iron_ingot", "material.oak_bark" },
+            BaseDefinitionId = "equip.emergent.iabc123",
+            ItemType = ItemType.Weapon,
+            DisplayName = "Vital Iron Longsword",
+            Provenance = new[] { "material.iron_ingot", "material.leather" },
+            BaseDelivery = new ItemBaseDelivery(2.5, 4, 0),
+            IdentitySentences = new[]
+            {
+                new ItemEffectSentence(ItemEffectCategory.Floor, "while_worn", "sustain", "vitality", 9, 1.0),
+            },
+            ExpressedIdentities = new[] { new IdentityStake("identity.vital", 2) },
+            DormantIdentities = new[] { new IdentityStake("identity.storm", 1) },
         });
         var equipment = new Equipment();
         equipment.Equip(EquipmentSlot.Weapon, new ItemInstance
@@ -77,15 +84,20 @@ public class SaveMapperTests
         Assert.Equal(450, restoredForestry.Xp);
         Assert.Equal(8, restoredForestry.GetMastery("action.chop_oak"));
 
-        Assert.True(newDiscoveries.IsDiscovered("discovery.barkbound_iron"));
+        Assert.True(newDiscoveries.IsDiscovered("discovery.healing_salve"));
         Assert.Equal(15, newKnowledge["realm.dark_forest"]);
         Assert.Equal("class.wizard", loaded.Build!.BaseClassId.Value);
 
-        // Crafted instance restored with its derived properties + provenance.
-        var restoredBark = Assert.Single(newStash.Instances);
-        Assert.Equal("Barkbound Iron", restoredBark.DisplayName);
-        Assert.Equal(0.05, restoredBark.Properties.Get("toxin_resistance"));
-        Assert.Contains("material.oak_bark", restoredBark.Provenance);
+        // The minted item restored whole: delivery, sentences, the identity split.
+        var restoredSword = Assert.Single(newStash.Instances);
+        Assert.Equal("Vital Iron Longsword", restoredSword.DisplayName);
+        Assert.Equal(2.5, restoredSword.BaseDelivery!.DamageBonus);
+        var sentence = Assert.Single(restoredSword.IdentitySentences);
+        Assert.Equal(ItemEffectCategory.Floor, sentence.Category);
+        Assert.Equal("vitality", sentence.PayloadId);
+        Assert.Equal("identity.vital", Assert.Single(restoredSword.ExpressedIdentities).Id);
+        Assert.Equal("identity.storm", Assert.Single(restoredSword.DormantIdentities).Id);
+        Assert.Contains("material.leather", restoredSword.Provenance);
 
         // Equipment restored.
         Assert.Equal("Iron Sword", newEquipment.InSlot(EquipmentSlot.Weapon)!.DisplayName);
@@ -95,72 +107,65 @@ public class SaveMapperTests
     }
 
     /// <summary>
-    /// An emergent archetype is the one definition-shaped thing a save holds, because there is
-    /// no authored definition to point back at (docs/emergent-item-system.md §12.4). Round-trip
-    /// it, then check the thing that actually matters: a stash stack referring to it resolves
-    /// again in a fresh session.
+    /// D49/D54, executed at v14: a pre-v14 save keeps every progression section and loses
+    /// every item section — progression survives, items reset. There is no faithful mapping
+    /// from property-shaped items to the identity model, so nothing is invented.
     /// </summary>
     [Fact]
-    public void CaptureThenApply_RestoresEmergentArchetypesAndTheStacksThatUseThem()
+    public void APreV14Save_KeepsProgressionAndLosesItems()
     {
-        const string signature = "emergent.7f3a91c4";
-
-        var materials = new DataStore<MaterialDefinition>();
-        var registry = new EmergentRegistry(materials);
-        registry.GetOrRegister(signature, () => new MaterialDefinition
+        var oldSave = new SaveData
         {
-            Id = signature,
-            Name = "Emberveined Iron",
-            Tags = new[] { "form:metal", "state:alloy" },
-            Properties = new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 },
-            State = new MaterialState(
-                new PropertySet(new Dictionary<string, double> { ["heat"] = 35, ["hardness"] = 62 }),
-                MaterialStrength: 49,
-                Workability: 72,
-                Lineage: new Lineage(
-                    new[] { new RootShare("material.iron_ingot", 1.0) },
-                    Generation: 2,
-                    CraftingActionId: "process.forge_infusion",
-                    ParentSignatures: new[] { "material.iron_ingot" }),
-                Signature: signature),
-        });
+            SchemaVersion = 13,
+            Stash = new List<ItemStack> { new("material.oak_log", 4) },
+            StashInstances = new List<ItemInstanceSave>
+            {
+                new() { InstanceId = 6, BaseDefinitionId = "equip.emergent.old", ItemType = ItemType.Weapon },
+            },
+            Gold = 120,
+            Equipment = new Dictionary<string, ItemInstanceSave>
+            {
+                ["Weapon"] = new() { InstanceId = 7, BaseDefinitionId = "equip.iron_sword", ItemType = ItemType.Weapon },
+            },
+            Professions = new List<ProfessionSave>
+            {
+                new() { ProfessionId = "profession.forestry", Xp = 450, Mastery = new() { ["action.chop_oak"] = 8 } },
+            },
+            RealmKnowledge = new Dictionary<string, int> { ["realm.dark_forest"] = 15 },
+            Discoveries = new List<string> { "discovery.healing_salve" },
+            IdentityArchetypes = new List<IdentityArchetypeSave> { new() { Id = "emergent.i123", Name = "Old Mint" } },
+            EmergentEquipment = new List<EquipmentArchetypeSave> { new() { Id = "equip.emergent.old" } },
+            LearnedMoves = new List<string> { "move.cleave" },
+            CharacterXp = 900,
+        };
 
         var stash = new Inventory();
-        stash.Add(signature, 40); // emergent materials stack like any other (§0 Decision 3)
         var professions = MakeProfessions(stash);
+        var discoveries = new DiscoverySystem();
+        var knowledge = new Dictionary<string, int>();
+        var equipment = new Equipment();
+        var registry = new EmergentRegistry(new DataStore<MaterialDefinition>());
+        var equipmentStore = new DataStore<Dungeons.Items.EquipmentDefinition>();
 
-        var save = SaveMapper.Capture(
-            null, stash, professions, new DiscoverySystem(), new Dictionary<string, int>(),
-            savedAtTick: 1, equipment: null, instanceIds: null, emergentRegistry: registry);
+        SaveMapper.Apply(oldSave, stash, professions, discoveries, knowledge,
+            equipment, emergentRegistry: registry, equipmentStore: equipmentStore);
 
-        var loaded = new SaveSerializer().Deserialize(new SaveSerializer().Serialize(save));
+        // Progression survives…
+        Assert.Equal(450, professions.GetProgress("profession.forestry").Xp);
+        Assert.Equal(15, knowledge["realm.dark_forest"]);
+        Assert.True(discoveries.IsDiscovered("discovery.healing_salve"));
+        Assert.Equal(120, stash.Gold);
 
-        // --- A fresh session that has never seen this material ---
-        var freshMaterials = new DataStore<MaterialDefinition>();
-        var freshRegistry = new EmergentRegistry(freshMaterials);
-        var freshStash = new Inventory();
-
-        SaveMapper.Apply(
-            loaded, freshStash, MakeProfessions(freshStash), new DiscoverySystem(),
-            new Dictionary<string, int>(), equipment: null, instanceIds: null,
-            emergentRegistry: freshRegistry);
-
-        Assert.Equal(40, freshStash.GetQuantity(signature));
-        Assert.True(freshMaterials.Contains(signature), "the stack must resolve to a material again.");
-
-        var restored = freshMaterials.GetById(signature);
-        Assert.Equal("Emberveined Iron", restored.Name);
-        Assert.Equal(49, restored.State!.MaterialStrength);
-        Assert.Equal(72, restored.State.Workability);
-        Assert.Equal(2, restored.State.Generation);
-        Assert.Equal(35, restored.State.Properties.Get("heat"));
-        Assert.Equal("process.forge_infusion", restored.State.Lineage.CraftingActionId);
-        Assert.Equal("material.iron_ingot", restored.State.Lineage.DominantRoot?.RootId);
-        Assert.Contains("material.iron_ingot", restored.State.Lineage.ParentSignatures);
+        // …items reset.
+        Assert.Empty(stash.Snapshot());
+        Assert.Empty(stash.Instances);
+        Assert.Null(equipment.InSlot(EquipmentSlot.Weapon));
+        Assert.Equal(0, registry.Count);
+        Assert.False(equipmentStore.Contains("equip.emergent.old"));
     }
 
-    /// <summary>v3 saves predate emergent archetypes and must still load — the new field simply
-    /// arrives empty, so no migration step is needed (SaveData v4).</summary>
+    /// <summary>Pre-v4 saves predate emergent archetypes and must still load — the new fields
+    /// simply arrive empty.</summary>
     [Fact]
     public void ASaveWithoutEmergentArchetypes_StillLoads()
     {

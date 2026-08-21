@@ -12,19 +12,18 @@ namespace Dungeons.Tests.Persistence;
 /// <summary>
 /// Save schema v12 — identity-model emergent materials (migration Phase 2c, D42).
 ///
-/// <para>Same rule as every version before it: a v11 save loads with no identity archetypes,
-/// which is the state of a player who never used the new bench. No migration step. The
-/// sharper pin here is the SPLIT: the registry holds both models during coexistence, and
-/// capturing used to throw the moment a new-model archetype appeared in it.</para>
+/// <para>Since v14 (Phase 7, D54) the registry is identity-model only — the property-model
+/// split of the coexistence era is gone with the system that needed it.</para>
 /// </summary>
 public class IdentityArchetypeSaveV12Tests
 {
     [Fact]
-    public void ANewSaveIsWrittenAtSchemaThirteen()
+    public void ANewSaveIsWrittenAtSchemaFourteen()
     {
-        // v12 added identity archetypes; v13 added the identity-minted item fields
-        // (Phase 3, D50/D51). Bumping this pin is the conscious act the pin exists to force.
-        Assert.Equal(13, SaveData.CurrentSchemaVersion);
+        // v12 added identity archetypes; v13 the identity-minted item fields; v14 settled the
+        // schema on the identity model alone (Phase 7, D49/D54 — items reset on older loads).
+        // Bumping this pin is the conscious act the pin exists to force.
+        Assert.Equal(14, SaveData.CurrentSchemaVersion);
     }
 
     [Fact]
@@ -66,51 +65,6 @@ public class IdentityArchetypeSaveV12Tests
             Fingerprint.Canonical(restoredState, restored.Tags));
         Assert.Equal(Condition.Strained, restoredState.Condition);
         Assert.Equal(Stability.Stable, restoredState.Stability); // derived, never stored
-    }
-
-    [Fact]
-    public void BothModelsShareTheRegistryAndCapturingSplitsThemCleanly()
-    {
-        // The coexistence pin: capturing a registry holding a new-model archetype used to
-        // throw ("has no profile to save") because the old mapper assumed every archetype
-        // carried a property-model state.
-        var registry = new EmergentRegistry(new DataStore<MaterialDefinition>());
-        registry.GetOrRegister("emergent.old00001", () => new MaterialDefinition
-        {
-            Id = "emergent.old00001", Name = "Emberlit Iron",
-            Tags = new[] { "form:metal" },
-            State = new MaterialState(
-                Properties: new PropertySet(new Dictionary<string, double> { ["hardness"] = 60 }),
-                MaterialStrength: 40,
-                Workability: 80,
-                Lineage: new Lineage(
-                    new List<RootShare> { new("material.iron_ingot", 1.0) }, 1, "process.forge_infusion", new List<string>()),
-                Signature: "emergent.old00001"),
-        });
-        registry.GetOrRegister("emergent.new00001", () => new MaterialDefinition
-        {
-            Id = "emergent.new00001", Name = "Dense Granite",
-            Tags = new[] { "form:stone", "state:refined" },
-            Capacity = 1,
-            IdentityState = new IdentityMaterialState
-            {
-                Identities = new[] { new IdentityStake("identity.dense", 1) },
-                Capacity = 1,
-                Roots = new[] { new ProvenanceRoot("material.granite", 1.0) },
-            },
-        });
-
-        var save = RoundTrip(Capture(registry));
-
-        Assert.Single(save.EmergentArchetypes);
-        Assert.Single(save.IdentityArchetypes);
-
-        var restoredRegistry = new EmergentRegistry(new DataStore<MaterialDefinition>());
-        Apply(save, restoredRegistry);
-        Assert.True(restoredRegistry.TryGet("emergent.old00001", out var oldModel));
-        Assert.NotNull(oldModel.State);
-        Assert.True(restoredRegistry.TryGet("emergent.new00001", out var newModel));
-        Assert.NotNull(newModel.IdentityState);
     }
 
     [Fact]

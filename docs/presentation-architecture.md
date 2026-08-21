@@ -1,6 +1,9 @@
 # Presentation Architecture — the three languages
 
 > **Source of truth for how the game talks to the player about materials, crafting and items.**
+> ⚠ §1–§5.1 record the correction as run against the PROPERTY system (R0–R4); that system and
+> its grammar (tiers/pips/glyphs/trends) were deleted in migration Phase 7 (D54). The living
+> rules are §0 and §6; the living voices are §5.2 (the identity system, Phase 6/D53).
 > Adopted 2026-08-16 from a user design directive: the emergent simulation is sophisticated but
 > the player-facing experience speaks the wrong language. This is a foundational correction,
 > not UI polish — loot, combat depth and profession work will inherit whatever language is
@@ -278,6 +281,36 @@ rare-roll (E7) · profession/realm families (E6) · the full 150–250 catalog �
 
 **Run order:** R4a+R4b as one run → checkpoint → R4c (split per mechanic if a row runs deep).
 Then C2c plays the whole language.
+
+# 5.2 The identity-system voice (migration Phase 6, 2026-08-21, D53)
+
+The identity redesign made the simulation itself legible, so its presentation layer is
+smaller than the property system's: no tiers, no pips, no glyph strips — names, rung words,
+ladder words and sentences. All of it lives in `Dungeons.Presentation`, one-way and
+unit-tested, replacing the engine spelling (`on_block → store → bulwark 0.15`) the panels
+deliberately showed until this pass.
+
+| Reader | Renders | Voice |
+|---|---|---|
+| `SentenceReadings` | one `ItemEffectSentence` → one player line | "On Block: 30% chance to gain Barrier (4)". Bound to what `SentenceAssemblers` actually compiles: drain reads damage-plus-recovery, store reads charge-plus-band, exchange repeats the assembler's own arithmetic. Modifier units derive from the key registry (multiplicative = distance from ×1, capped-fraction = percent, else flat) — never a hardcoded key list |
+| `ItemReadings` + `SemanticFormat.Item`/`ItemStrip` | the item card's identity layer | `Identities:` with rung words · effect lines labelled `Guaranteed:`/`Signature:`/`Drawback:` (bare lines are the roll — D50's taxonomy stays legible) · dormant identities join the dormant line |
+| `MintReadings` | the forge preview | the draw table as **likelihood words** (Likely / Possible / A long shot, measured against the uniform share — D53); breach rows read "beyond its families"; exact scores in the Advanced toggle |
+| `VerbReadings` | bench refusals + change lines | refusals in words (never enum names); previews/outcomes **diffed from the states the engine produced** — awakens / settles in / deepens / is ejected, condition and workmanship in ladder words, §4 risk odds intact. The engine's `VerbStep` text is the Advanced voice |
+| `IdentityMaterialReadings` | the bench substrate inspector | every §11.2 facet in a sentence: stakes and slots, latents, carrier fidelity, condition + meaning, workmanship word, overfill meaning |
+| `AssayLens.IdentityMaterial` | the Assay panel (re-aimed, D45/D48) | same facts, redacted by rung: always stakes + overfill (D42; chosen risk is never hidden) → Vessel → Latency → Latent names → **Leanings** (D53: strongest few, in words; themes never, §6.1) → Potential ("on gear, promises …", quoting `ItemEffectResolver.FloorPayloadOf` — the same rule generation mints from) |
+
+Words the pass fixed: ranks render as the §4 rung ladder (*improved / advanced /
+build-changing*; basic unmarked; numerals banned by D44), workmanship 0–100 renders as
+*rough / decent / fine / excellent / masterwork* (`IdentityPhrases.QualityWord`), and the
+`Stability`/`Condition` enum words are themselves the player vocabulary (§10.3–§10.4).
+Thresholds live in `PresentationTuning` (likelihood multiples, quality floors, leanings
+count). Picker rows everywhere carry `GameRoot.MaterialStakeSummary` — stakes, overfill,
+wear — because an Unstable component is a choice made at the menu.
+
+Phase 6 also caught the shipped `bulwark` payload authoring a delta (0.08–0.2) on a
+multiplicative key — an 85% Block-Strength *nerf* wearing a buff's description. Fixed to
+factors (1.08–1.2) behind a new validator fence (`MultiplicativePayloadRangeFloor`): a
+truthful renderer flushes out lying data, which is this architecture doing its job.
 
 # 6. Acceptance test (recorded from the directive, verbatim in intent)
 

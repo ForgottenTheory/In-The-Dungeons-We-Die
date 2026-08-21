@@ -1,10 +1,10 @@
 [
   // Hideout stations — the player-facing entry points, one per profession.
   //
-  // A station routes; it never rules. `crafting_actions` and `blueprints` say what is offered
-  // *here*, and the underlying gate is untouched: Distill is offered at the Alchemy Lab and
-  // still asks for Herblore 12, which the picker line says out loud. Grind is ungated, so it
-  // has two homes (a mortar and a mill) rather than being cornered into one.
+  // A station routes; it never rules. `verb_actions` says what bench work is offered *here*
+  // (each action keeps its own profession gate), and `has_assembly` marks the stations that
+  // host the identity forge — every migrated form, one panel; forms need no per-station
+  // routing since Phase 7 (D54).
   //
   // The validator enforces the two rules that keep this honest: every profession has exactly
   // one station, and every station hosts at least one profession.
@@ -64,21 +64,14 @@
     "name": "Forge",
     "description": "Fire, anvil and quench barrel. Ore becomes ingot, ingot becomes edge — and the edge leaves here as a weapon.",
     "professions": ["profession.smithing"],
-    "crafting_actions": [
-      "process.smelt",
-      "process.quench",
-      "process.alloy",
-      "process.forge_infusion"
-    ],
     "verb_actions": ["craft.smelt_iron", "craft.smelt_copper", "craft.smelt_silver", "craft.hone_metal", "craft.infuse_metal", "craft.temper_metal", "craft.mend", "craft.alloy", "craft.displace_metal"],
-    "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail", "form.shortsword", "form.halberd", "form.knuckles"]
+    "has_assembly": true
   },
   {
     "id": "station.apothecary",
     "name": "Apothecary",
     "description": "Mortar, press and steeping jars. Everything here prepares an ingredient without changing what it is.",
     "professions": ["profession.herblore"],
-    "crafting_actions": ["process.grind", "process.steep"],
     "verb_actions": ["craft.identify_virtues", "craft.draw_extract", "craft.press_herbs", "craft.dry_emberleaf", "craft.dry_frostfern"]
   },
   {
@@ -86,7 +79,6 @@
     "name": "Alchemy Lab",
     "description": "Glassware, a low flame and the willingness to find out. Where the Apothecary prepares, this changes.",
     "professions": ["profession.alchemy"],
-    "crafting_actions": ["process.distill"],
     "verb_actions": ["craft.distill", "craft.clarify", "craft.fuse_solution", "craft.universal_extraction", "craft.expand_vessel"]
   },
   {
@@ -101,7 +93,7 @@
     "description": "Lye, a scraping beam and drying frames. Drake leather stays drake; nothing here is flattened into a tier.",
     "professions": ["profession.leatherworking"],
     "verb_actions": ["craft.cure_hide", "craft.dress_leather", "craft.infuse_leather", "craft.work_supple", "craft.patch", "craft.displace_leather"],
-    "blueprints": ["form.vest", "form.gauntlets", "form.treads", "form.whip"]
+    "has_assembly": true
   },
   {
     "id": "station.loom",
@@ -109,7 +101,7 @@
     "description": "Fibre, thread, cloth. Slow, quiet, and the only source of anything soft enough to wear.",
     "professions": ["profession.tailoring"],
     "verb_actions": ["craft.spin_silkvine", "craft.weave_silkvine", "craft.press_cloth", "craft.infuse_cloth", "craft.embroider", "craft.reweave", "craft.displace_cloth"],
-    "blueprints": ["form.vest", "form.gauntlets", "form.sling"]
+    "has_assembly": true
   },
   {
     "id": "station.fletchers_bench",
@@ -117,25 +109,23 @@
     "description": "Shafts, staves, strings and vanes. The haft is most of a spear, which is why the spear is made here and not at the Forge.",
     "professions": ["profession.fletching"],
     "verb_actions": ["craft.hew_oak_planks", "craft.hew_maple_planks", "craft.true_the_grain", "craft.infuse_wood", "craft.season_wood", "craft.splice", "craft.displace_wood"],
-    "blueprints": ["form.warspear", "form.longbow", "form.crossbow", "form.quarterstaff", "form.halberd", "form.javelin", "form.sling"]
+    "has_assembly": true
   },
   {
     "id": "station.workbench",
     "name": "Workbench",
     "description": "Vices, files and a mill. The station whose whole job is making the other stations faster.",
     "professions": ["profession.artifice"],
-    "crafting_actions": ["process.grind"],
     "verb_actions": ["craft.melt_glass", "craft.cut_crystal", "craft.infuse_crystal", "craft.facet", "craft.reset_setting", "craft.fuse_composite", "craft.displace_crystal"],
-    "blueprints": ["form.buckler", "form.focus", "form.ring", "form.crossbow", "form.dagger"]
+    "has_assembly": true
   },
   {
     "id": "station.runic_altar",
     "name": "Runic Altar",
     "description": "A cut blank, an essence and a very steady hand. Raising a material's resonance starts here — and a focus is where that resonance finally does something.",
     "professions": ["profession.runecrafting"],
-    "crafting_actions": ["process.attune"],
     "verb_actions": ["craft.inscribe", "craft.deepen_inscription", "craft.expand_matrix"],
-    "blueprints": ["form.focus"]
+    "has_assembly": true
   },
 
   // --- Utility --------------------------------------------------------------------------

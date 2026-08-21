@@ -28,14 +28,6 @@ public sealed class CraftingInteractionDefinition : IDefinition
     public string ResultItemId { get; init; } = string.Empty;
     public int ResultQuantity { get; init; } = 1;
 
-    /// <summary>
-    /// When true, the result is produced as a unique <see cref="ItemInstance"/> whose
-    /// properties are derived from the inputs (a generated material that can be crafted
-    /// again). When false, the result is a plain stackable item. The future reaction
-    /// simulation will make instance-generation the default (docs/crafting.md §17).
-    /// </summary>
-    public bool ResultIsInstance { get; init; }
-
     /// <summary>Persistent id recorded when this interaction is first discovered.</summary>
     public string DiscoveryId { get; init; } = string.Empty;
 }

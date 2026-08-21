@@ -18,9 +18,7 @@ namespace Dungeons.Game.Ui;
 public partial class StationPanel : VBoxContainer
 {
     private readonly List<ProfessionLadderPanel> _ladders = new();
-    private CraftingBenchPanel? _bench;
     private VerbBenchPanel? _verbBench;
-    private EquipmentAssemblyPanel? _assembly;
     private IdentityForgePanel? _identityForge;
     private CraftingInteractionsPanel? _interactions;
     private FarmingPlotsPanel? _plots;
@@ -71,12 +69,6 @@ public partial class StationPanel : VBoxContainer
             AddChild(_interactions = new CraftingInteractionsPanel(game, interactions));
         }
 
-        if (station.HasBench)
-        {
-            AddChild(new HSeparator());
-            AddChild(_bench = new CraftingBenchPanel(game, game.CraftingActionsAt(station)));
-        }
-
         if (station.VerbActions.Count > 0)
         {
             AddChild(new HSeparator());
@@ -85,11 +77,6 @@ public partial class StationPanel : VBoxContainer
 
         if (station.HasAssembly)
         {
-            AddChild(new HSeparator());
-            AddChild(_assembly = new EquipmentAssemblyPanel(game, game.BlueprintsAt(station)));
-
-            // The identity forge (migration Phase 3) runs beside the old assembly until the
-            // surfaces swap — same station, same materials, the replacement mint.
             AddChild(new HSeparator());
             AddChild(_identityForge = new IdentityForgePanel(game));
         }
@@ -107,9 +94,7 @@ public partial class StationPanel : VBoxContainer
         _course?.Refresh();
         _assay?.Refresh();
         _interactions?.Refresh();
-        _bench?.Refresh();
         _verbBench?.Refresh();
-        _assembly?.Refresh();
         _identityForge?.Refresh();
     }
 }

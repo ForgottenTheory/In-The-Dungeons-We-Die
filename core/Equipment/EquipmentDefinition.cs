@@ -9,8 +9,8 @@ namespace Dungeons.Items;
 /// <para><b>These member names are persisted</b> — they are the keys of
 /// <c>SaveData.Equipment</c> and the <c>slot</c> field of every <c>equipment/</c> and
 /// <c>forms/</c> definition (docs/code-map.md §12). Adding a member is free; renaming one needs
-/// the content and a save migration in the same commit, which is exactly what
-/// <see cref="EquipmentSlots.LegacyBodySlotName"/> records.</para>
+/// the content and a save migration in the same commit (the v9 Armor→Body rename was exactly
+/// that, retired with D54's item reset).</para>
 ///
 /// <para>The two rings were appended, and appending really is free: slots persist <b>by name</b>
 /// (<c>SaveMapper</c> writes <c>slot.ToString()</c>), so a save written before they existed
@@ -33,14 +33,6 @@ public enum EquipmentSlot
 /// <summary>Facts about slots that would otherwise be re-derived at each call site.</summary>
 public static class EquipmentSlots
 {
-    /// <summary>
-    /// The slot name written by save schemas v1–v8, when the body slot was called <c>Armor</c>.
-    /// Renamed in v9 because the expansion to seven slots made it actively wrong — a helm is
-    /// armour too. <see cref="Dungeons.Persistence.SaveMapper"/> maps it on load; nothing else
-    /// should ever need to know it existed.
-    /// </summary>
-    public const string LegacyBodySlotName = "Armor";
-
     /// <summary>
     /// Slots whose worn item mitigates damage. A trinket is worn but is not armour, and a weapon
     /// is held rather than worn — so this is stated rather than inferred from "not a weapon",
@@ -112,18 +104,10 @@ public sealed class EquipmentDefinition : IItemDefinition
 
     public ArmorStats? Armor { get; init; }
 
-    /// <summary>Traits expressed through the fabrication trait expression (C2a §16.3). Empty on
-    /// authored gear.</summary>
-    public IReadOnlyList<Crafting.TraitInstance> ExpressedTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
-
-    /// <summary>Traits the trait expression or cap held back — kept for value, flavour, and future
-    /// refabrication (§16.2's dormancy rule).</summary>
-    public IReadOnlyList<Crafting.TraitInstance> DormantTraits { get; init; } = Array.Empty<Crafting.TraitInstance>();
-
-    /// <summary>Mass-share-weighted, arcane-amplified essence (§16.3 step 5).</summary>
-    public IReadOnlyDictionary<string, double> Essence { get; init; } = new Dictionary<string, double>();
-
-    /// <summary>Intrinsic material-style properties, as a name→value map.</summary>
+    /// <summary>Intrinsic material-style properties, as a name→value map — the authored
+    /// combat-unit channel (<c>mass</c> → damage/windup, <c>hardness</c> → armour) the
+    /// resolver reads for hand-authored gear. Identity mints carry an explicit
+    /// <c>ItemBaseDelivery</c> on the instance instead and author nothing here.</summary>
     public Dictionary<string, double> Properties { get; init; } = new();
 
     /// <summary>

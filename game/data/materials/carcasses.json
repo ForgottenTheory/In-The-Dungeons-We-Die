@@ -6,12 +6,12 @@
   //
   // Properties are the whole animal averaged: heavy, soft, and rotting from the moment it is
   // taken. `decay` is why carrying one out of a Realm is a decision.
-  { "id": "material.rabbit_carcass", "name": "Rabbit Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 8, "mass": 22, "flexibility": 30, "affinity": 40, "growth": 25, "decay": 30 }, "capacity": 1 },
-  { "id": "material.fowl_carcass", "name": "Fowl Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 8, "mass": 20, "flexibility": 32, "affinity": 42, "growth": 24, "decay": 32 }, "capacity": 1 },
-  { "id": "material.boar_carcass", "name": "Boar Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 14, "mass": 55, "flexibility": 26, "affinity": 38, "growth": 30, "decay": 28 }, "capacity": 1 },
-  { "id": "material.deer_carcass", "name": "Deer Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "properties": { "hardness": 13, "mass": 52, "flexibility": 30, "affinity": 40, "growth": 32, "decay": 28 }, "capacity": 1 },
-  { "id": "material.wolf_carcass", "name": "Wolf Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:uncommon", "comp:organic"], "properties": { "hardness": 15, "mass": 48, "flexibility": 34, "affinity": 38, "growth": 28, "decay": 28 }, "capacity": 2 },
-  { "id": "material.bear_carcass", "name": "Bear Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:uncommon", "comp:organic"], "properties": { "hardness": 20, "mass": 74, "flexibility": 24, "affinity": 36, "growth": 34, "decay": 26 }, "capacity": 2, "latent": ["identity.dense"] },
-  { "id": "material.thunderhorn_carcass", "name": "Thunderhorn Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:rare", "class:magical", "comp:organic"], "properties": { "hardness": 24, "mass": 78, "flexibility": 22, "affinity": 42, "conductivity": 45, "charge": 40, "growth": 30, "decay": 24, "instability": 20 }, "capacity": 3, "latent": ["identity.storm", "identity.dense"] },
-  { "id": "material.drake_carcass", "name": "Drake Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:rare", "class:magical", "comp:organic"], "properties": { "hardness": 34, "mass": 82, "flexibility": 20, "affinity": 38, "heat": 40, "heat_resistance": 55, "growth": 28, "decay": 20, "instability": 20 }, "capacity": 3, "latent": ["identity.ember", "identity.dense"] }
+  { "id": "material.rabbit_carcass", "name": "Rabbit Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "capacity": 1 },
+  { "id": "material.fowl_carcass", "name": "Fowl Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "capacity": 1 },
+  { "id": "material.boar_carcass", "name": "Boar Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "capacity": 1 },
+  { "id": "material.deer_carcass", "name": "Deer Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:common", "comp:organic"], "capacity": 1 },
+  { "id": "material.wolf_carcass", "name": "Wolf Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:uncommon", "comp:organic"], "capacity": 2 },
+  { "id": "material.bear_carcass", "name": "Bear Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:uncommon", "comp:organic"], "capacity": 2, "latent": ["identity.dense"] },
+  { "id": "material.thunderhorn_carcass", "name": "Thunderhorn Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:rare", "class:magical", "comp:organic"], "capacity": 3, "latent": ["identity.storm", "identity.dense"] },
+  { "id": "material.drake_carcass", "name": "Drake Carcass", "tags": ["state:raw", "form:carcass", "origin:fauna", "rarity:rare", "class:magical", "comp:organic"], "capacity": 3, "latent": ["identity.ember", "identity.dense"] }
 ]

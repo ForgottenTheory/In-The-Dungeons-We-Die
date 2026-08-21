@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ContentStudio.Models;
-using Dungeons.Affixes;
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Content;
@@ -31,20 +30,14 @@ public sealed class GameBundleService
         var bundle = new ContentBundle
         {
             Materials = BuildStore<MaterialDefinition>(workspace, "materials", problems),
-            Properties = BuildStore<PropertyDefinition>(workspace, "properties", problems),
             Identities = BuildStore<IdentityDefinition>(workspace, "identities", problems),
             SignatureTriggers = BuildStore<SignatureTriggerDefinition>(workspace, "signature_triggers", problems),
             SignatureBehaviors = BuildStore<SignatureBehaviorDefinition>(workspace, "signature_behaviors", problems),
             SignatureThemes = BuildStore<SignatureThemeDefinition>(workspace, "signature_themes", problems),
             SignaturePayloads = BuildStore<SignaturePayloadDefinition>(workspace, "signature_payloads", problems),
             VerbActions = BuildStore<VerbActionDefinition>(workspace, "verb_actions", problems),
-            CraftingActions = BuildStore<CraftingActionDefinition>(workspace, "processes", problems),
             Byproducts = BuildStore<ByproductDefinition>(workspace, "byproducts", problems),
-            Traits = BuildStore<TraitDefinition>(workspace, "traits", problems),
-            Essences = BuildStore<EssenceDefinition>(workspace, "essences", problems),
             Forms = BuildStore<EquipmentBlueprintDefinition>(workspace, "forms", problems),
-            Affixes = BuildStore<AffixDefinition>(workspace, "affixes", problems),
-            NameGrammar = BuildStore<NameWordDefinition>(workspace, "name_grammar", problems),
             ModifierKeys = BuildStore<ModifierKeyDefinition>(workspace, "modifier_keys", problems),
             NameFormats = BuildStore<NameFormatDefinition>(workspace, "name_formats", problems),
             Professions = BuildStore<ProfessionDefinition>(workspace, "professions", problems),

@@ -116,6 +116,19 @@ public sealed class ItemEffectResolver
 
     // ---- Stage: the guaranteed floor (D50 category 1) ---------------------------------------
 
+    /// <summary>The authored floor payload an identity promises — the D50 category-1 rule
+    /// stated once (the validator keeps it singular per identity). Public because the Assay
+    /// "what it promises on gear" reading must quote the same rule generation mints from.</summary>
+    public static SignaturePayloadDefinition? FloorPayloadOf(string identityId, ContentBundle content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        return content.SignaturePayloads.GetAll()
+            .Where(payload => payload.Floor is not null
+                && payload.Families.Any(family => family.Identity == identityId))
+            .OrderBy(payload => payload.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
     /// <summary>Each expressed identity's floor payload, compiled through its authored floor
     /// sentence at a magnitude positioned by quality and deepened by rank — deterministic to
     /// the last digit, which is what "guaranteed" means.</summary>
@@ -125,11 +138,7 @@ public sealed class ItemEffectResolver
 
         foreach (var stake in composition.Expressed)
         {
-            var floorPayload = _content.SignaturePayloads.GetAll()
-                .Where(payload => payload.Floor is not null
-                    && payload.Families.Any(family => family.Identity == stake.Id))
-                .OrderBy(payload => payload.Id, StringComparer.Ordinal)
-                .FirstOrDefault();
+            var floorPayload = FloorPayloadOf(stake.Id, _content);
             if (floorPayload?.Floor is not { } floorSentence)
                 continue; // an identity whose family has no authored payloads yet grants nothing — content, not code
 

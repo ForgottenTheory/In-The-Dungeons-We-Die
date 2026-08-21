@@ -88,10 +88,14 @@ public sealed record IdentityComposition(
 /// </summary>
 public static class IdentityEquipmentComposer
 {
+    /// <param name="formNoun">The noun the item's name builds on — the form's own name, or
+    /// one of its variants when the mint engine picked one (deterministically, from the
+    /// derived definition id). Null means the plain form name.</param>
     public static IdentityComposition Compose(
         EquipmentBlueprintDefinition form,
         IReadOnlyDictionary<string, (MaterialDefinition Definition, IdentityMaterialState State)> componentsBySlot,
-        ContentBundle content)
+        ContentBundle content,
+        string? formNoun = null)
     {
         ArgumentNullException.ThrowIfNull(form);
         ArgumentNullException.ThrowIfNull(componentsBySlot);
@@ -154,7 +158,7 @@ public static class IdentityEquipmentComposer
             mergedRoots,
             profile,
             Math.Clamp(quality, 0, IdentityCraftTuning.MaxQuality),
-            IdentityNameGenerator.NameForItem(expressed, mergedRoots, assembledComponentIds, form.Name, content),
+            IdentityNameGenerator.NameForItem(expressed, mergedRoots, assembledComponentIds, formNoun ?? form.Name, content),
             componentNames,
             wildestStability);
     }

@@ -14,6 +14,10 @@ namespace Dungeons.Game.Ui;
 /// every level, and levelling only replaces <c>???</c> with what the material was always doing.
 /// So this panel is the redaction made visible: the reveal ladder with its thresholds, and one
 /// material read through <see cref="AssayLens"/> at the current depth.</para>
+///
+/// <para>Re-aimed at the identity model in Phase 6 (D45/D48): the ladder now opens vessel,
+/// latency, latent names, leanings (D53) and potential — detecting what sleeps in a material
+/// and reading what it could become, never unredacting property numbers.</para>
 /// </summary>
 public partial class AssayBenchPanel : VBoxContainer
 {
@@ -63,7 +67,7 @@ public partial class AssayBenchPanel : VBoxContainer
         _depthLabel.Text = $"Assay L{level} reads to {depth}. Every level removes a ??? — never adds a point of anything.";
 
         ClearChildren(_revealLadder);
-        foreach (var facet in Enum.GetValues<AssayFacet>())
+        foreach (var facet in Enum.GetValues<IdentityAssayFacet>())
         {
             var requiredLevel = AssayLens.LevelFor(facet);
             var revealed = AssayLens.Reveals(depth, facet);

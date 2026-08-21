@@ -81,7 +81,8 @@ public sealed class IdentityFabricationEngine
         if (gate.Failure is not null)
             return new IdentityFabricationPreview(gate.Failure, gate.Detail, null, null, false);
 
-        var composition = IdentityEquipmentComposer.Compose(gate.Form!, gate.Components!, _content);
+        var composition = IdentityEquipmentComposer.Compose(
+            gate.Form!, gate.Components!, _content, FormNoun(gate.Form!, DerivedDefinitionId(invocation)));
         if (composition.Failure != IdentityCompositionFailure.None)
             return new IdentityFabricationPreview(null, null, composition, null, false);
 
@@ -97,7 +98,8 @@ public sealed class IdentityFabricationEngine
         if (gate.Failure is { } gateFailure)
             return Refused(gateFailure, gate.Detail);
 
-        var composition = IdentityEquipmentComposer.Compose(gate.Form!, gate.Components!, _content);
+        var composition = IdentityEquipmentComposer.Compose(
+            gate.Form!, gate.Components!, _content, FormNoun(gate.Form!, DerivedDefinitionId(invocation)));
         if (composition.Failure != IdentityCompositionFailure.None)
         {
             return new IdentityFabricationResult(
@@ -180,6 +182,33 @@ public sealed class IdentityFabricationEngine
         }
 
         return new GateCheck(null, null, form, components);
+    }
+
+    /// <summary>How many trailing hex characters of the derived id seed the noun pick —
+    /// eight fits <c>uint</c> and is already well distributed.</summary>
+    private const int NounHashHexLength = 8;
+
+    /// <summary>
+    /// The form's noun, which may be one of its <c>name_variants</c> (D34's ~120 weapon
+    /// names). Chosen from the derived definition id rather than the RNG, because that id
+    /// already means "this exact item kind": the same materials in the same form always read
+    /// the same way — two identical blades are never a Falchion and a Scimitar — and the
+    /// preview promises the noun the forge will actually mint. The old fabrication's rule,
+    /// carried across in Phase 7 (D54) so the name library survived its engine.
+    /// </summary>
+    public static string FormNoun(EquipmentBlueprintDefinition form, string derivedDefinitionId)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        ArgumentNullException.ThrowIfNull(derivedDefinitionId);
+
+        if (form.NameVariants.Count == 0)
+            return form.Name;
+
+        var options = new List<string>(form.NameVariants.Count + 1) { form.Name };
+        options.AddRange(form.NameVariants);
+
+        var hash = Convert.ToUInt32(derivedDefinitionId[^NounHashHexLength..], 16);
+        return options[(int)(hash % (uint)options.Count)];
     }
 
     /// <summary>The derived definition's identity: the form plus what filled each slot —

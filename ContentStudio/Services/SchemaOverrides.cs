@@ -102,38 +102,7 @@ public static class SchemaOverrides
         ["TriggerRule.chance"] = new(Min: 0, Max: 1, Step: 0.05),
         ["TriggerRule.cooldown_ticks"] = new(Min: 0),
 
-        // ── Materials & properties ──────────────────────────────────────────────────────────
-        ["MaterialDefinition.properties"] = new(KeySource: "properties", Min: 0, Max: 100, Step: 1),
-        ["MaterialDefinition.essence"] = new(KeySource: "essences", Min: 0, Max: 100, Step: 1),
-        ["MaterialDefinition.materialStrength"] = new(Min: 1, Max: 100),
-        ["MaterialDefinition.workability"] = new(Min: 1, Max: 100),
-        ["PropertyDefinition.opposes"] = new(Kind: "ref", RefTypes: new[] { "properties" }),
-        ["PropertyDefinition.floor"] = new(Min: 0, Max: 100),
-        ["ResistContributor.property"] = new(Kind: "ref", RefTypes: new[] { "properties" }),
-        ["ResistContributor.weight"] = new(Step: 0.05),
-        ["TagGrant.tag"] = new(Help: "family:value material tag granted at or above min."),
-
-        // ── Crafting actions (processes) ────────────────────────────────────────────────────
-        ["CraftingActionDefinition.profession"] = new(Kind: "ref", RefTypes: new[] { "professions" },
-            Help: "Empty string = ungated."),
-        ["CraftingActionDefinition.severity"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["CraftingActionDefinition.essence_rate"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["AffectedQuality.property"] = new(Kind: "ref", RefTypes: new[] { "properties" }),
-        ["AffectedQuality.rate"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["RoleWeights.substrate"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["RoleWeights.reagent"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["RoleWeights.catalyst"] = new(Min: 0, Max: 1, Step: 0.05),
-        ["CraftingActionRequirements.profession_level"] = new(Min: 0),
-
-        // ── Traits / essences / byproducts ──────────────────────────────────────────────────
-        ["TraitDefinition.category"] = new(Kind: "enum", EnumSource: "traitCategories"),
-        ["TraitDefinition.condition"] = new(Kind: "json", Help: "Property → {min, max} ranges."),
-        ["TraitDefinition.magnitude_of"] = new(Kind: "refList", RefTypes: new[] { "properties" }),
-        ["TraitDefinition.consumes"] = new(KeySource: "properties", Min: 0),
-        ["TraitMerge.with"] = new(Kind: "ref", RefTypes: new[] { "traits" }),
-        ["TraitMerge.into"] = new(Kind: "ref", RefTypes: new[] { "traits" }),
-        ["EssenceDefinition.anchor"] = new(Kind: "ref", RefTypes: new[] { "properties" }),
-        ["EssenceDefinition.opposes"] = new(EnumSource: "essenceKeys", Help: "Bare essence keys (fire, frost…)."),
+        // ── Materials ───────────────────────────────────────────────────────────────────────
         ["ByproductDefinition.material"] = new(Kind: "ref", RefTypes: new[] { "materials" }),
         ["ByproductDefinition.forms"] = new(Help: "Bare form-tag values (metal, wood…), not namespaced."),
 

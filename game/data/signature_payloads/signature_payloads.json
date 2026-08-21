@@ -82,7 +82,7 @@
     "name": "Bulwark",
     "families": [ { "identity": "identity.dense", "rung": 1 } ],
     "binding": { "kind": "modifier", "key": "combat.block.mult" },
-    "range": [0.08, 0.2],
+    "range": [1.08, 1.2],
     "weight": 10,
     "description": "Stronger blocks — mass planted between you and the hit."
   },

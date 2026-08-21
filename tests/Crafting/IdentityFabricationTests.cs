@@ -38,7 +38,9 @@ public class IdentityFabricationTests
         Assert.False(forge.Inventory.Contains("material.iron_ingot", 1));
         Assert.False(forge.Inventory.Contains("material.leather", 1));
         Assert.Contains(forge.Inventory.Instances, instance => instance.InstanceId == result.Item!.InstanceId);
-        Assert.Equal("Iron Longsword", result.Item!.DisplayName);
+        // The noun is the deterministic variant pick (D34, carried across in Phase 7) — this
+        // exact component set on a longsword reads as a Spatha, every time.
+        Assert.Equal("Iron Spatha", result.Item!.DisplayName);
     }
 
     [Fact]

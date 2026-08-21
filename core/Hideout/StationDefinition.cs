@@ -32,32 +32,20 @@ public sealed class StationDefinition : IDefinition
     /// new profession cannot ship without a way to reach it.</summary>
     public IReadOnlyList<string> Professions { get; init; } = Array.Empty<string>();
 
-    /// <summary>Crafting action ids this station's bench offers. An action may appear at more
-    /// than one station (Grind is ungated: a mortar at the Apothecary, a mill at the
-    /// Workbench), and a station with none simply shows no bench.</summary>
-    [JsonPropertyName("crafting_actions")]
-    public IReadOnlyList<string> CraftingActions { get; init; } = Array.Empty<string>();
-
-    /// <summary>Equipment blueprint ids that can be assembled here, by what the blueprint is
-    /// mostly made of — a Longsword at the Forge, a Vest at the Tannery or the Loom.</summary>
-    public IReadOnlyList<string> Blueprints { get; init; } = Array.Empty<string>();
-
-    /// <summary>Identity-system crafting actions (<see cref="VerbActionDefinition"/>) offered
-    /// here — the new bench, routing exactly as <see cref="CraftingActions"/> does for the
-    /// outgoing one. Both lists coexist through the migration; the old one dies with its
-    /// engine (Phase 7).</summary>
+    /// <summary>The identity bench's crafting actions (<see cref="VerbActionDefinition"/>)
+    /// offered here. An action may appear at more than one station; a station with none
+    /// simply shows no bench.</summary>
     [JsonPropertyName("verb_actions")]
     public IReadOnlyList<string> VerbActions { get; init; } = Array.Empty<string>();
+
+    /// <summary>True when this station hosts the identity forge. Forms need no per-station
+    /// routing — the forge offers every migrated form (Phase 7, D54).</summary>
+    [JsonPropertyName("has_assembly")]
+    public bool HasAssembly { get; init; }
 
     /// <summary>The profession whose shelf this station sorts onto in the Hideout — the first
     /// one listed. A station hosting several is filed under the one it is named for.</summary>
     public string PrimaryProfessionId => Professions.Count > 0 ? Professions[0] : string.Empty;
-
-    /// <summary>True when the material-transformation bench is worth drawing here.</summary>
-    public bool HasBench => CraftingActions.Count > 0;
-
-    /// <summary>True when something can be assembled into equipment here.</summary>
-    public bool HasAssembly => Blueprints.Count > 0;
 
     /// <summary>True if this station trains <paramref name="professionId"/>.</summary>
     public bool Hosts(string professionId) =>

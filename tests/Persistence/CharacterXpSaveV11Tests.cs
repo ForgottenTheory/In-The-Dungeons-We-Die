@@ -86,7 +86,7 @@ public class CharacterXpSaveV11Tests
 
         Assert.Equal(0, progress.Xp);
         Assert.Equal(1, progress.Level);
-        Assert.Equal(3, stash.GetQuantity("material.oak_log"));
+        Assert.Equal(0, stash.GetQuantity("material.oak_log")); // D54: pre-v14 items reset
     }
 
     [Fact]

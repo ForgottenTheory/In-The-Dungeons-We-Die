@@ -27,12 +27,20 @@ public class LoadoutTests
         Armor = new ArmorStats { Armor = armor, Resistances = resistances.ToDictionary(r => r.Lane, r => r.Value) },
     };
 
-    private static ItemInstance Instance(string definitionId, double hardness) => new()
+    private static ItemInstance Instance(string definitionId) => new()
     {
         InstanceId = 1,
         BaseDefinitionId = definitionId,
         ItemType = ItemType.Armor,
-        Properties = new PropertySet(new Dictionary<string, double> { ["hardness"] = hardness }),
+    };
+
+    private static EquipmentDefinition Hardened(EquipmentDefinition piece, double hardness) => new()
+    {
+        Id = piece.Id,
+        Name = piece.Name,
+        Slot = piece.Slot,
+        Armor = piece.Armor,
+        Properties = new Dictionary<string, double> { ["hardness"] = hardness },
     };
 
     // --- Armour is the sum of the loadout -----------------------------------
@@ -42,9 +50,9 @@ public class LoadoutTests
     {
         var worn = new (EquipmentDefinition, ItemInstance?)[]
         {
-            (Piece("helm", EquipmentSlot.Head, 1), Instance("helm", 2)),
-            (Piece("vest", EquipmentSlot.Body, 3), Instance("vest", 4)),
-            (Piece("boots", EquipmentSlot.Feet, 1), Instance("boots", 1)),
+            (Hardened(Piece("helm", EquipmentSlot.Head, 1), 2), null),
+            (Hardened(Piece("vest", EquipmentSlot.Body, 3), 4), null),
+            (Hardened(Piece("boots", EquipmentSlot.Feet, 1), 1), null),
         };
 
         var profile = EquipmentResolver.ResolveWornArmor(worn);
@@ -114,7 +122,7 @@ public class LoadoutTests
     public void ASecondRingGoesOnTheOtherHandRatherThanDisplacingTheFirst()
     {
         var equipment = new Dungeons.Items.Equipment();
-        var first = Instance("ring.first", 0);
+        var first = Instance("ring.first");
         var second = new ItemInstance { InstanceId = 2, BaseDefinitionId = "ring.second", ItemType = ItemType.Armor };
 
         Assert.Null(equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, first));
@@ -130,11 +138,11 @@ public class LoadoutTests
     public void AThirdRingDisplacesTheFirstPosition()
     {
         var equipment = new Dungeons.Items.Equipment();
-        var first = Instance("ring.first", 0);
+        var first = Instance("ring.first");
         equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, first);
-        equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.second", 0));
+        equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.second"));
 
-        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.third", 0));
+        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Ring1, Instance("ring.third"));
 
         Assert.Same(first, displaced);
         Assert.Equal("ring.third", equipment.InSlot(EquipmentSlot.Ring1)!.BaseDefinitionId);
@@ -147,10 +155,10 @@ public class LoadoutTests
     public void ASlotWithOnePositionStillReplacesWhatIsThere()
     {
         var equipment = new Dungeons.Items.Equipment();
-        var firstVest = Instance("vest.first", 0);
+        var firstVest = Instance("vest.first");
         equipment.EquipInFirstFreePosition(EquipmentSlot.Body, firstVest);
 
-        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Body, Instance("vest.second", 0));
+        var displaced = equipment.EquipInFirstFreePosition(EquipmentSlot.Body, Instance("vest.second"));
 
         Assert.Same(firstVest, displaced);
         Assert.Equal("vest.second", equipment.InSlot(EquipmentSlot.Body)!.BaseDefinitionId);
@@ -170,59 +178,6 @@ public class LoadoutTests
     }
 
     // --- The v9 migration ---------------------------------------------------
-
-    /// <summary>
-    /// A save written before the slot vocabulary grew calls the torso slot <c>Armor</c>. Without
-    /// the migration the key fails to parse and the item is dropped on the floor — so this is
-    /// the test that says the player keeps their vest.
-    /// </summary>
-    [Fact]
-    public void APreExpansionSaveKeepsWhatThePlayerWasWearing()
-    {
-        var save = new SaveData
-        {
-            SchemaVersion = 8,
-            Equipment = new Dictionary<string, ItemInstanceSave>
-            {
-                [EquipmentSlots.LegacyBodySlotName] = new()
-                {
-                    InstanceId = 7,
-                    BaseDefinitionId = "equip.iron_armor",
-                    ItemType = ItemType.Armor,
-                    DisplayName = "Iron Armor",
-                },
-            },
-        };
-
-        var equipment = new Dungeons.Items.Equipment();
-        SaveMapper.Apply(save, new Inventory(), NewProfessions(), new DiscoverySystem(),
-            new Dictionary<string, int>(), equipment);
-
-        var restored = equipment.InSlot(EquipmentSlot.Body);
-        Assert.NotNull(restored);
-        Assert.Equal("Iron Armor", restored!.DisplayName);
-    }
-
-    /// <summary>The same rename reaches fabricated archetypes: a vest minted before the
-    /// expansion stored its slot as "Armor" too.</summary>
-    [Fact]
-    public void APreExpansionFabricatedArchetypeRestoresToTheBodySlot()
-    {
-        var save = new SaveData
-        {
-            SchemaVersion = 8,
-            EmergentEquipment = new List<EquipmentArchetypeSave>
-            {
-                new() { Id = "equip.emergent.abc123", Name = "Leather Vest", Slot = EquipmentSlots.LegacyBodySlotName },
-            },
-        };
-
-        var store = new DataStore<EquipmentDefinition>();
-        SaveMapper.Apply(save, new Inventory(), NewProfessions(), new DiscoverySystem(),
-            new Dictionary<string, int>(), equipmentStore: store);
-
-        Assert.Equal(EquipmentSlot.Body, store.GetById("equip.emergent.abc123").Slot);
-    }
 
     [Fact]
     public void ACurrentSaveRoundTripsEverySlot()

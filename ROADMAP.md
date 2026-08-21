@@ -1,7 +1,7 @@
 # ROADMAP.md
 
 Status: ✅ done · 🔄 in progress · ⬜ not started. Kept short on purpose — history lives in git,
-system detail in `PROJECT_STATE.md`/`SYSTEM_INDEX.md`, status in `docs/GDD.md` §19.
+system detail in `docs/game-overview.md`/`docs/code-map.md`, status in `docs/GDD.md` §19.
 
 ## Done (compressed)
 - ✅ **MVP vertical slice** (Milestones 1–9): professions, crafting, tick combat, Dark Forest
@@ -30,61 +30,33 @@ system detail in `PROJECT_STATE.md`/`SYSTEM_INDEX.md`, status in `docs/GDD.md` �
   Farming plots, the Agility training course, Cartography → Realm Knowledge, and the Assay
   reveal ladder. 79 new materials; ecosystem enforced by test.
 
+- ✅ **The identity crafting redesign, Phases 1–7** (D42–D54, 2026-08-20/21): the identity
+  model beside the old system → the ten-verb bench → the item-effect pipeline and the Identity
+  Forge → the full 1,448-material migration (no cull) → professions train at the bench → the
+  Phase 6 presentation pass (player language everywhere, D53) → **Phase 7 deletion**: the
+  property algebra, genome/affixes, trait/essence layers, their UI, tests, content and docs
+  removed whole; all 23 forms identity-forgeable; save settles at **v14** (progression
+  survives, items reset — D49/D54). The old system no longer exists in the repo.
+
 ## The plan to the full-fantasy slice
 Target: prepare → enter → fight *as your build* → extract → **fabricate gear from what you
 brought back** → feel the difference next run. Dependency-ordered; each milestone is one
 coherent run.
 
-1. ✅ **C1 — Crafting P2 traits + P3 essence** (`64418bf`): 16-trait library with cap 3 /
-   displacement / supersession; the seven typed essences, resonance capacity/strain, Attune.
-2. ✅ **C2a+C2b — Fabrication + the scale reconciliation** (`bcb0c6e`): form templates
-   (3-slot Longsword, Buckler, Vest), aperture-gated traits with dormancy, derived equipment
-   archetypes persisted, iron-sword parity pinning the 0–100 → combat-unit calibration,
-   per-slot component UI.
-3. 🔄 **R0–R4 — the presentation correction (D30)** *(absorbs E5)*. The three-languages
-   architecture (`docs/presentation-architecture.md`): raw simulation numbers off normal play
-   surfaces, a semantic crafting grammar, items that pay off in gameplay language.
-   **R0 ✅** audit + doc. **R1 ✅** the Core semantic layer (tiers/trends/risk bands/slot-fit;
-   glyph+gloss on `PropertyDefinition`; typed changes on `CraftProjection`). **R2 ✅** bench UX
-   (grouped preview panel, glyph strips, Advanced toggle). **R3 ✅** fabrication `Project` +
-   slot-fit lines + the §6 reveal (`InstanceLabel` retired from player surfaces). **R4a ✅**
-   the lane alignment (`combat.resist.physical` + six aspect keys wired into the pipeline with
-   cap/floor; **D-07 executed** — evade.chance + avoid.lane, dodge.chance retired). **R4b ✅**
-   the Genome (persisted, **save v6**) → eligibility/weight/tier → seeded rolling; innates as
-   the deterministic layer; 28 representative affixes over already-resolving families —
-   **ailment application chances finally have their source**; triggered + stat grants through
-   the existing rule/modifier seams; preview genome translation ("Supports: …"); affix
-   validator rules + seeded distribution tests; debug reroll. **R4c-1 ✅** the retaliation
-   family as pure content over the rule engine (when-hit / on-block / after-dodge / poison
-   barbs, e2e-pinned — thorns needed **zero** new combat machinery); Evade live (untelegraphed
-   only, D-07) + lane avoidance (per-packet negation) + flat lane penetration after the cap
-   (overcap-vs-exposure semantics pinned); capped/raw on the armour summary (D-05a minimal);
-   the on-crit trigger family (CriticalLanded existed all along). 37 affixes shipped.
-   **R4c-2 ✅** Parry (gear-granted per D-26 — `parry` tag on the Buckler form, 3-tick window,
-   negation + heavy stagger + the `Parried` event; UI button appears only when gear grants
-   it), **Barrier absorption** (the HitPipeline debt closed — soaks before Health,
-   `BarrierBroken` on shatter), status potency/duration keys wired at the encounter seam,
-   the `DamageMitigated` event + reflect-% retaliation, move-modifier affix grants (the
-   11-op system's third grantor — Emberbrand ships as the first data move-mod), and the
-   parry/reflect/ward/potency/duration/emberbrand affixes — **43 affixes total**. Stored
-   retaliation + inversion/ignore stay with E7 (Exotic tier).
-4a. 🔄 **C2c — the playtest checkpoint**: the machine half is **done** (per-rule
-   `ValidateForms` failing-content tests; the D28/D29 first-session sufficiency audit —
-   which caught and then confirmed the boar-hide bonus faucet closes the binding chain; the
-   D29.3 essence source audit — overlap pinned to the shock-eel rung, flagged for the
-   noncompete check). **The playtest half is the user's by standing decision**: play the
-   full loop in the new language (mine → smelt → infuse → attune → fabricate → roll → fight
-   with thorns/ailments/parry live), then land the whole balance backlog in one pass —
-   Fireball, Bastion, casting-speed (§18 #16), profession interval/XP, fabrication
-   constants, affix-roll odds and counts, the eel-rung essence rates — plus, after P4,
-   profession intervals/XP across all twenty, opportunity odds/risk/cost, offline caps, plot
-   grow times and the course's bonus magnitudes. Save is **v7** (a v6 save still loads).
-4. ⬜ **C2c — the playtest checkpoint** *(user-driven; moved after R4, user call 2026-08-16)*.
-   Play the full loop in the new language (mine → smelt → infuse → attune → fabricate → fight);
-   land the whole parked balance backlog in one pass: Fireball one-shots, Bastion damage, the
-   casting-speed decision (GDD §18 #16), profession interval/XP, fabrication calibration
-   constants, affix-roll odds. Also close the small gap: per-rule failing-content tests for
-   `ValidateForms`. Plus the D28/D29 audits: first-session sufficiency, essence sources.
+1. ✅ **C1 / C2a+C2b / R0–R4 — the first crafting stack and the presentation correction.**
+   Superseded and deleted by the identity redesign (D42–D54, above); what carried forward:
+   the three-languages architecture (D30, `docs/presentation-architecture.md`), the lane
+   alignment + D-07, Parry, Barrier absorption, status potency/duration keys, the
+   `DamageMitigated` event, move-modifier grants, and the combat machinery every retired
+   affix used to prove — all alive, now fed by identity sentences.
+4. ⬜ **The playtest checkpoint** *(user-driven)*. Play the full loop in the identity
+   language (gather → bench verbs → forge → fight with sentences live), then land the whole
+   parked balance backlog in one pass: **every identity-system number** (all three `*Tuning`
+   classes say provisional — verb costs/risks, payload ranges and weights, Signature odds,
+   XP), plus the pre-redesign residue: Fireball one-shots, Bastion damage, the casting-speed
+   decision (GDD §18 #16), profession intervals/XP across all twenty, opportunity
+   odds/risk/cost, offline caps, plot grow times, course bonus magnitudes, synergy rates,
+   the auto-combat brains.
 5. 🔄 **M6 — Loop closers**.
    **Loot ✅ (2026-08-17, `docs/loot.md`, D31).** One data-driven table shape for every source —
    enemies (composed family+role+actor), gathering nodes, event chests and profession actions.
@@ -180,16 +152,18 @@ coherent run.
    components** (Smithing's tool head, Artifice's haft/mechanisms/lenses) and the Agility
    course's `CourseBonusKeys`, which nothing reads yet — E6 is where both get consumed.
 7. ⬜ **E7 — Crafting operations + Overreach**. Anneal/Etch/Scour/Reforge/Bind/Temper/Fracture +
-   the escalating-Ruin casino and Anomalous modifiers. Caps the crafting fantasy.
+   the escalating-Ruin casino and Anomalous effects — now to be designed over the identity
+   system's sentence vocabulary (the affix layer it originally targeted is gone, D54). Caps
+   the crafting fantasy.
 
 ## After the slice (unordered)
 Realm breadth (affixes, tiers, location types) · enemy roster to 8–10 + the
 elite/boss variant layer (the D26 fold seam exists) · **fully unattended Realm runs** (auto-combat
 landed in Phase 10; travel, extraction decisions and the run bag did not) · economy/vendors (NEEDS DESIGN — Thieving deliberately ships no currency) · Hideout ·
 species roster ·
-remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) · crafting P4/P6 ·
+remaining 40 suffix mechanics · the Fighter identity hook (§18 #15) ·
 Application-layer extraction from `GameRoot` · production UI.
 
 ## Guardrails
-Keep `dotnet test` green (**1190** now) and the build at 0 warnings. Content is data; never author
+Keep `dotnet test` green (**1,011** now — the identity migration retired the old system's suites) and the build at 0 warnings. Content is data; never author
 a combination. Nothing authoritative in `GameRoot`/UI. Commit only when asked; on `main`.

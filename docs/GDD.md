@@ -7,10 +7,11 @@
 > with newer decisions, the newer decision is recorded here and the older one is marked
 > superseded.
 >
-> ⚠ **Crafting redesign in progress (2026-08-20, DECISIONS D42–D44).** The material / property /
-> trait / essence crafting model this GDD describes is being replaced by the **Identity +
-> Signature system** — design of record: `docs/identity-foundation.md`. The crafting sections
-> describe the code as shipped until the migration lands; do not design against them.
+> ⚠ **The crafting redesign is COMPLETE (2026-08-21, DECISIONS D42–D54).** The material /
+> property / trait / essence crafting model this GDD's crafting sections describe was replaced
+> by the **identity system** and deleted whole in migration Phase 7. Those sections are
+> history, not the game — design of record: `docs/identity-foundation.md`; the shipped stack:
+> `docs/crafting-overview.md`. Do not design against the superseded sections.
 >
 > **Status marks:** **BUILT** (in the game, tested) · **PLANNED** (designed and settled, not yet
 > built) · **NEEDS DESIGN** (little or no design exists). Anything undecided is marked rather

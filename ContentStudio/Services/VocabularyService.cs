@@ -36,7 +36,6 @@ public static class VocabularyService
         moveOpFlags = Sorted(MoveOps.Flags),
         moveOpTimingFields = Sorted(MoveOps.TimingFields),
         scopeDimensions = Sorted(ScopeDimensions.All),
-        traitCategories = Sorted(EquipmentAssemblyTuning.TraitCategories),
         courseBonusKeys = CourseBonusKeys.All,
         nameFormats = Sorted(ContentValidator.NameFormats),
         tagFamilies = TagFamilies.All

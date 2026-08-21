@@ -1,5 +1,4 @@
 using ContentStudio.Models;
-using Dungeons.Affixes;
 using Dungeons.Characters.Composition;
 using Dungeons.Combat;
 using Dungeons.Content;
@@ -105,14 +104,6 @@ public static class ContentTypeRegistry
         },
         new()
         {
-            TypeId = "properties", Folder = "properties", DefinitionType = typeof(PropertyDefinition),
-            DisplayName = "Properties", SingularName = "Property", NavigationGroup = "Crafting", IdPrefix = "",
-            ListColumns = new[] { "role", "family" },
-            ValidatorCategories = new[] { "properties" },
-            Description = "The property registry — the single source of truth for what a valid property name is.",
-        },
-        new()
-        {
             TypeId = "identities", Folder = "identities", DefinitionType = typeof(IdentityDefinition),
             DisplayName = "Identities", SingularName = "Identity", NavigationGroup = "Crafting", IdPrefix = "identity.",
             ListColumns = new[] { "cluster" },
@@ -159,30 +150,6 @@ public static class ContentTypeRegistry
         },
         new()
         {
-            TypeId = "processes", Folder = "processes", DefinitionType = typeof(CraftingActionDefinition),
-            DisplayName = "Crafting Actions", SingularName = "Crafting Action", NavigationGroup = "Crafting", IdPrefix = "process.",
-            ListColumns = new[] { "profession", "medium", "severity" },
-            ValidatorCategories = new[] { "processes" },
-            Description = "The bench verbs (grind, steep, forge-infuse…): channel rates, medium, severity, gates.",
-        },
-        new()
-        {
-            TypeId = "traits", Folder = "traits", DefinitionType = typeof(TraitDefinition),
-            DisplayName = "Traits", SingularName = "Trait", NavigationGroup = "Crafting", IdPrefix = "trait.",
-            ListColumns = new[] { "category" },
-            ValidatorCategories = new[] { "traits" },
-            Description = "Emergent material qualities: birth conditions, magnitude sources, merges, drawbacks.",
-        },
-        new()
-        {
-            TypeId = "essences", Folder = "essences", DefinitionType = typeof(EssenceDefinition),
-            DisplayName = "Essences", SingularName = "Essence", NavigationGroup = "Crafting", IdPrefix = "essence.",
-            ListColumns = new[] { "anchor" },
-            ValidatorCategories = new[] { "essences" },
-            Description = "The seven aspects: anchor property, oppositions, capacity and strain.",
-        },
-        new()
-        {
             TypeId = "byproducts", Folder = "byproducts", DefinitionType = typeof(ByproductDefinition),
             DisplayName = "Byproducts", SingularName = "Byproduct", NavigationGroup = "Crafting", IdPrefix = "byproduct.",
             ListColumns = new[] { "material", "fallback" },
@@ -196,14 +163,6 @@ public static class ContentTypeRegistry
             ListColumns = new[] { "type", "trait_cap" },
             ValidatorCategories = new[] { "forms" },
             Description = "Fabrication blueprints: slots with tag gates and mass shares, the stat map, granted moves.",
-        },
-        new()
-        {
-            TypeId = "affixes", Folder = "affixes", DefinitionType = typeof(AffixDefinition),
-            DisplayName = "Item Modifiers", SingularName = "Item Modifier", NavigationGroup = "Crafting", IdPrefix = "affix.",
-            ListColumns = new[] { "slot", "family", "class" },
-            ValidatorCategories = new[] { "affix" },
-            Description = "Prefixes, suffixes and innates rolled from the genome: eligibility, weights, tiers, grants.",
         },
         new()
         {
@@ -227,13 +186,6 @@ public static class ContentTypeRegistry
             DisplayName = "Interactions", SingularName = "Interaction", NavigationGroup = "Crafting", IdPrefix = "interaction.",
             ValidatorCategories = new[] { "crafting" },
             Description = "The legacy fixed-recipe path; dies with P5c once consumable forms exist.",
-        },
-        new()
-        {
-            TypeId = "name_grammar", Folder = "name_grammar", DefinitionType = typeof(NameWordDefinition),
-            DisplayName = "Name Grammar", SingularName = "Name Word", NavigationGroup = "Crafting", IdPrefix = "",
-            ValidatorCategories = new[] { "name_grammar" },
-            Description = "The word ladders emergent material names are built from.",
         },
 
         // ── Professions ─────────────────────────────────────────────────────────────────────

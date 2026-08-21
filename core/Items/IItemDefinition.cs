@@ -14,7 +14,4 @@ public interface IItemDefinition : IDefinition
 
     /// <summary>Whether identical copies collapse into a quantity stack (true) or are unique instances (false).</summary>
     bool Stackable { get; }
-
-    /// <summary>Intrinsic material properties of this item kind.</summary>
-    PropertySet BaseProperties { get; }
 }

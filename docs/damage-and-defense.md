@@ -126,8 +126,9 @@ at 8, and makes conversion a genuine tactical lever (§2.6) rather than a damage
 
 ## 2.4 Essences tag, empower and gate — but never mitigate **[DECIDED — D-04]**
 
-Per GDD §9 / `emergent-item-system.md` §5, essence is the rare supernatural layer with an
-**anchor property**. In combat it does four jobs:
+Per GDD §9 (essence — since the identity redesign, the supernatural layer is carried by
+**identities**, D44 absorbing the essence map; the combat-side jobs below are unchanged).
+In combat it does four jobs:
 
 1. **Empowers its anchor aspect.** `essence.fire` increases heat-aspect damage and Burn
    magnitude on items that carry it. Scales expression, not lanes.

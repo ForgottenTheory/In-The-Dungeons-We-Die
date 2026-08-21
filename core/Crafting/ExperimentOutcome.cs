@@ -22,12 +22,6 @@ public sealed class ExperimentOutcome
     public int ResultQuantity { get; init; }
     public bool WasNewDiscovery { get; init; }
 
-    /// <summary>Properties carried by the produced material, for feedback.</summary>
-    public IReadOnlyList<MaterialProperty> ResultProperties { get; init; } = Array.Empty<MaterialProperty>();
-
-    /// <summary>The generated instance, when the interaction produces one (else null → a plain stack).</summary>
-    public ItemInstance? ProducedInstance { get; init; }
-
     /// <summary>The profession that fell short, when <see cref="Failure"/> is ProfessionTooLow.</summary>
     public string? UnmetProfessionId { get; init; }
     public int UnmetRequiredLevel { get; init; }

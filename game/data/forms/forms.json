@@ -1,42 +1,22 @@
 [
-  // Fabrication forms (C2a §16.2) — the terminal boundary where materials become equipment.
+  // Forms — the terminal boundary where materials become equipment (identity model since
+  // migration Phase 7, D54: docs/identity-foundation.md §8.1, §11.5).
   //
   // ── HOW TO READ A FORM ──────────────────────────────────────────────────────────────────────
   //
-  // `slots`      named components. `requires_tags` is ANY-OF. `mass_share` is what fraction of
-  //              the item this component IS (they sum to 1.0 — validated). `trait_expression`
-  //              gates how much of each trait category this position lets through; the rest
-  //              goes dormant.
-  // `stat_map`   what the finished item's stats READ. A named slot reads only that component;
-  //              `"*"` reads the mass-share-weighted total. This is the single most important
-  //              field in the file: it is why the same iron ingot is excellent in one form and
-  //              wasted in another, and it is what `ItemPotential.MaterialInfluence` weights
-  //              when it decides which modifiers are even eligible.
-  //
-  // ── WHY THESE FORMS ─────────────────────────────────────────────────────────────────────────
-  //
-  // Each form exists to exercise a different part of the material system, not to add variety:
-  //
-  //   Longsword   hardness-led, three slots      — the calibration reference (iron-sword parity)
-  //   Warspear    flexibility-led, mass in the   — the same iron that makes a great sword makes
-  //               haft rather than the head        a mediocre spear. The counter-example.
-  //   Buckler     one slot, all of it            — the simplest possible form; grants Parry
-  //   Helm        insulation matters             — the only armour whose stat_map reads it hard
-  //   Vest        hardness AND flexibility       — the trade-off form
-  //   Gauntlets   flexibility-led armour         — where being too hard is a cost
-  //   Treads      mass-led armour                — where being too heavy is a cost
-  //   Focus       resonance + arcane             — the ONLY form that reads them, which is what
-  //                                                gives resonant materials anywhere to go
-  //   Ring        conductivity + affinity        — the only form reading the two properties
-  //                                                nothing else looked at. Fills EITHER ring
-  //                                                position (see EquipmentSlots.RingPositions)
-  //
-  // ── ARMOUR COVERAGE IS AUTHORED, NOT CODED ──────────────────────────────────────────────────
-  //
-  // A worn loadout's armour is the sum of its pieces (`EquipmentResolver.ResolveWornArmor`), and
-  // each piece's contribution comes from how hard its stat_map reads `hardness`. A vest covers
-  // more of you than gauntlets do, so it reads harder. There is no per-slot multiplier in the
-  // code — change the weight here and the coverage changes.
+  // `slots`              named components. `requires_tags` is ANY-OF. `mass_share` is what
+  //                      fraction of the item this component IS (sums to 1.0 — validated);
+  //                      it weighs quality, provenance and the D51 expression tie-break.
+  // `identity_priority`  which slot's identities speak first when the cap forces a choice —
+  //                      authored where mass order would say the wrong thing (D51: selection
+  //                      stays readable, never percentage arithmetic).
+  // `identity_cap`       how many identities the finished item actively expresses; the rest
+  //                      go Dormant (D51). Material capacity is a different axis on purpose.
+  // `base_reads`         the D46 physical floor: which slot's Heft/Bite/Toughness/Give feeds
+  //                      damage, speed and armor. Why the same iron is excellent in a
+  //                      longsword's edge and a heavy stick in a spear's haft.
+  // `generation_profile` the form's thumb on the sentence-generation scale (§8 stage 1) —
+  //                      a shield leans toward blocking work, never a recipe.
 
   // ══ WEAPONS ═════════════════════════════════════════════════════════════════════════════════
 
@@ -49,27 +29,19 @@
       "edge": {
         "requires_tags": ["form:metal", "form:crystal"],
         "mass_share": 0.60,
-        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.5, "structural": 1.0 },
         "identity_priority": 3
       },
       "core": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 0.25,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.1, "vital": 0.3, "arcane": 0.7, "structural": 0.8 },
         "identity_priority": 2
       },
       "binding": {
         "requires_tags": ["form:hide", "form:fiber"],
         "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.4, "vital": 0.6, "arcane": 0.3, "structural": 0.3 },
         "identity_priority": 1
       }
     },
-    "stat_map": {
-      "mass":     [ { "slot": "*",    "property": "mass",     "weight": 1.0 } ],
-      "hardness": [ { "slot": "edge", "property": "hardness", "weight": 0.8 }, { "slot": "core", "property": "hardness", "weight": 0.2 } ]
-    },
-    "trait_cap": 4,
     // Identity model (Phase 3, D46/D51): the blade reads Bite off the edge and swings by its
     // whole-item Heft; the edge's identities express before the core's, the core's before the
     // binding's. identity_cap 3 — a sword states at most three ideas. The generation lean is
@@ -82,17 +54,14 @@
     "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.iron_slash", "move.heavy_strike"],
     // Every one-handed straight or curved blade in the library. They differ by fashion and by
-    // where they were made, not by what the stat map reads off them — so they are names, and
+    // where they were made, not by what the item reads off them — so they are names, and
     // adding them cost nothing but this line.
     "name_variants": ["Arming Sword", "Broadsword", "Falchion", "Scimitar", "Sabre", "Rapier", "Estoc", "Khopesh", "Kopis", "Falcata", "Dao", "Jian", "Katana", "Tachi", "Shotel", "Kilij", "Yatagan", "Talwar", "Firangi", "Messer", "Spatha", "Shamshir", "Pulwar", "Nimcha", "Flyssa", "Takoba", "Ida", "Backsword"],
     "description": "A proper blade. The material decides what kind of proper."
   },
-
   {
-    // The deliberate counterweight to the Longsword. Almost all the mass is in the haft, and
-    // the stat_map reads FLEXIBILITY from it — so a spear hafted in iron is heavy and stiff and
-    // worse than one hafted in yew, while the same iron in a longsword's edge is excellent.
-    // Hardness is read from the point alone, which is a quarter of the item.
+    // The deliberate counterweight to the Longsword: the business end is a quarter of the
+    // item, so where you put a material matters more than what it is.
     //
     // That is the whole material-genetics claim in one pair of forms: there is no best material,
     // only a best placement.
@@ -104,35 +73,37 @@
       "point": {
         "requires_tags": ["form:metal", "form:crystal", "form:bone", "form:horn"],
         "mass_share": 0.25,
-        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 1.0, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "identity_priority": 3
       },
       "haft": {
         "requires_tags": ["form:wood", "form:metal", "form:fiber"],
         "mass_share": 0.60,
-        "trait_expression": { "thermal": 0.2, "charge": 0.6, "toxic": 0.1, "vital": 0.5, "arcane": 0.8, "structural": 0.7 }
+        "identity_priority": 2
       },
       "grip": {
         "requires_tags": ["form:hide", "form:fiber", "form:cloth"],
         "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+        "identity_priority": 1
       }
     },
-    "stat_map": {
-      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.8 } ],
-      "hardness":    [ { "slot": "point", "property": "hardness",    "weight": 0.9 } ],
-      "flexibility": [ { "slot": "haft",  "property": "flexibility", "weight": 0.9 }, { "slot": "grip", "property": "flexibility", "weight": 0.3 } ]
+    // Identity model (Phase 7, D54): the point bites, the whole spear swings by its heft —
+    // the placement claim survives the property model: iron in the point is excellent, iron
+    // in the haft is a heavy stick.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "point", "stat": "bite", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 4,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     // move.spear_thrust, not move.skewer: Skewer requires the `sword` tag, which a spear does
     // not carry, so it sat here unusable for the whole of C2a. A validator rule now catches it.
     "moves": ["move.spear_thrust", "move.quick_stab"],
     "name_variants": ["Spear", "Pike", "Lance", "Boar Spear", "Awl Pike", "Dory", "Sarissa", "Yari", "Hooked Spear", "Hunting Spear", "Trident", "Military Fork", "Ranseur", "Spetum", "Partisan", "Corseque"],
     "description": "Reach, and the discipline to use it. Most of a spear is the part nobody looks at."
   },
-
   {
-    // The small blade. Almost no mass anywhere in the stat map, which is what makes it the one
-    // weapon where a rare, light, hard material is not wasted on a big lump of steel.
+    // The small blade — the one weapon where a rare, light, hard material is not wasted on
+    // a big lump of steel.
     "id": "form.dagger",
     "name": "Dagger",
     "type": "Weapon",
@@ -140,29 +111,29 @@
     "slots": {
       "blade": {
         "requires_tags": ["form:metal", "form:crystal", "form:bone"],
-        "mass_share": 0.75,
-        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 1.0, "vital": 0.2, "arcane": 0.6, "structural": 0.9 }
+        "mass_share": 0.75
+
       },
       "hilt": {
         "requires_tags": ["form:hide", "form:fiber", "form:wood", "form:leather"],
-        "mass_share": 0.25,
-        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+        "mass_share": 0.25
+
       }
     },
-    "stat_map": {
-      "hardness": [ { "slot": "blade", "property": "hardness", "weight": 0.9 } ],
-      "mass":     [ { "slot": "*",     "property": "mass",     "weight": 0.35 } ]
+    // Identity model (Phase 7, D54): a small vessel — two ideas at most, and all of them the blade's.
+    "identity_cap": 2,
+    "base_reads": {
+      "damage": [ { "slot": "blade", "stat": "bite", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 2,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.backstab", "move.quick_stab"],
     "name_variants": ["Rondel Dagger", "Dirk", "Stiletto", "Kris", "Katar", "Push Dagger", "Parrying Dagger", "Main-Gauche", "Baselard", "Bollock Dagger", "Misericorde", "Jambiya", "Khanjar", "Kukri", "Qama", "Kindjal", "Sica", "Seax", "Cinquedea", "Skinning Knife", "Throwing Knife"],
     "description": "Small enough to carry everywhere, which is most of the argument for it."
   },
-
   {
     // The heavy end of the sword family: it carries the `sword` tag, so every sword move works,
-    // and Cleave on top. Mass is read at OVER 1.0 off the whole item — the only form in the file
-    // that wants to be heavy, which flips the usual "dense metal is a cost" pressure.
+    // and Cleave on top. The one blade whose base reads reward weight (heft joins the damage).
     "id": "form.greatsword",
     "name": "Greatsword",
     "type": "Weapon",
@@ -170,35 +141,35 @@
     "slots": {
       "blade": {
         "requires_tags": ["form:metal", "form:crystal"],
-        "mass_share": 0.70,
-        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 0.8, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+        "mass_share": 0.70
+
       },
       "crossguard": {
         "requires_tags": ["form:metal", "form:bone", "form:horn"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.5, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 0.9 }
+        "mass_share": 0.15
+
       },
       "grip": {
         "requires_tags": ["form:hide", "form:fiber", "form:leather", "form:cloth"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+        "mass_share": 0.15
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "blade", "property": "hardness",    "weight": 0.75 } ],
-      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 1.20 } ],
-      "flexibility": [ { "slot": "blade", "property": "flexibility", "weight": 0.25 } ]
+    // Identity model (Phase 7, D54): the one blade that wants weight — the edge bites AND the
+    // whole item's heft lands, so dense metal is finally a virtue instead of a tax.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "blade", "stat": "bite", "weight": 1.0 }, { "slot": "*", "stat": "heft", "weight": 0.4 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 4,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.cleave", "move.heavy_strike", "move.iron_slash"],
     "name_variants": ["Zweihander", "Flamberge", "Claymore", "Bastard Sword", "Nodachi", "Kriegsmesser", "Dadao", "Rhomphaia", "Espadon"],
     "description": "Two hands, and a good reason for both."
   },
-
   {
-    // Head-heavy on purpose: mass is read off the HEAD alone rather than the whole item, so a
-    // dense head on a light haft beats the same metal spread evenly. The opposite bookkeeping to
-    // the Longsword, which reads mass across everything.
+    // Head-heavy on purpose: bite and heft both read off the head alone, so a dense head on
+    // a light haft beats the same metal spread evenly.
     "id": "form.battleaxe",
     "name": "Battle Axe",
     "type": "Weapon",
@@ -206,28 +177,30 @@
     "slots": {
       "head": {
         "requires_tags": ["form:metal", "form:stone", "form:crystal"],
-        "mass_share": 0.60,
-        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 0.7, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "mass_share": 0.60
+
       },
       "haft": {
         "requires_tags": ["form:wood", "form:fiber", "form:bone", "form:metal"],
-        "mass_share": 0.40,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+        "mass_share": 0.40
+
       }
     },
-    "stat_map": {
-      "hardness": [ { "slot": "head", "property": "hardness", "weight": 0.85 } ],
-      "mass":     [ { "slot": "head", "property": "mass",     "weight": 0.90 } ]
+    // Identity model (Phase 7, D54): an axe is an edge delivered by weight — bite and heft
+    // both read off the head, and nothing reads off the haft but the swing.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "head", "stat": "bite", "weight": 0.8 }, { "slot": "head", "stat": "heft", "weight": 0.5 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.rend", "move.overhead_crush"],
     "name_variants": ["Hand Axe", "Bearded Axe", "Dane Axe", "Francisca", "Tabar", "Sagaris", "Throwing Axe", "Hatchet", "Wood Axe", "Woodcutter's Axe", "Parashu", "Bhuj", "Falx"],
     "description": "Weight where the work happens, and nowhere else."
   },
-
   {
-    // Where heavy is the whole point. Mass is read off the head at 1.4 — the highest weight in
-    // the file — so this is the one form a lead or gold head is not a joke on.
+    // Where heavy is the whole point: the head's heft IS the damage, so a lead or gold head
+    // is not a joke on this one form.
     "id": "form.maul",
     "name": "Maul",
     "type": "Weapon",
@@ -235,26 +208,27 @@
     "slots": {
       "head": {
         "requires_tags": ["form:metal", "form:stone", "form:crystal"],
-        "mass_share": 0.70,
-        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 0.4, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "mass_share": 0.70
+
       },
       "haft": {
         "requires_tags": ["form:wood", "form:metal", "form:bone"],
-        "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.5, "arcane": 0.5, "structural": 0.8 }
+        "mass_share": 0.30
+
       }
     },
-    "stat_map": {
-      "mass":        [ { "slot": "head", "property": "mass",        "weight": 1.40 } ],
-      "hardness":    [ { "slot": "head", "property": "hardness",    "weight": 0.50 } ],
-      "flexibility": [ { "slot": "haft", "property": "flexibility", "weight": 0.30 } ]
+    // Identity model (Phase 7, D54): no edge, so no Bite anywhere — the head's heft IS the
+    // damage (D52's edge rule, stated as a form). Heavy is the point and the price at once.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "head", "stat": "heft", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.pulverize", "move.crash"],
     "name_variants": ["Warhammer", "Mace", "Flanged Mace", "Morning Star", "Club", "Cudgel", "War Club", "Knobkerrie", "Kanabo", "Tetsubo", "Goedendag", "Lucerne Hammer", "Mere", "Blacksmith Hammer", "Mining Hammer", "War Pick", "Horseman's Pick", "Zaghnal", "Pickaxe"],
     "description": "No edge, no subtlety, no argument."
   },
-
   {
     // THE flexibility weapon, and the sharpest counter-example in the file: a bow limbed in iron
     // is a terrible bow. Hardness barely registers and mass is a cost, so every instinct the
@@ -266,31 +240,32 @@
     "slots": {
       "limb": {
         "requires_tags": ["form:wood", "form:horn", "form:bone", "form:fiber"],
-        "mass_share": 0.65,
-        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.8, "arcane": 0.7, "structural": 0.9 }
+        "mass_share": 0.65
+
       },
       "string": {
         "requires_tags": ["form:fiber", "form:hide", "form:cloth"],
-        "mass_share": 0.20,
-        "trait_expression": { "thermal": 0.2, "charge": 0.4, "toxic": 0.4, "vital": 0.7, "arcane": 0.4, "structural": 0.4 }
+        "mass_share": 0.20
+
       },
       "grip": {
         "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:wood"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.2, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+        "mass_share": 0.15
+
       }
     },
-    "stat_map": {
-      "flexibility": [ { "slot": "limb", "property": "flexibility", "weight": 1.10 }, { "slot": "string", "property": "flexibility", "weight": 0.40 } ],
-      "hardness":    [ { "slot": "limb", "property": "hardness",    "weight": 0.20 } ],
-      "mass":        [ { "slot": "*",    "property": "mass",        "weight": 0.25 } ]
+    // Identity model (Phase 7, D54): a bow's power is its limb's spring — Give does the
+    // damage, and iron limbs stay a terrible bow under the new physics too.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "limb", "stat": "give", "weight": 1.0 }, { "slot": "string", "stat": "give", "weight": 0.4 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.aimed_shot", "move.arrow_shot"],
     "name_variants": ["Shortbow", "Recurve Bow", "Composite Bow", "War Bow", "Hunting Bow"],
     "description": "Stores everything you put into it, and gives it all back at once."
   },
-
   {
     // The bow's opposite answer to the same problem: where a bow needs a limb that bends and
     // returns, a crossbow spends hardness on a MECHANISM and holds the draw for you. Reads
@@ -302,31 +277,32 @@
     "slots": {
       "prod": {
         "requires_tags": ["form:metal", "form:wood", "form:horn", "form:bone"],
-        "mass_share": 0.45,
-        "trait_expression": { "thermal": 0.6, "charge": 0.6, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 1.0 }
+        "mass_share": 0.45
+
       },
       "stock": {
         "requires_tags": ["form:wood", "form:bone", "form:metal"],
-        "mass_share": 0.40,
-        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+        "mass_share": 0.40
+
       },
       "mechanism": {
         "requires_tags": ["form:metal", "form:bone", "form:horn"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.7, "charge": 0.8, "toxic": 0.2, "vital": 0.2, "arcane": 0.6, "structural": 1.0 }
+        "mass_share": 0.15
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "mechanism", "property": "hardness",    "weight": 0.70 }, { "slot": "prod", "property": "hardness", "weight": 0.30 } ],
-      "flexibility": [ { "slot": "prod",      "property": "flexibility", "weight": 0.55 } ],
-      "mass":        [ { "slot": "*",         "property": "mass",        "weight": 0.80 } ]
+    // Identity model (Phase 7, D54): the prod's spring does the damage; the mechanism holds
+    // it — a stiff prod is the one thing money cannot fix.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "prod", "stat": "give", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.bolt_shot"],
     "name_variants": ["Heavy Crossbow", "Hand Crossbow", "Repeating Crossbow", "Arbalest"],
     "description": "Holds the draw so you do not have to. Everything else about it is that trade."
   },
-
   {
     // One slot, one material, three reads — the simplest weapon in the file and the only one
     // where a single choice decides everything. The teaching form: fabricate one, then fabricate
@@ -338,21 +314,22 @@
     "slots": {
       "shaft": {
         "requires_tags": ["form:wood", "form:metal", "form:bone", "form:crystal"],
-        "mass_share": 1.0,
-        "trait_expression": { "thermal": 0.5, "charge": 0.7, "toxic": 0.3, "vital": 0.7, "arcane": 0.9, "structural": 0.8 }
+        "mass_share": 1.0
+
       }
     },
-    "stat_map": {
-      "flexibility": [ { "slot": "shaft", "property": "flexibility", "weight": 0.80 } ],
-      "mass":        [ { "slot": "shaft", "property": "mass",        "weight": 0.60 } ],
-      "hardness":    [ { "slot": "shaft", "property": "hardness",    "weight": 0.40 } ]
+    // Identity model (Phase 7, D54): one slot, one choice, everything readable — the teaching
+    // form keeps its job. Blunt, so heft is the damage; the lean makes it the guard's weapon.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "shaft", "stat": "heft", "weight": 0.6 } ],
+      "speed":  [ { "slot": "shaft", "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_block"] },
     "moves": ["move.staff_sweep", "move.quick_stab"],
     "name_variants": ["Bo Staff", "Shillelagh", "Eku", "Walking Staff"],
     "description": "A stick, until someone who knows what they are doing picks it up."
   },
-
   {
     // Mass in the head, flexibility in the CHAIN — the only form that wants a component to be
     // floppy. A rigid chain is a bad flail, which is a sentence no other form in the file could
@@ -364,36 +341,35 @@
     "slots": {
       "head": {
         "requires_tags": ["form:metal", "form:stone", "form:crystal"],
-        "mass_share": 0.50,
-        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 0.5, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "mass_share": 0.50
+
       },
       "chain": {
         "requires_tags": ["form:metal", "form:fiber", "form:hide"],
-        "mass_share": 0.25,
-        "trait_expression": { "thermal": 0.5, "charge": 0.8, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 0.6 }
+        "mass_share": 0.25
+
       },
       "haft": {
         "requires_tags": ["form:wood", "form:metal", "form:bone"],
-        "mass_share": 0.25,
-        "trait_expression": { "thermal": 0.3, "charge": 0.4, "toxic": 0.2, "vital": 0.6, "arcane": 0.5, "structural": 0.7 }
+        "mass_share": 0.25
+
       }
     },
-    "stat_map": {
-      "mass":        [ { "slot": "head",  "property": "mass",        "weight": 1.00 } ],
-      "hardness":    [ { "slot": "head",  "property": "hardness",    "weight": 0.60 } ],
-      "flexibility": [ { "slot": "chain", "property": "flexibility", "weight": 0.75 } ]
+    // Identity model (Phase 7, D54): the head's weight arrives through the chain's snap —
+    // the one weapon where a component's Give adds to the hit instead of the swing.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "head", "stat": "heft", "weight": 1.0 }, { "slot": "chain", "stat": "give", "weight": 0.3 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.flail_crush", "move.crash"],
     "name_variants": ["Two-Handed Flail", "Chain Sickle", "Kusarigama", "Meteor Hammer", "Nunchaku"],
     "description": "It arrives after you think it has, and from a direction you did not pick."
   },
-
   {
-    // The CHOPPING polearm, as against the Warspear's thrusting one. Same length of wood, wholly
-    // different question: a spear reads flexibility off its haft because it flexes on the thrust,
-    // while a halberd reads MASS off a head on the end of a lever and wants the haft stiff.
-    // The two exist as a pair for the same reason the Longsword and the Warspear do.
+    // The CHOPPING polearm, as against the Warspear's thrusting one — a head on the end of
+    // a lever. The two exist as a pair for the same reason the Longsword and the Warspear do.
     "id": "form.halberd",
     "name": "Halberd",
     "type": "Weapon",
@@ -402,30 +378,31 @@
       "head": {
         "requires_tags": ["form:metal", "form:stone", "form:crystal"],
         "mass_share": 0.45,
-        "trait_expression": { "thermal": 1.0, "charge": 0.8, "toxic": 0.7, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "identity_priority": 3
       },
       "haft": {
         "requires_tags": ["form:wood", "form:metal", "form:bone"],
         "mass_share": 0.45,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.7, "structural": 0.8 }
+        "identity_priority": 2
       },
       "langets": {
         "requires_tags": ["form:metal", "form:fiber", "form:hide"],
-        "mass_share": 0.10,
-        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.4, "arcane": 0.4, "structural": 0.7 }
+        "mass_share": 0.10
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "head",    "property": "hardness",    "weight": 0.80 } ],
-      "mass":        [ { "slot": "head",    "property": "mass",        "weight": 0.85 }, { "slot": "haft", "property": "mass", "weight": 0.35 } ],
-      "flexibility": [ { "slot": "langets", "property": "flexibility", "weight": 0.25 } ]
+    // Identity model (Phase 7, D54): the head speaks before the equal-mass haft — authored
+    // priority, because mass alone cannot break this tie (D51: selection stays readable).
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "head", "stat": "bite", "weight": 0.8 }, { "slot": "head", "stat": "heft", "weight": 0.5 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 4,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.hew", "move.overhead_crush"],
     "name_variants": ["Glaive", "Bardiche", "Pollaxe", "Bec de Corbin", "Bill", "Billhook", "Voulge", "Guisarme", "Fauchard", "Lochaber Axe", "Sparth Axe", "Naginata", "Guandao", "War Scythe", "Polehammer", "Swordstaff", "Scythe", "Pitchfork", "Shovel", "Shepherd's Crook"],
     "description": "An axe that decided the problem was standing too close."
   },
-
   {
     // Between the Dagger and the Longsword, and it earns the gap by reading BOTH hardness and
     // flexibility off the blade: short blades bend rather than break, and a brittle one snaps.
@@ -437,35 +414,34 @@
     "slots": {
       "blade": {
         "requires_tags": ["form:metal", "form:crystal", "form:bone"],
-        "mass_share": 0.65,
-        "trait_expression": { "thermal": 1.0, "charge": 0.9, "toxic": 0.9, "vital": 0.2, "arcane": 0.5, "structural": 1.0 }
+        "mass_share": 0.65
+
       },
       "guard": {
         "requires_tags": ["form:metal", "form:bone", "form:horn"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.5, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 0.8 }
+        "mass_share": 0.15
+
       },
       "grip": {
         "requires_tags": ["form:hide", "form:leather", "form:fiber", "form:cloth"],
-        "mass_share": 0.20,
-        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.3, "structural": 0.3 }
+        "mass_share": 0.20
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "blade", "property": "hardness",    "weight": 0.70 } ],
-      "flexibility": [ { "slot": "blade", "property": "flexibility", "weight": 0.45 } ],
-      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.55 } ]
+    // Identity model (Phase 7, D54): the middle blade — the longsword's reads at a lighter build.
+    "identity_cap": 3,
+    "base_reads": {
+      "damage": [ { "slot": "blade", "stat": "bite", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.flurry", "move.iron_slash", "move.quick_stab"],
     "name_variants": ["Gladius", "Xiphos", "Wakizashi", "Katzbalger", "Butterfly Sword", "Hook Sword", "Pata", "Cleaver", "Sickle"],
     "description": "Long enough to matter, short enough to bring indoors."
   },
-
   {
-    // Thrown, and therefore the only weapon whose mass is entirely a COST — a javelin you cannot
-    // throw far is a short bad spear. Mass is read at 0.20 across the whole item, the lowest of
-    // any weapon here, and the point still has to be hard.
+    // Thrown — a javelin you cannot throw far is a short bad spear, and the point still has
+    // to bite.
     "id": "form.javelin",
     "name": "Javelin",
     "type": "Weapon",
@@ -474,34 +450,35 @@
       "point": {
         "requires_tags": ["form:metal", "form:bone", "form:horn", "form:crystal"],
         "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.9, "charge": 0.7, "toxic": 1.0, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "identity_priority": 3
       },
       "shaft": {
         "requires_tags": ["form:wood", "form:fiber", "form:bone"],
         "mass_share": 0.55,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.6, "arcane": 0.6, "structural": 0.7 }
+        "identity_priority": 2
       },
       "fletching": {
         "requires_tags": ["form:fiber", "form:hide", "form:cloth"],
-        "mass_share": 0.15,
-        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.4, "vital": 0.7, "arcane": 0.4, "structural": 0.3 }
+        "mass_share": 0.15
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "point",     "property": "hardness",    "weight": 0.85 } ],
-      "flexibility": [ { "slot": "shaft",     "property": "flexibility", "weight": 0.60 }, { "slot": "fletching", "property": "flexibility", "weight": 0.25 } ],
-      "mass":        [ { "slot": "*",         "property": "mass",        "weight": 0.20 } ]
+    // Identity model (Phase 7, D54): the point speaks before the heavier shaft — authored
+    // priority, since the business end is a third of the mass.
+    "identity_cap": 2,
+    "base_reads": {
+      "damage": [ { "slot": "point", "stat": "bite", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 2,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.javelin_throw"],
     "name_variants": ["Pilum", "Plumbata", "Harpoon", "Chakram", "Shuriken", "Hunga Munga", "Mambele", "Atlatl"],
     "description": "You get one. Make the arm count."
   },
-
   {
-    // The cheapest weapon in the game and the only one that reads NO hardness at all — a sling is
-    // cord and a pouch, and what it does is decided entirely by how well the cord returns. The
-    // stone is not part of the weapon, which is exactly why the poorest character can own one.
+    // The cheapest weapon in the game: cord and a pouch, decided entirely by how well the
+    // cord returns (Give). The stone is not part of the weapon, which is exactly why the
+    // poorest character can own one.
     "id": "form.sling",
     "name": "Sling",
     "type": "Weapon",
@@ -509,25 +486,27 @@
     "slots": {
       "cord": {
         "requires_tags": ["form:fiber", "form:hide", "form:leather"],
-        "mass_share": 0.60,
-        "trait_expression": { "thermal": 0.2, "charge": 0.4, "toxic": 0.4, "vital": 0.8, "arcane": 0.5, "structural": 0.5 }
+        "mass_share": 0.60
+
       },
       "cradle": {
         "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
-        "mass_share": 0.40,
-        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.7, "arcane": 0.4, "structural": 0.4 }
+        "mass_share": 0.40
+
       }
     },
-    "stat_map": {
-      "flexibility": [ { "slot": "cord",   "property": "flexibility", "weight": 1.00 }, { "slot": "cradle", "property": "flexibility", "weight": 0.35 } ],
-      "mass":        [ { "slot": "*",      "property": "mass",        "weight": 0.15 } ]
+    // Identity model (Phase 7, D54): the cord's return is the whole weapon — Give does the
+    // damage, and the stone still is not part of it.
+    "identity_cap": 2,
+    "base_reads": {
+      "damage": [ { "slot": "cord", "stat": "give", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 2,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.sling_stone"],
     "name_variants": ["Staff Sling", "Blowgun"],
     "description": "String, leather, and whatever was lying on the ground."
   },
-
   {
     // Reach with no mass behind it. Flexibility off the lash at 1.35 is the hardest ANY form reads
     // flexibility off a single component — more even than the bow reads its limb. The Longbow
@@ -543,30 +522,29 @@
     "slots": {
       "lash": {
         "requires_tags": ["form:hide", "form:leather", "form:fiber"],
-        "mass_share": 0.70,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.8, "vital": 0.8, "arcane": 0.5, "structural": 0.4 }
+        "mass_share": 0.70
+
       },
       "handle": {
         "requires_tags": ["form:wood", "form:bone", "form:metal", "form:horn"],
-        "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.4, "charge": 0.5, "toxic": 0.3, "vital": 0.5, "arcane": 0.5, "structural": 0.7 }
+        "mass_share": 0.30
+
       }
     },
-    "stat_map": {
-      "flexibility": [ { "slot": "lash",   "property": "flexibility", "weight": 1.35 } ],
-      "hardness":    [ { "slot": "handle", "property": "hardness",    "weight": 0.25 } ],
-      "mass":        [ { "slot": "*",      "property": "mass",        "weight": 0.20 } ]
+    // Identity model (Phase 7, D54): the lash's Give is the crack; a steel whip stays a bad whip.
+    "identity_cap": 2,
+    "base_reads": {
+      "damage": [ { "slot": "lash", "stat": "give", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",    "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.lash"],
     "name_variants": ["Urumi", "Sjambok"],
     "description": "Arrives from further away than anyone standing there expects."
   },
-
   {
-    // Worn rather than held, and the smallest weapon in the game: mass at 0.10, and the only
-    // weapon whose stat map reads nothing but hardness and mass off two tiny components. It is
-    // the form for a material you have almost none of.
+    // Worn rather than held, and the smallest weapon in the game — the form for a material
+    // you have almost none of.
     "id": "form.knuckles",
     "name": "Knuckles",
     "type": "Weapon",
@@ -574,25 +552,27 @@
     "slots": {
       "shell": {
         "requires_tags": ["form:metal", "form:bone", "form:horn", "form:crystal", "form:stone"],
-        "mass_share": 0.70,
-        "trait_expression": { "thermal": 0.9, "charge": 0.9, "toxic": 0.7, "vital": 0.3, "arcane": 0.5, "structural": 1.0 }
+        "mass_share": 0.70
+
       },
       "wrap": {
         "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
-        "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.2, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 0.3 }
+        "mass_share": 0.30
+
       }
     },
-    "stat_map": {
-      "hardness": [ { "slot": "shell", "property": "hardness", "weight": 0.95 } ],
-      "mass":     [ { "slot": "*",     "property": "mass",     "weight": 0.10 } ]
+    // Identity model (Phase 7, D54): a hard shell on a fist — no edge, so the shell's heft
+    // is the hit; the smallest identity vessel among the weapons.
+    "identity_cap": 2,
+    "base_reads": {
+      "damage": [ { "slot": "shell", "stat": "heft", "weight": 1.0 } ],
+      "speed":  [ { "slot": "*",     "stat": "heft", "weight": 1.0 } ]
     },
-    "trait_cap": 2,
+    "generation_profile": { "favored_triggers": ["on_hit", "on_crit"] },
     "moves": ["move.pummel"],
     "name_variants": ["Cestus", "Tekko", "Tekko-Kagi", "Baghnakh", "Deer Horn Knives", "Sai", "Tonfa", "War Fan", "Macuahuitl"],
     "description": "The oldest weapon there is, with an opinion added."
   },
-
   // ══ OFFHAND ═════════════════════════════════════════════════════════════════════════════════
 
   {
@@ -604,15 +584,9 @@
       "face": {
         "requires_tags": ["form:metal", "form:wood"],
         "mass_share": 1.0,
-        "trait_expression": { "thermal": 0.6, "charge": 0.4, "toxic": 0.3, "vital": 0.3, "arcane": 0.4, "structural": 1.0 },
         "identity_priority": 1
       }
     },
-    "stat_map": {
-      "hardness": [ { "slot": "face", "property": "hardness", "weight": 1.0 } ],
-      "mass":     [ { "slot": "face", "property": "mass",     "weight": 0.8 } ]
-    },
-    "trait_cap": 4,
     // Identity model (Phase 3, D46/D51): all face — Toughness is the whole read. Same cap as
     // the sword's slots would give one component, so reality test 5's identical-floor rule
     // holds: the same material expresses the same identities here and on a longsword edge.
@@ -624,13 +598,11 @@
     "generation_profile": { "favored_triggers": ["on_block", "on_being_struck"] },
     "description": "A small answer to large questions. Carrying one makes Shield Bash yours."
   },
-
   // ══ WORN ARMOUR ═════════════════════════════════════════════════════════════════════════════
 
   {
-    // The only armour whose stat_map reads INSULATION hard, which makes it the one place a fur
-    // or a felt lining out-performs a better metal. Grounding, the Storm Veil and the Insulated
-    // innate are all reachable here and effectively nowhere else.
+    // The lining slot is why a fur or felt matters here: what it carries into the item is
+    // identities, not armour — the crown's toughness does the protecting.
     "id": "form.helm",
     "name": "Helm",
     "type": "Head",
@@ -638,24 +610,24 @@
     "slots": {
       "crown": {
         "requires_tags": ["form:metal", "form:chitin", "form:bone", "form:horn"],
-        "mass_share": 0.65,
-        "trait_expression": { "thermal": 0.7, "charge": 0.5, "toxic": 0.3, "vital": 0.3, "arcane": 0.5, "structural": 1.0 }
+        "mass_share": 0.65
+
       },
       "lining": {
         "requires_tags": ["form:hide", "form:fur", "form:cloth", "form:fiber"],
-        "mass_share": 0.35,
-        "trait_expression": { "thermal": 0.4, "charge": 0.3, "toxic": 0.4, "vital": 0.8, "arcane": 0.4, "structural": 0.2 }
+        "mass_share": 0.35
+
       }
     },
-    "stat_map": {
-      "hardness":   [ { "slot": "crown",  "property": "hardness",   "weight": 0.55 } ],
-      "mass":       [ { "slot": "*",      "property": "mass",       "weight": 0.6 } ],
-      "insulation": [ { "slot": "lining", "property": "insulation", "weight": 0.9 }, { "slot": "crown", "property": "insulation", "weight": 0.2 } ]
+    // Identity model (Phase 7, D54): the crown's toughness is the armour; the lining is for
+    // the identities a fur or felt carries.
+    "identity_cap": 2,
+    "base_reads": {
+      "armor": [ { "slot": "crown", "stat": "toughness", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_being_struck"] },
     "description": "Covers the part of you that decisions come out of."
   },
-
   {
     "id": "form.vest",
     "name": "Vest",
@@ -664,22 +636,21 @@
     "slots": {
       "shell": {
         "requires_tags": ["form:hide", "form:fiber", "form:metal"],
-        "mass_share": 1.0,
-        "trait_expression": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.3, "structural": 1.0 }
+        "mass_share": 1.0
+
       }
     },
-    "stat_map": {
-      "hardness": [ { "slot": "shell", "property": "hardness", "weight": 0.6 }, { "slot": "shell", "property": "flexibility", "weight": 0.4 } ],
-      "mass":     [ { "slot": "shell", "property": "mass",     "weight": 1.0 } ]
+    // Identity model (Phase 7, D54): the biggest worn canvas — one material, three ideas.
+    "identity_cap": 3,
+    "base_reads": {
+      "armor": [ { "slot": "shell", "stat": "toughness", "weight": 1.0 } ]
     },
-    "trait_cap": 4,
+    "generation_profile": { "favored_triggers": ["on_being_struck"] },
     "description": "Worn close. The material decides whether that is comfort or armour."
   },
-
   {
-    // Where being HARD is a cost. The stat_map reads flexibility from the glove at nearly twice
-    // the weight it reads hardness from the plating, so an all-metal pair is a worse pair — the
-    // opposite pressure to every other armour form, and the only reliable route to Ghoststep.
+    // Where being stiff is a cost: the glove's Give joins the armor read, so an all-metal
+    // pair is a worse pair — the opposite pressure to every other armour form.
     "id": "form.gauntlets",
     "name": "Gauntlets",
     "type": "Hands",
@@ -687,24 +658,24 @@
     "slots": {
       "glove": {
         "requires_tags": ["form:hide", "form:leather", "form:cloth", "form:fiber"],
-        "mass_share": 0.60,
-        "trait_expression": { "thermal": 0.4, "charge": 0.4, "toxic": 0.6, "vital": 0.7, "arcane": 0.5, "structural": 0.4 }
+        "mass_share": 0.60
+
       },
       "plating": {
         "requires_tags": ["form:metal", "form:chitin", "form:bone"],
-        "mass_share": 0.40,
-        "trait_expression": { "thermal": 0.8, "charge": 0.6, "toxic": 0.3, "vital": 0.2, "arcane": 0.4, "structural": 1.0 }
+        "mass_share": 0.40
+
       }
     },
-    "stat_map": {
-      "flexibility": [ { "slot": "glove",   "property": "flexibility", "weight": 0.95 } ],
-      "hardness":    [ { "slot": "plating", "property": "hardness",    "weight": 0.35 } ],
-      "mass":        [ { "slot": "*",       "property": "mass",        "weight": 0.4 } ]
+    // Identity model (Phase 7, D54): the plating's toughness protects, the glove's Give keeps
+    // the hand — the one armour where a supple material adds to the armour line itself.
+    "identity_cap": 2,
+    "base_reads": {
+      "armor": [ { "slot": "plating", "stat": "toughness", "weight": 0.6 }, { "slot": "glove", "stat": "give", "weight": 0.4 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_being_struck"] },
     "description": "The compromise every fighter argues about: protect the hand, or keep it."
   },
-
   {
     // Where being HEAVY is a cost, and the mirror of the Gauntlets. Hardness comes off the sole
     // and insulation off the upper, so treads reward a dense sole under a warm boot — a
@@ -716,35 +687,28 @@
     "slots": {
       "sole": {
         "requires_tags": ["form:leather", "form:hide", "form:wood", "form:metal", "form:chitin"],
-        "mass_share": 0.55,
-        "trait_expression": { "thermal": 0.6, "charge": 0.5, "toxic": 0.4, "vital": 0.4, "arcane": 0.3, "structural": 1.0 }
+        "mass_share": 0.55
+
       },
       "upper": {
         "requires_tags": ["form:hide", "form:fur", "form:cloth", "form:fiber"],
-        "mass_share": 0.45,
-        "trait_expression": { "thermal": 0.5, "charge": 0.3, "toxic": 0.5, "vital": 0.8, "arcane": 0.4, "structural": 0.3 }
+        "mass_share": 0.45
+
       }
     },
-    "stat_map": {
-      "hardness":    [ { "slot": "sole",  "property": "hardness",    "weight": 0.40 } ],
-      "mass":        [ { "slot": "*",     "property": "mass",        "weight": 0.7 } ],
-      "flexibility": [ { "slot": "upper", "property": "flexibility", "weight": 0.5 } ],
-      "insulation":  [ { "slot": "upper", "property": "insulation",  "weight": 0.6 } ]
+    // Identity model (Phase 7, D54): the sole takes the ground; the upper takes the weather.
+    "identity_cap": 2,
+    "base_reads": {
+      "armor": [ { "slot": "sole", "stat": "toughness", "weight": 1.0 } ]
     },
-    "trait_cap": 3,
+    "generation_profile": { "favored_triggers": ["on_being_struck"] },
     "description": "Carry everything you own on these. Choose accordingly."
   },
-
   // ══ TRINKET ═════════════════════════════════════════════════════════════════════════════════
 
   {
-    // The only form whose stat_map reads RESONANCE and ARCANE, which is what finally gives ley
-    // crystal, runes and mana prisms somewhere to be excellent — a sword reads neither, so a
-    // resonant material in a sword is wasted potential rather than a good sword.
-    //
-    // It grants no armour (Trinket is not an armour-bearing slot) and no moves. What it rolls
-    // are the form-agnostic modifier families — resources, regeneration, effort — which is the
-    // trinket's whole identity and needed no new affix content to express.
+    // A pure identity vessel: no delivery, no moves — the form for ley crystal, runes and
+    // mana prisms, whose worth is entirely what they carry. Its lean is the caster's rhythm.
     "id": "form.focus",
     "name": "Focus",
     "type": "Trinket",
@@ -752,24 +716,24 @@
     "slots": {
       "stone": {
         "requires_tags": ["form:crystal", "form:gem", "form:rune", "form:bone"],
-        "mass_share": 0.70,
-        "trait_expression": { "thermal": 0.6, "charge": 0.8, "toxic": 0.4, "vital": 0.6, "arcane": 1.0, "structural": 0.3 }
+        "mass_share": 0.70
+
       },
       "setting": {
         "requires_tags": ["form:metal", "form:wood", "form:fiber"],
-        "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.3, "charge": 0.5, "toxic": 0.2, "vital": 0.4, "arcane": 0.9, "structural": 0.4 }
+        "mass_share": 0.30
+
       }
     },
-    "stat_map": {
-      "resonance": [ { "slot": "stone",   "property": "resonance", "weight": 1.0 }, { "slot": "setting", "property": "resonance", "weight": 0.3 } ],
-      "arcane":    [ { "slot": "stone",   "property": "arcane",    "weight": 0.9 }, { "slot": "setting", "property": "arcane",    "weight": 0.4 } ],
-      "mass":      [ { "slot": "*",       "property": "mass",      "weight": 0.3 } ]
+    // Identity model (Phase 7, D54): no delivery at all — a pure identity vessel, which is
+    // what "No physical delivery" on the card was written for. The caster's rhythm is its lean.
+    "identity_cap": 3,
+    "generation_profile": {
+      "favored_triggers": ["on_move", "on_resource_spent"],
+      "favored_behaviors": ["amplify", "echo"]
     },
-    "trait_cap": 3,
     "description": "Held, not worn. Whatever it is made of, it is listening."
   },
-
   // ══ RINGS ═══════════════════════════════════════════════════════════════════════════════════
 
   {
@@ -785,8 +749,8 @@
     // `EquipmentSlots.InterchangeablePositions` is what makes the second ring slot usable; do not
     // author a second near-identical form to fill it.
     //
-    // Tiny mass share: a ring weighs nothing you would notice, so it reads mass at 0.15 and gets
-    // the smallest trait_cap in the file. It is the cheapest form to make and holds the least.
+    // Tiny: a ring weighs nothing you would notice. The cheapest form to make, and it holds
+    // the least.
     "id": "form.ring",
     "name": "Ring",
     "type": "Ring1",
@@ -795,20 +759,17 @@
       "band": {
         "requires_tags": ["form:metal", "form:bone", "form:horn"],
         "mass_share": 0.70,
-        "trait_expression": { "thermal": 0.5, "charge": 1.0, "toxic": 0.3, "vital": 0.5, "arcane": 0.8, "structural": 0.4 }
+        "identity_priority": 1
       },
       "inset": {
         "requires_tags": ["form:gem", "form:crystal", "form:rune"],
         "mass_share": 0.30,
-        "trait_expression": { "thermal": 0.6, "charge": 0.9, "toxic": 0.4, "vital": 0.7, "arcane": 0.9, "structural": 0.2 }
+        "identity_priority": 2
       }
     },
-    "stat_map": {
-      "conductivity": [ { "slot": "band",  "property": "conductivity", "weight": 1.0 }, { "slot": "inset", "property": "conductivity", "weight": 0.4 } ],
-      "affinity":     [ { "slot": "inset", "property": "affinity",     "weight": 0.9 }, { "slot": "band",  "property": "affinity",     "weight": 0.3 } ],
-      "mass":         [ { "slot": "*",     "property": "mass",         "weight": 0.15 } ]
-    },
-    "trait_cap": 2,
+    // Identity model (Phase 7, D54): a pure vessel like the Focus, but the gem speaks before
+    // the heavier band — authored priority, because the inset is the point of the ring.
+    "identity_cap": 2,
     "description": "Small, and worn where the hand meets everything. Twice over, if you have two."
   }
 ]

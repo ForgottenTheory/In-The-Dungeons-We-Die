@@ -16,9 +16,10 @@ namespace Dungeons.Game.Ui;
 /// ever lives where the crafter chose it (an overfilled material, Fragile work), and that is
 /// only fair if the odds are on screen before the click.</para>
 ///
-/// <para>Wording here is the engine's own step text for now — the semantic-layer pass over
-/// the identity system is migration Phase 6, and this panel deliberately does not invent a
-/// second vocabulary in the meantime (D30: translate, never recompute).</para>
+/// <para>Since the Phase 6 semantic pass the panel speaks through the Presentation layer:
+/// refusals and change lines from <see cref="Dungeons.Presentation.VerbReadings"/>, the
+/// substrate inspector from <see cref="Dungeons.Presentation.IdentityMaterialReadings"/>,
+/// and the engine's own step text one Advanced toggle away.</para>
 /// </summary>
 public partial class VerbBenchPanel : VBoxContainer
 {
@@ -28,6 +29,8 @@ public partial class VerbBenchPanel : VBoxContainer
     private OptionButton _actionPicker = null!;
     private Label _actionDescription = null!;
     private OptionButton _substratePicker = null!;
+    private Label _substrateInspector = null!;
+    private CheckButton _advancedToggle = null!;
     private HBoxContainer _sourceRow = null!;
     private OptionButton _sourcePicker = null!;
     private SpinBox _sourceCount = null!;
@@ -78,6 +81,12 @@ public partial class VerbBenchPanel : VBoxContainer
         _substratePicker = new OptionButton { CustomMinimumSize = new Vector2(280, 0) };
         _substratePicker.ItemSelected += _ => OnShapeChanged();
         substrateRow.AddChild(_substratePicker);
+        _advancedToggle = new CheckButton { Text = "Advanced" };
+        _advancedToggle.Toggled += _ => RefreshPreview();
+        substrateRow.AddChild(_advancedToggle);
+
+        _substrateInspector = Wrapping(Muted);
+        AddChild(Card(_substrateInspector));
 
         _sourceRow = Row();
         AddChild(_sourceRow);
@@ -126,13 +135,7 @@ public partial class VerbBenchPanel : VBoxContainer
         var previous = picker.Selected;
         picker.Clear();
         foreach (var (id, name, quantity) in _onHand)
-        {
-            var state = _game.IdentityStateOf(id);
-            var carried = state is { Identities.Count: > 0 }
-                ? " · " + string.Join(", ", state.Identities.Select(s => _game.IdentityNameOf(s.Id)))
-                : string.Empty;
-            picker.AddItem($"{name} ×{quantity}{carried}");
-        }
+            picker.AddItem($"{name} ×{quantity}{_game.MaterialStakeSummary(id)}");
         if (previous >= 0 && previous < picker.ItemCount)
             picker.Selected = previous;
     }
@@ -214,6 +217,10 @@ public partial class VerbBenchPanel : VBoxContainer
 
     private void RefreshPreview()
     {
+        _substrateInspector.Text = SelectedId(_substratePicker) is { } substrateId
+            ? _game.IdentityMaterialSummary(substrateId)
+            : string.Empty;
+
         if (CurrentInvocation() is not { } invocation)
         {
             _previewLabel.Text = _onHand.Count == 0
@@ -237,12 +244,15 @@ public partial class VerbBenchPanel : VBoxContainer
         var projection = preview.Projection!;
         if (projection.Failure is { } refusal)
         {
-            _previewLabel.Text = $"The material refuses: {refusal}.";
+            _previewLabel.Text = _game.VerbRefusalText(refusal);
             _runButton.Disabled = true;
             return;
         }
 
-        var lines = projection.Steps.Select(step => step.Detail).ToList();
+        // The player voice by default; the engine's own step text one toggle away.
+        var lines = _advancedToggle.ButtonPressed
+            ? projection.Steps.Select(step => step.Detail).ToList()
+            : _game.VerbProjectionReading(SelectedAction!, invocation.SubstrateId, projection).ToList();
         // Phase 5: the bench trains — the preview says what the run pays, like every other
         // promise on this panel.
         if (SelectedAction is { Profession.Length: > 0 } trainingAction)

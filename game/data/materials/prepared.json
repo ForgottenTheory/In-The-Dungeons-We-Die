@@ -2,16 +2,16 @@
   // Prepared goods (P3): Cooking and Alchemy outputs. `growth` is the recovery/vital property
   // (docs/damage-and-defense.md §2.1) — it is what will gate these as healing consumables
   // later; until then they are ordinary materials the reaction engine can eat.
-  { "id": "material.roast_boar", "name": "Roast Boar", "tags": ["state:processed", "form:meal", "rarity:common", "comp:organic", "origin:fauna"], "properties": { "hardness": 6, "mass": 30, "affinity": 40, "growth": 30, "decay": 15, "heat": 5 }, "capacity": 1 },
-  { "id": "material.fish_stew", "name": "Fish Stew", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:fauna"], "properties": { "mass": 20, "affinity": 45, "solubility": 60, "growth": 35, "decay": 20 }, "capacity": 1 },
-  { "id": "material.foragers_pot", "name": "Forager's Pot", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:flora"], "properties": { "mass": 18, "affinity": 45, "solubility": 55, "growth": 40, "decay": 22 }, "capacity": 1, "latent": ["identity.verdant"] },
-  { "id": "material.weak_tincture", "name": "Weak Tincture", "tags": ["state:processed", "form:tincture", "form:liquid", "rarity:common", "comp:organic", "origin:flora"], "properties": { "mass": 8, "affinity": 60, "solubility": 80, "growth": 25 }, "capacity": 1 },
+  { "id": "material.roast_boar", "name": "Roast Boar", "tags": ["state:processed", "form:meal", "rarity:common", "comp:organic", "origin:fauna"], "capacity": 1 },
+  { "id": "material.fish_stew", "name": "Fish Stew", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:fauna"], "capacity": 1 },
+  { "id": "material.foragers_pot", "name": "Forager's Pot", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:flora"], "capacity": 1, "latent": ["identity.verdant"] },
+  { "id": "material.weak_tincture", "name": "Weak Tincture", "tags": ["state:processed", "form:tincture", "form:liquid", "rarity:common", "comp:organic", "origin:flora"], "capacity": 1 },
 
   // Cooking's ladder. Each of these is a *configuration* — protein, vegetable, seasoning,
   // liquid — rather than an arbitrary recipe, and the ingredients' properties are what the
   // meal ends up carrying: the warming broth is warm because emberleaf went into it.
-  { "id": "material.hearty_stew", "name": "Hearty Stew", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:fauna"], "properties": { "mass": 26, "affinity": 48, "solubility": 55, "growth": 48, "decay": 18 }, "capacity": 1, "latent": ["identity.verdant"] },
-  { "id": "material.travel_ration", "name": "Travel Ration", "tags": ["state:processed", "form:meal", "rarity:common", "comp:organic", "origin:fauna", "origin:flora"], "properties": { "hardness": 14, "mass": 22, "affinity": 36, "insulation": 20, "growth": 36, "decay": 4 }, "capacity": 1 },
-  { "id": "material.spiced_venison", "name": "Spiced Venison", "tags": ["state:processed", "form:meal", "rarity:uncommon", "comp:organic", "origin:fauna"], "properties": { "hardness": 6, "mass": 28, "affinity": 46, "growth": 52, "heat": 18, "decay": 14 }, "capacity": 2, "latent": ["identity.verdant"] },
-  { "id": "material.warming_broth", "name": "Warming Broth", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:uncommon", "comp:organic", "origin:flora"], "properties": { "mass": 18, "affinity": 52, "solubility": 62, "growth": 42, "heat": 34, "heat_resistance": 30, "decay": 16 }, "capacity": 2, "latent": ["identity.verdant"] }
+  { "id": "material.hearty_stew", "name": "Hearty Stew", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:common", "comp:organic", "origin:fauna"], "capacity": 1, "latent": ["identity.verdant"] },
+  { "id": "material.travel_ration", "name": "Travel Ration", "tags": ["state:processed", "form:meal", "rarity:common", "comp:organic", "origin:fauna", "origin:flora"], "capacity": 1 },
+  { "id": "material.spiced_venison", "name": "Spiced Venison", "tags": ["state:processed", "form:meal", "rarity:uncommon", "comp:organic", "origin:fauna"], "capacity": 2, "latent": ["identity.verdant"] },
+  { "id": "material.warming_broth", "name": "Warming Broth", "tags": ["state:processed", "form:meal", "form:liquid", "rarity:uncommon", "comp:organic", "origin:flora"], "capacity": 2, "latent": ["identity.verdant"] }
 ]

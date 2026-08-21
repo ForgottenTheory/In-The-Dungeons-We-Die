@@ -179,7 +179,7 @@ path to keep in step.
 **Nothing spends it yet**, by design — there is no economy (NEEDS DESIGN). Save schema **v8**; a
 v7 save loads with none, which is the state a character who has never been paid is already in.
 
-Coin is a **Realm export**, the same way essence is: enemy tables, node tables and chests pay it,
+Coin is a **Realm export**, the same way the supernatural tier is: enemy tables, node tables and chests pay it,
 profession drop tables do not. `LootEcosystemTests.NoProfessionDropTablePaysCoin` enforces it.
 
 ---
@@ -222,7 +222,7 @@ play, because bad loot looks exactly like bad luck. They live in
 | Rule | Why |
 |---|---|
 | **No table yields finished equipment** (D28) | an enemy that drops a sword makes the bench optional |
-| **No profession drop table reaches essence** (D29.3) | essence is the Realm's export; extraction keeps the monopoly |
+| **No profession drop table reaches active-identity stock** (D29.3, identity edition) | the supernatural tier is the Realm's export; extraction keeps the monopoly |
 | **No profession drop table pays coin** | same reasoning, same rule |
 | **Realm sources *do* reach essence** | the positive half — a monopoly on nothing is not a monopoly |
 | **Every gathering table rewards active play with things passive cannot reach** | the §4 claim, made true rather than intended |

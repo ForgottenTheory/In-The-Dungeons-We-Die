@@ -117,8 +117,12 @@ public static class SentenceAssemblers
                 Target = AfflictTarget(sentence, payload, content),
             })),
 
+            // On the defensive events retaliate fires from (struck/blocked/parried/dodged),
+            // the wearer is the event's SOURCE and the attacker its TARGET — so aiming back
+            // means TriggerTarget, exactly as the old bramble affix aimed. TriggerSource here
+            // pointed the thorns at the wearer's own side; the Phase 7 live-fire probe caught it.
             "retaliate" => RuleOnly(Rule(sentence, trigger,
-                PayloadEffect(payload, sentence.Magnitude, EffectTarget.TriggerSource))),
+                PayloadEffect(payload, sentence.Magnitude, EffectTarget.TriggerTarget))),
 
             // "Take from the enemy": hurt them, restore yourself — the transfer reading that
             // resolves today (drainResource has no handler; see the class doc).

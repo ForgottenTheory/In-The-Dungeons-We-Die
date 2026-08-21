@@ -3,15 +3,6 @@ using Dungeons.Items;
 
 namespace Dungeons.Content;
 
-/// <summary>A named quantitative property value (e.g. toxin_resistance 0.05). Used to
-/// report a crafting outcome's derived properties; material definitions store their
-/// properties as a flat name→value map (see <see cref="MaterialDefinition.Properties"/>).</summary>
-public sealed class MaterialProperty
-{
-    public string Property { get; init; } = string.Empty;
-    public double Value { get; init; }
-}
-
 /// <summary>One identity carried by a material: which door is open, and how far it has been
 /// developed. Rank is an internal integer (1–4) mapping to the effect-family access rungs;
 /// presentation renders qualitative language, never numerals (D44).</summary>
@@ -73,24 +64,16 @@ public sealed class SignatureProfile
 }
 
 /// <summary>
-/// Data-driven raw-material definition — a stackable <see cref="IItemDefinition"/>.
-/// Its properties are the intrinsic starting point that crafting derives from. They are
-/// a flat name→value map (matching <see cref="Dungeons.Items.EquipmentDefinition"/>), on
-/// a 0–100 scale, and only the properties a material actually has are listed — anything
-/// absent reads as 0 (docs/itemization.md §2, docs/json-schema.md §7).
-///
-/// <para><b>Coexistence note (migration Phase 1, D42):</b> the identity-system fields below
-/// (<see cref="Capacity"/>, <see cref="Identities"/>, <see cref="Latent"/>, <see cref="Base"/>,
-/// <see cref="SignatureProfile"/>) are the replacement model landing alongside the property
-/// model. Nothing consumes them yet; the library adopts them in Phase 4 and the property map
-/// is deleted in Phase 7 (docs/identity-foundation.md §15).</para>
+/// Data-driven raw-material definition — a stackable <see cref="IItemDefinition"/> under the
+/// identity model (docs/identity-foundation.md): capacity, identities, latents, base stats
+/// and a signature personality. The 0–100 property map this type carried through the first
+/// crafting system died with it in migration Phase 7 (D54).
 /// </summary>
 public sealed class MaterialDefinition : IItemDefinition
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
-    public Dictionary<string, double> Properties { get; init; } = new();
 
     /// <summary>Stable identity capacity — how many distinct identities this material holds
     /// before overfill (docs/identity-foundation.md §10.1; range validated 1–4, provisional).
@@ -115,45 +98,12 @@ public sealed class MaterialDefinition : IItemDefinition
 
     /// <summary>
     /// The full identity-model state of an <b>emergent</b> material, set by the registration
-    /// path and never authored in JSON — the identity-system twin of <see cref="State"/>.
-    /// Null for authored materials, whose starting state
+    /// path and never authored in JSON. Null for authored materials, whose starting state
     /// <see cref="Dungeons.Crafting.Identity.IdentityStateResolver"/> derives.
     /// </summary>
     [JsonIgnore]
     public Dungeons.Crafting.Identity.IdentityMaterialState? IdentityState { get; init; }
 
-    /// <summary>The supernatural layer (§5.2), keyed by bare essence name (<c>"fire": 60</c>).
-    /// Deliberately sparse — mundane is the absence of essence, so ~430 of 480 materials
-    /// author nothing here and store no zeros.</summary>
-    public Dictionary<string, double> Essence { get; init; } = new();
-
-    /// <summary>
-    /// Optional authored override for derived material strength (§6.1). Left unset by the whole
-    /// authored library — <see cref="MaterialStateResolver"/> derives it — and exists so a
-    /// single material whose derived value reads wrong can be hand-tuned without special
-    /// cases in code.
-    /// </summary>
-    public int? MaterialStrength { get; init; }
-
-    /// <summary>Optional authored override for derived workability (§6.2). See <see cref="MaterialStrength"/>.</summary>
-    public int? Workability { get; init; }
-
-    /// <summary>
-    /// The explicit profile of an <b>emergent</b> archetype, computed by the reaction engine
-    /// and registered under its signature (§12). Null for authored materials, whose profile
-    /// is derived by <see cref="MaterialStateResolver"/>. Never authored in JSON — always
-    /// resolve through the resolver rather than reading this directly.
-    /// </summary>
-    [JsonIgnore]
-    public MaterialState? State { get; init; }
-
     public ItemType ItemType => ItemType.Material;
     public bool Stackable => true;
-
-    public PropertySet BaseProperties => new(Properties);
-
-    public bool HasProperty(string property) => BaseProperties.Has(property);
-
-    /// <summary>Returns the value of <paramref name="property"/>, or 0 if the material lacks it.</summary>
-    public double GetProperty(string property) => BaseProperties.Get(property);
 }

@@ -62,7 +62,7 @@ public class EquipmentTests
     }
 
     [Fact]
-    public void ResolveWeaponMoves_UsesTheAuthoredMove_WhenNoInstanceProperties()
+    public void ResolveWeaponMoves_UsesTheAuthoredMove_WhenTheDefinitionCarriesNoMass()
     {
         var moves = EquipmentResolver.ResolveWeaponMoves(IronSword(), instance: null, Moves());
 
@@ -73,18 +73,18 @@ public class EquipmentTests
     }
 
     [Fact]
-    public void ResolveWeaponMoves_DerivesFromInstanceMass()
+    public void ResolveWeaponMoves_DerivesFromDefinitionMass()
     {
-        var heavy = new ItemInstance
+        var heavy = new EquipmentDefinition
         {
-            InstanceId = 1,
-            BaseDefinitionId = "equip.iron_sword",
-            ItemType = ItemType.Weapon,
-            DisplayName = "Dense Iron Sword",
-            Properties = new PropertySet(new Dictionary<string, double> { [ItemProperties.Mass] = 3 }),
+            Id = "equip.heavy_iron_sword",
+            Name = "Dense Iron Sword",
+            Slot = EquipmentSlot.Weapon,
+            Moves = new[] { new MoveGrantSpec { Id = "move.iron_slash" } },
+            Properties = new Dictionary<string, double> { [ItemProperties.Mass] = 3 },
         };
 
-        var slash = Assert.Single(EquipmentResolver.ResolveWeaponMoves(IronSword(), heavy, Moves()));
+        var slash = Assert.Single(EquipmentResolver.ResolveWeaponMoves(heavy, instance: null, Moves()));
 
         Assert.Equal(13, slash.Packets.Sum(p => p.Amount), 3);   // 10 + mass 3 × 1.0
         Assert.Equal(8 + 6, slash.Timing.WindupTicks);           // 8 + mass 3 × 2 → slower
@@ -120,17 +120,18 @@ public class EquipmentTests
     }
 
     [Fact]
-    public void ResolveArmor_AddsHardnessAndKeepsResistances()
+    public void ResolveArmor_AddsDefinitionHardnessAndKeepsResistances()
     {
-        var hardened = new ItemInstance
+        var hardened = new EquipmentDefinition
         {
-            InstanceId = 1,
-            BaseDefinitionId = "equip.iron_armor",
-            ItemType = ItemType.Armor,
-            Properties = new PropertySet(new Dictionary<string, double> { [ItemProperties.Hardness] = 4 }),
+            Id = "equip.hard_iron_armor",
+            Name = "Hardened Iron Armor",
+            Slot = EquipmentSlot.Body,
+            Armor = new ArmorStats { Armor = 4, Resistances = new() { ["Slashing"] = 0.1 } },
+            Properties = new Dictionary<string, double> { [ItemProperties.Hardness] = 4 },
         };
 
-        var armor = EquipmentResolver.ResolveArmor(IronArmor(), hardened);
+        var armor = EquipmentResolver.ResolveArmor(hardened, instance: null);
         Assert.Equal(4 + 2, armor.Armor);              // 4 + hardness 4 * 0.5
         Assert.Equal(0.1, armor.ResistanceFor("Slashing"));
     }

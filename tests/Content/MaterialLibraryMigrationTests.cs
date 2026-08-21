@@ -12,20 +12,6 @@ namespace Dungeons.Tests.Content;
 /// </summary>
 public class MaterialLibraryMigrationTests
 {
-    /// <summary>D44's essence absorption map, as data: essence key → the identity that
-    /// absorbed it. The corrosion lane stays Corrosive's mechanical home but no <c>essence</c>
-    /// key ever pointed at it, so it does not appear here.</summary>
-    private static readonly IReadOnlyDictionary<string, string> EssenceAbsorption = new Dictionary<string, string>
-    {
-        ["fire"] = "identity.ember",
-        ["frost"] = "identity.frost",
-        ["storm"] = "identity.storm",
-        ["nature"] = "identity.verdant",
-        ["necrotic"] = "identity.blighted",
-        ["radiant"] = "identity.radiant",
-        ["abyssal"] = "identity.umbral",
-    };
-
     // --- Library-wide fences -------------------------------------------------
 
     [Fact]
@@ -40,24 +26,6 @@ public class MaterialLibraryMigrationTests
 
         Assert.True(unmigrated.Count == 0,
             $"{unmigrated.Count} materials have no identity model: {string.Join(", ", unmigrated.Take(10))}…");
-    }
-
-    [Fact]
-    public void EveryEssenceBearerCarriesItsAbsorbedIdentity()
-    {
-        // D44: the essence layer is absorbed into identities. A material that authored
-        // fire essence IS Ember-touched — as an active identity or a latent one.
-        foreach (var material in Materials().GetAll().Where(m => m.Essence.Count > 0))
-        {
-            foreach (var essenceKey in material.Essence.Keys)
-            {
-                var absorbedIdentity = EssenceAbsorption[essenceKey];
-                var carries = material.Identities.Any(grant => grant.Id == absorbedIdentity)
-                    || material.Latent.Contains(absorbedIdentity, StringComparer.Ordinal);
-                Assert.True(carries,
-                    $"{material.Id} authors {essenceKey} essence but carries neither active nor latent {absorbedIdentity}.");
-            }
-        }
     }
 
     [Fact]

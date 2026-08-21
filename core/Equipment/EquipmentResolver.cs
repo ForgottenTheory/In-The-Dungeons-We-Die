@@ -36,7 +36,7 @@ public static class EquipmentResolver
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(moves);
 
-        var properties = instance?.Properties ?? definition.BaseProperties;
+        var properties = definition.BaseProperties;
         var mass = properties.Get(ItemProperties.Mass);
         var resolved = new List<MoveDefinition>();
 
@@ -178,7 +178,7 @@ public static class EquipmentResolver
         if (definition.Armor is null)
             return ArmorProfile.None;
 
-        var properties = instance?.Properties ?? definition.BaseProperties;
+        var properties = definition.BaseProperties;
         var hardness = properties.Get(ItemProperties.Hardness);
 
         // Keyed by DamageLane, not by damage-type name (D-02). Future: derive lane resistances

@@ -7,12 +7,11 @@
 > **What this is not.** Not a specification — `docs/GDD.md` is the authoritative detailed
 > reference, and the per-system docs hold the math. Nothing here overrides them.
 >
-> Last synced with the repo: **2026-08-19** (1,191 passing tests, 0 build warnings, save v11).
+> Last synced with the repo: **2026-08-21** (1,011 passing tests, 0 build warnings, save v14).
 >
-> ⚠ **Crafting redesign in progress (2026-08-20, DECISIONS D42–D44):** the material/crafting
-> model described here is being replaced by the **Identity + Signature system** — design of
-> record: `docs/identity-foundation.md`. Crafting sections describe the code as shipped until
-> the migration lands.
+> The crafting sections describe the **identity system** (DECISIONS D42–D54) — the property
+> model that shipped first was replaced across migration Phases 1–7 and deleted whole.
+> Design of record: `docs/identity-foundation.md`; the stack map: `docs/crafting-overview.md`.
 
 ## How to read the status marks
 
@@ -45,9 +44,9 @@ Safety Procedures]*, and why every power states its drawback like a liability wa
 
 ### What makes it different
 
-1. **Crafting with no recipes, anywhere.** A universal reaction algebra computes what *any*
-   combination produces. Every experiment yields a real, named, stackable material — including
-   ones nobody has seen.
+1. **Crafting with no recipes, anywhere.** Ten universal verbs work any material's identities —
+   reveal what sleeps in it, transfer it, deepen it, overfill it and gamble. Every result is a
+   real, named, stackable material — including ones nobody has seen.
 2. **Builds you assemble, not classes you pick.** Base + Prefix + Suffix = **18,750 characters**,
    none hand-authored.
 3. **Combat on a clock, not in turns.** The simulation keeps ticking while you think. Skill is
@@ -74,17 +73,16 @@ to this work would walk past* — an unusually rich seam. Pursue it (it costs ti
 collapse) or let it go? You pursue, and come away with more ore than a day of idle picking —
 including a few lumps of stormglass.
 
-At the Forge bench you run a **Forge Infusion** — iron ingot, then the stormglass, step by
-step — watching the projection as you go ("Risk: COSTLY · within reach: Stormlaced — needs more
-Charge"). You push one more step, and mint a material that did not exist five minutes ago:
-**Stormlaced Iron**. First discovery. It stacks like anything else.
+At the Forge bench you **Transfer** the stormglass's Storm identity into an iron ingot, the
+preview stating the whole deal before you click — what settles in, what the work costs the
+metal, and the odds only if you chose them. You mint a material that did not exist five minutes
+ago: **Storm Iron**. First discovery. It stacks like anything else.
 
-At the Fletcher's Bench you feed it into a **Longbow** form — limb, grip, string. The preview
-tells you the truth before you commit: the limb wants flexibility and your iron is stiff, the
-bow will be mediocre — *but* the same material in the **Longsword** would express its storm
-trait fully. You forge the sword instead. Its **Genome** — how much hardness and charge actually
-reached the parts that matter — decides what it can roll. It comes out with a guaranteed innate,
-plus *"+12% Shock chance"*. You made the casino, then you played it.
+At the forge you feed it into a **Longsword** — the edge bites, the whole blade swings by its
+heft, and the preview shows the projection the mint will draw from: the guaranteed Storm floor,
+the scored table of what might join it ("Likely — On Hit: Jolt"), the Signature odds. You forge
+it and the sentences land: *"While Worn: +5% Charge Resistance"*, *"On Critical: inflict Shock
+(2.4)"*. You engineered the odds, then you played them.
 
 On the **Realm tab** you pick the Dark Forest. The briefing shows only what your Realm Knowledge
 has earned: the Brute's weakness to Crushing, the bog that costs health to cross, which workings
@@ -98,7 +96,7 @@ Your bag fills. The elite behind the hazard would pay better. The boss below him
 Every step deeper is the same bet: extract now and bank it, or push and maybe lose the lot.
 
 You die to Thornheart. The bag is gone — the ore, the salves, forty gold. The sword on your back
-survives. The levels, the mastery, the knowledge, the discovery of Stormlaced Iron: all safe.
+survives. The levels, the mastery, the knowledge, the discovery of Storm Iron: all safe.
 You know exactly what to do differently, and it starts at the bench.
 
 ---
@@ -110,9 +108,9 @@ You know exactly what to do differently, and it starts at the bench.
                 │  Train professions — active, passive,        │
                 │    or offline while the game is closed   ✅  │
                 │  Gather and process raw materials        ✅  │
-                │  Invent materials at the crafting bench  ✅  │
-                │  Fabricate them into equipment           ✅  │
-                │  Modifiers roll from the item's Genome   ✅  │
+                │  Work identities at the verb bench       ✅  │
+                │  Forge them into equipment               ✅  │
+                │  Sentences mint from the scored table    ✅  │
                 │  Assemble your build (Base+Prefix+Suffix)✅  │
                 │  Prepare: loadout, pack, briefing        ✅  │
                 └───────────────────┬──────────────────────────┘
@@ -269,182 +267,114 @@ components) · bow/projectile consumers for Fletching · Cooking's consumable ou
 
 ---
 
-# 7. Materials and the bench ✅
+# 7. Materials and the bench ✅ — the identity system
 
 ## 7.1 The ingredient library
 
-**1,448 materials** on a 0–100 property scale — deliberately **mundane-majority** (oak, iron,
-salt, spring water) so the rare things stand out by their property *profile*, not by tier.
-**There is no "Iron < Better Iron"** anywhere: Oak, Ironwood, Emberwood and Frostpine all fill
-the "wood" role and behave differently. A wolf gives hide, fur, meat, bone, fang and blood as
-separate materials. Every raw material has a gathering source — enforced exactly, by test.
+**1,448 materials**, deliberately **mundane-majority** (oak, iron, salt, spring water) so the
+strange things stand out by what they *are*, not by tier. A material is: **capacity** (how many
+identities it safely holds, 1–4) · **active identities** (ranked doors into effect families —
+only **53** materials ship any: motes, essences, hearts, runes, cores) · **latents** (present
+but asleep until revealed — ~413 carriers, discovery gameplay) · **base stats** (Heft, Bite,
+Toughness, Give on 0–10 — the mundane physical floor, structural stock only) · a **signature
+profile** (its crafting personality — 47 curated). **There is no "Iron < Better Iron"**
+anywhere, and every raw material has a gathering source — enforced exactly, by test.
 
-**21 properties** in four roles: **structural** (hardness, mass, flexibility, affinity,
-conductivity, insulation, solubility, resonance, instability — *what it is*), **reactive**
-(heat, cold, charge, toxicity, growth, decay, corrosion, arcane — *what it does to things*),
-**response** (the three resistances — derived, never inputs), **sourcing** (harvest_resistance —
-read only by gathering). **Affinity — the willingness to bond — is the single most important
-gate in the crafting engine.**
+The **identity roster is 24 and closed** (Dense, Vital, Ember, Frost, Storm, Warded, Arcane…) —
+a new identity is a design decision with a pinned test, never a content addition.
 
-## 7.2 The crafting bench — no recipes, ever
+## 7.2 The identity bench — ten verbs, no recipes
 
-**The engine is a total function, not a lookup.** Substrate + ordered reagents + a process +
-an optional catalyst → a real result, always. Authored content is just **eight processes**
-(Grind, Steep, Distill, Smelt, Quench, Alloy, Forge Infusion, Attune), four byproducts and a
-name grammar.
+Everything the bench does is one of **ten verbs**, shipped as **53 content actions across 11
+professions** at their own stations: **Process** (ore→ingot; the output's innate identities
+activate — preparation *is* activation) · **Fuse** · **Reveal** (wake a latent) · **Transfer** ·
+**Develop** (deepen a rank) · **Extract** (pull an identity onto a carrier) · **Displace** ·
+**Refine** (workmanship) · **Restore** · **Expand** (capacity, rare).
 
-```
-Substrate  ← Step 1: Reagent A  ⇒ intermediate state
-           ← Step 2: Reagent B  ⇒ intermediate state
-           ← Step 3: Reagent C  ⇒ final state
-           + Catalyst (not consumed — lends its affinity)
-           + Process  (decides which properties react at all)
-```
+**Risk only lives where you chose it.** Refusals are deterministic and previewable; the only
+dice are fracture (working an **overfilled** material — Unstable/Volatile, the §10.3 ladder)
+and destruction (deep work at **Fragile** condition), both shown as odds before the click, both
+shaved by per-action mastery (capped — skill narrows variance, never deletes it). **The bench
+trains**: every gated action pays profession XP and mastery.
 
-**Order matters automatically** — step 2 acts on what step 1 made. The algebra's one
-load-bearing rule: on-channel properties **converge toward the reagent's value and can never
-exceed the strongest input**. That single sentence kills stat inflation forever, with no caps.
-Off-channel values wash out, opposites (heat/cold, growth/decay) annihilate — you cannot
-stockpile both.
-
-Two meta-numbers drive the drama:
-
-- **Potency** — how strongly the result expresses. A **weighted mean, never a sum** — junk
-  inputs *lower* it, so a high-potency mundane material beats a low-potency exotic one and base
-  resources stay relevant forever.
-- **Integrity** — a **transformation budget**. Gentle, well-chosen steps cost little; brute
-  force costs a lot. **Zero destroys the material** — fair only because the projection shows
-  cost and risk *before* you commit, and destruction pays out byproducts (Slag, Cinders, Dross,
-  Residue) that are real reagents. *Refine once more, or commit?* — the crafting verse of the
-  risk rhyme.
-
-**Identity:** results are quantized, hashed, and registered as **stackable materials with
-deterministic names** (max 3 words, no "of X", no tier words — `heat` climbs Warmed → Emberlit →
-Cindered → Searing). Two players who reach the same state mint the same material with the same
-name. **Variance produces different neighbouring materials, not random stats** — a bad roll is a
-*different, weaker invention*, possibly one nobody has seen. High skill narrows variance to
-zero.
-
-**Traits (16)** are the qualitative layer — Emberveined, Frostbound, Stormlaced — born at
-thresholds, capped at 3, with authored merges (Emberveined + Stormlaced supersede into
-**Tempestforged**). Every trait carries a drawback. **Essence (7)** — fire, frost, storm,
-nature, necrotic, radiant, abyssal — is the rare supernatural layer on top: capacity is governed
-by `resonance` (Attune raises it), and excess becomes **strain** rather than a cap. *Powerful
-magic needs a worthy vessel.* Essence is scarce on purpose: it is **extraction's export** — you
-can only bank it through attentive play and Realm drops, never idle farming.
-
-And because a system this deep is only playable if it explains itself, **every craft emits the
-Reaction Log** — a human-readable trace where every line states *why*.
-
-📐 Not built: signature reactions (authored spikes over the universal rule) · consumable forms ·
-the codex/journal.
+Worked materials are **fingerprinted and registered** — the same state always mints the same
+stackable material with the same name ("Vital Oakbound Iron Ingot"), and plain smelted ore
+lands on authored `material.iron_ingot`, never an emergent twin.
 
 ## 7.3 The language you see it in ✅
 
-The player never reads "hardness 68" on a normal surface. **Three languages, one direction:**
-simulation numbers → a semantic crafting voice (glyphs, tiers Trace→Extreme, trend arrows, risk
-bands SAFE→DESTROYS, "within reach: Emberveined — needs more Heat") → gameplay payoffs (damage,
-Crit, Thorns, Shock). Raw numbers live behind a single **Advanced** toggle and the labs. Items
-speak gameplay language: *"+12% Shock chance"*, with the material influence shown as the cause,
-never the reward.
+The player reads identities, rung words (*improved / advanced / build-changing* — never
+numerals), Condition and Stability ladder words, workmanship words, and effect **sentences** —
+never engine ids or weights. The draw table reads as likelihood words (Likely / Possible / A
+long shot); exact scores live behind one **Advanced** toggle (D30/D53,
+`docs/presentation-architecture.md`).
 
 ---
 
 # 8. Assay — buying comprehension, never power ✅
 
-The reading of a material is computed identically at every Assay level; levelling only removes
-`???`. Identity at level 1, composition at 10, reactive behaviour at 25, traits at 45, essence
-at 65, full potential at 85. Modifiers on items you cannot read yet still work — the unreadable
-mark *is* the advertisement for the knowledge layer. Assay also produces **property dossiers**,
-which the three deepest crafting actions require as inputs.
+The reading is computed identically at every level; levelling only removes `???`. Always
+visible: a material's active identities and its overfill word (chosen risk is never hidden).
+The ladder then opens **Vessel** (slots, condition, workmanship) at 10 → **Latency**
+("something sleeps in this") at 25 → **Latent names** at 45 → **Leanings** (the profile as
+words — "leans toward blocking work · favors Warding") at 65 → **Potential** ("on gear,
+promises Vitality") at 85. Themes are never visible at any level.
 
 ---
 
-# 9. Fabrication — materials become gear ✅
+# 9. The identity forge — materials become gear ✅
 
-The terminal boundary: materials stop here, equipment begins, and it is irreversible — which is
-why it gets the same fairness guarantee as the bench: a **pre-commit preview computed by the
-same code that mints the item**.
+The terminal boundary, with the same fairness guarantee as the bench: the **pre-commit preview
+is the projection the mint draws from** — the scored candidate table the player sees IS the
+draw distribution.
 
 ```
-Equipment Form + material in each named slot → a unique item with a Genome
+Form + a material in each named slot
+  → compose: identity union, form cap, dormancy (D51) + base delivery (D46)
+  → the item-effect pipeline (D50)
+  → a minted item carrying its sentences
 ```
 
-`Longsword` is authored once — edge, core, binding, each slot with tag gates, a **mass share**,
-and an **aperture** deciding how much of each trait category that slot can express (the rest
-goes **dormant**: visible, valued, and fully available if you re-use the material in a different
-form later).
+**23 forms across all nine equipment slots (16 weapons), every one identity-forgeable**, each
+authored to disagree with the others: the longsword's edge **bites**, the maul's head hits by
+**heft** (no edge, no Bite — D52's rule), the bow's limb springs by **Give** (iron limbs are
+still a bad bow), armour reads **Toughness**, gauntlets add the glove's **Give** (supple beats
+plated), and the Focus and Ring read nothing at all — pure identity vessels. Identities beyond
+the form's cap go **Dormant**: recorded, inert, never deleted. ~120 weapon names (Falchion,
+Scimitar, Spatha…) ride the forms as cosmetic variants picked deterministically from the
+derived definition id — the preview promises the noun the forge mints.
 
-**23 forms across all nine equipment slots (16 weapons), each one authored to disagree with the
-others** about what matters — that is the whole trick that prevents a single best material:
-
-| Form | What it reads |
-|---|---|
-| **Longsword** | hardness off the edge — the calibration reference |
-| **Warspear** | flexibility off the *haft*, which is 60% of it — great sword-iron makes a mediocre spear |
-| **Longbow** | flexibility at 1.10, hardness at 0.20 — a bow limbed in iron is a bad bow |
-| **Maul** | mass off the head at 1.40 — lead is a bad sword and a fine maul |
-| **Dagger / Javelin / Knuckles** | almost no mass read anywhere — the forms for rare, light materials |
-| **Whip** | flexibility off the lash at 1.35; hardness only off the handle, which does no damage |
-| **Focus** | the only reader of resonance/arcane — the caster's slot |
-| **Ring** | the only reader of conductivity/affinity — one form fills either ring position |
-
-~180 weapon names (Falchion, Scimitar, Sabre…) ride ten of the weapon forms as **cosmetic
-variants picked deterministically from the item's signature** — the preview promises the noun
-the bench mints, and a variant can never quietly become a mechanical difference.
-
-Weapons carry their own moves (re-equipping literally reconfigures your moveset); armour pieces
-carry armour and lane resistances derived from what you made them of; the worn total is the sum
-of the loadout, with coverage authored per form.
+Weapons carry their own moves (re-equipping literally reconfigures your moveset); the worn
+armour total is the sum of the loadout.
 
 📐 Not built: consumable forms · **form acquisition** — schematic items already drop, but today
-every form is available from the first minute and the schematics bind to nothing. The one
-progression track nothing reads, and the roll-call test names it. 🟡
+every form is available from the first minute. The one progression track nothing reads, and the
+roll-call test names it. 🟡
 
 ---
 
-# 10. The Genome, modifiers, and the designed endgame
+# 10. The item-effect pipeline — one generator, three categories ✅
 
-## 10.1 The Genome ✅
-
-Every fabricated item carries a **Genome**: not "how much hardness went in", but *how much
-hardness actually reached the parts that matter*, weighted by the form's own stat map — plus
-essence, traits (expressed and dormant), tags and potency. Same materials, different form ⇒
-different genome.
-
-The genome answers three questions about every possible modifier, all as pure functions the
-player can see **before rolling**: *can* it roll (eligibility), how *likely* (weight), how
-*strong* (tier ceiling). Potency decides where in the tier the value lands. **"Engineer the
-casino" would be a lie if you gambled blind — so you don't.**
-
-## 10.2 Innates and modifiers ✅
+Every minted item's effects come from one pipeline (D50), kept apart on the item so the promise,
+the roll and the rarity never blur:
 
 ```
-  1–3 INNATES        deterministic, zero variance, never rerollable —
-                     a well-engineered material is never a total loss
-+ ≤3 modifier-prefixes ┐  rolled from weighted, tiered pools;
-+ ≤3 modifier-suffixes ┘  one modifier per family per item
-+ Exotic / Signature / Anomalous     📐 (endgame, not built)
+  FLOOR       guaranteed — each expressed identity's promised expression, deepened by rank,
+              deterministic to the last digit ("Guaranteed: While Worn: +9 Max Health")
++ GENERATED   1–3 sentences drawn from the scored table the preview shows — trigger →
+              behavior → payload over the shared vocabulary (22 × 11 × 29), biased by the
+              materials' profiles and the form's lean, never a recipe
++ SIGNATURE   the earned special layer: 1–2 coherent sentences, odds from theme resonance,
+              quality and overfill — earned, never owed (ceiling 90%)
++ DRAWBACK    the price of minting from Volatile stock: an ailment aimed at the wearer
 ```
 
-**44 modifiers ship** and every one resolves in real play — ailment chances, thorns and
-retaliation, parry and avoidance, penetration, barrier, resource and trigger effects, and the
-first move-rewriting modifier (Emberbrand, which adds Heat to your heavy strikes). A modifier is
-always called a *modifier* on screen — the bare word "Prefix" belongs to characters.
+Worn, the sentences recompile deterministically into stat grants, trigger rules, gauges and
+move modifiers — the same seams character components use, so they swap with the gear.
 
-## 10.3 Operations and Overreach 📐 DESIGNED — the crafting endgame
-
-Not built yet, and worth knowing where it is going:
-
-- **Operations** (Anneal · Etch · Scour · Reforge · Bind · Temper · Fracture) — targeted
-  gambling on an existing item, paid for chiefly with the **byproducts of failed crafts**, every
-  operation bounded by the genome.
-- **Overreach** — the final casino: Ruin · Brick · Mutation · Elevation · Exotic Mutation ·
-  Transcendence, drawn **only from the item's own genetic families** — a poison dagger can never
-  Overreach into a lightning effect, at any odds. Repeatable with **escalating Ruin odds**: the
-  extract-or-go-deeper decision, played at a workbench. **Anomalous** modifiers — the only
-  content allowed to bend the proc-safety rules — exist only here. (The engine already reserves
-  their exception; zero Overreach content exists today.)
+📐 The designed endgame (E7) still waits: **Operations** (targeted gambling on an existing
+item) and **Overreach** (the escalating-Ruin casino, Anomalous effects) — now to be built over
+the sentence vocabulary rather than the retired affix layer.
 
 ---
 
@@ -608,13 +538,14 @@ bench**:
 
 A slain Brute's crude blade arrives as scrap iron and rawhide, never as an equippable sword. A
 test fails any table that yields finished equipment. The designed chase items are **relic
-materials** — boss drops with impossible property profiles that feed the genome machinery
+materials** — boss drops with impossible identity profiles that feed the crafting machinery
 instead of bypassing it (the boss already drops the placeholder shards 📐).
 
 Structural, not numeric: **active gathering reaches entries passive cannot** (a condition, not
 better odds) · elite/boss spoils fire on the rank tag · a material's rarity comes from its own
-tag, stated once · essence never sits in a profession drop table, and no profession table pays
-coin — **coin and essence are Realm exports**, both held by test.
+tag, stated once · active-identity stock never sits in a profession drop table, and no
+profession table pays coin — **coin and the supernatural tier are Realm exports**, both held
+by test (D29.3, identity edition).
 
 **Gold** drops, rides in your bag *unsecured like everything else*, and today spends in exactly
 one place: the Hedge Trader. That ordering is deliberate — the faucet shipped before the economy
@@ -659,9 +590,9 @@ mid-play):
 
 | Authored as data | Count |
 |---|---|
-| Materials / Properties | 1,448 / 21 |
-| Processes / Byproducts / Traits / Essences / Forms | 8 / 4 / 16 / 7 / 23 |
-| Item modifiers (affixes) | 44 |
+| Materials (53 active-identity) / Identities | 1,448 / 24 |
+| Triggers / Behaviors / Payloads / Themes / Profiles | 22 / 11 / 29 / 16 / 47 |
+| Verb actions / Byproducts / Forms | 53 / 4 / 23 |
 | Moves / Move modifiers / Techniques | 517 / 11 / 493 |
 | Statuses / Modifier keys | 29 / 60 |
 | Bases / Prefixes / Suffixes / Species / Name formats | 15 / 25 / 50 / 3 / 9 |
@@ -671,28 +602,29 @@ mid-play):
 | Auto-combat brains | 3 |
 | Realms / Loot tables / Equipment / Consumables | 164 / 72 / 4 / 1 |
 
-✅ **BUILT** — the full loop: tick simulation · the reaction engine with traits and essence ·
-fabrication with the Genome and 44 live modifiers · the semantic presentation language · the
+✅ **BUILT** — the full loop: tick simulation · the identity bench (ten verbs, trained) · the
+identity forge and the item-effect pipeline · the player-language presentation layer · the
 class combinator · the hit pipeline, 29 statuses, Resolve · 517 moves and 493 techniques · the
 composed enemy roster with a live elite and boss · auto-combat · 20 professions with mastery,
 synergies, opportunities, offline + the away report · Farming plots and the Agility course ·
 20 stations · the Dark Forest with all eleven node kinds · Realm preparation and deep entry ·
 composed loot, gold, extraction and death · nine consumed progression tracks · single-slot
-save at schema v11.
+save at schema v14.
 
 🟡 **PARTIAL** — Species (3 thin) · Suffixes (10 of 50 expressed) · form acquisition (schematics
 inert) · the Hideout meta-layer · course bonuses (displayed, unread) · realm tiers (carried,
 unread) · 478 actors awaiting encounter wiring · the debug-console UI itself.
 
-📐 **DESIGNED, NOT BUILT** — operations + **Overreach** + Anomalous/Exotic/Signature modifiers ·
-signature reactions · consumable forms · the codex · profession tools (E6) · realm affixes and
-the campsite workshop · combat-side hazards · relic materials and sealed uniques · unattended
-Realm runs · the "gear at risk" toggle.
+📐 **DESIGNED, NOT BUILT** — operations + **Overreach** + Anomalous effects (E7, over the
+sentence vocabulary) · detonate/spread/bloom behaviors · named identity evolution · consumable
+forms · the codex · profession tools (E6) · realm affixes and the campsite workshop ·
+combat-side hazards · relic materials and sealed uniques · unattended Realm runs · the "gear
+at risk" toggle.
 
 ❓ **UNRESOLVED** — the economy (valuation, sinks, vendors at scale, respec pricing) · Species'
 mechanical role · the Fighter hook · positioning · durability · the combat triangle (leaning
-no) · casting-speed scaling · quantization bucket size · integrity budget strength · **and
-balance, wholesale: every shipped number is breadth-not-balance until the playtest pass.**
+no) · casting-speed scaling · **and balance, wholesale: every shipped number — the identity
+identity system's especially — is breadth-not-balance until the playtest pass.**
 
 ---
 
@@ -705,12 +637,11 @@ balance, wholesale: every shipped number is breadth-not-balance until the playte
 | The experience arc, stage by stage | `docs/how-it-plays.md` |
 | The presentation rule and its enforcement | `docs/presentation-architecture.md` |
 | The whole crafting stack, in one place | `docs/crafting-overview.md` |
-| The crafting engine's mathematics | `docs/emergent-item-system.md` |
+| The crafting foundation and the migration record | `docs/identity-foundation.md` |
 | The 20-profession system | `docs/professions.md` |
 | Damage, defence, lanes, thorns | `docs/damage-and-defense.md` |
 | Statuses and Resolve | `docs/statuses.md` |
 | The Move model | `docs/moves.md` |
-| The Genome, modifiers, operations, Overreach | `docs/affixes.md` |
 | The reward layer, table by table | `docs/loot.md` |
 | Why a decision was made (and what was rejected) | `DECISIONS.md` |
 | What's next, and where the last session stopped | `ROADMAP.md`, `HANDOFF.md` |

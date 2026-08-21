@@ -6,7 +6,9 @@
 > in the linked doc. Status marks (**BUILT** / **PLANNED** / **NEEDS DESIGN**) refer to the
 > machinery; the arc itself is design intent, validated at playtest checkpoints (C2c first).
 >
-> Chapters land one at a time as each system is fleshed out. **Ch. 1: Crafting** (2026-08-16).
+> Chapters land one at a time as each system is fleshed out. **Ch. 1: Crafting** (2026-08-16 —
+> ⚠ written for the property system the identity redesign replaced and deleted, D42–D54; the
+> arc's intent stands, its mechanics references are history — current: `identity-foundation.md`).
 > Planned: Combat · Realms & extraction · Professions · Character identity · Economy.
 
 ---

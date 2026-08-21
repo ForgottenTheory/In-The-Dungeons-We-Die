@@ -17,10 +17,10 @@
 | `damage-and-defense.md` | Damage types × aspects · the resolution pipeline · defence layers · resistance/penetration/inversion · avoidance vs mitigation · thorns |
 | `statuses.md` | Status taxonomy · ailments/impairments/controls/states · Resolve & the CC problem · the status data contract |
 | `moves.md` | The Move model · move modification · the shared Action vocabulary |
-| `affixes.md` | Item affix architecture · Material Genetics → eligibility/weight/tier · crafting operations · Overreach |
+| ~~`affixes.md`~~ | **Deleted with the affix layer (Phase 7, D54)** — item effects are identity sentences now (`identity-foundation.md` §7–§8) |
 | `profession-tools.md` | The profession outcome pipeline · tool forms and affixes |
 | `effect-catalog.md` | 254 starter modifier concepts for design review |
-| `worked-examples.md` | 10 build examples · 4 tool examples · 8 worked resolution traces |
+| ~~`worked-examples.md`~~ | **Deleted (Phase 7, D54)** — its resolution traces live on as golden tests |
 
 **Supersession.** This package supersedes `combat-spec.md` §15–16 and §22–25 (damage types,
 pipeline, blocking, dodging, crits, statuses) and extends `emergent-item-system.md` §16

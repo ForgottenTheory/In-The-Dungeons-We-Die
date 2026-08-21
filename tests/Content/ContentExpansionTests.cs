@@ -22,19 +22,17 @@ public class ContentExpansionTests
     // ---- The library is a spread of profiles, not a ladder -------------------------------------
 
     /// <summary>
-    /// <b>The anti-tiering rule, enforced.</b> A name is a claim about what a material DOES: a
-    /// Frost-something must actually carry cold, a Storm-something charge. If these ever pass by
-    /// accident — because every fancy material simply got bigger numbers — the library has become
-    /// the MMO tier list CLAUDE.md forbids.
+    /// <b>The anti-tiering rule, identity edition.</b> A name is a claim about what a material
+    /// IS: the frost family must keep the Frost identity reachable somewhere in its ranks, the
+    /// storm family Storm — or the fancy names have decayed into rungs of one ladder.
     /// </summary>
     [Theory]
-    [InlineData("frost", "cold")]
-    [InlineData("ember", "heat")]
-    [InlineData("storm", "charge")]
-    [InlineData("mana", "arcane")]
-    [InlineData("grave", "decay")]
-    [InlineData("venom", "toxicity")]
-    public void AMaterialsNameIsAClaimAboutWhatItDoes(string namePrefix, string property)
+    [InlineData("frost", "identity.frost")]
+    [InlineData("ember", "identity.ember")]
+    [InlineData("storm", "identity.storm")]
+    [InlineData("grave", "identity.blighted")]
+    [InlineData("venom", "identity.venomous")]
+    public void AMaterialFamilysNameKeepsItsIdentityReachable(string namePrefix, string identityId)
     {
         var matching = Materials().GetAll()
             .Where(m => m.Name.Contains(namePrefix, StringComparison.OrdinalIgnoreCase))
@@ -42,19 +40,21 @@ public class ContentExpansionTests
 
         Assert.True(matching.Count >= 5, $"only {matching.Count} '{namePrefix}' materials — too few to be a claim.");
 
-        foreach (var material in matching)
-            Assert.True(material.Properties.GetValueOrDefault(property) > 0,
-                $"{material.Id} is called '{material.Name}' but carries no {property}.");
+        Assert.True(matching.Any(m =>
+                m.Identities.Any(grant => grant.Id == identityId)
+                || m.Latent.Contains(identityId, StringComparer.Ordinal)),
+            $"no '{namePrefix}' material carries {identityId}, active or latent — the name has stopped being a claim.");
     }
 
     /// <summary>
     /// The mundane majority is what makes the strange things legible. Real-world plants and
-    /// minerals must stay ordinary — no arcane, no resonance — or "Sage" and "Voidleaf" stop
-    /// being different kinds of thing and become two rungs of one ladder.
+    /// minerals must stay ordinary — no magical identity, active or latent — or "Sage" and
+    /// "Voidleaf" stop being different kinds of thing and become two rungs of one ladder.
     /// </summary>
     [Fact]
     public void TheRealWorldHalfOfTheLibraryStaysMundane()
     {
+        var supernatural = new[] { "identity.arcane", "identity.resonant" };
         foreach (var id in new[]
                  {
                      "material.sage", "material.rosemary", "material.thyme", "material.carrot",
@@ -65,11 +65,11 @@ public class ContentExpansionTests
             if (!Materials().TryGetById(id, out var material))
                 continue; // a few of these already existed under other ids
 
-            // instability is deliberately NOT checked: the authored ores carry a baseline 5, and
-            // physical unpredictability is an ordinary property. Arcane and resonance are the
-            // supernatural pair, and those are what the mundane half must not have.
-            Assert.Equal(0, material.Properties.GetValueOrDefault("arcane"));
-            Assert.Equal(0, material.Properties.GetValueOrDefault("resonance"));
+            foreach (var identityId in supernatural)
+            {
+                Assert.DoesNotContain(material.Identities, grant => grant.Id == identityId);
+                Assert.DoesNotContain(identityId, material.Latent);
+            }
         }
     }
 

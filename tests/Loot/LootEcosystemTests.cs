@@ -124,7 +124,7 @@ public class LootEcosystemTests
     // --- D29.3: essence and coin are the Realm's export -----------------------
 
     [Fact]
-    public void NoProfessionDropTableReachesEssence()
+    public void NoProfessionDropTableReachesActiveIdentityStock()
     {
         var materials = Materials;
 
@@ -132,9 +132,9 @@ public class LootEcosystemTests
         {
             foreach (var itemId in Reachable(tableId))
             {
-                var isEssenceBearing = materials.TryGetById(itemId, out var material) && material.Essence.Count > 0;
-                Assert.False(isEssenceBearing,
-                    $"{tableId} can drop essence-bearing '{itemId}' — professions may not compete with extraction for the supernatural tier (D29.3).");
+                var isActiveIdentityStock = materials.TryGetById(itemId, out var material) && material.Identities.Count > 0;
+                Assert.False(isActiveIdentityStock,
+                    $"{tableId} can drop active-identity '{itemId}' — professions may not compete with extraction for the supernatural tier (D29.3, identity edition).");
             }
         }
     }
@@ -149,7 +149,7 @@ public class LootEcosystemTests
     /// <summary>The other half of the same rule, stated positively: Realm sources <em>do</em>
     /// reach essence, or extraction has no supernatural export to be the monopoly on.</summary>
     [Fact]
-    public void RealmSourcesReachEssence()
+    public void RealmSourcesReachActiveIdentityStock()
     {
         var realms = TestPaths.LoadStore<RealmDefinition>("realms");
         var materials = Materials;
@@ -161,11 +161,11 @@ public class LootEcosystemTests
             .Select(id => id!)
             .ToList();
 
-        var essenceReachable = realmTableIds
+        var activeStockReachable = realmTableIds
             .SelectMany(Reachable)
-            .Any(id => materials.TryGetById(id, out var material) && material.Essence.Count > 0);
+            .Any(id => materials.TryGetById(id, out var material) && material.Identities.Count > 0);
 
-        Assert.True(essenceReachable, "no Realm node can drop an essence-bearing material.");
+        Assert.True(activeStockReachable, "no Realm node can drop an active-identity material.");
     }
 
     // --- Active beats passive, structurally -----------------------------------
@@ -293,7 +293,7 @@ public class LootEcosystemTests
         var actions = Actions.GetAll();
         var interactions = TestPaths.LoadStore<CraftingInteractionDefinition>("crafting_interactions").GetAll();
         var forms = TestPaths.LoadStore<EquipmentBlueprintDefinition>("forms").GetAll();
-        var processes = TestPaths.LoadStore<CraftingActionDefinition>("processes").GetAll();
+        var verbActions = TestPaths.LoadStore<VerbActionDefinition>("verb_actions").GetAll();
 
         var consumedByProfessions = actions.SelectMany(a => a.Inputs.Select(i => i.ItemId)).ToHashSet(StringComparer.Ordinal);
         var consumedByBench = interactions.SelectMany(i => i.Inputs.Select(input => input.ItemId)).ToHashSet(StringComparer.Ordinal);
@@ -301,10 +301,10 @@ public class LootEcosystemTests
             .SelectMany(form => form.Slots.Values.SelectMany(slot => slot.RequiresTags))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // A material some shipped crafting action will accept as a substrate is wanted too —
-        // that is the whole point of an emergent bench. Only the tags a real action names count.
-        var craftableTags = processes
-            .SelectMany(process => process.Requires.SubstrateTags)
+        // A material some shipped bench action will accept as a substrate is wanted too —
+        // that is the whole point of the identity bench. Only the tags a real action names count.
+        var craftableTags = verbActions
+            .SelectMany(action => action.SubstrateTags)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         bool SomethingNamedWants(string itemId)

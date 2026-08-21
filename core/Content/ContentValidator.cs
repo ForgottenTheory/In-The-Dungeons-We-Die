@@ -56,6 +56,12 @@ public static class ContentValidator
     public const int MinBaseStat = 0;
     public const int MaxBaseStat = 10;
 
+    /// <summary>A payload binding a multiplicative modifier key must author its range as
+    /// factors on this side of zero-ish — below it, the author almost certainly wrote a
+    /// delta (+0.15) where a factor (1.15) belongs. 0.5 still admits genuine reductions
+    /// (a 0.9 cost factor) while catching the unit confusion.</summary>
+    public const double MultiplicativePayloadRangeFloor = 0.5;
+
     /// <summary>The roster's cluster vocabulary (docs/identity-foundation.md §3, D44) — a
     /// closed set per D16: clusters group the roster for tooling and docs, and a typo'd
     /// cluster should fail loudly rather than create an eighth group.</summary>
@@ -88,13 +94,8 @@ public static class ContentValidator
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        // The property registry is the single source of truth for valid property names.
-        var knownProperties = new HashSet<string>(
-            content.Properties.GetAll().Select(p => p.Id), StringComparer.OrdinalIgnoreCase);
-
         var problems = new List<ContentProblem>();
 
-        ValidateMaterials(content.Materials, knownProperties, problems);
         ValidateMaterialTags(content.Materials, problems);
         ValidateIdentityRegistry(content.Identities, problems);
         ValidateSignatureVocabulary(content.SignatureTriggers, content.SignatureBehaviors,
@@ -102,13 +103,9 @@ public static class ContentValidator
         ValidateSignaturePayloads(content, problems);
         ValidateMaterialIdentityFields(content, problems);
         ValidateVerbActions(content, problems);
-        ValidateProcesses(content.CraftingActions, content.Properties, content.Professions, problems);
         ValidateByproducts(content.Byproducts, content.Materials, problems);
-        ValidateTraits(content.Traits, knownProperties, problems);
-        ValidateEssences(content.Essences, content.Materials, knownProperties, problems);
-        ValidateForms(content.Forms, content.Moves, content.Materials, knownProperties, problems);
+        ValidateForms(content.Forms, content.Moves, content.Materials, problems);
         ValidateFormIdentityFields(content, problems);
-        ValidateNameGrammar(content.NameGrammar, content.Properties, problems);
         ValidateModifierKeys(content.ModifierKeys, problems);
         ValidateBases(content.Classes, content.ModifierKeys, problems);
         ValidatePrefixes(content.Prefixes, content.Classes, content.ModifierKeys, problems);
@@ -125,10 +122,9 @@ public static class ContentValidator
         ValidateInteractions(content.Interactions, content.Materials, content.Consumables, content.Professions, problems);
         ValidateRealms(content.Realms, content.Actors, content.Actions, content.LootTables, problems);
         ValidateLootTables(content, problems);
-        ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, knownProperties, problems);
+        ValidateEquipment(content.Equipment, content.Moves, content.MoveModifiers, problems);
         ValidateStatuses(content, problems);
         ValidateComponentMoves(content, problems);
-        ValidateAffixes(content, knownProperties, problems);
 
         return problems;
     }
@@ -334,6 +330,19 @@ public static class ContentValidator
             if (PayloadBindingKinds.MagnitudeBearing.Contains(payload.Binding.Kind) && payload.Range.Count == 0)
                 Problem($"binding kind '{payload.Binding.Kind}' carries a magnitude and needs a [lo, hi] range.");
 
+            // Multiplicative contributions multiply RAW (ModifierSet), so their ranges are
+            // resolved factors (1.1 = +10%), never deltas — a "+15%" authored as 0.15 would
+            // multiply the stat by 0.15 and quietly invert the payload. The shipped bulwark
+            // authored exactly that; this fence keeps it from coming back.
+            if (payload.Binding.Kind == PayloadBindingKinds.Modifier
+                && content.ModifierKeys.TryGetById(payload.Binding.Key, out var boundModifierKey)
+                && boundModifierKey.Kind == Modifiers.ModifierKind.Multiplicative
+                && payload.Range.Any(rangeValue => rangeValue < MultiplicativePayloadRangeFloor))
+            {
+                Problem($"binds multiplicative key '{payload.Binding.Key}' with range values below "
+                    + $"{MultiplicativePayloadRangeFloor} — multiplicative ranges are factors (1.1 = +10%), not deltas.");
+            }
+
             if (payload.Weight <= 0)
                 Problem("needs a positive default weight.");
 
@@ -525,171 +534,13 @@ public static class ContentValidator
     /// slots/classes are known, and availability names real properties. (Reachability and the
     /// distribution guarantees live in the seeded test suite; family-≥2 waits for catalog
     /// breadth.)</summary>
-    private static void ValidateAffixes(ContentBundle content, HashSet<string> knownProperties, List<ContentProblem> problems)
-    {
-        var slots = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "prefix", "suffix", "innate" };
-        var classes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "standard", "trigger", "innate", "exotic", "signature", "anomalous" };
 
-        foreach (var affix in content.Affixes.GetAll())
-        {
-            void Problem(string message) => problems.Add(new ContentProblem("affix", $"{affix.Id}: {message}"));
-
-            if (affix.Id.StartsWith("prefix.", StringComparison.Ordinal)
-                || affix.Id.StartsWith("suffix.", StringComparison.Ordinal))
-                Problem("affix ids must not start 'prefix.'/'suffix.' (D-17 naming collision)");
-
-            if (!slots.Contains(affix.Slot))
-                Problem($"unknown slot '{affix.Slot}'");
-            if (!classes.Contains(affix.Class))
-                Problem($"unknown class '{affix.Class}'");
-            if (string.IsNullOrWhiteSpace(affix.Family))
-                Problem("family is required — it is the anti-stacking unit (§3.5)");
-
-            foreach (var requirement in affix.Availability.Requires)
-            {
-                if (!knownProperties.Contains(requirement.Property))
-                    Problem($"availability names unknown property '{requirement.Property}'");
-            }
-
-            foreach (var scale in affix.ChanceWeight.Scale)
-            {
-                if (scale.Property is { Length: > 0 } p && !knownProperties.Contains(p))
-                    Problem($"weight scales on unknown property '{p}'");
-            }
-
-            if (affix.Tiers.Count == 0)
-            {
-                Problem("no tiers — nothing can ever roll");
-            }
-            else
-            {
-                var ordered = affix.Tiers.OrderBy(t => t.Tier).ToList();
-                for (var i = 0; i < ordered.Count; i++)
-                {
-                    if (ordered[i].Range.Count != 2)
-                        Problem($"tier {ordered[i].Tier} range must be [lo, hi]");
-
-                    foreach (var key in ordered[i].Requires.Keys)
-                    {
-                        var bare = key.StartsWith("essence.", StringComparison.OrdinalIgnoreCase)
-                            ? null
-                            : key;
-                        if (bare is not null && !knownProperties.Contains(bare))
-                            Problem($"tier {ordered[i].Tier} requires unknown property '{key}'");
-                    }
-                }
-            }
-
-            var hasRollGrant = false;
-            foreach (var grant in affix.Grants)
-            {
-                switch (grant.Type.ToLowerInvariant())
-                {
-                    case "stat":
-                        if (!content.ModifierKeys.Contains(grant.Key))
-                            Problem($"stat grant targets unknown modifier key '{grant.Key}'");
-                        if (string.Equals(grant.Value, "$roll", StringComparison.OrdinalIgnoreCase))
-                            hasRollGrant = true;
-                        else if (!double.TryParse(grant.Value, System.Globalization.NumberStyles.Float,
-                                     System.Globalization.CultureInfo.InvariantCulture, out _))
-                            Problem($"stat grant value '{grant.Value}' is neither $roll nor a number");
-                        break;
-
-                    case "rule":
-                        if (grant.Rule is null)
-                            Problem("rule grant carries no rule");
-                        else if (string.IsNullOrWhiteSpace(grant.Rule.Event))
-                            Problem($"rule grant '{grant.Rule.Id}' names no event");
-                        if (grant.RollInto is "chance" or "amount")
-                            hasRollGrant = true;
-                        break;
-
-                    case "movemodifier":
-                        if (!content.MoveModifiers.Contains(grant.Key))
-                            Problem($"moveModifier grant targets unknown modifier '{grant.Key}'");
-                        break;
-
-                    default:
-                        Problem($"unknown grant type '{grant.Type}'");
-                        break;
-                }
-            }
-
-            if (affix.Grants.Count == 0)
-                Problem("no grants — the modifier would do nothing when equipped (D30)");
-
-            // §8's parity rule: the tooltip and the mechanics may never drift.
-            var describesRoll = affix.Description.Contains("$roll", StringComparison.Ordinal);
-            if (hasRollGrant && !describesRoll)
-                Problem("$roll is granted but never described — silent tooltip drift");
-            if (!hasRollGrant && describesRoll)
-                Problem("$roll is described but never granted — the tooltip lies");
-        }
-    }
-
-    private static void ValidateMaterials(
-        DataStore<MaterialDefinition> materials,
-        IReadOnlySet<string> knownProperties,
-        List<ContentProblem> problems)
-    {
-        foreach (var material in materials.GetAll())
-        {
-            foreach (var (property, value) in material.Properties)
-            {
-                if (!knownProperties.Contains(property))
-                    problems.Add(new("materials", $"{material.Id} has unknown property '{property}' (typo, or add it to game/data/properties/)."));
-
-                if (value < MinPropertyValue || value > MaxPropertyValue)
-                    problems.Add(new("materials", $"{material.Id} property '{property}' = {value:0.##} is outside the {MinPropertyValue:0}–{MaxPropertyValue:0} range."));
-            }
-
-            // Optional emergent-system overrides (docs/emergent-item-system.md §6); normally
-            // unset, so a value out of range is a typo rather than a deliberate choice.
-            if (material.MaterialStrength is { } materialStrength && (materialStrength < MinMaterialStrength || materialStrength > MaxMaterialStrength))
-                problems.Add(new("materials", $"{material.Id} potency override {materialStrength} is outside the {MinMaterialStrength}–{MaxMaterialStrength} range."));
-
-            if (material.Workability is { } workability && (workability < MinWorkability || workability > MaxWorkability))
-                problems.Add(new("materials", $"{material.Id} integrity override {workability} is outside the {MinWorkability}–{MaxWorkability} range."));
-        }
-    }
 
     /// <summary>
     /// Validates crafting processes (docs/emergent-item-system.md §7). CraftingActions are the only
     /// authored content the reaction engine needs, so a typo here silently changes the physics
     /// of the whole game rather than breaking one recipe — hence the thorough checks.
     /// </summary>
-    private static void ValidateProcesses(
-        DataStore<CraftingActionDefinition> processes,
-        DataStore<PropertyDefinition> properties,
-        DataStore<ProfessionDefinition> professions,
-        List<ContentProblem> problems)
-    {
-        foreach (var craftingAction in processes.GetAll())
-        {
-            if (!craftingAction.IsUngated && !professions.Contains(craftingAction.Profession))
-                problems.Add(new("processes", $"{craftingAction.Id} requires unknown profession '{craftingAction.Profession}'."));
-
-            if (craftingAction.Severity is < MinSeverity or > MaxSeverity)
-                problems.Add(new("processes", $"{craftingAction.Id} severity {craftingAction.Severity:0.##} is outside the {MinSeverity:0}–{MaxSeverity:0} range."));
-
-            if (craftingAction.EssenceRate is < 0.0 or > 1.0)
-                problems.Add(new("processes", $"{craftingAction.Id} essence_rate {craftingAction.EssenceRate:0.##} is outside the 0–1 range."));
-
-            ValidateRoleWeights(craftingAction, problems);
-            ValidateChannel(craftingAction, properties, problems);
-            ValidateProcessTagEffects(craftingAction, problems);
-
-            foreach (var tag in craftingAction.Requires.SubstrateTags)
-                ValidateProcessTag(craftingAction, tag, "requires.substrate_tags", allowWildcard: false, problems);
-
-            if (craftingAction.Requires.ProfessionLevel < 0)
-                problems.Add(new("processes", $"{craftingAction.Id} requires a negative profession level."));
-
-            if (craftingAction.IsUngated && craftingAction.Requires.ProfessionLevel > 0)
-                problems.Add(new("processes", $"{craftingAction.Id} is ungated but requires profession level {craftingAction.Requires.ProfessionLevel}, which can never be met."));
-        }
-    }
 
     /// <summary>
     /// Validates the destruction byproduct table (docs/emergent-item-system.md §6.2c). The
@@ -744,43 +595,6 @@ public static class ContentValidator
     /// constraints are what keep generated names from reading like loot-generator spam, so
     /// they are enforced on the vocabulary rather than trusted to whoever authors it.
     /// </summary>
-    private static void ValidateNameGrammar(
-        DataStore<NameWordDefinition> grammar,
-        DataStore<PropertyDefinition> properties,
-        List<ContentProblem> problems)
-    {
-        foreach (var entry in grammar.GetAll())
-        {
-            if (!entry.HasKnownPrefix)
-            {
-                problems.Add(new("name_grammar", $"{entry.Id} must start with '{NameWordDefinition.IntensityPrefix}' or '{NameWordDefinition.FormPrefix}'."));
-                continue;
-            }
-
-            if (entry.Words.Count == 0)
-            {
-                problems.Add(new("name_grammar", $"{entry.Id} supplies no words."));
-                continue;
-            }
-
-            if (entry.Kind == NameWordKind.Intensity && !properties.Contains(entry.Key))
-                problems.Add(new("name_grammar", $"{entry.Id} is a ladder for unknown property '{entry.Key}'."));
-
-            foreach (var word in entry.Words)
-            {
-                if (string.IsNullOrWhiteSpace(word))
-                    problems.Add(new("name_grammar", $"{entry.Id} contains a blank word."));
-
-                // §13.1: numbers never appear in a name, and intensity is expressed through
-                // vocabulary rather than adjectives-of-adjectives.
-                if (word.Any(char.IsDigit))
-                    problems.Add(new("name_grammar", $"{entry.Id} word '{word}' contains a number."));
-
-                if (ForbiddenNameWords.Contains(word))
-                    problems.Add(new("name_grammar", $"{entry.Id} word '{word}' is a tier word; use a stronger vocabulary word instead."));
-            }
-        }
-    }
 
     /// <summary>
     /// Validates the modifier registry itself (docs/effect-foundation.md §4.1–4.2, D-12).
@@ -1048,96 +862,9 @@ public static class ContentValidator
             problems.Add(new("rules", $"{context} has a negative cooldown."));
     }
 
-    private static void ValidateRoleWeights(CraftingActionDefinition craftingAction, List<ContentProblem> problems)
-    {
-        var weights = craftingAction.RoleWeights;
 
-        if (weights.Substrate < 0.0 || weights.Reagent < 0.0 || weights.Catalyst < 0.0)
-            problems.Add(new("processes", $"{craftingAction.Id} has a negative role weight."));
 
-        // MaterialStrength is a weighted mean (§6.1); weights that don't sum to 1 would let a crafting action
-        // inflate or deflate material strength for free, which is the exploit the mean exists to close.
-        if (Math.Abs(weights.Total - 1.0) > RoleWeightTolerance)
-            problems.Add(new("processes", $"{craftingAction.Id} role_weights sum to {weights.Total:0.###}, not 1.0."));
-    }
 
-    private static void ValidateChannel(
-        CraftingActionDefinition craftingAction,
-        DataStore<PropertyDefinition> properties,
-        List<ContentProblem> problems)
-    {
-        if (craftingAction.AffectedQualities.Count == 0)
-        {
-            problems.Add(new("processes", $"{craftingAction.Id} declares no affected_qualities, so it could never change anything."));
-            return;
-        }
-
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var entry in craftingAction.AffectedQualities)
-        {
-            if (!seen.Add(entry.Property))
-                problems.Add(new("processes", $"{craftingAction.Id} lists channel property '{entry.Property}' twice."));
-
-            if (entry.Rate is <= 0.0 or > MaxChannelRate)
-                problems.Add(new("processes", $"{craftingAction.Id} channel '{entry.Property}' rate {entry.Rate:0.##} is outside the 0–{MaxChannelRate:0} range (exclusive of 0)."));
-
-            if (!properties.TryGetById(entry.Property, out var property))
-            {
-                problems.Add(new("processes", $"{craftingAction.Id} opens unknown property '{entry.Property}' (typo, or add it to game/data/properties/)."));
-                continue;
-            }
-
-            // §2.3: Response properties are derived outputs and Sourcing describes how hard the
-            // material was to obtain — neither may ever be a reaction input.
-            if (property.Role is PropertyRole.Response or PropertyRole.Sourcing)
-                problems.Add(new("processes", $"{craftingAction.Id} opens '{entry.Property}', which is a {property.Role} property and can never be a reaction input."));
-        }
-    }
-
-    private static void ValidateProcessTagEffects(CraftingActionDefinition craftingAction, List<ContentProblem> problems)
-    {
-        foreach (var tag in craftingAction.TagEffects.Set)
-            ValidateProcessTag(craftingAction, tag, "tag_effects.set", allowWildcard: false, problems);
-
-        foreach (var tag in craftingAction.TagEffects.Clear)
-            ValidateProcessTag(craftingAction, tag, "tag_effects.clear", allowWildcard: true, problems);
-
-        // Setting and clearing the same exact tag is always an authoring mistake; a family
-        // wildcard clear alongside a set in that family is the normal "replace" idiom.
-        foreach (var tag in craftingAction.TagEffects.Set.Intersect(craftingAction.TagEffects.Clear, StringComparer.Ordinal))
-            problems.Add(new("processes", $"{craftingAction.Id} both sets and clears tag '{tag}'."));
-    }
-
-    private static void ValidateProcessTag(
-        CraftingActionDefinition craftingAction,
-        string tag,
-        string field,
-        bool allowWildcard,
-        List<ContentProblem> problems)
-    {
-        if (!TagFamilies.TryParse(tag, out var family, out var value))
-        {
-            problems.Add(new("processes", $"{craftingAction.Id} {field} has un-namespaced tag '{tag}' (expected family:value)."));
-            return;
-        }
-
-        if (!TagFamilies.TryGet(family, out var def))
-        {
-            problems.Add(new("processes", $"{craftingAction.Id} {field} tag '{tag}' uses unknown family '{family}'."));
-            return;
-        }
-
-        if (value == CraftingActionTagEffects.ClearFamilyWildcard)
-        {
-            if (!allowWildcard)
-                problems.Add(new("processes", $"{craftingAction.Id} {field} may not use the '{family}:*' wildcard."));
-            return;
-        }
-
-        if (def.ClosedValues is not null && !def.ClosedValues.Contains(value))
-            problems.Add(new("processes", $"{craftingAction.Id} {field} tag '{tag}' is not a valid '{family}' value."));
-    }
 
     /// <summary>
     /// Validates the <c>family:value</c> tag namespace on materials (docs/emergent-item-system §4.1):
@@ -1353,49 +1080,6 @@ public static class ContentValidator
     /// <summary>§10 traits (C1a): every referenced property must exist, merges must resolve
     /// to known traits, and a merge-only trait (no condition) must actually be reachable as
     /// some merge's target — otherwise it is authored content nobody can ever see.</summary>
-    private static void ValidateTraits(
-        DataStore<Dungeons.Crafting.TraitDefinition> traits,
-        IReadOnlySet<string> knownProperties,
-        List<ContentProblem> problems)
-    {
-        var mergeTargets = traits.GetAll()
-            .SelectMany(t => t.Merges.Select(m => m.Into))
-            .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var trait in traits.GetAll())
-        {
-            foreach (var property in trait.Condition.Keys
-                         .Concat(trait.Consumes.Keys)
-                         .Concat(trait.MagnitudeOf))
-                if (!knownProperties.Contains(property))
-                    problems.Add(new("traits", $"{trait.Id} references unknown property '{property}'."));
-
-            foreach (var (property, amount) in trait.Consumes)
-                if (amount <= 0)
-                    problems.Add(new("traits", $"{trait.Id} consumes a non-positive amount of '{property}'."));
-
-            if (trait.IsStateBorn && trait.MagnitudeOf.Count == 0)
-                problems.Add(new("traits", $"{trait.Id} is state-born but names no magnitude_of properties."));
-
-            foreach (var merge in trait.Merges)
-            {
-                if (merge.With == trait.Id)
-                    problems.Add(new("traits", $"{trait.Id} merges with itself."));
-                if (!traits.Contains(merge.With))
-                    problems.Add(new("traits", $"{trait.Id} merges with unknown trait '{merge.With}'."));
-                if (!traits.Contains(merge.Into))
-                    problems.Add(new("traits", $"{trait.Id} merges into unknown trait '{merge.Into}'."));
-            }
-
-            if (!trait.IsStateBorn && !mergeTargets.Contains(trait.Id))
-                problems.Add(new("traits",
-                    $"{trait.Id} has no condition and is no merge's target — unreachable content."));
-
-            if (!Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories.Contains(trait.Category))
-                problems.Add(new("traits",
-                    $"{trait.Id} has unknown category '{trait.Category}'. Valid: {string.Join(", ", Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories)}."));
-        }
-    }
 
     /// <summary>§16.2 forms (C2a): apertures gate known categories, stat maps read known
     /// properties from real slots, and granted moves resolve.</summary>
@@ -1420,7 +1104,6 @@ public static class ContentValidator
         DataStore<Dungeons.Crafting.EquipmentBlueprintDefinition> forms,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
         DataStore<MaterialDefinition> materials,
-        IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
         foreach (var form in forms.GetAll())
@@ -1429,8 +1112,6 @@ public static class ContentValidator
 
             if (form.Slots.Count == 0)
                 problems.Add(new("forms", $"{form.Id} has no slots."));
-            if (form.TraitCap < 1)
-                problems.Add(new("forms", $"{form.Id} trait_cap must be at least 1."));
 
             if (form.Slots.Count > 0)
             {
@@ -1441,10 +1122,6 @@ public static class ContentValidator
 
             foreach (var (slotName, slot) in form.Slots)
             {
-                foreach (var category in slot.TraitExpression.Keys)
-                    if (!Dungeons.Crafting.EquipmentAssemblyTuning.TraitCategories.Contains(category))
-                        problems.Add(new("forms", $"{form.Id} slot '{slotName}' traitExpression gates unknown category '{category}'."));
-
                 if (slot.MassShare <= 0)
                     Problem($"slot '{slotName}' has mass_share {slot.MassShare}; a component that is none of the item cannot exist.");
 
@@ -1455,15 +1132,6 @@ public static class ContentValidator
                         slot.RequiresTags.Any(tag => material.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))))
                     Problem($"slot '{slotName}' accepts {string.Join("/", slot.RequiresTags)}, which no material carries — it could never be assembled.");
             }
-
-            foreach (var (stat, reads) in form.StatMap)
-                foreach (var read in reads)
-                {
-                    if (!knownProperties.Contains(read.Property))
-                        problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown property '{read.Property}'."));
-                    if (read.Slot != Dungeons.Crafting.BlueprintSlots.AllSlots && !form.Slots.ContainsKey(read.Slot))
-                        problems.Add(new("forms", $"{form.Id} stat '{stat}' reads unknown slot '{read.Slot}'."));
-                }
 
             var tags = new HashSet<string>(form.Tags, StringComparer.OrdinalIgnoreCase);
 
@@ -1556,43 +1224,6 @@ public static class ContentValidator
     /// <summary>§5 essence (C1b): anchors must be real properties, oppositions must resolve,
     /// and every material's essence vector must use known keys in [0, 100]. The set is typed
     /// and closed — a typo'd essence key is a load error, never a silent zero.</summary>
-    private static void ValidateEssences(
-        DataStore<Dungeons.Crafting.EssenceDefinition> essences,
-        DataStore<MaterialDefinition> materials,
-        IReadOnlySet<string> knownProperties,
-        List<ContentProblem> problems)
-    {
-        var keys = essences.GetAll().Select(e => e.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var essence in essences.GetAll())
-        {
-            if (string.IsNullOrEmpty(essence.Anchor) || !knownProperties.Contains(essence.Anchor))
-                problems.Add(new("essences", $"{essence.Id} anchors on unknown property '{essence.Anchor}'."));
-
-            foreach (var opposed in essence.Opposes)
-            {
-                if (!keys.Contains(opposed))
-                    problems.Add(new("essences", $"{essence.Id} opposes unknown essence '{opposed}'."));
-                if (string.Equals(opposed, essence.Key, StringComparison.OrdinalIgnoreCase))
-                    problems.Add(new("essences", $"{essence.Id} opposes itself."));
-            }
-        }
-
-        if (essences.Count == 0)
-            return; // pre-C1b bundles (tests may build partial bundles); nothing to key against
-
-        foreach (var material in materials.GetAll())
-        {
-            foreach (var (key, value) in material.Essence)
-            {
-                if (!keys.Contains(key))
-                    problems.Add(new("essences",
-                        $"{material.Id} authors unknown essence '{key}'. Valid: {string.Join(", ", keys.OrderBy(k => k))}."));
-                if (value is < 0 or > 100)
-                    problems.Add(new("essences", $"{material.Id} essence '{key}' is {value}, outside [0, 100]."));
-            }
-        }
-    }
 
     private static void ValidateProfessionActions(
         DataStore<ProfessionActionDefinition> actions,
@@ -1914,14 +1545,6 @@ public static class ContentValidator
                     stationHostingProfession[professionId] = station.Id;
             }
 
-            foreach (var craftingActionId in station.CraftingActions)
-                if (!content.CraftingActions.Contains(craftingActionId))
-                    Problem($"offers unknown crafting action '{craftingActionId}'.");
-
-            foreach (var blueprintId in station.Blueprints)
-                if (!content.Forms.Contains(blueprintId))
-                    Problem($"assembles unknown blueprint '{blueprintId}'.");
-
             foreach (var verbActionId in station.VerbActions)
                 if (!content.VerbActions.Contains(verbActionId))
                     Problem($"offers unknown verb action '{verbActionId}'.");
@@ -1939,18 +1562,11 @@ public static class ContentValidator
                     $"{profession.Id} has no station; there would be no way to reach it from the Hideout."));
 
         // Same standard the move vocabulary is held to: content nobody can reach is a mistake,
-        // not a feature waiting for a screen.
-        var offeredCraftingActions = content.Stations.GetAll().SelectMany(s => s.CraftingActions).ToHashSet(StringComparer.Ordinal);
-        foreach (var craftingAction in content.CraftingActions.GetAll())
-            if (!offeredCraftingActions.Contains(craftingAction.Id))
-                problems.Add(new("stations",
-                    $"{craftingAction.Id} is offered at no station — the player could never run it."));
-
-        var assembledBlueprints = content.Stations.GetAll().SelectMany(s => s.Blueprints).ToHashSet(StringComparer.Ordinal);
-        foreach (var blueprint in content.Forms.GetAll())
-            if (!assembledBlueprints.Contains(blueprint.Id))
-                problems.Add(new("stations",
-                    $"{blueprint.Id} is assembled at no station — the player could never make one."));
+        // not a feature waiting for a screen. Forms need no per-station routing — the identity
+        // forge at any assembly station offers every migrated form — but a game with forms and
+        // no forge anywhere would strand all of them.
+        if (content.Forms.Count > 0 && !content.Stations.GetAll().Any(station => station.HasAssembly))
+            problems.Add(new("stations", "forms exist but no station has an assembly — nothing could ever be forged."));
 
         var offeredVerbActions = content.Stations.GetAll().SelectMany(s => s.VerbActions).ToHashSet(StringComparer.Ordinal);
         foreach (var verbAction in content.VerbActions.GetAll())
@@ -2137,11 +1753,19 @@ public static class ContentValidator
             CheckRules(suffix.Expressions.Select(e => e.Rule), suffix.Id);
     }
 
+    /// <summary>The only property keys authored equipment may carry — the two the resolver
+    /// actually reads (mass → damage/windup, hardness → armour). A key nothing reads would
+    /// sit on the definition looking load-bearing while doing nothing.</summary>
+    private static readonly IReadOnlySet<string> EquipmentPropertyKeys =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            Dungeons.Items.ItemProperties.Mass, Dungeons.Items.ItemProperties.Hardness,
+        };
+
     private static void ValidateEquipment(
         DataStore<EquipmentDefinition> equipment,
         DataStore<Dungeons.Combat.MoveDefinition> moves,
         DataStore<Dungeons.Combat.MoveModifierDefinition> moveModifiers,
-        IReadOnlySet<string> knownProperties,
         List<ContentProblem> problems)
     {
         foreach (var def in equipment.GetAll())
@@ -2164,8 +1788,8 @@ public static class ContentValidator
                     problems.Add(new("equipment", $"{def.Id} grants unknown move modifier '{modifierId}'."));
 
             foreach (var property in def.Properties.Keys)
-                if (!knownProperties.Contains(property))
-                    problems.Add(new("equipment", $"{def.Id} has unknown property '{property}' (typo, or add it to game/data/properties/)."));
+                if (!EquipmentPropertyKeys.Contains(property))
+                    problems.Add(new("equipment", $"{def.Id} authors property '{property}', which nothing reads — the resolver consumes only {string.Join("/", EquipmentPropertyKeys)}."));
 
             // Resistances are keyed by damage LANE, not by damage-type name (D-02). Authoring
             // "Slashing" here used to silently resist nothing once the lanes collapsed.

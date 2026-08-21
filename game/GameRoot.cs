@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Dungeons.Affixes;
 using Dungeons.Characters;
 using Dungeons.Characters.Composition;
 using Dungeons.Characters.Rules;
@@ -106,14 +105,9 @@ public partial class GameRoot : Node
     private DiscoverySystem _discoveries = null!;
     private CraftingExperimentSystem _legacyInteractionCrafting = null!;
     private IEmergentRegistry _emergentRegistry = null!;
-    private EquipmentAssemblyEngine _equipmentAssembly = null!;
-    private IMaterialTransformationEngine _reactionEngine = null!;
     private VerbActionRunner _verbActionRunner = null!;
     private ItemEffectResolver _itemEffectResolver = null!;
     private IdentityFabricationEngine _identityFabrication = null!;
-    private MaterialStateResolver _materialStates = null!;
-    private PropertyGlossary _glossary = null!;
-    private SeededRandom _affixRandom = null!;
     private BuildResolver _buildResolver = null!;
     private CombatEncounter _encounter = null!;
 
@@ -266,28 +260,14 @@ public partial class GameRoot : Node
             instanceIds: _instanceIds);
         _discoveries.Discovered += OnDiscovered;
 
-        // The emergent crafting engine (docs/emergent-item-system.md P1). It replaces recipe
-        // matching entirely; the interaction system above survives only to keep the Healing
-        // Salve brewable until fabrication lands in P5c.
-        _materialStates = new MaterialStateResolver(content.Properties);
-        _glossary = new PropertyGlossary(content.Properties);
+        // The emergent registry: minted materials register here and load back from saves. The
+        // interaction system above survives only to keep the Healing Salve brewable until
+        // consumable forms land (P5c).
         _emergentRegistry = new EmergentRegistry(_materials);
-        _reactionEngine = new MaterialTransformationEngine(
-            content,
-            () => ActiveInventory,
-            _materialStates,
-            _emergentRegistry,
-            new NameGenerator(_materials, content.Properties, content.NameGrammar),
-            new TagDeriver(content.Properties),
-            new ByproductResolver(content.Byproducts),
-            new TraitResolver(content.Traits),
-            professionLevel: id => _professions.GetProgress(id).Level,
-            new SeededRandom(0xC12AF7));
 
-        // The identity bench (migration Phase 2c, D42–D48) — the replacement crafting stack,
-        // running beside the reaction engine until the surfaces swap. It shares the emergent
-        // registry (fingerprint ids and signature ids cannot collide) and deposits into the
-        // same ActiveInventory, so extraction risk applies to the new bench for free.
+        // The identity bench (migration Phase 2c, D42–D48) — the crafting stack, and since
+        // Phase 7 (D54) the only one. It deposits into ActiveInventory, so extraction risk
+        // applies to bench work for free.
         _verbActionRunner = new VerbActionRunner(
             content,
             new IdentityCraftingEngine(content, new SeededRandom(0x1DE47175)),
@@ -301,9 +281,6 @@ public partial class GameRoot : Node
         _itemEffectResolver = new ItemEffectResolver(content);
         _identityFabrication = new IdentityFabricationEngine(
             content, () => ActiveInventory, _instanceIds, new SeededRandom(0x1DEF0126));
-
-        _affixRandom = new SeededRandom(0xD1CE5);
-        _equipmentAssembly = new EquipmentAssemblyEngine(content, () => ActiveInventory, _materialStates, _instanceIds, _affixRandom);
 
         var combatRandom = new SeededRandom(0x0C0FFEE);
         _combatRandom = combatRandom;
@@ -319,7 +296,6 @@ public partial class GameRoot : Node
             // sentences (Phase 3) alike: equipment is just another contribution source,
             // with per-item provenance.
             buildModifiers: () => _buildResolver.Resolve(_build).Modifiers.Contributions
-                .Concat(EquippedAffixContributions())
                 .Concat(EquippedIdentityContributions()),
             _statuses, _gauges);
 
@@ -913,36 +889,28 @@ public partial class GameRoot : Node
             .OrderBy(station => station.Name, StringComparer.Ordinal)
             .ToList();
 
-    /// <summary>The crafting actions this station's bench offers, gentlest first.</summary>
-    public IReadOnlyList<CraftingActionDefinition> CraftingActionsAt(StationDefinition station) =>
-        station.CraftingActions
-            .Where(_content.CraftingActions.Contains)
-            .Select(_content.CraftingActions.GetById)
-            .OrderBy(craftingAction => craftingAction.Severity)
-            .ToList();
-
-    /// <summary>The equipment blueprints that can be assembled at this station.</summary>
-    public IReadOnlyList<EquipmentBlueprintDefinition> BlueprintsAt(StationDefinition station) =>
-        station.Blueprints
-            .Where(_content.Forms.Contains)
-            .Select(_content.Forms.GetById)
-            .OrderBy(blueprint => blueprint.Name, StringComparer.Ordinal)
-            .ToList();
-
     // --- Assay ---------------------------------------------------------------
 
     /// <summary>How much of a material's reading the player has earned the right to see.</summary>
     public AssayDepth CurrentAssayDepth => AssayLens.DepthFor(ProfessionLevel("profession.assay"));
 
-    /// <summary>The §3 material inspector, redacted to the player's Assay level. Assay never
-    /// changes what a material is — only how much of it is legible (D30, rule 7).</summary>
-    public string MaterialSummaryAssayed(string materialId) =>
-        _materials.TryGetById(materialId, out var material)
-            ? AssayLens.Material(
-                MaterialReadings.From(material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences),
-                _glossary,
-                CurrentAssayDepth)
-            : materialId;
+    /// <summary>The Assay inspector, redacted to the player's level. Assay never changes what
+    /// a material is — only how much of it is legible (D30, rule 7). Re-aimed at the identity
+    /// model in Phase 6 (D45/D48): latents, vessel, leanings, potential. Every material is
+    /// migrated (D52), so an unreadable id is the only fallback left.</summary>
+    public string MaterialSummaryAssayed(string materialId)
+    {
+        if (!_materials.TryGetById(materialId, out var material)
+            || IdentityStateResolver.StateOf(material) is not { } identityState)
+        {
+            return materialId;
+        }
+
+        return AssayLens.IdentityMaterial(
+            material.Name, identityState,
+            RootDerivations.ProfileOf(identityState, _materials),
+            _content, CurrentAssayDepth);
+    }
 
     public string InventoryReport()
     {
@@ -994,104 +962,11 @@ public partial class GameRoot : Node
             .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    /// <summary>The material inspector, in the player crafting language (D30). Thin forward —
-    /// the reading and the wording live in Core (<c>MaterialReadings</c>/<c>SemanticFormat</c>).</summary>
-    public string MaterialSummary(string materialId)
-    {
-        if (!_materials.TryGetById(materialId, out var material))
-            return string.Empty;
-
-        var reading = MaterialReadings.From(
-            material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences);
-        return SemanticFormat.Material(reading, _glossary);
-    }
-
-    /// <summary>The same inspector in the numeric voice — the §2F Advanced toggle's text.</summary>
-    public string MaterialSummaryAdvanced(string materialId) =>
-        _materials.TryGetById(materialId, out var material)
-            ? AdvancedFormat.Material(material, _materialStates.StateOf(material))
-            : string.Empty;
-
-    /// <summary>A crafting action picker line in the player language (D30).</summary>
-    public string CraftingActionLabel(CraftingActionDefinition craftingAction) =>
-        SemanticFormat.Process(craftingAction, ProfessionName(craftingAction.Profession));
-
-    /// <summary>What a crafting action drives, in words — the channel line under the picker.</summary>
-    public string AffectedQualitiesLabel(CraftingActionDefinition craftingAction) =>
-        SemanticFormat.AffectedQualities(craftingAction, _glossary);
-
-    /// <summary>The pre-commit reading (D30): groups, risk band, emergence — built from the
-    /// projection's typed movements. The UI styles it; every word comes from Core.</summary>
-    public CraftReading ProjectionReading(CraftPreview projection, string substrateId) =>
-        _materials.TryGetById(substrateId, out var substrate)
-            ? CraftReadings.From(projection, substrate.Name, _materialStates.StateOf(substrate), _content)
-            : CraftReadings.Failed(CraftFailure.UnknownSubstrate, substrateId);
-
-    /// <summary>The reading as typed lines the client colours by kind.</summary>
-    public IReadOnlyList<ProjectionLine> ProjectionLines(CraftReading reading) =>
-        SemanticFormat.ProjectionLines(reading, _glossary);
-
-    /// <summary>The pre-commit panel text in the player language (D30).</summary>
-    public string ProjectionText(CraftPreview projection, string substrateId) =>
-        SemanticFormat.Projection(ProjectionReading(projection, substrateId), _glossary);
-
-    /// <summary>The compact glyph+pips strip for a picker row ("▲●●●●●  !●●●●○").</summary>
-    public string MaterialStrip(string materialId)
-    {
-        if (!_materials.TryGetById(materialId, out var material))
-            return string.Empty;
-
-        var reading = MaterialReadings.From(
-            material, _materialStates.StateOf(material), _content.Properties, _content.Traits, _content.Essences);
-        return SemanticFormat.MaterialStrip(reading, _glossary);
-    }
-
-    /// <summary>The pre-commit panel in the numeric voice (§2F Advanced).</summary>
-    public string ProjectionTextAdvanced(CraftPreview projection, string substrateId) =>
-        AdvancedFormat.Projection(
-            projection, _materials.TryGetById(substrateId, out var substrate) ? substrate.Name : substrateId);
-
-    /// <summary>
-    /// What a craft would cost and risk, <b>before</b> committing to it
-    /// (docs/emergent-item-system.md §6.2c). Workability 0 destroys the material, so the UI must
-    /// always show this first.
-    /// </summary>
-    public CraftPreview ProjectCraft(string craftingActionId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null) =>
-        _reactionEngine.PreviewCraft(new CraftRequest(craftingActionId, substrateId, reagentIds, catalystId));
-
-    /// <summary>Runs a craft and reports it. Order of reagents is the mechanic (§0 Decision 2).</summary>
-    public CraftOutcome Craft(string craftingActionId, string substrateId, IReadOnlyList<string> reagentIds, string? catalystId = null)
-    {
-        var outcome = _reactionEngine.RunCraft(new CraftRequest(craftingActionId, substrateId, reagentIds, catalystId));
-
-        if (!outcome.Success)
-        {
-            Emit("[Craft] " + CraftFormat.Failure(outcome.Failure));
-            return outcome;
-        }
-
-        foreach (var entry in outcome.Log.Entries)
-            Emit("  " + new string(' ', entry.Indent * 2) + entry.Text);
-
-        if (outcome.WasDestroyed)
-            Emit($"[Craft] {outcome.ResultName} was destroyed. Recovered: {DescribeStacks(outcome.Byproducts)}.");
-        else if (outcome.IsFirstDiscovery)
-            Emit($"[Craft] First discovery — {outcome.ResultName} ×{outcome.Quantity}!");
-        else
-            Emit($"[Craft] Made {outcome.ResultName} ×{outcome.Quantity}.");
-
-        InventoryChanged?.Invoke();
-        DiscoveryChanged?.Invoke();
-        return outcome;
-    }
 
     private string DescribeStacks(IReadOnlyList<ItemStack> stacks) =>
         stacks.Count == 0
             ? "nothing"
             : string.Join(", ", stacks.Select(s => $"{ItemName(s.ItemId)} ×{s.Quantity}"));
-
-    /// <summary>The emergent materials this save has produced (§12.4).</summary>
-    public IReadOnlyCollection<MaterialDefinition> DiscoveredArchetypes => _emergentRegistry.All;
 
     // --- The identity bench (migration Phase 2c) -----------------------------
 
@@ -1105,26 +980,62 @@ public partial class GameRoot : Node
     public IReadOnlyList<string> MaterialTagsOf(string itemId) =>
         _materials.TryGetById(itemId, out var definition) ? definition.Tags : Array.Empty<string>();
 
-    /// <summary>Vocabulary display names for the forge preview. Engine ids until the
-    /// Phase 6 semantic pass, exactly like the bench's step text.</summary>
-    public string PayloadNameOf(string payloadId) =>
-        _content.SignaturePayloads.TryGetById(payloadId, out var payload) ? payload.Name : payloadId;
-
-    public string TriggerNameOf(string triggerId) =>
-        _content.SignatureTriggers.TryGetById(triggerId, out var trigger) ? trigger.Name : triggerId;
-
-    public string BehaviorNameOf(string behaviorId) =>
-        _content.SignatureBehaviors.TryGetById(behaviorId, out var behavior) ? behavior.Name : behaviorId;
-
     /// <summary>An identity's player-facing name.</summary>
     public string IdentityNameOf(string identityId) =>
         _content.Identities.TryGetById(identityId, out var identity) ? identity.Name : identityId;
 
-    /// <summary>One picker line: fiction name, verb, and the action's own gate.</summary>
+    /// <summary>A picker row's identity summary: the stakes in rank words plus the overfill
+    /// word — " · Dense, Vital (improved) · Unstable". Empty for unmigrated stock.</summary>
+    public string MaterialStakeSummary(string itemId)
+    {
+        if (IdentityStateOf(itemId) is not { } state)
+            return string.Empty;
+
+        var stakes = state.Identities.Count > 0
+            ? " · " + string.Join(", ", state.Identities.Select(stake => IdentityPhrases.Stake(stake, _content)))
+            : string.Empty;
+        return stakes + IdentityPhrases.StabilityMarker(state) + IdentityPhrases.ConditionMarker(state);
+    }
+
+    /// <summary>The bench inspector's material card: every §11.2 facet in a sentence.</summary>
+    public string IdentityMaterialSummary(string itemId) =>
+        IdentityStateOf(itemId) is { } state
+            ? IdentityMaterialReadings.Summary(state, _content)
+            : string.Empty;
+
+    /// <summary>A verb refusal in words — deterministic, previewable, never an enum name.</summary>
+    public string VerbRefusalText(VerbFailureReason reason) => VerbReadings.Refusal(reason);
+
+    /// <summary>The bench preview in the player voice: what would change, then the odds.</summary>
+    public IReadOnlyList<string> VerbProjectionReading(
+        VerbActionDefinition action, string substrateItemId, VerbProjection projection)
+    {
+        if (IdentityStateOf(substrateItemId) is not { } before)
+            return Array.Empty<string>();
+        return VerbReadings.ProjectionLines(
+            action.Verb, before, projection, VerbOutputName(action), _content);
+    }
+
+    private string? VerbOutputName(VerbActionDefinition action) =>
+        action.Output is { } outputId && _materials.TryGetById(outputId, out var output)
+            ? output.Name
+            : null;
+
+    /// <summary>The forge preview in the player voice (Phase 6, D53).</summary>
+    public string IdentityMintPreviewText(
+        IdentityComposition composition, ItemEffectProjection effects, bool firstOfItsKind) =>
+        MintReadings.Preview(composition, effects, firstOfItsKind, _content);
+
+    /// <summary>The forge preview's Advanced voice: exact scores and engine ids.</summary>
+    public string IdentityMintAdvancedText(IdentityComposition composition, ItemEffectProjection effects) =>
+        MintReadings.Advanced(composition, effects, _content);
+
+    /// <summary>One picker line: fiction name, verb, and the action's own gate. The verb enum
+    /// words are the design's own vocabulary (D47) — they are the player words.</summary>
     public string VerbActionLabel(VerbActionDefinition action)
     {
         var gate = string.IsNullOrEmpty(action.Profession)
-            ? "ungated"
+            ? "any hands"
             : $"{(_content.Professions.TryGetById(action.Profession, out var profession) ? profession.Name : action.Profession)} L{action.RequiredLevel}";
         return $"{action.Name} — {action.Verb} · {gate}";
     }
@@ -1145,11 +1056,14 @@ public partial class GameRoot : Node
         _verbActionRunner.Preview(new VerbActionInvocation(
             actionId, substrateItemId, sourceItemIds, targetIdentityId, displacedIdentityId));
 
-    /// <summary>Runs a verb action and reports it: gates → verb → consume → register → deposit.</summary>
+    /// <summary>Runs a verb action and reports it: gates → verb → consume → register → deposit.
+    /// The log speaks the Phase 6 player voice — the before-state is captured ahead of the
+    /// run so the outcome reading can diff what actually changed.</summary>
     public VerbActionResult RunVerbAction(
         string actionId, string substrateItemId, IReadOnlyList<string> sourceItemIds,
         string? targetIdentityId = null, string? displacedIdentityId = null)
     {
+        var substrateBefore = IdentityStateOf(substrateItemId);
         var result = _verbActionRunner.Run(new VerbActionInvocation(
             actionId, substrateItemId, sourceItemIds, targetIdentityId, displacedIdentityId));
 
@@ -1160,12 +1074,18 @@ public partial class GameRoot : Node
         }
         if (result.Outcome is { Kind: VerbResultKind.Refused } refused)
         {
-            Emit($"[Bench] The material refuses: {refused.Failure}.");
+            Emit($"[Bench] {VerbReadings.Refusal(refused.Failure ?? VerbFailureReason.MissingTargetIdentity)}");
             return result;
         }
 
-        foreach (var step in result.Outcome!.Steps)
-            Emit("  " + step.Detail);
+        if (substrateBefore is not null && _content.VerbActions.TryGetById(actionId, out var action))
+        {
+            foreach (var line in VerbReadings.OutcomeLines(
+                action.Verb, substrateBefore, result.Outcome!, VerbOutputName(action), _content))
+            {
+                Emit("  " + line);
+            }
+        }
         foreach (var item in result.Deposited)
             Emit(item.FirstDiscovery
                 ? $"[Bench] First discovery — {item.Name}!"
@@ -1258,11 +1178,7 @@ public partial class GameRoot : Node
         var outcome = _legacyInteractionCrafting.Experiment(itemIds);
         if (outcome.Success)
         {
-            var properties = outcome.ResultProperties.Count > 0
-                ? " (" + string.Join(", ", outcome.ResultProperties.Select(p => $"{p.Property} {p.Value:0.##}")) + ")"
-                : string.Empty;
-            var kind = outcome.ProducedInstance is not null ? " [instance]" : string.Empty;
-            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}{kind}{properties}.");
+            Emit($"[Craft] Made {outcome.ResultQuantity} {ItemName(outcome.ResultItemId!)}.");
             return;
         }
 
@@ -1274,35 +1190,6 @@ public partial class GameRoot : Node
             ExperimentFailure.NoMatch => "[Craft] Nothing happens. No known interaction for those materials.",
             _ => "[Craft] Failed.",
         });
-    }
-
-    /// <summary>
-    /// Debug helper: a spread of materials chosen to make the crafting bench worth playing
-    /// with immediately — substrates of different forms, reagents spanning the media (soluble,
-    /// volatile, hard), and enough skill to reach every crafting action.
-    /// </summary>
-    public void GrantCraftTestMaterials()
-    {
-        foreach (var id in new[]
-        {
-            // Substrates: metal, stone, wood, herb — different forms take different processes.
-            "material.iron_ingot", "material.iron_ore", "material.granite", "material.oak_log", "material.sageleaf",
-            // Fabrication components (C2b): binding hides and an attunement vessel.
-            "material.leather", "material.rawhide", "material.ley_crystal",
-            // Reagents: soluble (sap, springwater), volatile (cores), hard (stormglass, granite).
-            "material.ember_sap", "material.springwater", "material.oak_bark",
-            "material.ember_core", "material.frost_core", "material.storm_core", "material.stormglass",
-        })
-        {
-            if (_materials.Contains(id))
-                _stash.Add(id, 20);
-        }
-
-        _professions.GetProgress("profession.herblore").AddXp(ProfessionLeveling.XpForLevel(15));
-        _professions.GetProgress("profession.smithing").AddXp(ProfessionLeveling.XpForLevel(15));
-
-        Emit("[Debug] Granted crafting materials and Herblore/Smithing level 15 (every crafting action unlocked).");
-        InventoryChanged?.Invoke();
     }
 
     // --- Combat -------------------------------------------------------------
@@ -1458,113 +1345,7 @@ public partial class GameRoot : Node
         _pilot = null;
     }
 
-    // --- Fabrication (C2a) --------------------------------------------------
-
-    /// <summary>Materials on hand eligible for a form slot (any-of tag gate) — the per-slot
-    /// component pickers' source (C2b).</summary>
-    public IReadOnlyList<(string Id, string Name, int Quantity)> EligibleForSlot(string formId, string slotName)
-    {
-        if (!_content.Forms.TryGetById(formId, out var form) || !form.Slots.TryGetValue(slotName, out var slot))
-            return Array.Empty<(string, string, int)>();
-
-        return MaterialsOnHand
-            .Where(m => _materials.TryGetById(m.Id, out var def)
-                && (slot.RequiresTags.Count == 0
-                    || slot.RequiresTags.Any(t => def.Tags.Contains(t, StringComparer.OrdinalIgnoreCase))))
-            .ToList();
-    }
-
-    /// <summary>Multi-component fabrication (C2b): one material per named slot. Terminal —
-    /// materials consumed, an ItemInstance lands in the current bag.</summary>
-    public EquipmentAssemblyOutcome FabricateItem(string formId, IReadOnlyDictionary<string, string> slotMaterials)
-    {
-        if (!_content.Forms.TryGetById(formId, out var form))
-            return EquipmentAssemblyOutcome.Failed(EquipmentAssemblyFailure.UnknownBlueprint);
-
-        var outcome = _equipmentAssembly.Assemble(new EquipmentAssemblyRequest(formId, slotMaterials));
-
-        if (!outcome.Success)
-        {
-            Emit($"[Fabricate] {form.Name}: {SemanticFormat.FabricationFailureText(outcome.Failure)}");
-            return outcome;
-        }
-
-        var traits = outcome.Expressed.Count == 0
-            ? ""
-            : $" — {string.Join(", ", outcome.Expressed.Select(t => TraitName(t.Id)))}";
-        var dormant = outcome.Dormant.Count == 0 ? "" : $" ({outcome.Dormant.Count} dormant)";
-        Emit($"[Fabricate] {(outcome.IsFirstOfItsKind ? "✦ " : "")}{outcome.Name}{traits}{dormant}.");
-        InventoryChanged?.Invoke();
-        return outcome;
-    }
-
-    private string TraitName(string traitId) =>
-        _content.Traits.TryGetById(traitId, out var def) ? def.Name : traitId;
-
-    /// <summary>The pre-commit fabrication view — same composition, no side effects (R3).</summary>
-    public EquipmentAssemblyPreview ProjectFabrication(string formId, IReadOnlyDictionary<string, string> slotMaterials) =>
-        _equipmentAssembly.Preview(new EquipmentAssemblyRequest(formId, slotMaterials));
-
-    /// <summary>The fabrication preview card, read through the same seam the minted item uses.
-    /// Promises the deterministic layer (stats, innates) and translates the item potential's supported
-    /// families — the engineering half of the casino (D-21/D29).</summary>
-    public string FabricationPreviewText(string formId, IReadOnlyDictionary<string, string> slotMaterials)
-    {
-        var projection = ProjectFabrication(formId, slotMaterials);
-        if (!projection.CanFabricate)
-            return SemanticFormat.FabricationFailureText(projection.Failure);
-
-        var form = _content.Forms.GetById(formId);
-        var reading = ItemReadings.From(projection, form, _content);
-        return SemanticFormat.Fabrication(
-            projection, reading, ItemReadings.Supports(projection.Potential, _content));
-    }
-
-    /// <summary>Why a material suits (or doesn't suit) a slot — §2E context at the bench.</summary>
-    public string SlotFitText(string formId, string slotName, string materialId)
-    {
-        if (!_content.Forms.TryGetById(formId, out var form)
-            || !_materials.TryGetById(materialId, out var material))
-            return string.Empty;
-
-        var reading = SlotReadings.For(form, slotName, material, _materialStates.StateOf(material), _content.Traits);
-        return SemanticFormat.SlotFit(reading, _glossary);
-    }
-
-    /// <summary>Debug-only: reroll a stash instance's prefixes and suffixes. Innates never
-    /// reroll (U-7 — the item potential speaking). The player-facing reroll path is E7's operations;
-    /// this exists so the casino can be verified without loot faucets.</summary>
-    public ItemInstance? DebugRerollAffixes(long instanceId)
-    {
-        var instance = _stash.GetInstance(instanceId);
-        if (instance?.Potential is not { } itemPotential)
-            return null;
-
-        var affixes = new List<RolledAffix>(
-            ModifierGenerator.Innates(itemPotential, _content.Affixes.GetAll()));
-        affixes.AddRange(ModifierGenerator.Roll(itemPotential, "prefix", _content.Affixes.GetAll(), _affixRandom));
-        affixes.AddRange(ModifierGenerator.Roll(itemPotential, "suffix", _content.Affixes.GetAll(), _affixRandom));
-
-        var rerolled = new ItemInstance
-        {
-            InstanceId = instance.InstanceId,
-            BaseDefinitionId = instance.BaseDefinitionId,
-            ItemType = instance.ItemType,
-            DisplayName = instance.DisplayName,
-            Quality = instance.Quality,
-            Properties = instance.Properties,
-            Provenance = instance.Provenance,
-            Traits = instance.Traits,
-            Potential = instance.Potential,
-            Affixes = affixes,
-        };
-
-        _stash.RemoveInstance(instanceId);
-        _stash.AddInstance(rerolled);
-        Emit($"[Debug] Rerolled {rerolled.DisplayName}: {affixes.Count} modifiers.");
-        InventoryChanged?.Invoke();
-        return rerolled;
-    }
+    // --- Item cards (the §6 reveal, identity layer since Phase 6) ---------------------------
 
     /// <summary>The full §6 reveal card for an owned item.</summary>
     public string ItemCardText(ItemInstance instance) =>
@@ -1911,7 +1692,6 @@ public partial class GameRoot : Node
         BaseDefinitionId = def.Id,
         ItemType = def.ItemType,
         DisplayName = def.Name,
-        Properties = def.BaseProperties,
         Provenance = new[] { def.Id },
     };
 
@@ -1957,16 +1737,8 @@ public partial class GameRoot : Node
                     if (_moveModifierStore.TryGetById(modifierId, out var definition))
                         modifierGrants.Add(new MoveModifierGrant(definition, item.DisplayName));
 
-        // R4c-2: worn affixes author move modifiers too — the 11-op system's third grantor,
-        // through the same builder path as equipment and character components.
-        foreach (var (instance, rolled, affixDef) in EquippedAffixes())
-            foreach (var grant in affixDef.Grants)
-                if (string.Equals(grant.Type, "moveModifier", StringComparison.OrdinalIgnoreCase)
-                    && _moveModifierStore.TryGetById(grant.Key, out var moveModifier))
-                    modifierGrants.Add(new MoveModifierGrant(moveModifier, $"{affixDef.Name} ({instance.DisplayName})"));
-
-        // Phase 3: identity sentences' convert behavior grants standing move modifiers —
-        // the fourth grantor, same builder path.
+        // Phase 3: identity sentences. convert behavior grants standing move modifiers —
+        // the third grantor, same builder path as equipment and character components.
         foreach (var (identityInstance, compiled) in EquippedIdentityGrants())
             foreach (var moveModifierId in compiled.MoveModifierIds)
                 if (_moveModifierStore.TryGetById(moveModifierId, out var identityMoveModifier))
@@ -2873,16 +2645,9 @@ public partial class GameRoot : Node
         foreach (var attached in resolved.Rules)
             _ruleEngine.Attach(attached.Rule, attached.Source);
 
-        // R4b: triggered affixes on worn items attach beside the build's own hooks and swap
-        // with the gear — an unequipped item's rules must stop firing exactly like a retired
-        // Prefix's would.
-        foreach (var (instance, rolled, definition) in EquippedAffixes())
-        {
-            foreach (var rule in ModifierGrants.Rules(rolled, definition))
-                _ruleEngine.Attach(rule, $"{definition.Name} ({instance.DisplayName})");
-        }
-
-        // Phase 3: identity sentences on worn items attach the same way — rules beside the
+        // Phase 3: identity sentences on worn items attach beside the build.s own hooks and
+        // swap with the gear — an unequipped item.s rules must stop firing exactly like a
+        // retired Prefix.s would: rules beside the
         // build's, gauges beside the build's (a store sentence's meter swaps with the gear
         // exactly like a Prefix's meter swaps with the Prefix).
         var identityGrants = EquippedIdentityGrants().ToList();
@@ -2899,26 +2664,8 @@ public partial class GameRoot : Node
             _tick.CurrentTick);
     }
 
-    /// <summary>Every rolled affix on every worn item, with its definition resolved.</summary>
-    private IEnumerable<(ItemInstance Instance, RolledAffix Rolled, AffixDefinition Definition)> EquippedAffixes()
-    {
-        foreach (var instance in _playerEquipment.Slots.Values)
-        {
-            foreach (var rolled in instance.Affixes)
-            {
-                if (_content.Affixes.TryGetById(rolled.AffixId, out var definition))
-                    yield return (instance, rolled, definition);
-            }
-        }
-    }
-
-    /// <summary>Stat grants from worn items' affixes, as ordinary scoped contributions.</summary>
-    private IEnumerable<ModifierContribution> EquippedAffixContributions() =>
-        EquippedAffixes().SelectMany(a =>
-            ModifierGrants.Contributions(a.Rolled, a.Definition, $"{a.Definition.Name} ({a.Instance.DisplayName})"));
-
     /// <summary>Every worn identity-minted item with its sentences recompiled to grants —
-    /// the equip-time twin of <see cref="EquippedAffixes"/>. Compiled fresh per rebuild; the
+    /// Compiled fresh per rebuild; the
     /// compile is deterministic from the persisted sentences (D50), so nothing can drift.</summary>
     private IEnumerable<(ItemInstance Instance, CompiledSentence Compiled)> EquippedIdentityGrants()
     {

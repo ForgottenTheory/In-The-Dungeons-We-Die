@@ -78,46 +78,7 @@ public sealed class CraftingExperimentSystem
 
         _inventory.TryRemoveAll(interaction.Inputs);
 
-        ItemInstance? produced = null;
-        IReadOnlyList<MaterialProperty> resultProperties;
-
-        if (interaction.ResultIsInstance)
-        {
-            // Generated material: derive its properties from the inputs and mint unique instances.
-            var inputProperties = interaction.Inputs
-                .Select(i => _materials.TryGetById(i.ItemId, out var m) ? m.BaseProperties : PropertySet.Empty)
-                .ToList();
-            var derived = CraftingDerivation.Derive(inputProperties);
-            var name = _materials.TryGetById(interaction.ResultItemId, out var resultDef) ? resultDef.Name : interaction.ResultItemId;
-            var provenance = interaction.Inputs.Select(i => i.ItemId).ToList();
-
-            for (var q = 0; q < interaction.ResultQuantity; q++)
-            {
-                produced = new ItemInstance
-                {
-                    InstanceId = _instanceIds.Next(),
-                    BaseDefinitionId = interaction.ResultItemId,
-                    ItemType = ItemType.Material,
-                    DisplayName = name,
-                    Properties = derived,
-                    Provenance = provenance,
-                };
-                _inventory.AddInstance(produced);
-            }
-
-            resultProperties = derived.AsDictionary()
-                .Select(kv => new MaterialProperty { Property = kv.Key, Value = kv.Value })
-                .ToList();
-        }
-        else
-        {
-            _inventory.Add(interaction.ResultItemId, interaction.ResultQuantity);
-            resultProperties = _materials.TryGetById(interaction.ResultItemId, out var material)
-                ? material.BaseProperties.AsDictionary()
-                    .Select(kv => new MaterialProperty { Property = kv.Key, Value = kv.Value })
-                    .ToList()
-                : Array.Empty<MaterialProperty>();
-        }
+        _inventory.Add(interaction.ResultItemId, interaction.ResultQuantity);
 
         var wasNew = !string.IsNullOrEmpty(interaction.DiscoveryId) && _discoveries.Record(interaction.DiscoveryId);
 
@@ -128,8 +89,6 @@ public sealed class CraftingExperimentSystem
             ResultItemId = interaction.ResultItemId,
             ResultQuantity = interaction.ResultQuantity,
             WasNewDiscovery = wasNew,
-            ResultProperties = resultProperties,
-            ProducedInstance = produced,
         };
     }
 }

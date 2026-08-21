@@ -107,7 +107,7 @@ public class LoadoutSaveV10Tests
 
         Assert.Null(loadout.RealmId);
         Assert.Empty(loadout.PackedConsumables);
-        Assert.Equal(2, stash.GetQuantity("material.oak_log"));
+        Assert.Equal(0, stash.GetQuantity("material.oak_log")); // D54: pre-v14 items reset
     }
 
     /// <summary>Every other caller passes no loadout, and that must stay legal — the parameter is

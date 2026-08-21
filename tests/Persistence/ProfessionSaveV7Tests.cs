@@ -185,7 +185,8 @@ public class ProfessionSaveV7Tests
         SaveMapper.Apply(legacy, session.Stash, session.Professions, new DiscoverySystem(), session.Knowledge,
             farmingPlots: session.Plots, trainingCourse: session.Course);
 
-        Assert.Equal(3, session.Stash.GetQuantity("material.oak_log"));
+        // D54 (v14): pre-v14 items reset — the stack is gone, the progression is not.
+        Assert.Equal(0, session.Stash.GetQuantity("material.oak_log"));
         Assert.Equal(450, session.Professions.GetProgress("profession.forestry").Xp);
         Assert.Null(legacy.PassiveActionId);
         Assert.All(session.Plots.Plots, plot => Assert.True(plot.IsEmpty));

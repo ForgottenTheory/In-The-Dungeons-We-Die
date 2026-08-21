@@ -634,7 +634,7 @@ The foundation survived all six tests without inventing a new rule.
 |---|---|---|
 | 1 | ~~Signatures vs rolled modifiers~~ — **RESOLVED (D50, §8):** one unified pipeline (`ItemEffectResolver`) emitting three categories — identity floor expressions, ordinary generated effects, optional Signatures; the 44 affixes re-ground as shared-vocabulary content | ✅ 2026-08-20 |
 | 2 | ~~Item-side identity expression~~ — **RESOLVED (D51, §8.1):** union + form cap + dormancy; readable slot roles, never percentage apertures; material capacity and the form cap stay separate | ✅ 2026-08-20 |
-| 3 | **Profile visibility** — what Assay reveals of favored triggers/behaviors. Themes are never visible (§6.1) | Presentation phase |
+| 3 | ~~Profile visibility~~ — **RESOLVED (D53):** Assay reads the profile as plain leanings at its high rung — the strongest few favored triggers/behaviors/payloads in vocabulary words, weights as words, exact weights Advanced-only. Themes never visible (§6.1). The forge's candidate table speaks likelihood words derived from score share, scores behind Advanced | ✅ 2026-08-20 |
 | 4 | **Named identity evolution** (§5) | Later, explicitly |
 | 5 | **Residual sentence-count drivers** (quality, generation context — §7.1) | Balance |
 | 6 | **Emergent Phenomena** — the anomaly system behind §8's seam; overfill raising its odds (§10.3) is its first designed input | Much later; seam only |
@@ -659,39 +659,42 @@ Ordered so the game stays green and nothing is authored twice. Position marker k
 | **3 — Item generation** | The item-effect pipeline (`ItemEffectResolver`, D50 — identity floor expressions + ordinary generated effects + optional Signatures, succeeding genome → `ModifierGenerator`); the payload registry (effect families as content); per-form base reads (§11.5); item-side expression (D51, §8.1) | **✅ complete (2026-08-20)** — shipped: the payload registry (bare-key entries binding to live machinery, families+rungs, the one-floor-per-identity discipline validator-enforced; 8 starter payloads over Dense/Vital/Ember/Warded; `favored_payloads` joins profiles and §9's breach path works) · form identity fields (`identity_cap`, `base_reads`, per-slot `identity_priority`, `generation_profile`) authored on Longsword + Buckler, leather migrated to complete the starter set · `IdentityEquipmentComposer` (D51 union/cap/dormancy; base delivery parity-pinned to the authored Iron Sword through the live resolver seam) · `ItemEffectResolver`/`SignatureResolver` + 11 behavior assemblers with preview-parity projections (the scored table IS the draw distribution; per-payload diversity cap) · `IdentityFabricationEngine` minting `ItemInstance`s that carry the three categories, dormant identities and the base delivery · save **v13** (sentences + delivery + identity split persist; derived definitions ride the existing emergent-equipment list) · `IdentityForgePanel` beside the old assembly · the equip seam (stat grants, rules, gauges, move modifiers) attaching sentences like affixes. Editor verification pending, per standing practice |
 | 4 — Material database | Re-author the library to capacity/identities/latents/profiles; `material.*` ids stay stable so loot tables and profession actions survive. **The expected cull was consciously declined (D52)**: the library measured 1,448 materials with 1,446 referenced by shipped profession/loot content, so everything migrates | **✅ complete (2026-08-20)** — all 1,448 materials migrated: derivation-drafted (capacity by rarity +magical, base from properties on structural forms — `TagFamilies.StructuralForms`/`EdgeCapableForms` now validator rules — latents from D44's essence map + property signals, ~413 carriers) and hand-tiered: **53 active-identity materials** (elemental motes/shards r1, essences/hearts/runes r2, cores r3; Earthen found its home in elemental earth, Resonant in the resonance catalyst, Pure in the alchemical salts) · **every one of the 24 identities has a shipped source and an authored floor payload** (28 payloads total; the fence caught `craft.quality`/`loot.*` as declared-but-unread, so Pure floors on `profession.preserve.chance` and Charmed on `attr.luck`) · **the acquisition fence** (D29.3 translated: gathering faucets never passively pay active-identity stock — caught the arcane core as a guaranteed idle yield; three new opportunities took the evicted payouts, 36→39) · **46 curated signature profiles** · seeds carry their plant's latent (D48). Fences: `MaterialLibraryMigrationTests` |
 | 5 — Professions | Identity verbs per profession (gather/reveal/isolate/transfer/develop); bench awards XP/mastery (fixing the existing gap); cross-profession prepared products | **✅ complete (2026-08-20)** — **the bench trains**: `VerbActionDefinition.experience` (validated: gated ⇒ pays, ungated ⇒ cannot), awards through the shared `ProfessionProgress` ledger on any run where work happened (success/fracture/destruction; refusals pay nothing), level-ups surface in the result and at the bench, and the preview names the pay · **mastery steadies the hand** (the D47 §4 consumer): per-action mastery shaves both risk chances via `VerbRequest.RiskReduction`, engine-clamped at the ceiling — built in the shared gate path so preview and commit read one practiced hand · **the D48 matrix is content**: 53 actions across 11 professions at their own stations, pinned by test incl. Runecrafting-is-the-only-identity-scoped-profession; domain Restores eat salvage stock; Expand costs its catalysts; the worked chain now trains all four of its professions · **preparation = activation**: raw→prepared Process pairs (drying emberleaf/frostfern, curing, spinning/weaving, hewing, glass-melting) land on the authored prepared ids with the output's innate identities active, pinned by `DryingActivatesThePreparedForm` |
-| 6 — Presentation + UI | Identity/signature readings replace property readings; Assay re-aimed at detecting latents and reading potential | not started |
-| 7 — Deletion + docs | Property algebra, genome pressure, trait/essence layers, stale tests and superseded docs removed; save schema settles | not started |
+| 6 — Presentation + UI | Identity/signature readings replace property readings; Assay re-aimed at detecting latents and reading potential | **✅ complete (2026-08-21)** — D53 (profile leanings in words · likelihood-word draw table). Shipped, all in `Dungeons.Presentation` (docs/presentation-architecture.md §5.2): `SentenceReadings` (one sentence → one player line, truthful to the assemblers; modifier units derived from the key registry) · the item card/strip identity layer (`Identities:` with §4 rung words — numerals stay banned; `Guaranteed:`/`Signature:`/`Drawback:` labels keep D50 legible; dormant identities on the dormant line) · `MintReadings` (forge preview: likelihood words vs the uniform share, "beyond its families" for breaches, exact scores behind Advanced) · `VerbReadings` (refusals in words; previews/outcomes diffed from engine states; engine step text = the Advanced voice) · `IdentityMaterialReadings` (bench inspector: §11.2 in sentences) · `AssayLens.IdentityMaterial` (Vessel → Latency → Latent names → Leanings → Potential on the same five rungs; stakes + overfill never gated; themes never shown). Workmanship words rough→masterwork; `bulwark` fixed from delta to factor range behind a new multiplicative-range validator fence. Editor verification pending, per standing practice |
+| 7 — Deletion + docs | Property algebra, genome pressure, trait/essence layers, stale tests and superseded docs removed; save schema settles | **✅ complete (2026-08-21)** — D54 executed. The migration finished first: all **23 forms** author identity fields (caps, base reads, priorities, generation profiles; every-form-forgeable pinned by test) and the D34 name-variant pick carried across (`IdentityFabricationEngine.FormNoun`, deterministic from the derived id). Then the deletion, whole: the reaction engine/algebra/quantization, genome + `ModifierGenerator` + the affix layer, traits, essences, `MaterialState(+Resolver)`, old fabrication, the property presentation stack (readings/tiers/trends/glossary/risk bands/`AdvancedFormat`), `CraftingBenchPanel` + `EquipmentAssemblyPanel`, the `processes/`/`traits/`/`essences/`/`affixes/`/`name_grammar/`/`properties/` content folders, and every test that pinned them (suite 1,378 → **1,011**, all green, 0 warnings). Material JSON stripped of `properties`/`essence` (1,448 entries), forms of `stat_map`/`trait_expression`/`trait_cap`, stations route `verb_actions` + `has_assembly` only. `ItemInstance` and the save settled at **v14**: identity fields only; pre-v14 loads keep every progression section (gold included) and drop every item section — the v9 slot-rename shim retired as unreachable. The live-fire re-grounding of the thorns e2e caught a real Phase 3 bug (retaliate aimed at `TriggerSource`; the attacker is the defensive events' *target* — fixed in `SentenceAssemblers`). ContentStudio registry/schema/balance views follow (14/14 green). Docs: the six superseded docs + `PROJECT_STATE`/`SYSTEM_INDEX` deleted; `crafting-overview` rewritten as the identity-stack map; CLAUDE/code-map/game-overview/GDD/ROADMAP/loot/json-schema refreshed |
 
 ---
 
 # 16. System impact ledger
 
-Running list of downstream consequences recorded so far (kept current as decisions land):
+All consequences landed with Phase 7 (2026-08-21); kept as the record of what the migration
+touched:
 
-- **Saves — decided (D49): progression survives, items reset.** The progression half of the
-  save (professions, mastery, realm knowledge, character XP, learned moves, discoveries) keeps
-  its exact shapes and loads as-is; the crafting-touched sections (stash items, instances,
-  equipment, emergent registries) are dropped at migration — no faithful property→identity
-  conversion exists, only invention. Schema bumps; the existing starter-kit rule re-equips a
-  loaded save with no weapon.
-- **Combat:** no pipeline change. New content later (Wither and the decay lane, charge gauges,
-  chain content). Four small effect-kind gaps (§7.3) + the `LootResolver` luck seam (§7.4).
-- **Content types:** identities, profiles, triggers, behaviors, payloads, themes, weighting
-  rules — each needs the full chain (bundle → loader → validator → tests → ContentStudio
-  registry + `SchemaOverrides`).
-- **Content Studio:** material editor regenerates from the Core type; hand work in
-  `SchemaOverrides`, the Balance Studio material views (0–100 histograms, the `hardness > 70`
-  query language), vocab endpoints, editor layouts.
-- **Presentation:** property tiers/glossary/readings replaced by identity readings; the
-  semantic layer *shrinks* because the sim itself becomes legible; D30 discipline unchanged.
-- **Docs:** `crafting-overview.md`, `emergent-item-system.md`, `itemization.md`, `affixes.md`,
-  `crafting.md`, `worked-examples.md` carry superseded banners; GDD and game-overview carry
-  redesign notices. Full rewrites land in Phase 7.
-- **Tests:** crafting/fabrication/affix suites rebuilt phase by phase; validator-before-content
-  method continues.
-- **Standing decisions:** supersedes the "playtest before retuning" backlog for the crafting
-  half (recorded in D42); D7's *goal* survives with a new mechanism; D20, D30, D-01, D-06,
-  D-07, D29.3, D40 all carry forward.
+- **Saves — executed (D49/D54, v14): progression survives, items reset.** Pre-v14 loads keep
+  every progression section exactly (gold included) and drop every item section; the
+  starter-kit rule re-equips. The old-model DTOs are gone; the serializer ignores their keys
+  in old files.
+- **Combat:** no pipeline change, as promised. The retired affixes' machinery (retaliation,
+  parry, barrier, potency/duration keys, move-mod grants) lives on, fed by sentences. Open
+  content later: Wither and the decay lane, charge gauges, chain content; four effect-kind
+  gaps (§7.3) + the `LootResolver` luck seam (§7.4).
+- **Content types:** identities, profiles (on materials), triggers, behaviors, payloads,
+  themes and verb actions all ship the full chain (bundle → loader → validator → failing-
+  content tests → ContentStudio registry + `SchemaOverrides`). The property/process/trait/
+  essence/affix/name-grammar types are deleted end to end.
+- **Content Studio:** registry and schema overrides track the identity types only; the 0–100
+  material histogram warnings retired with the numbers they histogrammed.
+- **Presentation:** the property stack (tiers/pips/trends/glossary/risk bands) is gone; the
+  semantic layer shrank exactly as predicted because the sim itself became legible. D30
+  discipline unchanged; D53 added the profile-leanings and likelihood-word voices.
+- **Docs:** the six superseded docs and `PROJECT_STATE`/`SYSTEM_INDEX` are deleted (git is
+  the archive); `crafting-overview.md` is the identity-stack map; CLAUDE.md, code-map,
+  game-overview, GDD, ROADMAP, loot and json-schema are refreshed.
+- **Tests:** 367 old-system tests retired with their systems (1,378 → 1,011 green); the
+  validator-before-content method continues — Phase 7 itself added the multiplicative-range
+  payload fence and the every-form-forgeable pin.
+- **Standing decisions:** the crafting-half balance backlog is superseded into the identity
+  playtest checkpoint (ROADMAP #4); D7's *goal* survives with a new mechanism; D20, D30,
+  D-01, D-06, D-07, D29.3 (identity edition), D40 all carry forward.
 
 ---
 
