@@ -735,7 +735,10 @@ public partial class MainMvpUI : Control
         root.AddChild(SectionTitle("Techniques"));
         _techniqueControls = new VBoxContainer();
         root.AddChild(_techniqueControls);
-        root.AddChild(MakeButton("Grant Techniques (debug)", () => _game.GrantTestTechniques(), Accent));
+        var debugGrantRow = Row();
+        root.AddChild(debugGrantRow);
+        debugGrantRow.AddChild(MakeButton("Grant Techniques (debug)", () => _game.GrantTestTechniques(), Accent));
+        debugGrantRow.AddChild(MakeButton("Grant Test Materials (debug)", () => _game.GrantTestMaterials(), Accent));
     }
 
     private void RebuildTechniqueControls()

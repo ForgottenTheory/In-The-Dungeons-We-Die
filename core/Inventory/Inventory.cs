@@ -67,6 +67,35 @@ public sealed class Inventory
 
     public void Add(ItemStack stack) => Add(stack.ItemId, stack.Quantity);
 
+    /// <summary>
+    /// Adds every stack, raising <see cref="Changed"/> <b>once</b> for the whole batch.
+    /// Bulk grants must come through here: each <see cref="Changed"/> triggers a full UI
+    /// rebuild upstream, so a per-stack loop over a large batch turns one click into
+    /// thousands of rebuilds of a growing bag — quadratic work that freezes the game.
+    /// </summary>
+    public void AddAll(IEnumerable<ItemStack> stacks)
+    {
+        ArgumentNullException.ThrowIfNull(stacks);
+
+        // Validate the whole batch before touching contents — stack transactions are
+        // all-or-nothing, and a throw halfway through must not leave a partial grant.
+        var validatedStacks = stacks.ToList();
+        foreach (var stack in validatedStacks)
+        {
+            if (string.IsNullOrWhiteSpace(stack.ItemId))
+                throw new ArgumentException("Item id is null or empty.", nameof(stacks));
+            if (stack.Quantity <= 0)
+                throw new ArgumentOutOfRangeException(nameof(stacks), stack.Quantity, "Quantity must be positive.");
+        }
+
+        if (validatedStacks.Count == 0)
+            return;
+
+        foreach (var stack in validatedStacks)
+            _quantities[stack.ItemId] = GetQuantity(stack.ItemId) + stack.Quantity;
+        Changed?.Invoke();
+    }
+
     /// <summary>Removes items if enough are present. Returns false and changes nothing otherwise.</summary>
     public bool TryRemove(string itemId, int quantity)
     {

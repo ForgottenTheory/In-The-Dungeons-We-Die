@@ -1402,6 +1402,52 @@ public partial class GameRoot : Node
         InventoryChanged?.Invoke();
     }
 
+    /// <summary>Stack size per material for <see cref="GrantTestMaterials"/> — enough to feed
+    /// several bench crafts of the same recipe without re-granting.</summary>
+    private const int TestMaterialGrantQuantity = 25;
+
+    /// <summary>
+    /// Debug: a curated bench-testing kit into the stash, in one batched stash change.
+    /// Not the whole catalog — 1448 materials granted one <c>Add</c> at a time once froze
+    /// the game (each add re-ran the full inventory UI rebuild), and even batched, a
+    /// full-catalog stash drowns every material picker. The kit instead covers the verb
+    /// space: every material that starts with an identity (Transfer/Displace/Extract/Fuse
+    /// sources), one carrier per distinct latent identity (Reveal/Develop coverage), and
+    /// one blank vessel per capacity tier (transfer targets of every size).
+    /// </summary>
+    public void GrantTestMaterials()
+    {
+        var authoredMaterials = _materials.GetAll()
+            .OrderBy(material => material.Id, StringComparer.Ordinal)
+            .ToList();
+
+        var identityBearers = authoredMaterials
+            .Where(material => material.Identities.Count > 0);
+
+        var onePerLatentIdentity = authoredMaterials
+            .Where(material => material.Latent.Count > 0)
+            .SelectMany(material => material.Latent.Select(latentId => (latentId, material)))
+            .GroupBy(pair => pair.latentId, StringComparer.Ordinal)
+            .Select(group => group.First().material);
+
+        var oneBlankVesselPerCapacityTier = authoredMaterials
+            .Where(material => material.Capacity is not null
+                && material.Identities.Count == 0
+                && material.Latent.Count == 0)
+            .GroupBy(material => material.Capacity!.Value)
+            .Select(group => group.First());
+
+        var testKit = identityBearers
+            .Concat(onePerLatentIdentity)
+            .Concat(oneBlankVesselPerCapacityTier)
+            .DistinctBy(material => material.Id)
+            .Select(material => new ItemStack(material.Id, TestMaterialGrantQuantity))
+            .ToList();
+
+        _stash.AddAll(testKit);
+        Emit($"[Materials] Granted a test kit: {testKit.Count} material(s) ×{TestMaterialGrantQuantity} to the stash.");
+    }
+
     private string MoveName(string moveId) =>
         _moves.TryGetById(moveId, out var move) ? move.Name : moveId;
 
