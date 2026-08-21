@@ -70,4 +70,22 @@ public static class IdentityCraftTuning
     /// profiles, trace-pruned and capped per list so profiles never grow without bound.</summary>
     public const int MaxProfileEntriesPerList = 4;
     public const double ProfileTraceWeight = 0.15;
+
+    /// <summary>How much of a consumed source's provenance joins the substrate's on Transfer
+    /// and Displace — the reason oak's personality (and the "Oakbound" in the name) reaches
+    /// the iron it was infused into. Kept small on purpose: at 0.25 three infusions
+    /// compounded until the ingot "descended mostly from oak", flipping its primary root —
+    /// and with it byproducts, base stats and the name's noun. The substrate must stay
+    /// physically primary under repeated infusion (provisional).</summary>
+    public const double TransferRootShare = 0.15;
+    public const double DevelopRootShare = 0.15;
+
+    /// <summary>Naming (docs/identity-foundation.md §12 findings): at most four words; a
+    /// secondary root earns its "-bound" adjective at this weight (matched to
+    /// <see cref="TransferRootShare"/> so a single infusion's source is name-worthy);
+    /// carriers take the extract noun. All provisional until the naming grammar gets its own
+    /// content pass.</summary>
+    public const int MaxNameWords = 4;
+    public const double RootAdjectiveThreshold = 0.15;
+    public const string CarrierNoun = "Extract";
 }

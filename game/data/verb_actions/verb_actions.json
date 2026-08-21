@@ -1,8 +1,71 @@
 [
   // Verb actions — the crafting actions of the identity system (docs/transformation-verbs.md
-  // §1/§8, D47/D48): verb + parameters + gates + costs + fiction name. Deliberately EMPTY
-  // until migration Phase 4 puts migrated materials under them — an action whose substrates
-  // and Process outputs aren't in the identity model yet would be dead furniture, and the
-  // validator rightly refuses Process outputs that aren't migrated. The station routing
-  // (stations.json `verb_actions`) fills in with the same pass.
+  // §1/§8, D47/D48): verb + parameters + gates + costs + fiction name. This is the STARTER
+  // set over the handful of migrated materials (iron ore/ingot, granite, oak, sageleaf) —
+  // enough to run the worked chain end to end: prospect granite, identify oak, draw and
+  // distill an extract, smelt and infuse iron. The full set arrives with the Phase 4
+  // material migration. Every gate is the action's own; stations only route (D48).
+
+  // ---- Reveal — discovery at the source (gatherer Reveal, D48) ------------------------------
+  {
+    "id": "craft.prospect_stone", "name": "Prospect", "verb": "Reveal",
+    "description": "Read the vein of a stone or ore: a latent identity wakes at rank 1.",
+    "profession": "profession.mining", "required_level": 1,
+    "substrate_tags": ["origin:mineral"]
+  },
+  {
+    "id": "craft.read_the_grain", "name": "Read the Grain", "verb": "Reveal",
+    "description": "What a timber holds, the grain admits — a latent identity wakes at rank 1.",
+    "profession": "profession.forestry", "required_level": 1,
+    "substrate_tags": ["form:wood"]
+  },
+  {
+    "id": "craft.identify_virtues", "name": "Identify Virtues", "verb": "Reveal",
+    "description": "Herblore's eye for what a plant can do: a latent identity wakes at rank 1.",
+    "profession": "profession.herblore", "required_level": 1,
+    "substrate_tags": ["origin:flora"]
+  },
+
+  // ---- The carrier chain — preparation = fidelity (D47 §3) ----------------------------------
+  {
+    "id": "craft.draw_extract", "name": "Draw an Extract", "verb": "Extract",
+    "description": "Pull an identity out of a plant onto a carrier, rank preserved. The plant is spent.",
+    "profession": "profession.herblore", "required_level": 1,
+    "substrate_tags": ["origin:flora"]
+  },
+  {
+    "id": "craft.distill", "name": "Distill", "verb": "Develop",
+    "description": "Deepen a carrier's identity by feeding it same-identity sources.",
+    "profession": "profession.alchemy", "required_level": 1,
+    "substrate_tags": ["state:extract"]
+  },
+
+  // ---- The metal domain (Smithing, D48) ------------------------------------------------------
+  {
+    "id": "craft.smelt_iron", "name": "Smelt Iron", "verb": "Process",
+    "description": "Iron ore into an ingot; whatever the ore carried, the ingot carries.",
+    "profession": "profession.smithing", "required_level": 1,
+    "substrate_tags": ["form:ore"], "substrate_id": "material.iron_ore",
+    "output": "material.iron_ingot"
+  },
+  {
+    "id": "craft.infuse_metal", "name": "Infuse", "verb": "Transfer",
+    "description": "Work a source's identity into metal. Raw sources deliver rank 1; a prepared carrier delivers its full rank.",
+    "profession": "profession.smithing", "required_level": 5,
+    "substrate_tags": ["form:metal"]
+  },
+  {
+    "id": "craft.mend", "name": "Mend", "verb": "Restore",
+    "description": "Climb a worked metal's condition one step, fed by salvage. Worked is the ceiling — Pristine cannot be faked.",
+    "profession": "profession.smithing", "required_level": 3,
+    "substrate_tags": ["form:metal"],
+    "extra_costs": [ { "itemId": "material.slag", "quantity": 1 } ]
+  },
+
+  // ---- Gentle, ungated (the Grind precedent) -------------------------------------------------
+  {
+    "id": "craft.hone", "name": "Hone", "verb": "Refine",
+    "description": "Careful work: quality up, nothing risked, no condition cost.",
+    "profession": "", "required_level": 0
+  }
 ]

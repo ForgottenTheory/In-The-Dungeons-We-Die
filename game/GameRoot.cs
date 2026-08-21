@@ -9,6 +9,7 @@ using Dungeons.Characters.Rules;
 using Dungeons.Combat;
 using Dungeons.Content;
 using Dungeons.Crafting;
+using Dungeons.Crafting.Identity;
 using Dungeons.Events;
 using Dungeons.Game.Infrastructure;
 using Dungeons.Hideout;
@@ -107,6 +108,7 @@ public partial class GameRoot : Node
     private IEmergentRegistry _emergentRegistry = null!;
     private EquipmentAssemblyEngine _equipmentAssembly = null!;
     private IMaterialTransformationEngine _reactionEngine = null!;
+    private VerbActionRunner _verbActionRunner = null!;
     private MaterialStateResolver _materialStates = null!;
     private PropertyGlossary _glossary = null!;
     private SeededRandom _affixRandom = null!;
@@ -279,6 +281,17 @@ public partial class GameRoot : Node
             new TraitResolver(content.Traits),
             professionLevel: id => _professions.GetProgress(id).Level,
             new SeededRandom(0xC12AF7));
+
+        // The identity bench (migration Phase 2c, D42–D48) — the replacement crafting stack,
+        // running beside the reaction engine until the surfaces swap. It shares the emergent
+        // registry (fingerprint ids and signature ids cannot collide) and deposits into the
+        // same ActiveInventory, so extraction risk applies to the new bench for free.
+        _verbActionRunner = new VerbActionRunner(
+            content,
+            new IdentityCraftingEngine(content, new SeededRandom(0x1DE47175)),
+            _emergentRegistry,
+            () => ActiveInventory,
+            professionLevel: id => _professions.GetProgress(id).Level);
 
         _affixRandom = new SeededRandom(0xD1CE5);
         _equipmentAssembly = new EquipmentAssemblyEngine(content, () => ActiveInventory, _materialStates, _instanceIds, _affixRandom);
@@ -1068,6 +1081,75 @@ public partial class GameRoot : Node
 
     /// <summary>The emergent materials this save has produced (§12.4).</summary>
     public IReadOnlyCollection<MaterialDefinition> DiscoveredArchetypes => _emergentRegistry.All;
+
+    // --- The identity bench (migration Phase 2c) -----------------------------
+
+    /// <summary>A material's identity-model state, or null when it has not been migrated.</summary>
+    public IdentityMaterialState? IdentityStateOf(string itemId) =>
+        _materials.TryGetById(itemId, out var definition)
+            ? IdentityStateResolver.StateOf(definition)
+            : null;
+
+    /// <summary>An identity's player-facing name.</summary>
+    public string IdentityNameOf(string identityId) =>
+        _content.Identities.TryGetById(identityId, out var identity) ? identity.Name : identityId;
+
+    /// <summary>One picker line: fiction name, verb, and the action's own gate.</summary>
+    public string VerbActionLabel(VerbActionDefinition action)
+    {
+        var gate = string.IsNullOrEmpty(action.Profession)
+            ? "ungated"
+            : $"{(_content.Professions.TryGetById(action.Profession, out var profession) ? profession.Name : action.Profession)} L{action.RequiredLevel}";
+        return $"{action.Name} — {action.Verb} · {gate}";
+    }
+
+    /// <summary>The identity-system actions this station's bench offers.</summary>
+    public IReadOnlyList<VerbActionDefinition> VerbActionsAt(string stationId) =>
+        _content.Stations.TryGetById(stationId, out var station)
+            ? station.VerbActions
+                .Where(id => _content.VerbActions.Contains(id))
+                .Select(id => _content.VerbActions.GetById(id))
+                .ToList()
+            : Array.Empty<VerbActionDefinition>();
+
+    /// <summary>What a verb action would do, before committing — gates included.</summary>
+    public VerbActionPreview PreviewVerbAction(
+        string actionId, string substrateItemId, IReadOnlyList<string> sourceItemIds,
+        string? targetIdentityId = null, string? displacedIdentityId = null) =>
+        _verbActionRunner.Preview(new VerbActionInvocation(
+            actionId, substrateItemId, sourceItemIds, targetIdentityId, displacedIdentityId));
+
+    /// <summary>Runs a verb action and reports it: gates → verb → consume → register → deposit.</summary>
+    public VerbActionResult RunVerbAction(
+        string actionId, string substrateItemId, IReadOnlyList<string> sourceItemIds,
+        string? targetIdentityId = null, string? displacedIdentityId = null)
+    {
+        var result = _verbActionRunner.Run(new VerbActionInvocation(
+            actionId, substrateItemId, sourceItemIds, targetIdentityId, displacedIdentityId));
+
+        if (result.GateFailure is not null)
+        {
+            Emit($"[Bench] {result.GateDetail}");
+            return result;
+        }
+        if (result.Outcome is { Kind: VerbResultKind.Refused } refused)
+        {
+            Emit($"[Bench] The material refuses: {refused.Failure}.");
+            return result;
+        }
+
+        foreach (var step in result.Outcome!.Steps)
+            Emit("  " + step.Detail);
+        foreach (var item in result.Deposited)
+            Emit(item.FirstDiscovery
+                ? $"[Bench] First discovery — {item.Name}!"
+                : $"[Bench] {item.Name} added to the bag.");
+
+        InventoryChanged?.Invoke();
+        if (result.AnyFirstDiscovery)
+            DiscoveryChanged?.Invoke();
+        return result;
+    }
 
     // --- Legacy fixed-interaction crafting -----------------------------------
     //

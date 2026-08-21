@@ -132,6 +132,45 @@ public sealed class EmergentArchetypeSave
     public Dictionary<string, double> Essence { get; init; } = new();
 }
 
+/// <summary>One identity carried by a persisted identity-model material (v12).</summary>
+public sealed class IdentityStakeSave
+{
+    public string Id { get; init; } = string.Empty;
+    public int Rank { get; init; } = 1;
+}
+
+/// <summary>One provenance root of a persisted identity-model material (v12).</summary>
+public sealed class IdentityRootSave
+{
+    public string DefinitionId { get; init; } = string.Empty;
+    public double Weight { get; init; }
+}
+
+/// <summary>
+/// An emergent material minted by the identity bench (v12, migration Phase 2c, D42): the
+/// fingerprint id plus the full eight-facet state — the identity-model sibling of
+/// <see cref="EmergentArchetypeSave"/>, with the same regenerable-cache reasoning. Stability
+/// is not stored: it derives from identity count vs capacity, always.
+/// </summary>
+public sealed class IdentityArchetypeSave
+{
+    /// <summary>The fingerprint, which is also the material's id.</summary>
+    public string Id { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
+    public List<string> Tags { get; init; } = new();
+    public List<IdentityStakeSave> Identities { get; init; } = new();
+    public List<string> Latent { get; init; } = new();
+    public int Capacity { get; init; } = 1;
+
+    /// <summary>A <c>Condition</c> enum member name; an unreadable value loads Pristine.</summary>
+    public string Condition { get; init; } = "Pristine";
+
+    public int Quality { get; init; }
+    public bool IsCarrier { get; init; }
+    public List<IdentityRootSave> Roots { get; init; } = new();
+}
+
 /// <summary>
 /// Versioned root of a save file. Stores ids and runtime values only — never
 /// definitions (docs/architecture.md §27–28, docs/json-schema.md §22). Persistent
@@ -177,8 +216,13 @@ public sealed class SaveData
     /// <para>v11 added <see cref="CharacterXp"/> (Phase 8). A v10 save loads at 0, which is
     /// character level 1 — where every character in every existing save already is, because
     /// until now nothing awarded it. No migration step.</para>
+    ///
+    /// <para><b>v12 — identity archetypes.</b> Emergent materials minted by the identity
+    /// bench (migration Phase 2c, D42) persist as <see cref="IdentityArchetypeSave"/> beside
+    /// the old-model archetypes. An older save loads with none — the state of a player who
+    /// never used the new bench. No migration step.</para>
     /// </summary>
-    public const int CurrentSchemaVersion = 11;
+    public const int CurrentSchemaVersion = 12;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
     public long SavedAtTick { get; init; }
@@ -237,6 +281,10 @@ public sealed class SaveData
 
     /// <summary>Emergent material archetypes this save has produced (§12.4).</summary>
     public List<EmergentArchetypeSave> EmergentArchetypes { get; init; } = new();
+
+    /// <summary>Identity-model emergent materials (v12) — minted by the verb bench. Absent
+    /// on older saves: loads empty, the state of a player who never used the new bench.</summary>
+    public List<IdentityArchetypeSave> IdentityArchetypes { get; init; } = new();
 
     /// <summary>Move ids learned from technique items, in learn order (M2′ acquisition).</summary>
     public List<string> LearnedMoves { get; init; } = new();

@@ -107,6 +107,15 @@ public sealed class MaterialDefinition : IItemDefinition
     [JsonPropertyName("signature_profile")]
     public SignatureProfile? SignatureProfile { get; init; }
 
+    /// <summary>
+    /// The full identity-model state of an <b>emergent</b> material, set by the registration
+    /// path and never authored in JSON — the identity-system twin of <see cref="State"/>.
+    /// Null for authored materials, whose starting state
+    /// <see cref="Dungeons.Crafting.Identity.IdentityStateResolver"/> derives.
+    /// </summary>
+    [JsonIgnore]
+    public Dungeons.Crafting.Identity.IdentityMaterialState? IdentityState { get; init; }
+
     /// <summary>The supernatural layer (§5.2), keyed by bare essence name (<c>"fire": 60</c>).
     /// Deliberately sparse — mundane is the absence of essence, so ~430 of 480 materials
     /// author nothing here and store no zeros.</summary>

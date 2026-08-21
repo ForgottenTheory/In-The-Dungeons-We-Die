@@ -308,6 +308,9 @@ public static class ContentValidator
                 Problem("no material satisfies its substrate gate — an action nobody can ever run.");
             }
 
+            if (!string.IsNullOrWhiteSpace(action.SubstrateId) && !content.Materials.Contains(action.SubstrateId))
+                Problem($"substrate_id '{action.SubstrateId}' is not a known material.");
+
             foreach (var identityId in action.IdentityScope)
                 if (!content.Identities.Contains(identityId))
                     Problem($"identity scope names unknown identity '{identityId}'.");

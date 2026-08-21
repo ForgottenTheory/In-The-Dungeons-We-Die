@@ -19,6 +19,7 @@ public partial class StationPanel : VBoxContainer
 {
     private readonly List<ProfessionLadderPanel> _ladders = new();
     private CraftingBenchPanel? _bench;
+    private VerbBenchPanel? _verbBench;
     private EquipmentAssemblyPanel? _assembly;
     private CraftingInteractionsPanel? _interactions;
     private FarmingPlotsPanel? _plots;
@@ -75,6 +76,12 @@ public partial class StationPanel : VBoxContainer
             AddChild(_bench = new CraftingBenchPanel(game, game.CraftingActionsAt(station)));
         }
 
+        if (station.VerbActions.Count > 0)
+        {
+            AddChild(new HSeparator());
+            AddChild(_verbBench = new VerbBenchPanel(game, game.VerbActionsAt(station.Id)));
+        }
+
         if (station.HasAssembly)
         {
             AddChild(new HSeparator());
@@ -95,6 +102,7 @@ public partial class StationPanel : VBoxContainer
         _assay?.Refresh();
         _interactions?.Refresh();
         _bench?.Refresh();
+        _verbBench?.Refresh();
         _assembly?.Refresh();
     }
 }

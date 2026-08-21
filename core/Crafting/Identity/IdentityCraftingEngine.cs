@@ -327,6 +327,13 @@ public sealed class IdentityCraftingEngine
                 .ToArray(),
             Latent = substrate.Latent.Where(id => id != targetId).ToArray(),
             Condition = StepDown(substrate.Condition),
+            // The source's provenance joins the substrate's — how oak's personality (profile,
+            // base, the "Oakbound" name) travels with the identity it delivered.
+            Roots = RootDerivations.MergeRoots(new[]
+            {
+                (substrate.Roots, 1.0 - IdentityCraftTuning.TransferRootShare),
+                (source.Roots, IdentityCraftTuning.TransferRootShare),
+            }),
         };
 
         var fidelity = source.IsCarrier ? "carrier fidelity" : "raw transfer";
@@ -369,12 +376,16 @@ public sealed class IdentityCraftingEngine
             return ResolvedVerb.Refused(VerbFailureReason.InsufficientDevelopment);
 
         var risks = RisksFor(substrate, stepsCondition: true);
+        var feedShare = IdentityCraftTuning.DevelopRootShare / request.Sources.Count;
         var result = substrate with
         {
             Identities = substrate.Identities
                 .Select(s => s.Id == stake.Id ? s with { Rank = s.Rank + 1 } : s)
                 .ToArray(),
             Condition = StepDown(substrate.Condition),
+            Roots = RootDerivations.MergeRoots(
+                request.Sources.Select(source => (source.Roots, feedShare))
+                    .Prepend((substrate.Roots, 1.0 - IdentityCraftTuning.DevelopRootShare))),
         };
 
         var steps = new List<VerbStep>
@@ -453,6 +464,11 @@ public sealed class IdentityCraftingEngine
                 .ToArray(),
             Latent = substrate.Latent.Where(id => id != incomingId).ToArray(),
             Condition = StepDown(substrate.Condition),
+            Roots = RootDerivations.MergeRoots(new[]
+            {
+                (substrate.Roots, 1.0 - IdentityCraftTuning.TransferRootShare),
+                (source.Roots, IdentityCraftTuning.TransferRootShare),
+            }),
         };
 
         var steps = new List<VerbStep>

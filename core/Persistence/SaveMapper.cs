@@ -90,7 +90,10 @@ public static class SaveMapper
             Discoveries = discoveries.All.ToList(),
             EmergentArchetypes = emergentRegistry is null
                 ? new List<EmergentArchetypeSave>()
-                : emergentRegistry.All.Select(ToSave).ToList(),
+                : emergentRegistry.All.Where(a => a.IdentityState is null).Select(ToSave).ToList(),
+            IdentityArchetypes = emergentRegistry is null
+                ? new List<IdentityArchetypeSave>()
+                : emergentRegistry.All.Where(a => a.IdentityState is not null).Select(ToIdentitySave).ToList(),
             LearnedMoves = learnedMoves?.All.ToList() ?? new List<string>(),
             EmergentEquipment = (emergentEquipment ?? Enumerable.Empty<Items.EquipmentDefinition>())
                 .Select(ToSave).ToList(),
@@ -171,6 +174,7 @@ public static class SaveMapper
         // Restored first: stash stacks may refer to emergent archetype ids, which nothing else
         // in the game can resolve until they are back in the material store.
         emergentRegistry?.Restore(save.EmergentArchetypes.Select(FromSave));
+        emergentRegistry?.Restore(save.IdentityArchetypes.Select(FromSave));
 
         stash.Clear();
         foreach (var stack in save.Stash)
@@ -281,6 +285,63 @@ public static class SaveMapper
             Essence = new Dictionary<string, double>(save.Essence),
         },
     };
+
+    private static IdentityArchetypeSave ToIdentitySave(MaterialDefinition archetype)
+    {
+        var state = archetype.IdentityState
+            ?? throw new InvalidOperationException($"Identity archetype '{archetype.Id}' has no state to save.");
+
+        return new IdentityArchetypeSave
+        {
+            Id = archetype.Id,
+            Name = archetype.Name,
+            Tags = archetype.Tags.ToList(),
+            Identities = state.Identities
+                .Select(stake => new IdentityStakeSave { Id = stake.Id, Rank = stake.Rank })
+                .ToList(),
+            Latent = state.Latent.ToList(),
+            Capacity = state.Capacity,
+            Condition = state.Condition.ToString(),
+            Quality = state.Quality,
+            IsCarrier = state.IsCarrier,
+            Roots = state.Roots
+                .Select(root => new IdentityRootSave { DefinitionId = root.DefinitionId, Weight = root.Weight })
+                .ToList(),
+        };
+    }
+
+    private static MaterialDefinition FromSave(IdentityArchetypeSave save)
+    {
+        var state = new Crafting.Identity.IdentityMaterialState
+        {
+            Identities = save.Identities
+                .Select(stake => new Crafting.Identity.IdentityStake(stake.Id, stake.Rank))
+                .ToList(),
+            Latent = save.Latent.ToList(),
+            Capacity = save.Capacity,
+            Condition = Enum.TryParse<Crafting.Identity.Condition>(save.Condition, out var condition)
+                ? condition
+                : Crafting.Identity.Condition.Pristine,
+            Quality = save.Quality,
+            IsCarrier = save.IsCarrier,
+            Roots = save.Roots
+                .Select(root => new Crafting.Identity.ProvenanceRoot(root.DefinitionId, root.Weight))
+                .ToList(),
+        };
+
+        return new MaterialDefinition
+        {
+            Id = save.Id,
+            Name = save.Name,
+            Tags = save.Tags,
+            Capacity = save.Capacity,
+            Identities = save.Identities
+                .Select(stake => new IdentityGrant { Id = stake.Id, Rank = stake.Rank })
+                .ToList(),
+            Latent = save.Latent.ToList(),
+            IdentityState = state,
+        };
+    }
 
     private static ItemInstanceSave ToSave(ItemInstance instance) => new()
     {

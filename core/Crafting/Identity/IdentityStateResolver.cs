@@ -18,6 +18,11 @@ public static class IdentityStateResolver
     public static IdentityMaterialState? StateOf(MaterialDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
+
+        // Emergent materials carry the exact state they were registered with.
+        if (definition.IdentityState is { } stored)
+            return stored;
+
         if (definition.Capacity is not int capacity)
             return null;
 

@@ -42,6 +42,13 @@ public sealed record VerbActionDefinition : IDefinition
     [JsonPropertyName("substrate_tags")]
     public IReadOnlyList<string> SubstrateTags { get; init; } = Array.Empty<string>();
 
+    /// <summary>Exact-material gate, for the actions whose fiction is one conversion
+    /// ("Smelt Iron"). Matches the substrate's definition <b>or its primary provenance
+    /// root</b> — which is why smelting Dense Iron Ore into a Dense ingot needs no second
+    /// action. Combines with <see cref="SubstrateTags"/>; empty means no exact gate.</summary>
+    [JsonPropertyName("substrate_id")]
+    public string? SubstrateId { get; init; }
+
     /// <summary>Which identities this action may target — Runecrafting's lever: Transfer and
     /// Develop scoped to the magical identities on any substrate. Empty means any identity;
     /// only meaningful on the identity-targeting verbs (validated).</summary>

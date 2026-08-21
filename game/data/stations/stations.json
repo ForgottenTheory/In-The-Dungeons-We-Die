@@ -15,13 +15,15 @@
     "id": "station.mineshaft",
     "name": "Mineshaft",
     "description": "A lamp, a shaft head and a working face. Ore, stone and crystal come up here; what they become is someone else's station.",
-    "professions": ["profession.mining"]
+    "professions": ["profession.mining"],
+    "verb_actions": ["craft.prospect_stone"]
   },
   {
     "id": "station.timber_yard",
     "name": "Timber Yard",
     "description": "Stacked logs, stripped bark, buckets under the cuts. One tree leaves in four directions.",
-    "professions": ["profession.forestry"]
+    "professions": ["profession.forestry"],
+    "verb_actions": ["craft.read_the_grain"]
   },
   {
     "id": "station.fishing_dock",
@@ -67,6 +69,7 @@
       "process.alloy",
       "process.forge_infusion"
     ],
+    "verb_actions": ["craft.smelt_iron", "craft.infuse_metal", "craft.mend", "craft.hone"],
     "blueprints": ["form.longsword", "form.buckler", "form.helm", "form.ring", "form.dagger", "form.greatsword", "form.battleaxe", "form.maul", "form.flail", "form.shortsword", "form.halberd", "form.knuckles"]
   },
   {
@@ -74,14 +77,16 @@
     "name": "Apothecary",
     "description": "Mortar, press and steeping jars. Everything here prepares an ingredient without changing what it is.",
     "professions": ["profession.herblore"],
-    "crafting_actions": ["process.grind", "process.steep"]
+    "crafting_actions": ["process.grind", "process.steep"],
+    "verb_actions": ["craft.identify_virtues", "craft.draw_extract", "craft.hone"]
   },
   {
     "id": "station.alchemy_lab",
     "name": "Alchemy Lab",
     "description": "Glassware, a low flame and the willingness to find out. Where the Apothecary prepares, this changes.",
     "professions": ["profession.alchemy"],
-    "crafting_actions": ["process.distill"]
+    "crafting_actions": ["process.distill"],
+    "verb_actions": ["craft.distill"]
   },
   {
     "id": "station.kitchen",

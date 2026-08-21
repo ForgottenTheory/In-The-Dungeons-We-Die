@@ -32,9 +32,11 @@ public class CharacterXpSaveV11Tests
     }
 
     [Fact]
-    public void ANewSaveIsWrittenAtSchemaEleven()
+    public void ANewSaveIsWrittenAtSchemaElevenOrLater()
     {
-        Assert.Equal(11, SaveData.CurrentSchemaVersion);
+        // The exact pin lives with the newest version's tests (v12 at the time of writing);
+        // this one only holds that v11's fields are part of the written schema.
+        Assert.True(SaveData.CurrentSchemaVersion >= 11);
     }
 
     [Fact]
